@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ShieldCheck } from "lucide-react";
@@ -8,48 +9,68 @@ import { ShieldCheck } from "lucide-react";
 export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <div className="flex flex-col items-center gap-2 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 mb-2">
-                    <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
-                <p className="text-muted-foreground text-sm text-balance">
-                    Enter your details to create an admin account.
-                </p>
-            </div>
+            <Card className="border-zinc-800 bg-zinc-900/50 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden">
+                <CardHeader className="text-center pb-8">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                        <ShieldCheck className="h-6 w-6 text-indigo-400" />
+                        <CardTitle className="text-2xl font-bold text-white">Create an account</CardTitle>
+                    </div>
+                    <CardDescription className="text-zinc-400">
+                        Enter your details to create an admin account.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                    <form className="grid gap-4">
+                        <div className="grid gap-2">
+                            <Label htmlFor="name" className="text-zinc-300">Full Name</Label>
+                            <Input 
+                                id="name" 
+                                type="text" 
+                                placeholder="John Doe" 
+                                required 
+                                className="bg-zinc-950/50 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500/50 placeholder:text-zinc-600 focus-visible:border-indigo-500/50 rounded-3xl h-12"
+                            />
+                        </div>
 
-            <form className="grid gap-6">
-                <div className="grid gap-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" type="text" placeholder="John Doe" required />
-                </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="email" className="text-zinc-300">Email</Label>
+                            <Input 
+                                id="email" 
+                                type="email" 
+                                placeholder="m@example.com" 
+                                required 
+                                className="bg-zinc-950/50 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500/50 placeholder:text-zinc-600 focus-visible:border-indigo-500/50 rounded-3xl h-12"
+                            />
+                        </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="m@example.com" required />
-                </div>
+                        <div className="grid gap-2">
+                            <Label htmlFor="password" className="text-zinc-300">Password</Label>
+                            <Input 
+                                id="password" 
+                                type="password" 
+                                required 
+                                className="bg-zinc-950/50 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50 rounded-3xl h-12"
+                            />
+                        </div>
 
-                <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" required />
-                </div>
+                        <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700 text-white border-0 rounded-3xl h-12 mt-2">
+                            Sign Up
+                        </Button>
 
-                <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
-                    Sign Up
-                </Button>
-            </form>
-
-            <div className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link href="/auth/login" className="text-indigo-600 hover:text-indigo-500 hover:underline font-medium">
-                    Log in
-                </Link>
-            </div>
-            
-            <div className="text-center text-xs text-muted-foreground mt-4">
-                By clicking continue, you agree to our <a href="#" className="underline hover:text-indigo-600">Terms of Service</a>{" "}
-                and <a href="#" className="underline hover:text-indigo-600">Privacy Policy</a>.
-            </div>
+                        <div className="text-center text-sm text-muted-foreground mt-2">
+                            Already have an account?{" "}
+                            <Link href="/auth/login" className="text-indigo-400 hover:text-indigo-300 hover:underline font-medium">
+                                Log in
+                            </Link>
+                        </div>
+                        
+                        <div className="text-center text-xs text-zinc-500 mt-2">
+                            By clicking continue, you agree to our <a href="#" className="underline hover:text-indigo-400">Terms of Service</a>{" "}
+                            and <a href="#" className="underline hover:text-indigo-400">Privacy Policy</a>.
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
 }

@@ -13,111 +13,117 @@ import { setTempLoginSession, getTempLoginSession, deleteTempLoginSession } from
  * Check credentials and return if 2FA is required
  */
 const loginCheckHandler = async (request: NextRequest) => {
-  try {
-    const body = await request.json();
-    let { email, password } = body;
+	try {
+		const body = await request.json();
+		let { email, password } = body;
 
-    // Validate required fields
-    if (!email || !password) {
-      return NextResponse.json(
-        { success: false, error: "Email and password are required" },
-        { status: 400 }
-      );
-    }
+		// Validate required fields
+		if (!email || !password) {
+			return NextResponse.json(
+				{ success: false, error: "Email and password are required" },
+				{ status: 400 }
+			);
+		}
 
-    // Sanitize email
-    try {
-      email = sanitizeEmail(email);
-    } catch (error) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email format" },
-        { status: 400 }
-      );
-    }
+		// Sanitize email
+		try {
+			email = sanitizeEmail(email);
+		} catch (error) {
+			return NextResponse.json(
+				{ success: false, error: "Invalid email format" },
+				{ status: 400 }
+			);
+		}
+		console.log("1. Login check handler called");
 
-    // Find user by email
-    const userResults = await db
-      .select({
-        id: users.id,
-        email: users.email,
-        password: users.password,
-        fullName: users.fullName,
-        role: users.role,
-        twoFactorEnabled: users.twoFactorEnabled,
-        twoFactorMethod: users.twoFactorMethod,
-        createdAt: users.createdAt,
-      })
-      .from(users)
-      .where(eq(users.email, email))
-      .limit(1);
+		// Find user by email
+		const userResults = await db
+			.select({
+				id: users.id,
+				email: users.email,
+				password: users.password,
+				fullName: users.fullName,
+				role: users.role,
+				twoFactorEnabled: users.twoFactorEnabled,
+				twoFactorMethod: users.twoFactorMethod,
+				createdAt: users.createdAt,
+			})
+			.from(users)
+			.where(eq(users.email, email))
+			.limit(1);
 
-    if (userResults.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email or password" },
-        { status: 401 }
-      );
-    }
+		console.log("2. User results:", userResults);
 
-    const user = userResults[0];
+		if (userResults.length === 0) {
+			return NextResponse.json(
+				{ success: false, error: "Invalid email or password" },
+				{ status: 401 }
+			);
+		}
 
-    // Verify password
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+		console.log("3. User results:", userResults);
 
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email or password" },
-        { status: 401 }
-      );
-    }
+		const user = userResults[0];
 
-    // Check if 2FA is enabled
-    if (user.twoFactorEnabled) {
-      // Generate temporary session token for 2FA verification
-      const sessionToken = crypto.randomBytes(32).toString("hex");
-      
-      console.log("Creating temp login session for 2FA", {
-        userId: user.id,
-        email: user.email,
-        sessionToken: sessionToken.substring(0, 8) + "...",
-        twoFactorMethod: user.twoFactorMethod,
-      });
+		// Verify password
+		const isPasswordValid = await bcrypt.compare(password, user.password);
 
-      try {
-        await setTempLoginSession(sessionToken, user.id, user.email, 15 * 60 * 1000); // 15 minutes
-        console.log("Temp login session created successfully", {
-          sessionToken: sessionToken.substring(0, 8) + "...",
-        });
-      } catch (error) {
-        console.error("Error creating temp login session:", error);
-        return NextResponse.json(
-          { success: false, error: "Failed to create login session. Please try again." },
-          { status: 500 }
-        );
-      }
+		console.log("4. Is password valid:", isPasswordValid);
+		if (!isPasswordValid) {
+			return NextResponse.json(
+				{ success: false, error: "Invalid email or password" },
+				{ status: 401 }
+			);
+		}
 
-      // Authenticator app method
-      return NextResponse.json({
-        success: true,
-        requiresTwoFactor: true,
-        sessionToken,
-        twoFactorMethod: user.twoFactorMethod || "authenticator",
-        message: "Please enter your 2FA code from your authenticator app",
-      });
-    }
+		// Check if 2FA is enabled
+		if (user.twoFactorEnabled) {
+			// Generate temporary session token for 2FA verification
+			const sessionToken = crypto.randomBytes(32).toString("hex");
 
-    // 2FA not enabled - login can proceed normally via NextAuth
-    return NextResponse.json({
-      success: true,
-      requiresTwoFactor: false,
-      message: "Login successful",
-    });
-  } catch (error) {
-    console.error("Login check error:", error);
-    return NextResponse.json(
-      { success: false, error: "Internal server error" },
-      { status: 500 }
-    );
-  }
+			console.log("Creating temp login session for 2FA", {
+				userId: user.id,
+				email: user.email,
+				sessionToken: sessionToken.substring(0, 8) + "...",
+				twoFactorMethod: user.twoFactorMethod,
+			});
+
+			try {
+				await setTempLoginSession(sessionToken, user.id, user.email, 15 * 60 * 1000); // 15 minutes
+				console.log("Temp login session created successfully", {
+					sessionToken: sessionToken.substring(0, 8) + "...",
+				});
+			} catch (error) {
+				console.error("Error creating temp login session:", error);
+				return NextResponse.json(
+					{ success: false, error: "Failed to create login session. Please try again." },
+					{ status: 500 }
+				);
+			}
+
+			// Authenticator app method
+			return NextResponse.json({
+				success: true,
+				requiresTwoFactor: true,
+				sessionToken,
+				twoFactorMethod: user.twoFactorMethod || "authenticator",
+				message: "Please enter your 2FA code from your authenticator app",
+			});
+		}
+
+		// 2FA not enabled - login can proceed normally via NextAuth
+		return NextResponse.json({
+			success: true,
+			requiresTwoFactor: false,
+			message: "Login successful",
+		});
+	} catch (error) {
+		console.error("Login check error:", error);
+		return NextResponse.json(
+			{ success: false, error: "Internal server error" },
+			{ status: 500 }
+		);
+	}
 };
 
 export const POST = withRateLimit(RateLimits.STRICT, loginCheckHandler);
@@ -127,31 +133,31 @@ export const POST = withRateLimit(RateLimits.STRICT, loginCheckHandler);
  * Get temporary login session
  */
 export const GET = async (request: NextRequest) => {
-  const searchParams = request.nextUrl.searchParams;
-  const sessionToken = searchParams.get("sessionToken");
+	const searchParams = request.nextUrl.searchParams;
+	const sessionToken = searchParams.get("sessionToken");
 
-  if (!sessionToken) {
-    return NextResponse.json(
-      { success: false, error: "Session token required" },
-      { status: 400 }
-    );
-  }
+	if (!sessionToken) {
+		return NextResponse.json(
+			{ success: false, error: "Session token required" },
+			{ status: 400 }
+		);
+	}
 
-  const session = await getTempLoginSession(sessionToken);
+	const session = await getTempLoginSession(sessionToken);
 
-  if (!session) {
-    return NextResponse.json(
-      { success: false, error: "Invalid or expired session" },
-      { status: 401 }
-    );
-  }
+	if (!session) {
+		return NextResponse.json(
+			{ success: false, error: "Invalid or expired session" },
+			{ status: 401 }
+		);
+	}
 
-  return NextResponse.json({
-    success: true,
-    data: {
-      userId: session.userId,
-      email: session.email,
-    },
-  });
+	return NextResponse.json({
+		success: true,
+		data: {
+			userId: session.userId,
+			email: session.email,
+		},
+	});
 };
 
