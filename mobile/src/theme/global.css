@@ -1,0 +1,143 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        /* ELIDZ-STP Brand Colors */
+        --background: 255 255 255;
+        --foreground: 33 37 41;
+        --card: 255 255 255;
+        --card-foreground: 33 37 41;
+        --popover: 248 249 250;
+        --popover-foreground: 33 37 41;
+        --primary: 0 33 71; /* ELIDZ Navy Blue */
+        --primary-foreground: 255 255 255;
+        --secondary: 255 102 0; /* ELIDZ Orange */
+        --secondary-foreground: 255 255 255;
+        --muted: 108 117 125;
+        --muted-foreground: 73 80 87;
+        --accent: 255 102 0; /* ELIDZ Orange (matching logo) */
+        --accent-foreground: 255 255 255;
+        --destructive: 220 53 69;
+        --destructive-foreground: 255 255 255;
+        --border: 233 236 239;
+        --input: 255 255 255;
+        --ring: 0 33 71; /* ELIDZ Navy Blue */
+
+        /* Extended ELIDZ Palette */
+        --blue: 0 33 71; /* ELIDZ Navy Blue */
+        --green: 40 167 69;
+        --orange: 255 102 0; /* ELIDZ Orange */
+        --purple: 111 66 193;
+        --pink: 232 62 140;
+        --teal: 23 162 184;
+        --indigo: 102 16 242;
+        --cyan: 32 201 151;
+
+        /* User Role Colors */
+        --role-entrepreneur: 40 167 69;  /* Green */
+        --role-researcher: 0 33 71;    /* ELIDZ Navy Blue */
+        --role-sme: 255 102 0;           /* ELIDZ Orange */
+        --role-student: 111 66 193;      /* Purple */
+        --role-investor: 232 62 140;     /* Pink */
+        --role-tenant: 23 162 184;       /* Teal */
+
+        /* Status Colors */
+        --online: 40 167 69;
+        --offline: 108 117 125;
+        --pending: 255 193 7;
+        --unread: 220 53 69;
+
+        /* Android specific overrides */
+        --android-background: 255 255 255;
+        --android-foreground: 33 37 41;
+        --android-card: 255 255 255;
+        --android-card-foreground: 33 37 41;
+        --android-popover: 248 249 250;
+        --android-popover-foreground: 33 37 41;
+        --android-primary: 0 33 71; /* ELIDZ Navy Blue */
+        --android-primary-foreground: 255 255 255;
+        --android-secondary: 255 102 0; /* ELIDZ Orange */
+        --android-secondary-foreground: 255 255 255;
+        --android-muted: 108 117 125;
+        --android-muted-foreground: 73 80 87;
+        --android-accent: 255 102 0; /* ELIDZ Orange */
+        --android-accent-foreground: 33 37 41;
+        --android-destructive: 220 53 69;
+        --android-destructive-foreground: 255 255 255;
+        --android-border: 233 236 239;
+        --android-input: 255 255 255;
+        --android-ring: 0 33 71; /* ELIDZ Navy Blue */
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            /* ELIDZ-STP Dark Mode Colors */
+            --background: 18 18 18;
+            --foreground: 255 255 255;
+            --card: 30 30 30;
+            --card-foreground: 255 255 255;
+            --popover: 42 42 42;
+            --popover-foreground: 255 255 255;
+            --primary: 0 26 54; /* Darker ELIDZ Navy Blue */
+            --primary-foreground: 255 255 255;
+            --secondary: 204 82 0; /* Darker ELIDZ Orange */
+            --secondary-foreground: 255 255 255;
+            --muted: 176 176 176;
+            --muted-foreground: 128 128 128;
+            --accent: 230 92 0; /* Darker ELIDZ Orange */
+            --accent-foreground: 255 255 255;
+            --destructive: 220 53 69;
+            --destructive-foreground: 255 255 255;
+            --border: 64 64 64;
+            --input: 51 51 51;
+            --ring: 0 26 54; /* Darker ELIDZ Navy Blue */
+
+            /* Extended ELIDZ Palette (same for consistency) */
+            --blue: 0 33 71; /* ELIDZ Navy Blue */
+            --green: 40 167 69;
+            --orange: 255 102 0; /* ELIDZ Orange */
+            --purple: 111 66 193;
+            --pink: 232 62 140;
+            --teal: 23 162 184;
+            --indigo: 102 16 242;
+            --cyan: 32 201 151;
+
+            /* User Role Colors (same as light for consistency) */
+            --role-entrepreneur: 40 167 69;
+            --role-researcher: 0 33 71; /* ELIDZ Navy Blue */
+            --role-sme: 255 102 0; /* ELIDZ Orange */
+            --role-student: 111 66 193;
+            --role-investor: 232 62 140;
+            --role-tenant: 23 162 184;
+
+            /* Status Colors (same as light for consistency) */
+            --online: 40 167 69;
+            --offline: 108 117 125;
+            --pending: 255 193 7;
+            --unread: 220 53 69;
+
+            /* Android dark mode overrides */
+            --android-background: 18 18 18;
+            --android-foreground: 255 255 255;
+            --android-card: 30 30 30;
+            --android-card-foreground: 255 255 255;
+            --android-popover: 42 42 42;
+            --android-popover-foreground: 255 255 255;
+            --android-primary: 0 26 54; /* Darker ELIDZ Navy Blue */
+            --android-primary-foreground: 255 255 255;
+            --android-secondary: 204 82 0; /* Darker ELIDZ Orange */
+            --android-secondary-foreground: 255 255 255;
+            --android-muted: 176 176 176;
+            --android-muted-foreground: 128 128 128;
+            --android-accent: 230 92 0; /* Darker ELIDZ Orange */
+            --android-accent-foreground: 255 255 255;
+            --android-destructive: 220 53 69;
+            --android-destructive-foreground: 255 255 255;
+            --android-border: 64 64 64;
+            --android-input: 51 51 51;
+            --android-ring: 0 26 54; /* Darker ELIDZ Navy Blue */
+        }
+    }
+}
