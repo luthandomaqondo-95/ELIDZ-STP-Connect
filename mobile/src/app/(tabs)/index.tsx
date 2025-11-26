@@ -67,7 +67,7 @@ export default function DashboardScreen() {
         const nameLower = center.name.toLowerCase();
         let icon = 'briefcase';
         if (nameLower.includes('food') || nameLower.includes('water') || nameLower.includes('lab')) icon = 'droplet';
-        else if (nameLower.includes('design')) icon = 'palette';
+        else if (nameLower.includes('design')) icon = 'pen-tool';
         else if (nameLower.includes('digital') || nameLower.includes('tech')) icon = 'monitor';
         else if (nameLower.includes('automotive')) icon = 'settings';
         else if (nameLower.includes('energy')) icon = 'zap';

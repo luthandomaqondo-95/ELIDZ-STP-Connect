@@ -105,6 +105,24 @@ class ConnectionService {
 	async createConnection(userId: string, connectedUserId: string): Promise<Connection> {
 		console.log('ConnectionService.createConnection called:', userId, '->', connectedUserId);
 
+		// Debug auth state
+		const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+		console.log('ConnectionService.createConnection auth debug:', {
+			sessionExists: !!session,
+			userId: session?.user?.id,
+			requestedUserId: userId,
+			matches: session?.user?.id === userId,
+			sessionError: sessionError?.message
+		});
+
+		if (!session?.user) {
+			throw new Error('User not authenticated');
+		}
+
+		if (session.user.id !== userId) {
+			throw new Error(`User ID mismatch: authenticated user ${session.user.id} does not match requested user ${userId}`);
+		}
+
 		const { data: existing, error: checkError } = await supabase
 			.from('connections')
 			.select('*')

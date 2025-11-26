@@ -255,17 +255,18 @@ function CenterDetailScreen() {
         }}>
         <View style={{ flex: 1, marginRight: (id === '1' || id === '2' || id === '5' || id === '6' || id === '7' || id === '8') ? Spacing.lg : 0 }}>
         <Text style={[Typography.h3, { marginBottom: Spacing.lg }]}>Services & Capabilities</Text>
-          {React.Children.toArray(data.services.map((service: string) => {
+          {data.services.map((service: string, index: number) => {
             const incubatorInfo = parseIncubatorService(service);
             return (
               <ServiceRow
+                key={index}
                 service={service}
                 incubatorInfo={incubatorInfo}
                 colors={colors}
                 onOpenWebsite={handleWebsite}
               />
             );
-          }))}
+          })}
         </View>
         {/* Show image on the right for specific centers */}
         {id === '1' && (
@@ -440,12 +441,13 @@ function CenterDetailScreen() {
 
       <View style={{ marginBottom: Spacing.xl }}>
         <Text style={[Typography.h3, { marginBottom: Spacing.lg }]}>Equipment & Facilities</Text>
-        {React.Children.toArray(data.equipment.map((item: string) => (
+        {data.equipment.map((item: string, index: number) => (
           <EquipmentRow
+            key={index}
             item={item}
             colors={colors}
           />
-        )))}
+        ))}
       </View>
 
       {data.contact && (

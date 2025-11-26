@@ -64,12 +64,12 @@ function MessagesScreen() {
 
     function getRoleIcon(role: UserRole): string {
         const roleIcons: Record<UserRole, string> = {
-            Entrepreneur: 'lightbulb',
+            Entrepreneur: 'zap',
             Researcher: 'search',
             SME: 'briefcase',
-            Student: 'graduation-cap',
+            Student: 'book-open',
             Investor: 'trending-up',
-            Tenant: 'building',
+            Tenant: 'home',
         };
         return roleIcons[role] || 'user';
     }
