@@ -8,6 +8,7 @@ export interface Profile {
   bio?: string;
   avatar?: string;
   isPremium?: boolean;
+  verification_status?: 'verified' | 'pending' | 'rejected' | 'unverified';
   created_at: string;
 }
 
@@ -81,4 +82,3 @@ export interface Resource {
   uploaded_by?: string;
   status?: string; // For UI
 }
-

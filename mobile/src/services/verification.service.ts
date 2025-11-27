@@ -37,8 +37,27 @@ class VerificationService {
         return (data as SMMEVerification[]) || [];
     }
 
-    // Get overall verification status (verified if all 3 required documents are verified)
+    // Get overall verification status (verified if all 3 required documents are verified OR profile is verified)
     async getVerificationStatus(userId: string): Promise<SMMEVerification | null> {
+        // First check profile status directly
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('verification_status')
+            .eq('id', userId)
+            .single();
+
+        if (profile?.verification_status === 'verified') {
+             return {
+                id: 'profile-verified',
+                user_id: userId,
+                document_url: '',
+                document_type: 'Other' as DocumentType, // Cast to satisfy type
+                status: 'verified',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            } as SMMEVerification;
+        }
+
         const documents = await this.getAllVerifications(userId);
         
         if (documents.length === 0) return null;
