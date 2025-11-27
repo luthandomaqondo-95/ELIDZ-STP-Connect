@@ -1,5 +1,4 @@
-"use client"
-
+import { createClient } from "@/lib/supabase/server"
 import {
   Card,
   CardContent,
@@ -7,78 +6,80 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Bar, BarChart, CartesianGrid, XAxis, Tooltip, ResponsiveContainer } from "recharts"
+import { UserDemographicsCharts } from "./demographics-charts"
 
-const data = [
-  { name: "Jan", users: 400 },
-  { name: "Feb", users: 300 },
-  { name: "Mar", users: 550 },
-  { name: "Apr", users: 480 },
-  { name: "May", users: 600 },
-  { name: "Jun", users: 700 },
-]
+export default async function UserDemographicsPage() {
+    const supabase = await createClient()
+    
+    // Fetch profile data
+    const { data: profiles } = await supabase
+        .from('profiles')
+        .select('*')
 
-export default function UserDemographicsPage() {
+    // Process data for charts
+    const roleCounts: Record<string, number> = {}
+    const locationCounts: Record<string, number> = {}
+    const growthData: Record<string, number> = {} // Key: Month-Year
+
+    profiles?.forEach(profile => {
+        // Role Stats
+        const role = profile.role || 'Unknown'
+        roleCounts[role] = (roleCounts[role] || 0) + 1
+
+        // Location Stats - Parse "City, Province, Zip" or use as is if simple
+        let location = 'Unknown'
+        if (profile.address) {
+            // Assuming format "City, Province, Zip" from mobile signup
+            const parts = profile.address.split(',')
+            if (parts.length >= 2) {
+                location = parts[1].trim() // Province
+            } else {
+                location = profile.address // Fallback
+            }
+        } else if (profile.location) {
+             // Fallback to location column if address is empty (legacy/admin created)
+             // location column might be JSON or text based on schema history
+             if (typeof profile.location === 'string') {
+                 location = profile.location
+             } else if (typeof profile.location === 'object' && profile.location?.province) {
+                 location = profile.location.province
+             }
+        }
+        locationCounts[location] = (locationCounts[location] || 0) + 1
+
+        // Growth Stats (Created At)
+        const date = new Date(profile.created_at)
+        const key = date.toLocaleString('default', { month: 'short' })
+        growthData[key] = (growthData[key] || 0) + 1
+    })
+
+    // Format data for charts
+    const rolesChartData = Object.entries(roleCounts).map(([name, count]) => ({
+        name,
+        count,
+        fill: `var(--color-${name.toLowerCase().replace(/\s+/g, '-')})` 
+    }))
+
+    const locationChartData = Object.entries(locationCounts)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 8) // Top 8 locations
+
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const growthChartData = months.map(month => ({
+        name: month,
+        users: growthData[month] || 0
+    }))
+
     return (
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <h1 className="text-2xl font-bold tracking-tight">User Demographics</h1>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>User Growth</CardTitle>
-                        <CardDescription>New user registrations over time</CardDescription>
-                    </CardHeader>
-                    <CardContent className="h-[300px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={data}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                                <XAxis dataKey="name" tickLine={false} axisLine={false} />
-                                <Tooltip />
-                                <Bar dataKey="users" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </CardContent>
-                </Card>
-                
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>User Roles</CardTitle>
-                        <CardDescription>Distribution of user roles</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                         <div className="space-y-4">
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Tenants</span>
-                                    <span className="font-medium">65%</span>
-                                </div>
-                                <div className="h-2 w-full rounded-full bg-secondary">
-                                    <div className="h-full w-[65%] rounded-full bg-primary" />
-                                </div>
-                            </div>
-                             <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Investors</span>
-                                    <span className="font-medium">20%</span>
-                                </div>
-                                <div className="h-2 w-full rounded-full bg-secondary">
-                                    <div className="h-full w-[20%] rounded-full bg-primary" />
-                                </div>
-                            </div>
-                             <div className="space-y-2">
-                                <div className="flex items-center justify-between text-sm">
-                                    <span>Staff</span>
-                                    <span className="font-medium">15%</span>
-                                </div>
-                                <div className="h-2 w-full rounded-full bg-secondary">
-                                    <div className="h-full w-[15%] rounded-full bg-primary" />
-                                </div>
-                            </div>
-                         </div>
-                    </CardContent>
-                </Card>
-            </div>
+            <UserDemographicsCharts 
+                roleData={rolesChartData} 
+                locationData={locationChartData} 
+                growthData={growthChartData}
+                totalUsers={profiles?.length || 0}
+            />
         </div>
     );
 }

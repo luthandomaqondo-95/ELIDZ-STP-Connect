@@ -23,7 +23,7 @@ export default function ServicesScreen() {
 	const [screenMode, setScreenMode] = useState<ScreenMode>('list');
 	const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
 	const [selectedService, setSelectedService] = useState<VRSection | null>(null);
-	
+
 	// Data states
 	const [facilities, setFacilities] = useState<Facility[]>([]);
 	const [facilityWithTour, setFacilityWithTour] = useState<FacilityWithTour | null>(null);
@@ -63,7 +63,7 @@ export default function ServicesScreen() {
 			// Filter by search query if provided
 			let filteredData = data;
 			if (debouncedSearch.trim()) {
-				filteredData = data.filter(facility => 
+				filteredData = data.filter(facility =>
 					facility.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
 					facility.description.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
 					facility.location.toLowerCase().includes(debouncedSearch.toLowerCase())
@@ -133,8 +133,8 @@ export default function ServicesScreen() {
 	};
 
 	const activeSceneId = currentSceneId ?? facilityWithTour?.initialSceneId;
-	const activeScene = activeSceneId && facilityWithTour?.scenes 
-		? facilityWithTour.scenes.find(s => s.id === activeSceneId) 
+	const activeScene = activeSceneId && facilityWithTour?.scenes
+		? facilityWithTour.scenes.find(s => s.id === activeSceneId)
 		: null;
 	const hasSections = facilityWithTour?.sections ? facilityWithTour.sections.length > 0 : false;
 
@@ -149,7 +149,7 @@ export default function ServicesScreen() {
 	// Handle service access actions
 	const handleRequestAccess = (service: VRSection) => {
 		if (!facilityWithTour) return;
-		
+
 		Alert.alert(
 			'Request Access',
 			`Would you like to request access to ${service.title}?`,
@@ -181,7 +181,7 @@ export default function ServicesScreen() {
 
 	const handleContactFacility = () => {
 		if (!facilityWithTour) return;
-		
+
 		Alert.alert(
 			'Contact Facility',
 			`How would you like to contact ${facilityWithTour.name}?`,
@@ -274,59 +274,60 @@ export default function ServicesScreen() {
 
 	return (
 		<View className="flex-1">
+			{/* Header */}
+			<View
+				className="pt-12 pb-6"
+				style={{ paddingHorizontal: isTablet ? 24 : 24 }}
+			>
+				<View
+					style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+				>
+					<View className="flex-row items-center justify-end mb-2">
+						<HeaderNotificationIcon />
+						<HeaderAvatar />
+					</View>
+					<View className="items-start mb-2">
+						<Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
+							IDZ STP Services
+						</Text>
+						<Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
+							Explore our world-class facilities and innovation centers
+						</Text>
+					</View>
+				</View>
+
+				{/* Search Bar */}
+				<View
+					className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
+					style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+				>
+					<Feather name="search" size={20} color="#9CA3AF" />
+					<TextInput
+						className="flex-1 ml-3 text-base text-foreground"
+						placeholder="Search facilities..."
+						placeholderTextColor="#D1D5DB"
+						value={searchQuery}
+						onChangeText={setSearchQuery}
+					/>
+					{searchQuery.length > 0 && (
+						<Pressable
+							onPress={() => setSearchQuery('')}
+							className="ml-2"
+							hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+						>
+							<Feather name="x" size={18} color="#9CA3AF" />
+						</Pressable>
+					)}
+				</View>
+			</View>
 			{screenMode === 'list' && (
 				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
-					{/* Header */}
-					<View
-						className="pt-12 pb-6"
-						style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-					>
-						<View 
-							style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-						>
-							<View className="flex-row items-center justify-end mb-2">
-								<HeaderNotificationIcon />
-								<HeaderAvatar />
-							</View>
-							<View className="items-start mb-2">
-								<Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
-									IDZ STP Services
-								</Text>
-								<Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-									Explore our world-class facilities and innovation centers
-								</Text>
-							</View>
-						</View>
 
-						{/* Search Bar */}
-						<View 
-							className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
-							style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-						>
-							<Feather name="search" size={20} color="#9CA3AF" />
-							<TextInput
-								className="flex-1 ml-3 text-base text-foreground"
-								placeholder="Search facilities..."
-								placeholderTextColor="#D1D5DB"
-								value={searchQuery}
-								onChangeText={setSearchQuery}
-							/>
-							{searchQuery.length > 0 && (
-								<Pressable 
-									onPress={() => setSearchQuery('')} 
-									className="ml-2"
-									hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-								>
-									<Feather name="x" size={18} color="#9CA3AF" />
-								</Pressable>
-							)}
-						</View>
-					</View>
 
 					{/* Facilities List */}
-					<View 
+					<View
 						className="py-4"
-						style={{ 
+						style={{
 							paddingHorizontal: isTablet ? 24 : 20,
 							maxWidth: isTablet ? 1200 : '100%',
 							alignSelf: 'center',
@@ -336,39 +337,39 @@ export default function ServicesScreen() {
 						{loading ? (
 							<View className="items-center py-12">
 								<ActivityIndicator size="large" color="#002147" />
-              <Text className="text-muted-foreground mt-4">Loading facilities...</Text>
-            </View>
-          ) : facilities.length === 0 ? (
-            <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
-              <Feather name="home" size={48} color="#CBD5E0" />
-              <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
-                {searchQuery ? 'No facilities found' : 'No facilities available'}
-              </Text>
-              <Text className="text-muted-foreground text-sm mt-2 text-center">
-                {searchQuery ? 'Try a different search term' : 'Check back soon for updates'}
-              </Text>
-            </View>
-          ) : (
-            facilities.map((facility) => (
-              <Pressable
-                key={facility.id}
-                className="bg-card rounded-2xl mb-4 p-4 shadow-sm border border-border active:opacity-95"
-								onPress={() => handleFacilitySelect(facility.id)}
-							>
-								<View className="flex-row items-center">
-									<View className="w-16 h-16 rounded-xl items-center justify-center mr-4" style={{ backgroundColor: facility.color }}>
-										<Feather name={facility.icon as any} size={28} color="#FFFFFF" />
-									</View>
-									<View className="flex-1">
-                    <Text className="text-lg font-bold text-foreground mb-1">{facility.name}</Text>
-                    <Text className="text-muted-foreground text-sm mb-2">{facility.description}</Text>
-                    <View className="flex-row items-center">
-                      <Text className="text-xs text-muted-foreground">{facility.location}</Text>
-											<Feather name="chevron-right" size={16} color="#FF6600" style={{ marginLeft: 'auto' }} />
+								<Text className="text-muted-foreground mt-4">Loading facilities...</Text>
+							</View>
+						) : facilities.length === 0 ? (
+							<View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
+								<Feather name="home" size={48} color="#CBD5E0" />
+								<Text className="text-muted-foreground text-base mt-4 text-center font-medium">
+									{searchQuery ? 'No facilities found' : 'No facilities available'}
+								</Text>
+								<Text className="text-muted-foreground text-sm mt-2 text-center">
+									{searchQuery ? 'Try a different search term' : 'Check back soon for updates'}
+								</Text>
+							</View>
+						) : (
+							facilities.map((facility) => (
+								<Pressable
+									key={facility.id}
+									className="bg-card rounded-2xl mb-4 p-4 shadow-sm border border-border active:opacity-95"
+									onPress={() => handleFacilitySelect(facility.id)}
+								>
+									<View className="flex-row items-center">
+										<View className="w-16 h-16 rounded-xl items-center justify-center mr-4" style={{ backgroundColor: facility.color }}>
+											<Feather name={facility.icon as any} size={28} color="#FFFFFF" />
+										</View>
+										<View className="flex-1">
+											<Text className="text-lg font-bold text-foreground mb-1">{facility.name}</Text>
+											<Text className="text-muted-foreground text-sm mb-2">{facility.description}</Text>
+											<View className="flex-row items-center">
+												<Text className="text-xs text-muted-foreground">{facility.location}</Text>
+												<Feather name="chevron-right" size={16} color="#FF6600" style={{ marginLeft: 'auto' }} />
+											</View>
 										</View>
 									</View>
-								</View>
-							</Pressable>
+								</Pressable>
 							))
 						)}
 					</View>
@@ -403,91 +404,91 @@ export default function ServicesScreen() {
 
 					{/* Services List */}
 					{!loadingTour && (
-					<View className="mx-5 py-4">
-            <Text className="text-xl font-bold text-foreground mb-4">Available Services</Text>
+						<View className="mx-5 py-4">
+							<Text className="text-xl font-bold text-foreground mb-4">Available Services</Text>
 							{facilityWithTour.sections.map((service, index) => (
-							<View
-								key={index}
-                className="bg-card rounded-2xl mb-4 p-4 shadow-sm border border-border"
-							>
-								<Pressable
-									onPress={() => handleServiceSelect(service)}
-									className="active:opacity-95"
+								<View
+									key={index}
+									className="bg-card rounded-2xl mb-4 p-4 shadow-sm border border-border"
 								>
-									<View className="flex-row items-center justify-between mb-3">
-										<View className="flex-1">
-                    <Text className="text-lg font-bold text-foreground mb-2">{service.title}</Text>
-                    <Text className="text-muted-foreground text-sm mb-3">{service.description}</Text>
-                    <View className="flex-row flex-wrap">
-                      {service.details.slice(0, 3).map((detail: string, i: number) => (
-                        <View key={i} className="bg-primary/10 px-2 py-1 rounded-md mr-2 mb-1">
-                          <Text className="text-primary text-[10px] font-medium">{detail}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  </View>
-                  {service.has_vr ? (
-                      <View className="ml-4">
-                        <Feather name="eye" size={24} color="#FF6600" />
-                      </View>
-                    ) : null}
-                </View>
-              </Pressable>
-              
-              {/* Access Actions */}
-              <View className="flex-row gap-2 mt-2 pt-3 border-t border-border">
 									<Pressable
-										onPress={() => handleRequestAccess(service)}
-										className="flex-1 bg-[#002147] py-2.5 rounded-lg active:opacity-90"
+										onPress={() => handleServiceSelect(service)}
+										className="active:opacity-95"
 									>
-										<View className="flex-row items-center justify-center">
-											<Feather name="user-plus" size={16} color="white" />
-											<Text className="text-white font-semibold text-sm ml-2">Request Access</Text>
+										<View className="flex-row items-center justify-between mb-3">
+											<View className="flex-1">
+												<Text className="text-lg font-bold text-foreground mb-2">{service.title}</Text>
+												<Text className="text-muted-foreground text-sm mb-3">{service.description}</Text>
+												<View className="flex-row flex-wrap">
+													{service.details.slice(0, 3).map((detail: string, i: number) => (
+														<View key={i} className="bg-primary/10 px-2 py-1 rounded-md mr-2 mb-1">
+															<Text className="text-primary text-[10px] font-medium">{detail}</Text>
+														</View>
+													))}
+												</View>
+											</View>
+											{service.has_vr ? (
+												<View className="ml-4">
+													<Feather name="eye" size={24} color="#FF6600" />
+												</View>
+											) : null}
 										</View>
 									</Pressable>
-									<Pressable
-										onPress={handleContactFacility}
-										className="px-4 py-2.5 border border-[#002147] rounded-lg active:opacity-90"
-									>
-										<View className="flex-row items-center">
-											<Feather name="mail" size={16} color="#002147" />
-										</View>
-									</Pressable>
-									{service.has_vr && (
+
+									{/* Access Actions */}
+									<View className="flex-row gap-2 mt-2 pt-3 border-t border-border">
 										<Pressable
-											onPress={() => handleServiceSelect(service)}
-											className="px-4 py-2.5 border border-[#FF6600] rounded-lg active:opacity-90"
+											onPress={() => handleRequestAccess(service)}
+											className="flex-1 bg-[#002147] py-2.5 rounded-lg active:opacity-90"
 										>
-											<View className="flex-row items-center">
-												<Feather name="eye" size={16} color="#FF6600" />
+											<View className="flex-row items-center justify-center">
+												<Feather name="user-plus" size={16} color="white" />
+												<Text className="text-white font-semibold text-sm ml-2">Request Access</Text>
 											</View>
 										</Pressable>
-									)}
+										<Pressable
+											onPress={handleContactFacility}
+											className="px-4 py-2.5 border border-[#002147] rounded-lg active:opacity-90"
+										>
+											<View className="flex-row items-center">
+												<Feather name="mail" size={16} color="#002147" />
+											</View>
+										</Pressable>
+										{service.has_vr && (
+											<Pressable
+												onPress={() => handleServiceSelect(service)}
+												className="px-4 py-2.5 border border-[#FF6600] rounded-lg active:opacity-90"
+											>
+												<View className="flex-row items-center">
+													<Feather name="eye" size={16} color="#FF6600" />
+												</View>
+											</Pressable>
+										)}
+									</View>
 								</View>
-							</View>
-						))}
-					</View>
+							))}
+						</View>
 					)}
 
 					{/* Tenants */}
 					{!loadingTour && tenants.length > 0 && (
 						<View className="mx-5 py-4">
-            <Text className="text-xl font-bold text-foreground mb-4">Tenants in this Facility</Text>
-            <Text className="text-muted-foreground text-sm mb-4">
-              Connect with tenants offering services in this facility
-            </Text>
-            {tenants.map(tenant => (
-              <Pressable
-                key={tenant.id}
-                onPress={() => router.push(`/tenant-detail?id=${tenant.id}`)}
-                className="bg-card p-4 rounded-xl mb-3 flex-row items-center border border-border active:opacity-95"
-              >
-                <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-                  <Text className="text-primary font-bold">{tenant.name.charAt(0)}</Text>
-                </View>
-                <View className="flex-1">
-                  <Text className="font-semibold text-foreground">{tenant.name}</Text>
-                  <Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>{tenant.description}</Text>
+							<Text className="text-xl font-bold text-foreground mb-4">Tenants in this Facility</Text>
+							<Text className="text-muted-foreground text-sm mb-4">
+								Connect with tenants offering services in this facility
+							</Text>
+							{tenants.map(tenant => (
+								<Pressable
+									key={tenant.id}
+									onPress={() => router.push(`/tenant-detail?id=${tenant.id}`)}
+									className="bg-card p-4 rounded-xl mb-3 flex-row items-center border border-border active:opacity-95"
+								>
+									<View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
+										<Text className="text-primary font-bold">{tenant.name.charAt(0)}</Text>
+									</View>
+									<View className="flex-1">
+										<Text className="font-semibold text-foreground">{tenant.name}</Text>
+										<Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>{tenant.description}</Text>
 										{(tenant.contact_email || tenant.contact_phone || tenant.website) && (
 											<View className="flex-row items-center mt-2 gap-3">
 												{tenant.contact_email && (
@@ -538,9 +539,9 @@ export default function ServicesScreen() {
 					{/* Contact Facility Section */}
 					{!loadingTour && (
 						<View className="mx-5 py-4">
-            <View className="bg-card rounded-2xl p-5 shadow-sm border border-border">
-              <Text className="text-lg font-bold text-foreground mb-3">Need Help?</Text>
-              <Text className="text-muted-foreground text-sm mb-4">
+							<View className="bg-card rounded-2xl p-5 shadow-sm border border-border">
+								<Text className="text-lg font-bold text-foreground mb-3">Need Help?</Text>
+								<Text className="text-muted-foreground text-sm mb-4">
 									Contact the facility directly for inquiries, bookings, or more information about services.
 								</Text>
 								<View className="flex-row gap-2">
