@@ -13,7 +13,7 @@ export default function AuthChoiceScreen() {
 			<View className="items-center mb-12">
 				<Image
 					source={require('../../../assets/logos/blue text-idz logo.png')}
-					className="w-48 h-16"
+					style={{ width: 300, height: 130 }}
 					resizeMode="contain"
 				/>
 				<Text className="text-primary mt-4 text-xl font-semibold">

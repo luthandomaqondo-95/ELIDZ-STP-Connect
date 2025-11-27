@@ -41,17 +41,17 @@ export default function TabLayout() {
                 }}
             />
             <Tabs.Screen
-                name="tenants"
+                name="news"
                 options={{
-                    title: 'Tenants',
-                    tabBarIcon: ({ color }) => <Feather name="users" size={24} color={color} />,
+                    title: 'News',
+                    tabBarIcon: ({ color }) => <Feather name="file-text" size={24} color={color} />,
                 }}
             />
             <Tabs.Screen
                 name="verified-smmes"
                 options={{
                     title: 'Verified SMMEs',
-                    tabBarLabel: 'Verified',
+                    tabBarLabel: "SMME's",
                     tabBarIcon: ({ color }) => <Feather name="shield" size={24} color={color} />,
                 }}
             />

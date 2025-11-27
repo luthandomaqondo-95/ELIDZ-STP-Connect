@@ -1,20 +1,23 @@
 import { DarkTheme, DefaultTheme } from '@react-navigation/native';
 import { Platform } from 'react-native';
 
-// ELIDZ-STP Brand Colors - Matching Logo Colors
+// ELIDZ-STP Brand Colors - EXACT Logo Colors
+// These colors are extracted directly from the official East London IDZ logo
+// Blue: Used for "east london" text in logo - RGB(0, 33, 71)
+// Orange: Used for "idz" text and "SCIENCE & TECHNOLOGY PARK" text - RGB(255, 102, 0)
 const ELIDZ_BRAND_COLORS = {
-    // Primary Brand Colors - Medium Blue from logo
-    primary: '#002147',          // ELIDZ Navy Blue
+    // Primary Brand Colors - EXACT Blue from logo
+    primary: '#002147',          // ELIDZ Navy Blue - EXACT logo blue (RGB: 0, 33, 71)
     primaryDark: '#001A36',      // Darker navy for dark mode
-    secondary: '#FF6600',        // ELIDZ Orange
+    secondary: '#FF6600',        // ELIDZ Orange - EXACT logo orange (RGB: 255, 102, 0)
     secondaryDark: '#CC5200',    // Darker orange for dark mode
-    accent: '#FF6600',           // ELIDZ Orange
+    accent: '#FF6600',           // ELIDZ Orange - EXACT logo orange (RGB: 255, 102, 0)
     accentDark: '#CC5200',       // Darker orange for dark mode
 
     // Extended Brand Palette
-    blue: '#002147',             // ELIDZ Navy Blue
+    blue: '#002147',             // ELIDZ Navy Blue - EXACT logo blue (RGB: 0, 33, 71)
     green: '#28A745',
-    orange: '#FF6600',           // ELIDZ Orange (matching logo)
+    orange: '#FF6600',           // ELIDZ Orange - EXACT logo orange (RGB: 255, 102, 0)
     purple: '#6F42C1',
     pink: '#E83E8C',
     teal: '#17A2B8',

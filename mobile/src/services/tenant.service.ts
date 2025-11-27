@@ -25,8 +25,13 @@ class TenantService {
       throw error;
     }
 
-    console.log('TenantService.getTenants succeeded:', data?.length || 0, 'tenants');
-    return (data || []) as Tenant[];
+    // Remove duplicates based on name (case-insensitive)
+    const uniqueTenants = (data || []).filter((tenant, index, self) =>
+      index === self.findIndex(t => t.name.toLowerCase() === tenant.name.toLowerCase())
+    );
+
+    console.log('TenantService.getTenants succeeded:', uniqueTenants.length, 'unique tenants (from', data?.length || 0, 'total)');
+    return uniqueTenants as Tenant[];
   }
 
   async getCentersOfExcellence(search?: string): Promise<Tenant[]> {
@@ -41,7 +46,7 @@ class TenantService {
        // We need to combine the OR conditions. Since we already have an OR for types, we should append search as AND.
        // Supabase doesn't easily chain ORs and ANDs in this fluent way without careful constructing.
        // However, we can use client side filtering or try to construct a complex filter string.
-       // For simplicity, let's filter by search term on the returned data if we can't easily chain, 
+       // For simplicity, let's filter by search term on the returned data if we can't easily chain,
        // OR assume the search is more specific.
        // Let's try adding another ilike filter which acts as AND.
        query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
@@ -54,8 +59,13 @@ class TenantService {
       throw error;
     }
 
-    console.log('TenantService.getCentersOfExcellence succeeded:', data?.length || 0, 'centers');
-    return data || [];
+    // Remove duplicates based on name (case-insensitive)
+    const uniqueCenters = (data || []).filter((tenant, index, self) =>
+      index === self.findIndex(t => t.name.toLowerCase() === tenant.name.toLowerCase())
+    );
+
+    console.log('TenantService.getCentersOfExcellence succeeded:', uniqueCenters.length, 'unique centers (from', data?.length || 0, 'total)');
+    return uniqueCenters;
   }
 
   async getTenantById(id: string): Promise<Tenant | null> {

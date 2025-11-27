@@ -96,6 +96,7 @@ export default function VRTourScreen() {
 					imageUrl={activeScene.image}
 					title={activeScene.title}
 					hotspots={activeScene.hotspots}
+					regions={activeScene.regions}
 					onHotspotClick={handleHotspotClick}
 				/>
 			) : (
@@ -125,6 +126,20 @@ export default function VRTourScreen() {
 									<Text className="text-base text-foreground flex-1">{detail}</Text>
 								</View>
 							))}
+
+							{section.hasVR && section.vrSceneId && (
+								<Pressable
+									className="mt-6 flex-row items-center justify-center px-6 py-3 rounded-full"
+									style={{ backgroundColor: tourData.color }}
+									onPress={() => {
+										setCurrentSceneId(section.vrSceneId!);
+										setViewMode('panorama');
+									}}
+								>
+									<Feather name="globe" size={20} color="#FFFFFF" />
+									<Text className="ml-2 text-white font-semibold">View 360° Panorama</Text>
+								</Pressable>
+							)}
 						</View>
 					) : (
 						<View className="bg-card rounded-2xl p-6 shadow-sm border border-border mb-6">
@@ -159,7 +174,10 @@ export default function VRTourScreen() {
 				<View className="flex-row justify-between items-center p-6 border-t border-border bg-background">
 					<Pressable
 						className={`flex-row items-center ${currentSection === 0 ? 'opacity-50' : 'active:opacity-70'}`}
-						onPress={() => setCurrentSection(Math.max(0, currentSection - 1))}
+						onPress={() => {
+							const prevSection = Math.max(0, currentSection - 1);
+							setCurrentSection(prevSection);
+						}}
 						disabled={currentSection === 0}
 					>
 						<Feather name="chevron-left" size={24} color="rgb(var(--foreground))" />
@@ -178,7 +196,13 @@ export default function VRTourScreen() {
 
 					<Pressable
 						className={`flex-row items-center ${currentSection === tourData.sections.length - 1 ? 'opacity-50' : 'active:opacity-70'}`}
-						onPress={() => setCurrentSection(Math.min(tourData.sections.length - 1, currentSection + 1))}
+						onPress={() => {
+							const nextSection = Math.min(tourData.sections.length - 1, currentSection + 1);
+							setCurrentSection(nextSection);
+							// Optional: Auto-switch scene when navigating sections?
+							// const nextSectionData = tourData.sections[nextSection];
+							// if (nextSectionData.vrSceneId) setCurrentSceneId(nextSectionData.vrSceneId);
+						}}
 						disabled={currentSection === tourData.sections.length - 1}
 					>
 						<Text className="mr-2 font-semibold text-foreground">Next</Text>

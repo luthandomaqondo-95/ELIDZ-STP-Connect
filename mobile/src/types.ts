@@ -2,10 +2,12 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
-  role: 'Entrepreneur' | 'Researcher' | 'SME' | 'Student' | 'Investor' | 'Tenant';
+  role: 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
+  address?: string;
   organization?: string;
   bio?: string;
   avatar?: string;
+  isPremium?: boolean;
   created_at: string;
 }
 
@@ -16,8 +18,21 @@ export interface Tenant {
   industry?: string;
   logo_url?: string;
   website?: string;
+  contact_email?: string;
+  contact_phone?: string;
   location?: string;
+  address?: string;
+  services?: string;
+  capabilities?: string;
+  social_media_links?: string;
+  application_url?: string;
+  opening_hours?: string;
+  additional_contact_email?: string;
+  key_personnel?: string;
+  partners?: string;
   created_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Opportunity {

@@ -25,6 +25,7 @@ export default function DashboardScreen() {
     const isGuest = !profile;
 
     const [latestOpportunities, setLatestOpportunities] = useState<Opportunity[]>([]);
+    const [recommendedOpportunities, setRecommendedOpportunities] = useState<Opportunity[]>([]);
     const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
     const [featuredTenants, setFeaturedTenants] = useState<Tenant[]>([]);
     const [centersOfExcellence, setCentersOfExcellence] = useState<Tenant[]>([]);
@@ -39,6 +40,16 @@ export default function DashboardScreen() {
                 // Load opportunities
                 const opportunities = await OpportunityService.getOpportunities();
                 setLatestOpportunities(opportunities.slice(0, 5));
+
+                // Load recommended opportunities if user is logged in
+                if (profile?.id) {
+                    try {
+                        const recommended = await OpportunityService.getRecommendedOpportunities(profile.id, 5);
+                        setRecommendedOpportunities(recommended);
+                    } catch (error) {
+                        console.error('Error loading recommended opportunities:', error);
+                    }
+                }
 
                 // Load events
                 const events = await EventService.getUpcomingEvents(5);
@@ -67,7 +78,7 @@ export default function DashboardScreen() {
         const nameLower = center.name.toLowerCase();
         let icon = 'briefcase';
         if (nameLower.includes('food') || nameLower.includes('water') || nameLower.includes('lab')) icon = 'droplet';
-        else if (nameLower.includes('design')) icon = 'palette';
+        else if (nameLower.includes('design')) icon = 'pen-tool';
         else if (nameLower.includes('digital') || nameLower.includes('tech')) icon = 'monitor';
         else if (nameLower.includes('automotive')) icon = 'settings';
         else if (nameLower.includes('energy')) icon = 'zap';
@@ -188,6 +199,45 @@ export default function DashboardScreen() {
                     </Pressable>
                 </View>
             </View>
+
+            {/* Recommended for You - Only show if logged in and has recommendations */}
+            {isLoggedIn && profile && recommendedOpportunities.length > 0 && (
+                <View className="mb-8">
+                    <View className="flex-row justify-between items-center mx-5 mb-4">
+                        <View className="flex-row items-center">
+                            <Feather name="sparkles" size={20} color="#FF6600" className="mr-2" />
+                            <Text className="text-xl font-bold text-foreground tracking-tight">Recommended for You</Text>
+                        </View>
+                        <Pressable onPress={() => router.push('/opportunities')}>
+                            <Text className="text-[#FF6600] text-sm font-semibold">View All</Text>
+                        </Pressable>
+                    </View>
+                    <View className="mx-5">
+                        {recommendedOpportunities.slice(0, 3).map((opp, index) => (
+                            <Pressable
+                                key={opp.id}
+                                className={`flex-row items-center p-4 mb-3 rounded-2xl bg-card active:opacity-95 border-2 border-accent/30 shadow-sm ${index === 2 ? 'mb-0' : ''}`}
+                                onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: opp.id } })}
+                            >
+                                <View className="w-10 h-10 rounded-full justify-center items-center mr-3 bg-accent/10">
+                                    <Feather 
+                                        name={opp.type === 'Funding' ? 'dollar-sign' : 'briefcase'} 
+                                        size={18} 
+                                        color="#FF6600" 
+                                    />
+                                </View>
+                                <View className="flex-1">
+                                    <Text className="text-sm font-bold text-foreground mb-1" numberOfLines={1}>{opp.title}</Text>
+                                    <Text className="text-muted-foreground text-xs">
+                                        {opp.org} • {opp.deadline ? new Date(opp.deadline).toLocaleDateString() : 'No deadline'}
+                                    </Text>
+                                </View>
+                                <Feather name="chevron-right" size={20} color="#FF6600" />
+                            </Pressable>
+                        ))}
+                    </View>
+                </View>
+            )}
 
             {/* Latest Opportunities */}
             <View className="mb-8">
@@ -337,8 +387,8 @@ export default function DashboardScreen() {
                 </View>
             )}
 
-            {/* Welcome message for guest users */}
-            {!isLoggedIn ? (
+            {/* Welcome message for guest users - only show when not logged in and not loading */}
+            {!isLoggedIn && !isLoading ? (
                 <View className="mx-5 mb-8 p-5 rounded-3xl bg-muted/30 border border-border/50">
                     <Text className="text-lg font-bold mb-2 text-[#002147]">
                         Welcome to ELIDZ-STP! 👋

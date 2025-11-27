@@ -4,63 +4,150 @@ import { Feather } from '@expo/vector-icons';
 import { Text } from '@/components/ui/text';
 
 // Map tenant names to local logo files
+// Using exact name matching first, then fuzzy matching as fallback
 function getTenantLogo(name: string): any {
-    const nameLower = name.toLowerCase();
+    if (!name) return null;
+    
+    const nameLower = name.toLowerCase().trim();
+    const nameNormalized = nameLower.replace(/[^a-z0-9]/g, ''); // Remove special chars for matching
 
-    if (nameLower.includes('ecsa') || nameLower.includes('engineering council')) {
-        return require('../../assets/images/tenants/ecsa-logo.png');
+    // Exact name matches (most specific first)
+    const exactMatches: Record<string, any> = {
+        'samrc': require('../../assets/images/tenants/samrc-logo.png'),
+        'southafricanmedicalresearchcouncil': require('../../assets/images/tenants/samrc-logo.png'),
+        'ecsa': require('../../assets/images/tenants/ecsa-logo.png'),
+        'engineeringcouncilofsouthafrica': require('../../assets/images/tenants/ecsa-logo.png'),
+        'ecngoc': require('../../assets/images/tenants/ecngoc-logo.png'),
+        'ecngoc (eastern cape ngo coalition)': require('../../assets/images/tenants/ecngoc-logo.png'),
+        'ecngoc eastern cape ngo coalition': require('../../assets/images/tenants/ecngoc-logo.png'),
+        'ecngc': require('../../assets/images/tenants/ecngoc-logo.png'),
+        'easterncapegovernmentchemist': require('../../assets/images/tenants/ecngoc-logo.png'),
+        'easterncapengocoalition': require('../../assets/images/tenants/ecngoc-logo.png'),
+        'eciti': require('../../assets/images/tenants/eciti-logo.png'),
+        'eciti (eastern cape information technology institute)': require('../../assets/images/tenants/eciti-logo.png'),
+        'eciti eastern cape information technology institute': require('../../assets/images/tenants/eciti-logo.png'),
+        'easterncapeinformationtechnologyinstitute': require('../../assets/images/tenants/eciti-logo.png'),
+        'kgi bpo': require('../../assets/images/tenants/kgi-bpo-logo.png'),
+        'kgibpo': require('../../assets/images/tenants/kgi-bpo-logo.png'),
+        'kgi holdings': require('../../assets/images/tenants/kgi-holdings-logo.png'),
+        'kgiholdings': require('../../assets/images/tenants/kgi-holdings-logo.png'),
+        'the cortex hub': require('../../assets/images/tenants/cortex-hub-logo.png'),
+        'cortex hub': require('../../assets/images/tenants/cortex-hub-logo.png'),
+        'cortexhub': require('../../assets/images/tenants/cortex-hub-logo.png'),
+        'thecortexhub': require('../../assets/images/tenants/cortex-hub-logo.png'),
+        'chemin': require('../../assets/images/tenants/chemin-logo.png'),
+        'longlife': require('../../assets/images/tenants/longlife-logo.png'),
+        'long life': require('../../assets/images/tenants/longlife-logo.png'),
+        'longlifeabetconsulting': require('../../assets/images/tenants/longlife-logo.png'),
+        'mfuraa': require('../../assets/images/tenants/mfuraa-logo.png'),
+        'mfuraaprojects': require('../../assets/images/tenants/mfuraa-logo.png'),
+        'phokophela': require('../../assets/images/tenants/phokophela-logo.png'),
+        'phokophelainvestmentholdings': require('../../assets/images/tenants/phokophela-logo.png'),
+        'zizi': require('../../assets/images/tenants/zizi-logo.png'),
+        'msc artisan': require('../../assets/images/tenants/msc-artisan-logo.png'),
+        'mscartisanacademy': require('../../assets/images/tenants/msc-artisan-logo.png'),
+        'msc artisan academy': require('../../assets/images/tenants/msc-artisan-logo.png'),
+        'buffalo city': require('../../assets/images/tenants/buffalo-city-logo.png'),
+        'buffalocity': require('../../assets/images/tenants/buffalo-city-logo.png'),
+        'amn environmental': require('../../assets/images/tenants/amn-environmental-logo.png'),
+        'amnenvironmental': require('../../assets/images/tenants/amn-environmental-logo.png'),
+    };
+
+    // Check exact matches first
+    if (exactMatches[nameLower]) {
+        return exactMatches[nameLower];
     }
-    if (nameLower.includes('samrc') || nameLower.includes('medical research')) {
+    if (exactMatches[nameNormalized]) {
+        return exactMatches[nameNormalized];
+    }
+
+    // Fuzzy matching (more specific patterns first)
+    // KGI BPO must come before KGI
+    if ((nameLower.includes('kgi') && nameLower.includes('bpo')) || 
+        (nameNormalized.includes('kgi') && nameNormalized.includes('bpo'))) {
+        return require('../../assets/images/tenants/kgi-bpo-logo.png');
+    }
+    
+    // Specific tenant name patterns
+    if (nameLower === 'samrc' || nameLower.startsWith('samrc') || 
+        (nameLower.includes('south african') && nameLower.includes('medical research'))) {
         return require('../../assets/images/tenants/samrc-logo.png');
     }
-    if (nameLower.includes('ecngc') || nameLower.includes('government chemist')) {
+    
+    if (nameLower === 'ecsa' || nameLower.startsWith('ecsa') || 
+        (nameLower.includes('engineering') && nameLower.includes('council'))) {
+        return require('../../assets/images/tenants/ecsa-logo.png');
+    }
+    
+    if (nameLower === 'ecngoc' || nameLower === 'ecngc' || nameLower.startsWith('ecng') ||
+        (nameLower.includes('eastern cape') && (nameLower.includes('ngo coalition') || nameLower.includes('ngoc') || nameLower.includes('government chemist')))) {
         return require('../../assets/images/tenants/ecngoc-logo.png');
     }
-    if (nameLower.includes('eciti')) {
+    
+    if (nameLower === 'eciti' || nameLower.startsWith('eciti') ||
+        (nameLower.includes('eastern cape') && nameLower.includes('information technology'))) {
         return require('../../assets/images/tenants/eciti-logo.png');
     }
-    if (nameLower.includes('analytical') || nameLower.includes('food') || nameLower.includes('water') || nameLower.includes('testing') || nameLower.includes('laboratory')) {
-        return require('../../assets/images/tenants/analytical-lab.png');
-    }
-    if (nameLower.includes('design') || nameLower.includes('innovation hub')) {
+    
+    if ((nameLower.includes('cortex') && nameLower.includes('hub')) || 
+        (nameLower.includes('the cortex') && nameLower.includes('hub')) ||
+        (nameLower.includes('cortex') && !nameLower.includes('design') && !nameLower.includes('digital'))) {
         return require('../../assets/images/tenants/cortex-hub-logo.png');
     }
-    if (nameLower.includes('digital') || nameLower.includes('technology')) {
-        return require('../../assets/images/tenants/cortex-hub-logo.png');
-    }
-    if (nameLower.includes('automotive')) {
-        return require('../../assets/images/tenants/msc-artisan-logo.png');
-    }
-    if (nameLower.includes('renewable') || nameLower.includes('energy')) {
-        return require('../../assets/images/tenants/amn-environmental-logo.png');
-    }
-    if (nameLower.includes('buffalo') || nameLower.includes('city')) {
-        return require('../../assets/images/tenants/buffalo-city-logo.png');
-    }
+    
     if (nameLower.includes('chemin')) {
         return require('../../assets/images/tenants/chemin-logo.png');
     }
-    if (nameLower.includes('cortex')) {
-        return require('../../assets/images/tenants/cortex-hub-logo.png');
-    }
-    if (nameLower.includes('kgi') && nameLower.includes('bpo')) {
-        return require('../../assets/images/tenants/kgi-bpo-logo.png');
-    }
-    if (nameLower.includes('kgi')) {
+    
+    if (nameLower.includes('kgi') && !nameLower.includes('bpo')) {
         return require('../../assets/images/tenants/kgi-holdings-logo.png');
     }
-    if (nameLower.includes('longlife')) {
+    
+    if (nameLower.includes('longlife') || nameLower.includes('long life')) {
         return require('../../assets/images/tenants/longlife-logo.png');
     }
+    
     if (nameLower.includes('mfuraa')) {
         return require('../../assets/images/tenants/mfuraa-logo.png');
     }
+    
     if (nameLower.includes('phokophela')) {
         return require('../../assets/images/tenants/phokophela-logo.png');
     }
+    
     if (nameLower.includes('zizi')) {
         return require('../../assets/images/tenants/zizi-logo.png');
     }
+    
+    if (nameLower.includes('msc') && (nameLower.includes('artisan') || nameLower.includes('automotive'))) {
+        return require('../../assets/images/tenants/msc-artisan-logo.png');
+    }
+    
+    if (nameLower.includes('buffalo') && nameLower.includes('city')) {
+        return require('../../assets/images/tenants/buffalo-city-logo.png');
+    }
+    
+    if (nameLower.includes('amn') && nameLower.includes('environmental')) {
+        return require('../../assets/images/tenants/amn-environmental-logo.png');
+    }
+    
+    // Facility/center logos (only if not matched above)
+    if ((nameLower.includes('analytical') || nameLower.includes('food') || nameLower.includes('water') || 
+         nameLower.includes('testing') || nameLower.includes('laboratory')) && 
+        !nameLower.includes('design') && !nameLower.includes('digital')) {
+        return require('../../assets/images/tenants/analytical-lab.png');
+    }
+    
+    if (nameLower.includes('design') && nameLower.includes('centre') || 
+        nameLower.includes('design') && nameLower.includes('center') ||
+        (nameLower.includes('innovation') && nameLower.includes('hub') && !nameLower.includes('cortex'))) {
+        return require('../../assets/images/tenants/cortex-hub-logo.png');
+    }
+    
+    if (nameLower.includes('renewable') && nameLower.includes('energy') && !nameLower.includes('msc')) {
+        return require('../../assets/images/tenants/amn-environmental-logo.png');
+    }
+    
     return null;
 }
 

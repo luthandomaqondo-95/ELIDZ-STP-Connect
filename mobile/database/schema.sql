@@ -103,13 +103,13 @@ CREATE TABLE IF NOT EXISTS public.resources (
 -- Connections/Network table
 CREATE TABLE IF NOT EXISTS public.connections (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES public.profiles(id) NOT NULL,
-  connected_user_id UUID REFERENCES public.profiles(id) NOT NULL,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'blocked')),
+  requester_id UUID REFERENCES public.profiles(id) NOT NULL,
+  addressee_id UUID REFERENCES public.profiles(id) NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'blocked')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  UNIQUE(user_id, connected_user_id),
-  CHECK (user_id != connected_user_id)
+  UNIQUE(requester_id, addressee_id),
+  CHECK (requester_id != addressee_id)
 );
 
 -- Messages table

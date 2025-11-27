@@ -6,17 +6,27 @@ export interface VRHotspot {
     targetSceneId: string;
 }
 
+export interface VRRegion {
+    id: string;
+    name: string;
+    angle: number;
+    width: number;
+}
+
 export interface VRScene {
     id: string;
-    image: string;
+    image: any;
     title: string;
     hotspots: VRHotspot[];
+    regions?: VRRegion[];
 }
 
 export interface VRSection {
     title: string;
     description: string;
     details: string[];
+    hasVR?: boolean;
+    vrSceneId?: string;
 }
 
 export interface VRTourData {
@@ -45,16 +55,20 @@ export interface Tenant {
     name: string;
     location: string;
     description: string;
+    contact_email?: string;
+    contact_phone?: string;
+    website?: string;
+    application_url?: string;
 }
 
 // Mock Data from Tenants/Facilities
 export const FACILITIES: Facility[] = [
     {
         id: 'food-water',
-        name: 'Food & Water Testing Lab',
+        name: 'Analytical Laboratory',
         type: 'Facility',
         location: 'Analytical Laboratory',
-        description: 'Advanced testing facilities for food safety and water quality analysis',
+        description: 'Advanced testing facilities, including Food & Water Testing and Technology Labs',
         image: require('../../assets/images/connect-solve.png'),
         icon: 'droplet',
         color: '#0066CC',
@@ -117,33 +131,27 @@ export const TENANTS: Tenant[] = [
 // VR Data for specific tours
 export const VR_TOUR_DATA: Record<string, VRTourData> = {
     'food-water': {
-        name: 'Food & Water Testing Lab',
+        name: 'ANALYTICAL LABORATORY',
         icon: 'droplet',
-        description: 'Comprehensive testing facility equipped with state-of-the-art analytical instruments',
+        description: 'SANAS accredited laboratory for comprehensive analytical testing services',
         color: '#0066CC',
         initialSceneId: 'main-lab',
         scenes: {
             'main-lab': {
                 id: 'main-lab',
-                title: 'Main Laboratory',
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Biotechnology_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7621-7627.TIF/lossy-page1-2560px-Biotechnology_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7621-7627.TIF.jpg',
-                hotspots: [
-                    { id: 'to-analytics', text: 'Go to Analytics Room', position: { x: 400, y: -50, z: -300 }, targetSceneId: 'analytics' },
-                ]
-            },
-            'analytics': {
-                id: 'analytics',
-                title: 'Analytics Room',
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Mathematics_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7741-7747.TIF/lossy-page1-2560px-Mathematics_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7741-7747.TIF.jpg',
-                hotspots: [
-                    { id: 'back-to-main', text: 'Back to Main Lab', position: { x: -400, y: 0, z: 300 }, targetSceneId: 'main-lab' }
+                title: 'Analytical Laboratory',
+                image: require('../../assets/videos/360-tours/analytical-laboratory/analyticlaboratory.jpeg'),
+                hotspots: [],
+                regions: [
+                    { id: 'lab-benches', name: 'Lab Benches', angle: 0, width: 90 },
+                    { id: 'equipment', name: 'Testing Equipment', angle: 120, width: 60 },
+                    { id: 'storage', name: 'Sample Storage', angle: 240, width: 60 }
                 ]
             }
         },
         sections: [
-            { title: 'Reception & Sample Intake', description: 'Where all samples are received and logged.', details: ['Sample documentation', 'Quality check-in'] },
-            { title: 'Microbiological Testing Lab', description: 'Dedicated lab for food safety analysis.', details: ['Culture plates', 'Incubators', 'Microscopes'] },
-            { title: 'Analytical Chemistry Lab', description: 'Advanced chemical analysis equipment.', details: ['GC-MS', 'HPLC', 'Spectrometers'] },
+            { title: 'Analytical Services', description: 'Full-service analytical testing laboratory with SANAS accreditation.', details: ['Sample intake and documentation', 'Microbiology testing', 'Chemical analysis', 'Water quality testing', 'Food safety testing', 'Environmental testing'], hasVR: true, vrSceneId: 'main-lab' },
+            { title: 'Food & Technology Lab', description: 'Specialized food and water technology services.', details: ['Advanced food safety analysis', 'Water purification testing', 'Technology development'], hasVR: true, vrSceneId: 'main-lab' },
         ],
     },
     'design-centre': {
@@ -151,29 +159,42 @@ export const VR_TOUR_DATA: Record<string, VRTourData> = {
         icon: 'pen-tool',
         description: 'Creative hub for product design and prototyping',
         color: '#FF6600',
-        initialSceneId: 'atrium',
+        initialSceneId: 'cad-3d-printing',
         scenes: {
-            'atrium': {
-                id: 'atrium',
-                title: 'Main Atrium',
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/360-degree_panorama_of_the_ESO_Headquarters_%28hqe-pano1%29.jpg/2560px-360-degree_panorama_of_the_ESO_Headquarters_%28hqe-pano1%29.jpg',
-                hotspots: [
-                    { id: 'to-workshop', text: 'Go to Workshop', position: { x: 300, y: 0, z: 400 }, targetSceneId: 'workshop' }
+            // 'overview': {
+            //     id: 'overview',
+            //     title: 'Design Centre Overview',
+            //     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c2/360-degree_panorama_of_the_ESO_Headquarters_%28hqe-pano1%29.jpg/2560px-360-degree_panorama_of_the_ESO_Headquarters_%28hqe-pano1%29.jpg',
+            //     hotspots: []
+            // },
+            'cad-3d-printing': {
+                id: 'cad-3d-printing',
+                title: 'CAD and 3D Printing',
+                image: require('../../assets/videos/360-tours/design-centre/cadand3dprinting.jpeg'),
+                hotspots: [],
+                regions: [
+                    { id: '3d-printers', name: '3D Printers', angle: 0, width: 60 },
+                    { id: 'workstations', name: 'CAD Workstations', angle: 90, width: 60 },
+                    { id: 'entrance', name: 'Entrance', angle: 180, width: 60 },
+                    { id: 'materials', name: 'Material Storage', angle: 270, width: 60 },
                 ]
             },
-            'workshop': {
-                id: 'workshop',
-                title: 'Design Workshop',
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Hilo_Base_Facility_Control_Room_360_Panorama_%282022_03_29_Hilo_360_Control_Room_2-CC%29.jpg/2560px-Hilo_Base_Facility_Control_Room_360_Panorama_%282022_03_29_Hilo_360_Control_Room_2-CC%29.jpg',
-                hotspots: [
-                    { id: 'back-to-atrium', text: 'Back to Atrium', position: { x: -300, y: 0, z: -400 }, targetSceneId: 'atrium' }
+            'cnc-milling': {
+                id: 'cnc-milling',
+                title: 'CNC Milling',
+                image: require('../../assets/videos/360-tours/design-centre/cncmilling.jpeg'),
+                hotspots: [],
+                regions: [
+                    { id: 'cnc-machine', name: 'CNC Machine', angle: 30, width: 80 },
+                    { id: 'control-panel', name: 'Control Panel', angle: 0, width: 40 },
+                    { id: 'tools', name: 'Tool Storage', angle: 200, width: 60 },
+                    { id: 'materials', name: 'Material Area', angle: 300, width: 60 }
                 ]
             }
         },
         sections: [
-            { title: 'Concept Studio', description: 'Collaborative space for initial design.', details: ['Workstations', 'Digital sketching'] },
-            { title: 'CAD Lab', description: 'Professional 3D modeling stations.', details: ['High-performance PCs', 'CAD software'] },
-            { title: '3D Printing', description: 'Rapid prototyping facility.', details: ['FDM Printers', 'SLA Printers'] },
+            { title: 'CAD and 3D Printing', description: 'Professional design and rapid prototyping.', details: ['CAD workstations', '3D printers', 'Design software'], hasVR: true, vrSceneId: 'cad-3d-printing' },
+            { title: 'CNC Milling', description: 'Precision machining and fabrication.', details: ['CNC mills', 'Precision tools', 'Material processing'], hasVR: true, vrSceneId: 'cnc-milling' },
         ],
     },
     'digital-hub': {
@@ -181,67 +202,114 @@ export const VR_TOUR_DATA: Record<string, VRTourData> = {
         icon: 'monitor',
         description: 'Technology acceleration center',
         color: '#28A745',
-        initialSceneId: 'control-room',
+        initialSceneId: 'broadcasting',
         scenes: {
-            'control-room': {
-                id: 'control-room',
-                title: 'Control Room',
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Hilo_Base_Facility_Control_Room_360_Panorama_%282022_03_29_Hilo_360_Control_Room_2-CC%29.jpg/2560px-Hilo_Base_Facility_Control_Room_360_Panorama_%282022_03_29_Hilo_360_Control_Room_2-CC%29.jpg',
-                hotspots: []
+            // 'overview': {
+            //     id: 'overview',
+            //     title: 'Digital Hub Overview',
+            //     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Hilo_Base_Facility_Control_Room_360_Panorama_%282022_03_29_Hilo_360_Control_Room_2-CC%29.jpg/2560px-Hilo_Base_Facility_Control_Room_360_Panorama_%282022_03_29_Hilo_360_Control_Room_2-CC%29.jpg',
+            //     hotspots: []
+            // },
+            'auditorium': {
+                id: 'auditorium',
+                title: 'Auditorium',
+                image: require('../../assets/videos/360-tours/digital-hub/auditorium/auditorium.jpeg'),
+                hotspots: [],
+                regions: [
+                    { id: 'seating', name: 'Seating Area', angle: 0, width: 120 },
+                    { id: 'stage', name: 'Presentation Stage', angle: 180, width: 60 },
+                    { id: 'screen', name: 'Projection Screen', angle: 180, width: 40 },
+                    { id: 'entrance', name: 'Main Entrance', angle: 270, width: 40 }
+                ]
+            },
+            'broadcasting': {
+                id: 'broadcasting',
+                title: 'Broadcasting and Videography',
+                image: require('../../assets/videos/360-tours/digital-hub/broadcasting-studio/broadcastingandvideography.jpeg'),
+                hotspots: [],
+                regions: [
+                    { id: 'podcast-area', name: 'Podcast Station', angle: 0, width: 70 },
+                    { id: 'lighting', name: 'Studio Lighting', angle: 90, width: 60 },
+                    { id: 'camera', name: 'Camera Equipment', angle: 180, width: 60 },
+                    { id: 'green-screen', name: 'Backdrop Area', angle: 270, width: 80 }
+                ]
+            },
+            'digital-units': {
+                id: 'digital-units',
+                title: 'Digital Units',
+                image: require('../../assets/videos/360-tours/digital-hub/digital-units/digitalunits.jpeg'),
+                hotspots: [],
+                regions: [
+                    { id: 'workstations', name: 'Tech Workstations', angle: 0, width: 100 },
+                    { id: 'meeting-area', name: 'Meeting Area', angle: 120, width: 60 },
+                    { id: 'relax-zone', name: 'Relaxation Zone', angle: 240, width: 60 }
+                ]
             }
         },
         sections: [
-            { title: 'Co-working Space', description: 'Flexible workspace for startups.', details: ['Hot desks', 'High-speed internet'] },
-            { title: 'Server Room', description: 'Secure data center infrastructure.', details: ['Rack servers', 'Cooling systems'] },
-            { title: 'Meeting Rooms', description: 'Professional presentation spaces.', details: ['Video conferencing', 'Smart boards'] },
+            { title: 'Auditorium', description: 'Professional presentation and event space.', details: ['Stage lighting', 'Sound system', 'Seating for 100+'], hasVR: true, vrSceneId: 'auditorium' },
+            { title: 'Broadcasting and Videography', description: 'Complete video production studio.', details: ['HD cameras', 'Lighting equipment', 'Editing software'], hasVR: true, vrSceneId: 'broadcasting' },
+            { title: 'Digital Units', description: 'Technology development and innovation spaces.', details: ['Co-working areas', 'Tech labs', 'Innovation hubs'], hasVR: true, vrSceneId: 'digital-units' },
         ],
     },
     'automotive-incubator': {
-        name: 'Automotive Incubator',
+        name: 'Automotive & Manufacturing Incubator',
         icon: 'settings',
-        description: 'Manufacturing innovation center',
+        description: 'Advanced manufacturing and automotive innovation incubator',
         color: '#6F42C1',
-        initialSceneId: 'assembly',
+        initialSceneId: 'ancillary-services',
         scenes: {
-            'assembly': {
-                id: 'assembly',
-                title: 'Assembly Line',
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Motive_Power_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7900-7908.TIF/lossy-page1-2560px-Motive_Power_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7900-7908.TIF.jpg',
-                hotspots: [
-                    { id: 'to-transport', text: 'Go to Transport Gallery', position: { x: 400, y: 0, z: 0 }, targetSceneId: 'transport' }
-                ]
-            },
-            'transport': {
-                id: 'transport',
-                title: 'Transport Gallery',
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6d/Transport_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7833-7840.tif/lossy-page1-2560px-Transport_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7833-7840.tif.jpg',
-                hotspots: [
-                    { id: 'back-to-assembly', text: 'Back to Assembly', position: { x: -400, y: 0, z: 0 }, targetSceneId: 'assembly' }
+            // 'overview': {
+            //     id: 'overview',
+            //     title: 'Incubator Overview',
+            //     image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Motive_Power_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7900-7908.TIF/lossy-page1-2560px-Motive_Power_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7900-7908.TIF.jpg',
+            //     hotspots: []
+            // },
+            // 'industrial-incubation': {
+            //     id: 'industrial-incubation',
+            //     title: 'Industrial Incubation Unit',
+            //     image: require('../../../assets/videos/360-tours/automotive-incubator/industrial-incubation-units/industrial-incubation-main.mp4'),
+            //     hotspots: []
+            // },
+            'ancillary-services': {
+                id: 'ancillary-services',
+                title: 'Shared Ancillary Services',
+                image: require('../../assets/videos/360-tours/automotive-incubator/shared-ancillary-services/sharedancilary.jpeg'),
+                hotspots: [],
+                regions: [
+                    { id: 'meeting-space', name: 'Meeting Space', angle: 0, width: 100 },
+                    { id: 'office-cubicles', name: 'Office Cubicles', angle: 120, width: 80 },
+                    { id: 'lounge', name: 'Lounge Area', angle: 240, width: 60 }
                 ]
             }
         },
         sections: [
-            { title: 'Assembly Line', description: 'Simulated manufacturing environment.', details: ['Conveyors', 'Robotic arms'] },
-            { title: 'QC Station', description: 'Quality control and testing.', details: ['Measurement tools', 'Inspection'] },
+            { title: 'Industrial Incubation Unit', description: 'Dedicated manufacturing space for automotive startups.', details: ['Advanced manufacturing equipment', 'Prototyping facilities', 'Testing and validation labs'] },
+            { title: 'Shared Ancillary Services', description: 'Common facilities supporting all incubator tenants.', details: ['Meeting rooms', 'Conference facilities', 'Business support services'], hasVR: true, vrSceneId: 'ancillary-services' },
         ],
     },
     'renewable-energy': {
         name: 'Renewable Energy Centre',
         icon: 'zap',
-        description: 'Green technology solutions',
+        description: 'Clean energy solutions and sustainability projects',
         color: '#E83E8C',
-        initialSceneId: 'solar-lab',
+        initialSceneId: 'main-facility',
         scenes: {
-            'solar-lab': {
-                id: 'solar-lab',
-                title: 'Solar Lab',
-                image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Electricity_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7637-7643.TIF/lossy-page1-2560px-Electricity_Gallery_-_360_Degree_Equirectangular_View_-_BITM_-_Kolkata_2015-06-30_7637-7643.TIF.jpg',
-                hotspots: []
+            'main-facility': {
+                id: 'main-facility',
+                title: 'Renewable Energy Centre',
+                image: require('../../assets/videos/360-tours/renewable-energy/renewableenergy.jpeg'),
+                hotspots: [],
+                regions: [
+                    { id: 'training-benches', name: 'Training Workstations', angle: 0, width: 100 },
+                    { id: 'electrical-panels', name: 'Electrical Panels', angle: 90, width: 60 },
+                    { id: 'control-systems', name: 'Control Systems', angle: 270, width: 60 },
+                    { id: 'storage', name: 'Equipment Storage', angle: 180, width: 60 }
+                ]
             }
         },
         sections: [
-            { title: 'Solar Lab', description: 'PV panel testing facility.', details: ['Solar simulators', 'Efficiency testing'] },
-            { title: 'Battery Storage', description: 'Energy storage research.', details: ['Battery banks', 'Charge controllers'] },
+            { title: 'Complete Renewable Energy Services', description: 'Full-service clean energy and sustainability center.', details: ['Solar panel testing', 'Wind energy testing', 'Battery storage solutions', 'Energy efficiency research', 'Sustainable technology development'], hasVR: true, vrSceneId: 'main-facility' },
         ],
     },
 };

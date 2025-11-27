@@ -102,7 +102,7 @@ export default function ProductLinesScreen() {
               </Pressable>
               <Pressable
                 className={`flex-row items-center justify-center py-3 rounded-xl mx-1 ${line.colorClass} active:opacity-70`}
-                onPress={() => router.push({ pathname: '/VR-tour', params: { id: line.id, name: line.name } })}
+                onPress={() => router.push({ pathname: '/vr-tour', params: { id: line.id, name: line.name } })}
               >
                 <Feather name="eye" size={18} color="#FFFFFF" />
                 <Text className="text-white text-sm ml-2 font-semibold">

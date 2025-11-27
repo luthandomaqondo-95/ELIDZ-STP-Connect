@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { tenantService } from '@/services/tenant.service';
-import { smeService } from '@/services/sme.service';
+import { smmmeService } from '@/services/smme.service';
 import { OpportunityService } from '@/services/opportunity.service';
 import { chatService } from '@/services/chat.service';
 import { ResourceService } from '@/services/resource.service';
 import { connectionService } from '@/services/connection.service';
+import { NewsService } from '@/services/news.service';
 
 export const useTenantsSearch = (search: string = '') => {
   return useQuery({
@@ -23,7 +24,7 @@ export const useFacilitiesSearch = (search: string = '') => {
 export const useBusinessSearch = (search: string = '') => {
   return useQuery({
     queryKey: ['businesses', search],
-    queryFn: () => smeService.getAllSMEsWithServicesProducts(search),
+    queryFn: () => smmmeService.getAllSMMEsWithServicesProducts(search),
   });
 };
 
@@ -42,11 +43,14 @@ export const useChatSearch = (userId: string, search: string = '') => {
   });
 };
 
+
 export const useContactsSearch = (userId: string, search: string = '') => {
   return useQuery({
     queryKey: ['contacts', userId, search],
     queryFn: () => connectionService.getAllContacts(userId, search),
     enabled: !!userId,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 };
 
@@ -54,5 +58,14 @@ export const useResourcesSearch = (search: string = '') => {
   return useQuery({
     queryKey: ['resources', search],
     queryFn: () => ResourceService.getServicesResources(search),
+  });
+};
+
+export const useNewsSearch = (search: string = '') => {
+  return useQuery({
+    queryKey: ['news', search],
+    queryFn: () => NewsService.getAllNews(search),
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 };

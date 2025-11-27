@@ -5,7 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthContext } from '@/hooks/use-auth-context';
-import { SMEWithServicesProducts, SMEServiceProduct } from '@/services/sme.service';
+import { SMMEWithServicesProducts, SMMEServiceProduct } from '@/services/smme.service';
 import { TenantLogo } from '@/components/TenantLogo';
 import { useBusinessSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -45,18 +45,18 @@ interface SMME {
     services: Service[];
 }
 
-// Map database SME to SMME interface
-function mapSMEToSMME(sme: SMEWithServicesProducts): SMME {
+// Map database SMME to SMME interface
+function mapSMMEToSMME(smmme: SMMEWithServicesProducts): SMME {
     // Get contact info from first service/product if available
-    const firstItem = [...sme.services, ...sme.products][0];
-    const contactEmail = firstItem?.contact_email || sme.email;
+    const firstItem = [...smmme.services, ...smmme.products][0];
+    const contactEmail = firstItem?.contact_email || smmme.email;
     const contactPhone = firstItem?.contact_phone;
     const website = firstItem?.website_url;
 
     // Determine industry from organization or services/products
-    let industry = sme.organization || 'General';
-    if (sme.services.length > 0 || sme.products.length > 0) {
-        const categories = [...sme.services.map(s => s.category), ...sme.products.map(p => p.category)];
+    let industry = smmme.organization || 'General';
+    if (smmme.services.length > 0 || smmme.products.length > 0) {
+        const categories = [...smmme.services.map(s => s.category), ...smmme.products.map(p => p.category)];
         if (categories.some(cat => cat?.toLowerCase().includes('software') || cat?.toLowerCase().includes('development'))) {
             industry = 'Technology';
         } else if (categories.some(cat => cat?.toLowerCase().includes('design'))) {
@@ -71,28 +71,28 @@ function mapSMEToSMME(sme: SMEWithServicesProducts): SMME {
     }
 
     return {
-        id: sme.id,
-        name: sme.name,
+        id: smmme.id,
+        name: smmme.name,
         industry: industry,
-        sector: sme.organization || industry,
+        sector: smmme.organization || industry,
         location: 'ELIDZ STP',
-        description: sme.bio || sme.organization || 'Verified SME partner',
-        logo_url: sme.avatar !== 'blue' ? sme.avatar : undefined, // Assuming avatar might be a URL or 'blue'
-        verified: true, // All SMEs from database are considered verified
+        description: smmme.bio || smmme.organization || 'Verified SMME partner',
+        logo_url: smmme.avatar !== 'blue' ? smmme.avatar : undefined, // Assuming avatar might be a URL or 'blue'
+        verified: true, // Only verified SMMEs are returned by the service
         bbbee: undefined, // Can be added to profiles table later
         contact: {
             email: contactEmail,
             phone: contactPhone,
             website: website,
         },
-        products: sme.products.map((p: SMEServiceProduct) => ({
+        products: smmme.products.map((p: SMMEServiceProduct) => ({
             id: p.id,
             name: p.name,
             description: p.description,
             category: p.category,
             price: p.price,
         })),
-        services: sme.services.map((s: SMEServiceProduct) => ({
+        services: smmme.services.map((s: SMMEServiceProduct) => ({
             id: s.id,
             name: s.name,
             description: s.description,
@@ -103,7 +103,7 @@ function mapSMEToSMME(sme: SMEWithServicesProducts): SMME {
 
 export default function VerifiedSMMEsScreen() {
     const { profile: user } = useAuthContext();
-    const isSME = user?.role === 'SME';
+    const isSMME = user?.role === 'SMME';
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [expandedSMME, setExpandedSMME] = useState<string | null>(null);
@@ -111,13 +111,13 @@ export default function VerifiedSMMEsScreen() {
     const debouncedSearch = useDebounce(searchQuery, 300);
 
     // Use the search hook
-    const { data: smes, isLoading: loading } = useBusinessSearch(debouncedSearch);
+    const { data: smmmes, isLoading: loading } = useBusinessSearch(debouncedSearch);
 
     const verifiedSMMEs = React.useMemo(() => {
-        return (smes || []).map(mapSMEToSMME);
-    }, [smes]);
+        return (smmmes || []).map(mapSMMEToSMME);
+    }, [smmmes]);
 
-    // Categories for filtering - extract unique industries from loaded SMEs
+    // Categories for filtering - extract unique industries from loaded SMMEs
     const categories = React.useMemo(() => {
         const industries = new Set<string>();
         verifiedSMMEs.forEach(smme => {
@@ -144,7 +144,7 @@ export default function VerifiedSMMEsScreen() {
     };
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-background">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Header */}
                 <LinearGradient
@@ -158,10 +158,10 @@ export default function VerifiedSMMEsScreen() {
                                 Discover verified partners and their services.
                             </Text>
                         </View>
-                        {isSME && (
+                        {isSMME && (
                             <Pressable
                                 className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl active:opacity-80 ml-4"
-                                onPress={() => router.push({ pathname: '/post-service-product' as any })}
+                                onPress={() => router.push('/add-product-service')}
                             >
                                 <View className="flex-row items-center">
                                     <Feather name="plus" size={16} color="white" />
@@ -192,11 +192,11 @@ export default function VerifiedSMMEsScreen() {
                                 key={category}
                                 className={`px-5 py-2.5 rounded-full border mr-3 shadow-sm ${selectedCategory === category
                                         ? 'bg-[#002147] border-[#002147]'
-                                        : 'bg-white border-gray-200'
+                                        : 'bg-card border-border'
                                     }`}
                                 onPress={() => setSelectedCategory(category)}
                             >
-                                <Text className={`text-sm font-semibold ${selectedCategory === category ? 'text-white' : 'text-gray-600'
+                                <Text className={`text-sm font-semibold ${selectedCategory === category ? 'text-white' : 'text-foreground'
                                     }`}>
                                     {category}
                                 </Text>
@@ -206,11 +206,11 @@ export default function VerifiedSMMEsScreen() {
                 </View>
 
                 {/* Results Count */}
-                <View className="px-6 mb-4 mt-2">
+                <View className="mx-5 mb-4 mt-2">
                     {loading ? (
-                        <Text className="text-base font-semibold text-[#002147]">Loading...</Text>
+                        <Text className="text-base font-semibold text-foreground">Loading...</Text>
                     ) : (
-                        <Text className="text-base font-semibold text-[#002147]">
+                        <Text className="text-base font-semibold text-foreground">
                             {filteredSMMEs.length} Verified Partner{filteredSMMEs.length !== 1 ? 's' : ''}
                         </Text>
                     )}
@@ -218,9 +218,9 @@ export default function VerifiedSMMEsScreen() {
 
                 {/* Loading State */}
                 {loading && (
-                    <View className="px-6">
+                    <View className="mx-5">
                         {Array.from({ length: 3 }).map((_, index) => (
-                            <View key={index} className="bg-white mb-4 rounded-2xl border border-gray-100 shadow-sm p-4">
+                            <View key={index} className="bg-card mb-4 rounded-2xl border border-border shadow-sm p-4">
                                 <View className="flex-row items-start">
                                     <View className="w-14 h-14 rounded-xl bg-gray-200 animate-pulse" />
                                     <View className="flex-1 ml-4">
@@ -236,14 +236,14 @@ export default function VerifiedSMMEsScreen() {
 
                 {/* SMMEs List */}
                 {!loading && (
-                    <View className="px-6">
+                    <View className="mx-5">
                         {filteredSMMEs.map((smme) => {
                             const isExpanded = expandedSMME === smme.id;
 
                             return (
                                 <View
                                     key={smme.id}
-                                    className="bg-white mb-4 rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                                    className="bg-card mb-4 rounded-2xl border border-border shadow-sm overflow-hidden"
                                 >
                                     {/* SMME Header */}
                                     <Pressable
@@ -259,7 +259,7 @@ export default function VerifiedSMMEsScreen() {
                                             {/* Info */}
                                             <View className="flex-1 ml-4">
                                                 <View className="flex-row items-center justify-between mb-1">
-                                                    <Text className="text-base font-bold text-[#002147] flex-1 mr-2" numberOfLines={1}>
+                                                    <Text className="text-base font-bold text-foreground flex-1 mr-2" numberOfLines={1}>
                                                         {smme.name}
                                                     </Text>
                                                     <Feather
@@ -281,7 +281,7 @@ export default function VerifiedSMMEsScreen() {
                                                     )}
                                                 </View>
 
-                                                <Text className="text-gray-500 text-xs" numberOfLines={2}>
+                                                <Text className="text-muted-foreground text-xs" numberOfLines={2}>
                                                     {smme.description}
                                                 </Text>
                                             </View>
@@ -404,10 +404,10 @@ export default function VerifiedSMMEsScreen() {
                                             {/* Action Button */}
                                             <Pressable
                                                 className="mt-6 py-3 rounded-xl bg-[#002147] active:opacity-90 shadow-md flex-row justify-center items-center"
-                                                onPress={() => router.push({ pathname: '/tenant-detail', params: { name: smme.name, id: smme.id } })}
+                                                onPress={() => router.push(`/user-profile?id=${smme.id}`)}
                                             >
                                                 <Text className="text-white font-bold text-sm mr-2">
-                                                    View Full Profile
+                                                    View Profile & Connect
                                                 </Text>
                                                 <Feather name="arrow-right" size={16} color="white" />
                                             </Pressable>

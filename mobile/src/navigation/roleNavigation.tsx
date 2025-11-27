@@ -10,7 +10,7 @@ import { NetworkScreen } from '../screens/NetworkScreen';
 import { SettingsScreen } from '../screens/SettingsScreen';
 import { UserProfileScreen } from '../screens/UserProfileScreen';
 
-export type UserRole = 'Entrepreneur' | 'Researcher' | 'SME' | 'Student' | 'Investor' | 'Tenant';
+export type UserRole = 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
 
 export interface NavigationItem {
   name: string;
@@ -27,42 +27,42 @@ export const roleNavigationConfig: NavigationItem[] = [
     name: 'Dashboard',
     component: DashboardScreen,
     icon: 'home',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 1,
   },
   {
     name: 'Product Lines',
     component: ProductLinesScreen,
     icon: 'grid',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 2,
   },
   {
     name: 'Opportunities',
     component: OpportunitiesScreen,
     icon: 'briefcase',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 3,
   },
   {
     name: 'Resources',
     component: ResourcesScreen,
     icon: 'book',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 4,
   },
   {
     name: 'Events',
     component: EventsScreen,
     icon: 'calendar',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 5,
   },
   {
     name: 'News',
     component: NewsScreen,
     icon: 'file-text',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 6,
   },
   
@@ -71,28 +71,28 @@ export const roleNavigationConfig: NavigationItem[] = [
     name: 'Tenants',
     component: TenantsScreen,
     icon: 'users',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 7,
   },
   {
     name: 'My Network',
     component: NetworkScreen,
     icon: 'users',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 8,
   },
   {
     name: 'My Profile',
     component: UserProfileScreen,
     icon: 'user',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 9,
   },
   {
     name: 'Settings',
     component: SettingsScreen,
     icon: 'settings',
-    roles: ['Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant'],
+    roles: ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'],
     priority: 10,
   },
 ];
@@ -120,10 +120,10 @@ export const roleInterests: Record<UserRole, {
     secondaryScreens: ['Opportunities', 'Events', 'My Network', 'Tenants'],
     description: 'Academic and industry researchers seeking labs, equipment, and collaboration opportunities',
   },
-  SME: {
+  SMME: {
     primaryScreens: ['Dashboard', 'Opportunities', 'Tenants', 'Resources'],
     secondaryScreens: ['Product Lines', 'Events', 'News', 'My Network'],
-    description: 'Small and medium enterprises looking for business opportunities and partnerships',
+    description: 'Small, medium and micro enterprises looking for business opportunities and partnerships',
   },
   Student: {
     primaryScreens: ['Dashboard', 'Opportunities', 'Events', 'Resources'],

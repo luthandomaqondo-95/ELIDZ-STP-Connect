@@ -1,280 +1,726 @@
-import React, { useState } from 'react';
-import { View, Pressable, TextInput, ScrollView, Image } from 'react-native';
-import { Text } from '@/components/ui/text';
-import { useAuthContext } from '@/hooks/use-auth-context';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Pressable, ScrollView, View, ActivityIndicator, Linking, Alert, TextInput } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { Text } from '@/components/ui/text';
+import { PanoramaViewer } from '@/components/mixed-experiences/PanoramaViewer';
+import { facilitiesService, type Facility, type FacilityWithTour, type VRScene, type VRSection } from '@/services/facilities.service';
+import { getTenantsByLocation } from '@/data/vrToursData';
+import type { Tenant } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
-import { useOpportunitiesSearch, useFacilitiesSearch, useResourcesSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 
+type ViewMode = 'panorama' | 'sections';
+type ScreenMode = 'list' | 'detail' | 'vr-tour';
+
 export default function ServicesScreen() {
-    const { isLoggedIn } = useAuthContext();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [selectedCategory, setSelectedCategory] = useState('All');
+	const params = useLocalSearchParams<{ id?: string }>();
+	const [screenMode, setScreenMode] = useState<ScreenMode>('list');
+	const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
+	const [selectedService, setSelectedService] = useState<VRSection | null>(null);
+	
+	// Data states
+	const [facilities, setFacilities] = useState<Facility[]>([]);
+	const [facilityWithTour, setFacilityWithTour] = useState<FacilityWithTour | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [loadingTour, setLoadingTour] = useState(false);
+	const [searchQuery, setSearchQuery] = useState('');
+	const debouncedSearch = useDebounce(searchQuery, 300);
 
-    const debouncedSearch = useDebounce(searchQuery, 300);
+	// Use facility ID from params or selected facility
+	const facilityId = params.id || selectedFacilityId;
 
-    // Fetch data using hooks
-    const { data: fundingOpportunitiesRaw, isLoading: loadingFunding } = useOpportunitiesSearch(debouncedSearch, 'Funding');
-    const { data: facilitiesDataRaw, isLoading: loadingFacilities } = useFacilitiesSearch(debouncedSearch);
-    const { data: resourcesRaw, isLoading: loadingResources } = useResourcesSearch(debouncedSearch);
+	const tenants = useMemo(
+		() => (facilityWithTour ? getTenantsByLocation(facilityWithTour.location) : []),
+		[facilityWithTour]
+	);
 
-    const fundingOpportunities = fundingOpportunitiesRaw || [];
-    const facilitiesData = facilitiesDataRaw || [];
-    const resources = resourcesRaw || [];
+	const [viewMode, setViewMode] = useState<ViewMode>('panorama');
+	const [currentSection, setCurrentSection] = useState(0);
+	const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
 
-    const loading = loadingFunding || loadingFacilities || loadingResources;
+	// Fetch all facilities on mount
+	useEffect(() => {
+		loadFacilities();
+	}, []);
 
-    // Map facilities data to display format
-    const productLines = facilitiesData.map((tenant: any) => ({
-        id: tenant.id,
-        name: tenant.name,
-        type: 'Facility',
-        sector: tenant.industry || 'Innovation',
-        location: tenant.location || 'ELIDZ STP',
-        description: tenant.description || 'Innovation center at ELIDZ STP.',
-        image: require('../../../assets/images/connect-solve.png'), // Placeholder or mapped image
-        icon: 'briefcase', // Default icon
-        services: ['Innovation Services', 'Consulting', 'Support'], // Placeholder services
-    }));
+	// Fetch facility tour data when facility is selected
+	useEffect(() => {
+		if (facilityId) {
+			loadFacilityTour(facilityId);
+		}
+	}, [facilityId]);
 
-    const categories = ['All', 'Funding', 'Facilities', 'Resources'];
+	const loadFacilities = async () => {
+		setLoading(true);
+		try {
+			const data = await facilitiesService.getAllFacilities();
+			// Filter by search query if provided
+			let filteredData = data;
+			if (debouncedSearch.trim()) {
+				filteredData = data.filter(facility => 
+					facility.name.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+					facility.description.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+					facility.location.toLowerCase().includes(debouncedSearch.toLowerCase())
+				);
+			}
+			setFacilities(filteredData);
+		} catch (error) {
+			console.error('Error loading facilities:', error);
+		} finally {
+			setLoading(false);
+		}
+	};
 
-    const renderSectionHeader = (title: string, action?: () => void) => (
-        <View className="flex-row justify-between items-center mb-4 mt-6 px-6">
-            <Text className="text-xl font-bold text-[#002147] tracking-tight">{title}</Text>
-            {action && (
-                <Pressable onPress={action}>
-                    <Text className="text-[#FF6600] text-sm font-semibold">View All</Text>
-                </Pressable>
-            )}
-        </View>
-    );
+	// Refetch when search query changes
+	useEffect(() => {
+		if (screenMode === 'list') {
+			loadFacilities();
+		}
+	}, [debouncedSearch]);
 
-    const renderFundingCard = (item: any) => (
-        <Pressable
-            key={item.id}
-            className="bg-white mx-6 mb-4 p-4 rounded-2xl border border-gray-100 shadow-sm active:opacity-95"
-            onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: item.id } })}
-        >
-            <View className="flex-row justify-between items-start mb-2">
-                <View className="bg-green-50 px-3 py-1 rounded-full">
-                    <Text className="text-green-700 text-xs font-bold uppercase">Funding</Text>
-                </View>
-                <Text className="text-gray-400 text-xs">{item.deadline ? new Date(item.deadline).toLocaleDateString() : 'No deadline'}</Text>
+	const loadFacilityTour = async (id: string) => {
+		setLoadingTour(true);
+		try {
+			const data = await facilitiesService.getFacilityWithTour(id);
+			setFacilityWithTour(data);
+		} catch (error) {
+			console.error('Error loading facility tour:', error);
+		} finally {
+			setLoadingTour(false);
+		}
+	};
+
+	useEffect(() => {
+		setCurrentSection(0);
+		setCurrentSceneId(null);
+		setViewMode('panorama');
+	}, [facilityId]);
+
+	// Handle facility selection
+	const handleFacilitySelect = (facilityId: string) => {
+		setSelectedFacilityId(facilityId);
+		setSelectedService(null);
+		setScreenMode('detail');
+	};
+
+	// Handle service selection for VR tour
+	const handleServiceSelect = (service: VRSection) => {
+		if (service.has_vr) {
+			setSelectedService(service);
+			setCurrentSceneId(service.vr_scene_id || facilityWithTour?.initialSceneId || null);
+			setScreenMode('vr-tour');
+		}
+	};
+
+	// Handle back to list
+	const handleBackToList = () => {
+		setSelectedFacilityId(null);
+		setSelectedService(null);
+		setScreenMode('list');
+		router.setParams({});
+	};
+
+	// Handle back to facility detail
+	const handleBackToDetail = () => {
+		setSelectedService(null);
+		setScreenMode('detail');
+	};
+
+	const activeSceneId = currentSceneId ?? facilityWithTour?.initialSceneId;
+	const activeScene = activeSceneId && facilityWithTour?.scenes 
+		? facilityWithTour.scenes.find(s => s.id === activeSceneId) 
+		: null;
+	const hasSections = facilityWithTour?.sections ? facilityWithTour.sections.length > 0 : false;
+
+	const handleHotspotClick = (hotspotId: string) => {
+		if (!activeScene || !activeScene.hotspots) return;
+		const hotspot = activeScene.hotspots.find((h) => h.id === hotspotId);
+		if (hotspot?.target_scene_id) {
+			setCurrentSceneId(hotspot.target_scene_id);
+		}
+	};
+
+	// Handle service access actions
+	const handleRequestAccess = (service: VRSection) => {
+		if (!facilityWithTour) return;
+		
+		Alert.alert(
+			'Request Access',
+			`Would you like to request access to ${service.title}?`,
+			[
+				{ text: 'Cancel', style: 'cancel' },
+				{
+					text: 'Submit Enquiry',
+					onPress: () => {
+						router.push({
+							pathname: '/enquiry-form',
+							params: {
+								type: 'Facility',
+								facilityId: facilityWithTour.id,
+								subject: `Request Access: ${service.title}`,
+							},
+						});
+					},
+				},
+				{
+					text: 'View Tenants',
+					onPress: () => {
+						// Scroll to tenants section or show tenant list
+						Alert.alert('Tenants', 'Please scroll down to view tenants offering this service.');
+					},
+				},
+			]
+		);
+	};
+
+	const handleContactFacility = () => {
+		if (!facilityWithTour) return;
+		
+		Alert.alert(
+			'Contact Facility',
+			`How would you like to contact ${facilityWithTour.name}?`,
+			[
+				{ text: 'Cancel', style: 'cancel' },
+				{
+					text: 'Submit Enquiry',
+					onPress: () => {
+						router.push({
+							pathname: '/enquiry-form',
+							params: {
+								type: 'Facility',
+								facilityId: facilityWithTour.id,
+								subject: `Enquiry about ${facilityWithTour.name}`,
+							},
+						});
+					},
+				},
+				{
+					text: 'Send Email',
+					onPress: () => {
+						const email = 'info@elidz.co.za'; // Default ELIDZ email
+						Linking.openURL(`mailto:${email}?subject=Inquiry about ${facilityWithTour.name}`);
+					},
+				},
+				{
+					text: 'Visit Website',
+					onPress: () => {
+						Linking.openURL('https://www.elidz.co.za');
+					},
+				},
+			]
+		);
+	};
+
+	const handleContactTenant = (tenant: any) => {
+		const options: string[] = [];
+		const actions: Array<{ text: string; onPress: () => void }> = [];
+
+		if (tenant.contact_email) {
+			options.push('Email');
+			actions.push({
+				text: 'Email',
+				onPress: () => Linking.openURL(`mailto:${tenant.contact_email}`),
+			});
+		}
+
+		if (tenant.contact_phone) {
+			options.push('Call');
+			actions.push({
+				text: 'Call',
+				onPress: () => Linking.openURL(`tel:${tenant.contact_phone}`),
+			});
+		}
+
+		if (tenant.website) {
+			options.push('Website');
+			actions.push({
+				text: 'Website',
+				onPress: () => Linking.openURL(tenant.website),
+			});
+		}
+
+		if (tenant.application_url) {
+			options.push('Apply');
+			actions.push({
+				text: 'Apply',
+				onPress: () => Linking.openURL(tenant.application_url),
+			});
+		}
+
+		if (options.length === 0) {
+			Alert.alert('No Contact Information', 'Contact information is not available for this tenant.');
+			return;
+		}
+
+		Alert.alert(
+			`Contact ${tenant.name}`,
+			'How would you like to contact them?',
+			[
+				{ text: 'Cancel', style: 'cancel' },
+				...actions,
+				{
+					text: 'View Profile',
+					onPress: () => router.push(`/tenant-detail?id=${tenant.id}`),
+				},
+			]
+		);
+	};
+
+	return (
+		<View className="flex-1">
+			{screenMode === 'list' && (
+				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
+					{/* Header */}
+					<LinearGradient
+						colors={['#002147', '#003366']}
+						className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
+					>
+						<View className="flex-row justify-between items-center mb-2">
+							<View className="flex-1">
+								<Text className="text-white text-3xl font-bold mb-2">IDZ STP Services</Text>
+								<Text className="text-white/80 text-base">
+									Explore our world-class facilities and innovation centers
+								</Text>
+							</View>
+							<HeaderAvatar />
+						</View>
+
+						{/* Search Bar */}
+						<View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
+							<Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+							<TextInput
+								className="flex-1 ml-3 text-base text-white"
+								placeholder="Search facilities..."
+								placeholderTextColor="rgba(255,255,255,0.5)"
+								value={searchQuery}
+								onChangeText={setSearchQuery}
+							/>
+							{searchQuery.length > 0 && (
+								<Pressable onPress={() => setSearchQuery('')} className="ml-2">
+									<Feather name="x" size={18} color="rgba(255,255,255,0.7)" />
+								</Pressable>
+							)}
+						</View>
+					</LinearGradient>
+
+					{/* Facilities List */}
+					<View className="mx-5 py-4">
+						{loading ? (
+							<View className="items-center py-12">
+								<ActivityIndicator size="large" color="#002147" />
+              <Text className="text-muted-foreground mt-4">Loading facilities...</Text>
             </View>
-            <Text className="text-[#002147] text-lg font-bold mb-1 leading-tight">{item.title}</Text>
-            <Text className="text-gray-500 text-sm mb-4" numberOfLines={2}>{item.description}</Text>
-
-            <View className="flex-row items-center justify-between border-t border-gray-50 pt-3">
-                <Text className="text-gray-500 text-xs font-medium">{item.org}</Text>
-                <View className="flex-row items-center">
-                    <Text className="text-[#FF6600] text-sm font-bold mr-1">Apply Now</Text>
-                    <Feather name="arrow-right" size={16} color="#FF6600" />
-                </View>
+          ) : facilities.length === 0 ? (
+            <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
+              <Feather name="home" size={48} color="#CBD5E0" />
+              <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
+                {searchQuery ? 'No facilities found' : 'No facilities available'}
+              </Text>
+              <Text className="text-muted-foreground text-sm mt-2 text-center">
+                {searchQuery ? 'Try a different search term' : 'Check back soon for updates'}
+              </Text>
             </View>
-        </Pressable>
-    );
+          ) : (
+            facilities.map((facility) => (
+              <Pressable
+                key={facility.id}
+                className="bg-card rounded-2xl mb-4 p-4 shadow-sm border border-border active:opacity-95"
+								onPress={() => handleFacilitySelect(facility.id)}
+							>
+								<View className="flex-row items-center">
+									<View className="w-16 h-16 rounded-xl items-center justify-center mr-4" style={{ backgroundColor: facility.color }}>
+										<Feather name={facility.icon as any} size={28} color="#FFFFFF" />
+									</View>
+									<View className="flex-1">
+                    <Text className="text-lg font-bold text-foreground mb-1">{facility.name}</Text>
+                    <Text className="text-muted-foreground text-sm mb-2">{facility.description}</Text>
+                    <View className="flex-row items-center">
+                      <Text className="text-xs text-muted-foreground">{facility.location}</Text>
+											<Feather name="chevron-right" size={16} color="#FF6600" style={{ marginLeft: 'auto' }} />
+										</View>
+									</View>
+								</View>
+							</Pressable>
+							))
+						)}
+					</View>
+				</ScrollView>
+			)}
 
-    const renderFacilityCard = (item: any) => (
-        <Pressable
-            key={item.id}
-            className="bg-white mx-6 mb-4 rounded-2xl border border-gray-100 shadow-sm overflow-hidden active:opacity-95"
-            onPress={() => router.push({ pathname: '/center-detail', params: { name: item.name } })}
-        >
-            <View className="h-32 bg-gray-100 relative">
-                <Image
-                    source={item.image}
-                    className="w-full h-full"
-                    resizeMode="cover"
-                />
-                <View className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-black/60 to-transparent" />
-                <View className="absolute bottom-3 left-3 flex-row items-center">
-                    <View className="bg-white/20 p-1.5 rounded-lg backdrop-blur-md mr-2">
-                        <Feather name={item.icon as any || 'briefcase'} size={14} color="white" />
+			{screenMode === 'detail' && facilityWithTour && (
+				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
+					{/* Header */}
+					<View className="px-6 pt-12 pb-6 bg-card shadow-sm">
+						<View className="flex-row items-center mb-4">
+							<Pressable onPress={handleBackToList} className="p-2 mr-3">
+								<Feather name="arrow-left" size={24} color="#002147" />
+							</Pressable>
+							<View className="w-12 h-12 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: facilityWithTour.color }}>
+								<Feather name={facilityWithTour.icon as any} size={24} color="#FFFFFF" />
+							</View>
+							<View className="flex-1">
+								<Text className="text-2xl font-bold text-foreground">{facilityWithTour.name}</Text>
+								<Text className="text-muted-foreground text-sm">{facilityWithTour.location}</Text>
+							</View>
+						</View>
+						<Text className="text-muted-foreground text-base">{facilityWithTour.description}</Text>
+					</View>
+
+					{/* Loading State */}
+					{loadingTour && (
+						<View className="flex-1 items-center justify-center py-20">
+							<ActivityIndicator size="large" color="#002147" />
+						</View>
+					)}
+
+					{/* Services List */}
+					{!loadingTour && (
+					<View className="mx-5 py-4">
+            <Text className="text-xl font-bold text-foreground mb-4">Available Services</Text>
+							{facilityWithTour.sections.map((service, index) => (
+							<View
+								key={index}
+                className="bg-card rounded-2xl mb-4 p-4 shadow-sm border border-border"
+							>
+								<Pressable
+									onPress={() => handleServiceSelect(service)}
+									className="active:opacity-95"
+								>
+									<View className="flex-row items-center justify-between mb-3">
+										<View className="flex-1">
+                    <Text className="text-lg font-bold text-foreground mb-2">{service.title}</Text>
+                    <Text className="text-muted-foreground text-sm mb-3">{service.description}</Text>
+                    <View className="flex-row flex-wrap">
+                      {service.details.slice(0, 3).map((detail: string, i: number) => (
+                        <View key={i} className="bg-primary/10 px-2 py-1 rounded-md mr-2 mb-1">
+                          <Text className="text-primary text-[10px] font-medium">{detail}</Text>
+                        </View>
+                      ))}
                     </View>
-                    <Text className="text-white font-bold shadow-sm">{item.sector}</Text>
+                  </View>
+                  {service.has_vr ? (
+                      <View className="ml-4">
+                        <Feather name="eye" size={24} color="#FF6600" />
+                      </View>
+                    ) : null}
                 </View>
-            </View>
-            <View className="p-4">
-                <Text className="text-[#002147] text-lg font-bold mb-1">{item.name}</Text>
-                <Text className="text-gray-500 text-sm mb-3" numberOfLines={2}>{item.description}</Text>
-                <View className="flex-row flex-wrap">
-                    {item.services.slice(0, 2).map((s: string, i: number) => (
-                        <View key={i} className="bg-blue-50 px-2 py-1 rounded-md mr-2 mb-1">
-                            <Text className="text-[#002147] text-[10px] font-medium">{s}</Text>
-                        </View>
-                    ))}
+              </Pressable>
+              
+              {/* Access Actions */}
+              <View className="flex-row gap-2 mt-2 pt-3 border-t border-border">
+									<Pressable
+										onPress={() => handleRequestAccess(service)}
+										className="flex-1 bg-[#002147] py-2.5 rounded-lg active:opacity-90"
+									>
+										<View className="flex-row items-center justify-center">
+											<Feather name="user-plus" size={16} color="white" />
+											<Text className="text-white font-semibold text-sm ml-2">Request Access</Text>
+										</View>
+									</Pressable>
+									<Pressable
+										onPress={handleContactFacility}
+										className="px-4 py-2.5 border border-[#002147] rounded-lg active:opacity-90"
+									>
+										<View className="flex-row items-center">
+											<Feather name="mail" size={16} color="#002147" />
+										</View>
+									</Pressable>
+									{service.has_vr && (
+										<Pressable
+											onPress={() => handleServiceSelect(service)}
+											className="px-4 py-2.5 border border-[#FF6600] rounded-lg active:opacity-90"
+										>
+											<View className="flex-row items-center">
+												<Feather name="eye" size={16} color="#FF6600" />
+											</View>
+										</Pressable>
+									)}
+								</View>
+							</View>
+						))}
+					</View>
+					)}
+
+					{/* Tenants */}
+					{!loadingTour && tenants.length > 0 && (
+						<View className="mx-5 py-4">
+            <Text className="text-xl font-bold text-foreground mb-4">Tenants in this Facility</Text>
+            <Text className="text-muted-foreground text-sm mb-4">
+              Connect with tenants offering services in this facility
+            </Text>
+            {tenants.map(tenant => (
+              <Pressable
+                key={tenant.id}
+                onPress={() => router.push(`/tenant-detail?id=${tenant.id}`)}
+                className="bg-card p-4 rounded-xl mb-3 flex-row items-center border border-border active:opacity-95"
+              >
+                <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
+                  <Text className="text-primary font-bold">{tenant.name.charAt(0)}</Text>
                 </View>
-            </View>
-        </Pressable>
-    );
+                <View className="flex-1">
+                  <Text className="font-semibold text-foreground">{tenant.name}</Text>
+                  <Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>{tenant.description}</Text>
+										{(tenant.contact_email || tenant.contact_phone || tenant.website) && (
+											<View className="flex-row items-center mt-2 gap-3">
+												{tenant.contact_email && (
+													<Pressable
+														onPress={(e) => {
+															e.stopPropagation();
+															Linking.openURL(`mailto:${tenant.contact_email}`);
+														}}
+														className="flex-row items-center"
+													>
+														<Feather name="mail" size={12} color="#002147" />
+														<Text className="text-primary text-[10px] ml-1">Email</Text>
+													</Pressable>
+												)}
+												{tenant.contact_phone && (
+													<Pressable
+														onPress={(e) => {
+															e.stopPropagation();
+															Linking.openURL(`tel:${tenant.contact_phone}`);
+														}}
+														className="flex-row items-center"
+													>
+														<Feather name="phone" size={12} color="#002147" />
+														<Text className="text-primary text-[10px] ml-1">Call</Text>
+													</Pressable>
+												)}
+												{tenant.website && (
+													<Pressable
+														onPress={(e) => {
+															e.stopPropagation();
+															Linking.openURL(tenant.website!);
+														}}
+														className="flex-row items-center"
+													>
+														<Feather name="globe" size={12} color="#002147" />
+														<Text className="text-primary text-[10px] ml-1">Website</Text>
+													</Pressable>
+												)}
+											</View>
+										)}
+									</View>
+									<Feather name="chevron-right" size={20} color="#FF6600" />
+								</Pressable>
+							))}
+						</View>
+					)}
 
-    const renderResourceCard = (item: any) => (
-        <Pressable
-            key={item.id}
-            className="bg-white mx-6 mb-3 p-4 rounded-xl border border-gray-100 shadow-sm flex-row items-center active:opacity-95"
-            onPress={() => router.push({ pathname: '/resources', params: item.targetCategory ? { category: item.targetCategory } : undefined })}
-        >
-            <View className="w-12 h-12 rounded-full bg-[#002147]/5 justify-center items-center mr-4">
-                <Feather name={item.icon as any || 'file'} size={20} color="#002147" />
-            </View>
-            <View className="flex-1">
-                <Text className="text-[#002147] text-base font-bold mb-0.5">{item.name}</Text>
-                <Text className="text-gray-500 text-xs">{item.description}</Text>
-            </View>
-            <View className="bg-[#FF6600]/10 px-2.5 py-1 rounded-lg">
-                <Text className="text-[#FF6600] text-xs font-bold">{item.available || '0'} Left</Text>
-            </View>
-        </Pressable>
-    );
+					{/* Contact Facility Section */}
+					{!loadingTour && (
+						<View className="mx-5 py-4">
+            <View className="bg-card rounded-2xl p-5 shadow-sm border border-border">
+              <Text className="text-lg font-bold text-foreground mb-3">Need Help?</Text>
+              <Text className="text-muted-foreground text-sm mb-4">
+									Contact the facility directly for inquiries, bookings, or more information about services.
+								</Text>
+								<View className="flex-row gap-2">
+									<Pressable
+										onPress={handleContactFacility}
+										className="flex-1 bg-[#002147] py-3 rounded-lg active:opacity-90"
+									>
+										<View className="flex-row items-center justify-center">
+											<Feather name="mail" size={16} color="white" />
+											<Text className="text-white font-semibold text-sm ml-2">Contact Facility</Text>
+										</View>
+									</Pressable>
+									<Pressable
+										onPress={() => Linking.openURL('https://www.elidz.co.za')}
+										className="px-4 py-3 border border-[#002147] rounded-lg active:opacity-90"
+									>
+										<Feather name="globe" size={18} color="#002147" />
+									</Pressable>
+								</View>
+							</View>
+						</View>
+					)}
+				</ScrollView>
+			)}
 
-    return (
-        <ScrollView className="flex-1 bg-gray-50" contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* Header */}
-            <LinearGradient
-                colors={['#002147', '#003366']}
-                className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
-            >
-                <View className="flex-row justify-between items-center">
-                    <Text className="text-white text-3xl font-bold mb-2">Services</Text>
-                    <HeaderAvatar />
-                </View>
-                <Text className="text-white/80 text-base">
-                    Access world-class facilities and funding opportunities.
-                </Text>
+			{screenMode === 'vr-tour' && facilityWithTour && selectedService && (
+				<View className="flex-1 bg-background">
+					<View className="px-6 pt-12 pb-6 flex-row items-center justify-between" style={{ backgroundColor: facilityWithTour.color }}>
+						<Pressable onPress={handleBackToDetail} className="p-2 bg-white/20 rounded-full">
+							<Feather name="arrow-left" size={24} color="#FFFFFF" />
+						</Pressable>
+						<View className="items-center">
+							<Text className="text-white text-lg font-bold">{selectedService.title}</Text>
+							<Text className="text-white/80 text-xs">
+								{viewMode === 'panorama' && activeScene ? activeScene.title : 'Virtual Tour'}
+							</Text>
+						</View>
+						<View className="flex-row gap-2">
+							<Pressable
+								className={`p-2 rounded-full ${viewMode === 'panorama' ? 'bg-white text-primary' : 'bg-white/20'}`}
+								onPress={() => setViewMode('panorama')}
+							>
+								<Feather name="globe" size={20} color={viewMode === 'panorama' ? facilityWithTour.color : '#FFFFFF'} />
+							</Pressable>
+							<Pressable
+								className={`p-2 rounded-full ${viewMode === 'sections' ? 'bg-white text-primary' : 'bg-white/20'}`}
+								onPress={() => hasSections && setViewMode('sections')}
+								disabled={!hasSections}
+							>
+								<Feather name="list" size={20} color={viewMode === 'sections' ? facilityWithTour.color : '#FFFFFF'} />
+							</Pressable>
+						</View>
+					</View>
 
-                {/* Search Bar */}
-                <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
-                    <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
-                    <TextInput
-                        className="flex-1 ml-3 text-base text-white"
-                        placeholder="Search services..."
-                        placeholderTextColor="rgba(255,255,255,0.5)"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
-            </LinearGradient>
+					{/* VR Panorama Viewer */}
+					{viewMode === 'panorama' && activeScene ? (
+						<PanoramaViewer
+							imageUrl={facilitiesService.getImageUrl(activeScene.image_url, facilityWithTour.id)}
+							title={activeScene.title}
+							hotspots={activeScene.hotspots || []}
+							onHotspotClick={handleHotspotClick}
+						/>
+					) : (
+						<ScrollView className="flex-1 px-6 py-6" showsVerticalScrollIndicator={false}>
+							{/* Service Overview */}
+							<View className="bg-card rounded-2xl p-6 shadow-sm border border-border mb-6">
+								<View className="flex-row items-center mb-4">
+									<View className="w-12 h-12 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: facilityWithTour.color }}>
+										<Feather name={facilityWithTour.icon as any} size={24} color="#FFFFFF" />
+									</View>
+									<View className="flex-1">
+										<Text className="text-xl font-bold text-foreground">{selectedService.title}</Text>
+										<Text className="text-sm text-muted-foreground">{facilityWithTour.location}</Text>
+									</View>
+								</View>
+								<Text className="text-base text-muted-foreground leading-6">
+									{selectedService.description}
+								</Text>
+							</View>
 
-            {/* Categories */}
-            <View className="mt-6 mb-2">
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-                    {categories.map((category) => (
-                        <Pressable
-                            key={category}
-                            className={`px-5 py-2.5 rounded-full border mr-3 shadow-sm ${selectedCategory === category
-                                ? 'bg-[#002147] border-[#002147]'
-                                : 'bg-white border-gray-200'
-                                }`}
-                            onPress={() => setSelectedCategory(category)}
-                        >
-                            <Text className={`text-sm font-semibold ${selectedCategory === category ? 'text-white' : 'text-gray-600'
-                                }`}>
-                                {category}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </ScrollView>
-            </View>
+							{/* Service Details */}
+							<View className="bg-card rounded-2xl p-6 shadow-sm border border-border mb-6">
+								<Text className="text-lg font-semibold text-foreground mb-4">Key Features & Services</Text>
+								{selectedService.details.map((detail: string, index: number) => (
+									<View key={index} className="flex-row items-center mb-3">
+										<View className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: facilityWithTour.color }} />
+										<Text className="text-base text-foreground flex-1">{detail}</Text>
+									</View>
+								))}
+							</View>
 
-            {loading ? (
-                <Text className="text-center text-gray-500 mt-10">Loading services...</Text>
-            ) : (
-                <View>
-                    {/* Content - ALL */}
-                    {selectedCategory === 'All' && !searchQuery && (
-                        <>
-                            {/* Funding Section */}
-                            {fundingOpportunities && fundingOpportunities.length > 0 && (
-                                <>
-                                    {renderSectionHeader('Funding Opportunities', () => setSelectedCategory('Funding'))}
-                                    {fundingOpportunities.slice(0, 2).map(renderFundingCard)}
-                                </>
-                            )}
+							{/* Access Actions */}
+							<View className="bg-card rounded-2xl p-6 shadow-sm border border-border mb-6">
+								<Text className="text-lg font-semibold text-foreground mb-4">Access This Service</Text>
+								<View className="gap-3">
+									<Pressable
+										onPress={() => handleRequestAccess(selectedService)}
+										className="bg-primary py-4 rounded-lg active:opacity-90"
+									>
+										<View className="flex-row items-center justify-center">
+											<Feather name="user-plus" size={18} color="white" />
+											<Text className="text-white font-semibold text-base ml-2">Request Access</Text>
+										</View>
+									</Pressable>
+									<Pressable
+										onPress={() => {
+											if (facilityWithTour) {
+												router.push({
+													pathname: '/enquiry-form',
+													params: {
+														type: 'Facility',
+														facilityId: facilityWithTour.id,
+														subject: `Enquiry about ${selectedService.title}`,
+													},
+												});
+											}
+										}}
+										className="border border-primary py-4 rounded-lg active:opacity-90"
+									>
+										<View className="flex-row items-center justify-center">
+											<Feather name="mail" size={18} color="#002147" />
+											<Text className="text-primary font-semibold text-base ml-2">Contact Facility</Text>
+										</View>
+									</Pressable>
+									<Pressable
+										onPress={() => Linking.openURL('https://www.elidz.co.za')}
+										className="border border-border py-4 rounded-lg active:opacity-90"
+									>
+										<View className="flex-row items-center justify-center">
+											<Feather name="globe" size={18} color="#002147" />
+											<Text className="text-primary font-semibold text-base ml-2">Visit ELIDZ Website</Text>
+										</View>
+									</Pressable>
+								</View>
+							</View>
 
-                            {/* Facilities Section */}
-                            {productLines && productLines.length > 0 && (
-                                <>
-                                    {renderSectionHeader('Centers of Excellence', () => setSelectedCategory('Facilities'))}
-                                    {productLines.slice(0, 2).map(renderFacilityCard)}
-                                </>
-                            )}
-
-                            {/* Resources Section */}
-                            {resources && resources.length > 0 && (
-                                <>
-                                    {renderSectionHeader('Available Resources', () => setSelectedCategory('Resources'))}
-                                    {resources.map(renderResourceCard)}
-                                </>
-                            )}
-                        </>
-                    )}
-
-                    {/* Filtered Content */}
-                    {(selectedCategory !== 'All' || searchQuery) && (
-                        <View className="mt-4">
-                            {(selectedCategory === 'All' || selectedCategory === 'Funding') && fundingOpportunities?.length > 0 && (
-                                <>
-                                    {searchQuery && <Text className="px-6 mb-2 text-gray-500 font-medium">Funding</Text>}
-                                    {fundingOpportunities.map(renderFundingCard)}
-                                </>
-                            )}
-
-                            {(selectedCategory === 'All' || selectedCategory === 'Facilities') && productLines?.length > 0 && (
-                                <>
-                                    {searchQuery && <Text className="px-6 mb-2 mt-4 text-gray-500 font-medium">Facilities</Text>}
-                                    {productLines.map(renderFacilityCard)}
-                                </>
-                            )}
-
-                            {(selectedCategory === 'All' || selectedCategory === 'Resources') && resources?.length > 0 && (
-                                <>
-                                    {searchQuery && <Text className="px-6 mb-2 mt-4 text-gray-500 font-medium">Resources</Text>}
-                                    {resources.map(renderResourceCard)}
-                                </>
-                            )}
-
-                            {/* Empty State */}
-                            {((!fundingOpportunities?.length && !productLines?.length && !resources?.length)) && (
-                                <View className="items-center py-12 px-6">
-                                    <Feather name="search" size={48} color="#CBD5E0" />
-                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
-                                        No results found for "{searchQuery}"
-                                    </Text>
-                                </View>
-                            )}
-                        </View>
-                    )}
-                </View>
-            )}
-
-            {/* CTA for Guests */}
-            {!isLoggedIn && (
-                <View className="mx-6 mt-6 mb-6 p-5 rounded-2xl bg-white border border-[#002147]/10 shadow-sm">
-                    <View className="flex-row items-center mb-3">
-                        <View className="bg-[#FF6600]/10 p-2 rounded-full mr-3">
-                            <Feather name="lock" size={18} color="#FF6600" />
-                        </View>
-                        <Text className="text-[#002147] text-lg font-bold">
-                            Unlock Full Access
-                        </Text>
-                    </View>
-                    <Text className="text-gray-500 text-sm mb-5 leading-relaxed">
-                        Create an account to apply for funding, book resources, and connect with partners.
-                    </Text>
-                    <Pressable
-                        className="bg-[#002147] py-3 px-6 rounded-xl items-center active:opacity-90"
-                        onPress={() => router.push('/(auth)/auth-choice')}
-                    >
-                        <Text className="text-white font-bold">
-                            Sign Up Now
-                        </Text>
-                    </Pressable>
-                </View>
-            )}
-        </ScrollView>
-    );
+							{/* Tenants */}
+							<View className="mb-6">
+								<Text className="text-lg font-semibold text-foreground mb-4">Tenants in this Facility</Text>
+								<Text className="text-sm text-muted-foreground mb-4">
+									Connect with tenants offering services in this facility
+								</Text>
+								{tenants.length === 0 && (
+									<Text className="text-muted-foreground">No tenants listed for this facility.</Text>
+								)}
+								{tenants.map(tenant => (
+									<Pressable
+										key={tenant.id}
+										onPress={() => router.push(`/tenant-detail?id=${tenant.id}`)}
+										className="bg-card p-4 rounded-xl mb-3 flex-row items-center border border-border active:opacity-95"
+									>
+										<View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
+											<Text className="text-primary font-bold">{tenant.name.charAt(0)}</Text>
+										</View>
+										<View className="flex-1">
+											<Text className="font-semibold text-foreground">{tenant.name}</Text>
+											<Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>{tenant.description}</Text>
+											{(tenant.contact_email || tenant.contact_phone || tenant.website) && (
+												<View className="flex-row items-center mt-2 gap-3">
+													{tenant.contact_email && (
+														<Pressable
+															onPress={(e) => {
+																e.stopPropagation();
+																Linking.openURL(`mailto:${tenant.contact_email}`);
+															}}
+															className="flex-row items-center"
+														>
+															<Feather name="mail" size={12} color="#002147" />
+															<Text className="text-primary text-[10px] ml-1">Email</Text>
+														</Pressable>
+													)}
+													{tenant.contact_phone && (
+														<Pressable
+															onPress={(e) => {
+																e.stopPropagation();
+																Linking.openURL(`tel:${tenant.contact_phone}`);
+															}}
+															className="flex-row items-center"
+														>
+															<Feather name="phone" size={12} color="#002147" />
+															<Text className="text-primary text-[10px] ml-1">Call</Text>
+														</Pressable>
+													)}
+													{tenant.website && (
+														<Pressable
+															onPress={(e) => {
+																e.stopPropagation();
+																Linking.openURL(tenant.website!);
+															}}
+															className="flex-row items-center"
+														>
+															<Feather name="globe" size={12} color="#002147" />
+															<Text className="text-primary text-[10px] ml-1">Website</Text>
+														</Pressable>
+													)}
+												</View>
+											)}
+										</View>
+										<Feather name="chevron-right" size={18} color="#FF6600" />
+									</Pressable>
+								))}
+							</View>
+						</ScrollView>
+					)}
+				</View>
+			)}
+		</View>
+	);
 }

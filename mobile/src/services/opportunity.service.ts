@@ -85,6 +85,29 @@ class OpportunityServiceClass {
 
 		return data as Opportunity;
 	}
+
+	/**
+	 * Get recommended opportunities for a user
+	 */
+	async getRecommendedOpportunities(userId: string, limit = 5): Promise<Opportunity[]> {
+		// Import here to avoid circular dependency
+		const { recommendationService } = await import('./recommendation.service');
+		const { profileService } = await import('./profile.service');
+
+		// Get user profile
+		const user = await profileService.getProfile(userId);
+		if (!user) {
+			return [];
+		}
+
+		// Get all active opportunities
+		const allOpportunities = await this.getOpportunities();
+
+		// Get recommendations
+		const recommendations = recommendationService.getRecommendedOpportunities(user, allOpportunities, limit);
+
+		return recommendations.map(r => r.opportunity);
+	}
 }
 
 export const OpportunityService = new OpportunityServiceClass();

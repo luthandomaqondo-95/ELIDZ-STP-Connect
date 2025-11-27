@@ -8,7 +8,8 @@ export type AuthData = {
     isLoading: boolean
     isLoggedIn: boolean
     login: (email: string, password: string) => Promise<void>
-    signup: (name: string, email: string, password: string, role: Profile['role']) => Promise<void>
+    signup: (name: string, email: string, password: string, role: Profile['role'], address: string) => Promise<void>
+    signInWithGoogle: () => Promise<any>
     logout: () => Promise<void>
     updateProfile: (updates: Partial<Profile>) => Promise<void>
 }
@@ -20,6 +21,7 @@ export const AuthContext = createContext<AuthData>({
     isLoggedIn: false,
     login: async () => {},
     signup: async () => {},
+    signInWithGoogle: async () => {},
     logout: async () => {},
     updateProfile: async () => {},
 })

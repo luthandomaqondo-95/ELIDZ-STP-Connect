@@ -41,6 +41,7 @@ export default function AuthLayout() {
 			/>
 			<Stack.Screen name="forgot-password" options={{ title: "Forgot Password" }} />
 			<Stack.Screen name="change-password" options={{ title: "Change Password" }} />
+			<Stack.Screen name="callback" options={{ title: "Signing In", headerShown: false }} />
 		</Stack>
 	);
 }
