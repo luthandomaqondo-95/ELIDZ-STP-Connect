@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/server"
 import { UsersTable, User } from "./users-table"
+import { InviteUserDialog } from "./invite-user-dialog"
 
 export default async function AllUsersPage() {
     const supabase = await createClient()
@@ -21,7 +21,7 @@ export default async function AllUsersPage() {
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-bold tracking-tight">All Users</h1>
-                <Button>Add User</Button>
+                <InviteUserDialog />
             </div>
             <UsersTable users={users} />
         </div>
