@@ -36,8 +36,22 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protect dashboard routes
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL('/auth/login', request.url))
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/auth/login', request.url))
+    }
+
+    // Check user role in profiles table
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    // If no profile or role is not Admin, redirect to unauthorized page
+    if (!profile || profile.role !== 'Admin') {
+      return NextResponse.redirect(new URL('/auth/unauthorized', request.url))
+    }
   }
 
   return response
@@ -55,4 +69,3 @@ export const config = {
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }
-
