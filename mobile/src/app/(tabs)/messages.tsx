@@ -5,8 +5,8 @@ import { useAuthContext } from '../../hooks/use-auth-context';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { connectionService, ContactWithConnection } from '@/services/connection.service';
-import { chatService } from '@/services/chat.service';
+import { chatService, ChatWithDetails } from '@/services/chat.service';
+import { connectionService, ContactWithConnection, ConnectionRequest } from '@/services/connection.service';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { useContactsSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -17,9 +17,9 @@ function MessagesScreen() {
     const { profile, isLoggedIn } = useAuthContext();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRole, setSelectedRole] = useState<UserRole | 'All'>('All');
-    
+
     const debouncedSearch = useDebounce(searchQuery, 300);
-    
+
     const { data: contacts, isLoading: loading } = useContactsSearch(profile?.id || '', debouncedSearch);
 
     const roles: (UserRole | 'All')[] = useMemo(() => {
@@ -37,18 +37,16 @@ function MessagesScreen() {
     const filteredContacts = useMemo(() => {
         if (!contacts) return [];
         return contacts.filter((contact) => {
-            // Search is already done server/service side, but we can refine client side if needed
-            // Especially if service side search is broad or we want to support multiple fields not covered.
-            // But for now, trust the hook.
             const matchesRole = selectedRole === 'All' || contact.role === selectedRole;
             return matchesRole;
         });
     }, [contacts, selectedRole]);
 
-    // Separate connected and available contacts
+    // Separate contacts by connection status
     const connectedContacts = filteredContacts.filter(c => c.connectionStatus === 'connected');
+    const pendingSentContacts = filteredContacts.filter(c => c.connectionStatus === 'pending_sent');
+    const pendingReceivedContacts = filteredContacts.filter(c => c.connectionStatus === 'pending_received');
     const availableContacts = filteredContacts.filter(c => c.connectionStatus === 'available');
-    const pendingContacts = filteredContacts.filter(c => c.connectionStatus === 'pending');
 
     function getRoleColor(role: UserRole): string {
         const roleColors: Record<UserRole, string> = {
@@ -80,23 +78,37 @@ function MessagesScreen() {
             return;
         }
         try {
-            await connectionService.createConnection(profile.id, contact.id);
+            await connectionService.sendConnectionRequest(profile.id, contact.id);
             Alert.alert('Success', `Connection request sent to ${contact.name}!`);
-            // React Query will refetch if we invalidate queries, but we don't have invalidate here.
-            // Ideally we should use useMutation and invalidate queries.
-            // For now, let's just alert. The UI might not update immediately without invalidation.
-            // This is a limitation of switching to simple hooks without mutations.
-            // But the prompt asked for search hooks. I'll stick to that.
-            // To be proper, I should probably invalidate. But I don't have queryClient here easily unless I useQueryClient.
         } catch (error: any) {
-            console.error('Error creating connection:', error);
+            console.error('Error sending connection request:', error);
             Alert.alert('Error', error.message || 'Failed to send connection request.');
+        }
+    }
+
+    async function handleAcceptConnection(connectionId: string, userName: string) {
+        try {
+            await connectionService.acceptConnectionRequest(connectionId);
+            Alert.alert('Success', `You are now connected with ${userName}!`);
+        } catch (error: any) {
+            console.error('Error accepting connection:', error);
+            Alert.alert('Error', error.message || 'Failed to accept connection request.');
+        }
+    }
+
+    async function handleDeclineConnection(connectionId: string, userName: string) {
+        try {
+            await connectionService.declineConnectionRequest(connectionId);
+            Alert.alert('Request Declined', `Connection request from ${userName} has been declined.`);
+        } catch (error: any) {
+            console.error('Error declining connection:', error);
+            Alert.alert('Error', error.message || 'Failed to decline connection request.');
         }
     }
 
     async function handleMessage(contact: ContactWithConnection) {
         if (contact.connectionStatus !== 'connected') {
-            Alert.alert('Connection Required', 'You need to connect first before messaging.');
+            Alert.alert('Connection Required', 'You need to be connected first before messaging.');
             return;
         }
         try {
@@ -106,6 +118,111 @@ function MessagesScreen() {
             console.error('Error creating chat:', error);
             Alert.alert('Error', error.message || 'Failed to start conversation.');
         }
+    }
+
+    function renderChat(chat: ChatWithDetails) {
+        const displayName = chat.type === 'direct' && chat.otherUser
+            ? chat.otherUser.name
+            : chat.name || 'Group Chat';
+
+        const initials = displayName
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+
+        const role = chat.type === 'direct' && chat.otherUser
+            ? chat.otherUser.role as UserRole
+            : 'Entrepreneur'; // Default for group chats
+
+        const formatTimeAgo = (dateString: string) => {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diffMs = now.getTime() - date.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
+            const diffHours = Math.floor(diffMs / 3600000);
+            const diffDays = Math.floor(diffMs / 86400000);
+
+            if (diffMins < 1) return 'Just now';
+            if (diffMins < 60) return `${diffMins}m ago`;
+            if (diffHours < 24) return `${diffHours}h ago`;
+            if (diffDays < 7) return `${diffDays}d ago`;
+            return date.toLocaleDateString();
+        };
+
+        return (
+            <Pressable
+                key={chat.id}
+                className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm overflow-hidden active:opacity-95"
+                onPress={() => {
+                    const userName = chat.type === 'direct' && chat.otherUser ? chat.otherUser.name : displayName;
+                    router.push(`/message?chatId=${chat.id}&userName=${encodeURIComponent(userName)}`);
+                }}
+            >
+                <View className="flex-row items-center p-4">
+                    <View className="relative">
+                        <View
+                            className="w-12 h-12 rounded-full justify-center items-center"
+                            style={{ backgroundColor: getRoleColor(role) + '20' }}
+                        >
+                            <Text className="text-base font-bold" style={{ color: getRoleColor(role) }}>
+                                {initials}
+                            </Text>
+                        </View>
+                        {chat.unreadCount && chat.unreadCount > 0 && (
+                            <View className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF6600] rounded-full justify-center items-center">
+                                <Text className="text-white text-xs font-bold">{chat.unreadCount}</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    <View className="flex-1 ml-3">
+                        <View className="flex-row items-center justify-between mb-1">
+                            <Text className="text-base font-bold text-[#002147] flex-1" numberOfLines={1}>
+                                {displayName}
+                            </Text>
+                            {chat.lastMessage && (
+                                <Text className="text-xs text-gray-400 ml-2">
+                                    {formatTimeAgo(chat.lastMessage.created_at)}
+                                </Text>
+                            )}
+                        </View>
+
+                        <View className="flex-row items-center mb-1.5">
+                            <View
+                                className="flex-row items-center px-2 py-0.5 rounded-md"
+                                style={{ backgroundColor: getRoleColor(role) + '10' }}
+                            >
+                                <Feather name={getRoleIcon(role) as any} size={10} color={getRoleColor(role)} />
+                                <Text className="text-[10px] font-medium ml-1" style={{ color: getRoleColor(role) }}>
+                                    {chat.type === 'direct' ? role : 'Group'}
+                                </Text>
+                            </View>
+                            {chat.type === 'direct' && chat.otherUser?.organization && (
+                                <Text className="text-gray-400 text-xs ml-2" numberOfLines={1}>
+                                    • {chat.otherUser.organization}
+                                </Text>
+                            )}
+                        </View>
+
+                        {chat.lastMessage ? (
+                            <Text className={`text-sm ${chat.unreadCount && chat.unreadCount > 0 ? 'text-[#002147] font-semibold' : 'text-gray-500'}`} numberOfLines={1}>
+                                {chat.lastMessage.content}
+                            </Text>
+                        ) : (
+                            <Text className="text-xs text-gray-400 italic">
+                                No messages yet
+                            </Text>
+                        )}
+                    </View>
+
+                    {chat.unreadCount && chat.unreadCount > 0 && (
+                        <View className="w-2.5 h-2.5 rounded-full bg-[#FF6600] ml-2" />
+                    )}
+                </View>
+            </Pressable>
+        );
     }
 
     function renderContact(contact: ContactWithConnection) {
@@ -120,7 +237,14 @@ function MessagesScreen() {
             <Pressable
                 key={contact.id}
                 className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm overflow-hidden active:opacity-95"
-                onPress={() => contact.connectionStatus === 'connected' ? handleMessage(contact) : handleConnect(contact)}
+                onPress={() => {
+                    if (contact.connectionStatus === 'connected') {
+                        handleMessage(contact);
+                    } else {
+                        // Navigate to user profile for connection
+                        router.push(`/user-profile?id=${contact.id}`);
+                    }
+                }}
             >
                 <View className="flex-row items-center p-4">
                     <View className="relative">
@@ -167,7 +291,10 @@ function MessagesScreen() {
                             </Text>
                         ) : (
                             <Text className="text-xs text-gray-400 italic">
-                                Tap to view profile
+                                {contact.connectionStatus === 'connected' ? 'Tap to message' :
+                                 contact.connectionStatus === 'available' ? 'Tap to connect' :
+                                 contact.connectionStatus === 'pending_sent' ? 'Request sent' :
+                                 'Pending approval'}
                             </Text>
                         )}
                     </View>
@@ -175,26 +302,42 @@ function MessagesScreen() {
                     {contact.hasUnreadMessages && (
                         <View className="w-2.5 h-2.5 rounded-full bg-[#FF6600] ml-2" />
                     )}
-                </View>
 
-                {contact.connectionStatus !== 'connected' && (
-                    <View className="px-4 pb-4 pt-0 flex-row justify-end">
-                        {contact.connectionStatus === 'pending' ? (
-                            <View className="flex-row items-center bg-gray-100 px-3 py-1.5 rounded-full">
-                                <Feather name="clock" size={12} color="#6C757D" />
-                                <Text className="text-gray-500 text-xs font-medium ml-1">Pending</Text>
-                            </View>
-                        ) : (
+                    {contact.connectionStatus === 'pending_received' && (
+                        <View className="flex-row ml-2">
                             <Pressable
-                                className="flex-row items-center bg-[#002147] px-3 py-1.5 rounded-full active:opacity-90"
-                                onPress={() => handleConnect(contact)}
+                                className="w-8 h-8 rounded-full bg-green-500 justify-center items-center mr-2"
+                                onPress={() => handleAcceptConnection(contact.connectionId!, contact.name)}
                             >
-                                <Feather name="user-plus" size={12} color="white" />
-                                <Text className="text-white text-xs font-bold ml-1">Connect</Text>
+                                <Feather name="check" size={16} color="white" />
                             </Pressable>
-                        )}
-                    </View>
-                )}
+                            <Pressable
+                                className="w-8 h-8 rounded-full bg-red-500 justify-center items-center"
+                                onPress={() => handleDeclineConnection(contact.connectionId!, contact.name)}
+                            >
+                                <Feather name="x" size={16} color="white" />
+                            </Pressable>
+                        </View>
+                    )}
+
+                    {contact.connectionStatus === 'pending_sent' && (
+                        <View className="ml-2">
+                            <Feather name="clock" size={20} color="#6C757D" />
+                        </View>
+                    )}
+
+                    {contact.connectionStatus === 'available' && (
+                        <View className="ml-2">
+                            <Feather name="user-plus" size={20} color="#002147" />
+                        </View>
+                    )}
+
+                    {contact.connectionStatus === 'connected' && (
+                        <View className="ml-2">
+                            <Feather name="message-circle" size={20} color="#002147" />
+                        </View>
+                    )}
+                </View>
             </Pressable>
         );
     }
@@ -288,55 +431,84 @@ function MessagesScreen() {
                     {/* Loading State */}
                     {loading && (
                         <View className="px-6">
-                            {Array.from({ length: 3 }).map((_, index) => (
-                                <View key={index} className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm p-4">
-                                    <View className="flex-row items-center">
-                                        <View className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
-                                        <View className="flex-1 ml-3">
-                                            <View className="h-4 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
-                                            <View className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                            {/* Loading Messages */}
+                            <View className="mb-6">
+                                <View className="flex-row items-center justify-between mx-6 mb-3 mt-2">
+                                    <Text className="text-lg font-bold text-[#002147]">
+                                        Messages
+                                    </Text>
+                                </View>
+                                {Array.from({ length: 2 }).map((_, index) => (
+                                    <View key={`loading-msg-${index}`} className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm p-4">
+                                        <View className="flex-row items-center">
+                                            <View className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+                                            <View className="flex-1 ml-3">
+                                                <View className="h-4 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
+                                                <View className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                                            </View>
                                         </View>
                                     </View>
+                                ))}
+                            </View>
+
+                            {/* Loading People */}
+                            <View className="mb-6">
+                                <View className="flex-row items-center justify-between mx-6 mb-3 mt-2">
+                                    <Text className="text-lg font-bold text-[#002147]">
+                                        Discover People
+                                    </Text>
                                 </View>
-                            ))}
+                                {Array.from({ length: 3 }).map((_, index) => (
+                                    <View key={`loading-people-${index}`} className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm p-4">
+                                        <View className="flex-row items-center">
+                                            <View className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+                                            <View className="flex-1 ml-3">
+                                                <View className="h-4 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
+                                                <View className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                                            </View>
+                                        </View>
+                                    </View>
+                                ))}
+                            </View>
                         </View>
                     )}
-                    {/* Connected Contacts */}
-                    {!loading && (
+                    {/* Connected Contacts (Messages) */}
+                    {!loading && connectedContacts.length > 0 && (
                         <View className="mb-6">
                             <View className="flex-row items-center justify-between mx-6 mb-3 mt-2">
                                 <Text className="text-lg font-bold text-[#002147]">
                                     Messages
                                 </Text>
-                                {connectedContacts.length > 0 && (
-                                    <View className="bg-gray-200 px-2 py-0.5 rounded-full">
-                                        <Text className="text-xs font-bold text-gray-600">{connectedContacts.length}</Text>
-                                    </View>
-                                )}
+                                <View className="bg-gray-200 px-2 py-0.5 rounded-full">
+                                    <Text className="text-xs font-bold text-gray-600">{connectedContacts.length}</Text>
+                                </View>
                             </View>
-
-                            {connectedContacts.length > 0 ? (
-                                <View className="px-6">
-                                    {connectedContacts.map(renderContact)}
-                                </View>
-                            ) : (
-                                <View className="items-center py-8 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
-                                    <Feather name="message-square" size={32} color="#CBD5E0" />
-                                    <Text className="text-gray-400 text-sm mt-2 text-center font-medium">
-                                        No active conversations
-                                    </Text>
-                                </View>
-                            )}
+                            <View className="px-6">
+                                {connectedContacts.map(renderContact)}
+                            </View>
                         </View>
                     )}
-                    {/* Pending Connections */}
-                    {!loading && pendingContacts.length > 0 && (
+
+                    {/* Pending Requests Received */}
+                    {!loading && pendingReceivedContacts.length > 0 && (
                         <View className="mb-6">
                             <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
-                                Pending
+                                Connection Requests ({pendingReceivedContacts.length})
                             </Text>
                             <View className="px-6">
-                                {pendingContacts.map(renderContact)}
+                                {pendingReceivedContacts.map(renderContact)}
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Pending Requests Sent */}
+                    {!loading && pendingSentContacts.length > 0 && (
+                        <View className="mb-6">
+                            <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
+                                Sent Requests ({pendingSentContacts.length})
+                            </Text>
+                            <View className="px-6">
+                                {pendingSentContacts.map(renderContact)}
                             </View>
                         </View>
                     )}
@@ -344,9 +516,16 @@ function MessagesScreen() {
                     {/* Available to Connect */}
                     {!loading && (
                         <View className="mb-6">
-                            <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
-                                Suggested Connections
-                            </Text>
+                            <View className="flex-row items-center justify-between mx-6 mb-3 text-[#002147]">
+                                <Text className="text-lg font-bold text-[#002147]">
+                                    Discover People
+                                </Text>
+                                {availableContacts.length > 0 && (
+                                    <View className="bg-gray-200 px-2 py-0.5 rounded-full">
+                                        <Text className="text-xs font-bold text-gray-600">{availableContacts.length}</Text>
+                                    </View>
+                                )}
+                            </View>
 
                             {availableContacts.length > 0 ? (
                                 <View className="px-6">
@@ -356,7 +535,7 @@ function MessagesScreen() {
                                 <View className="items-center py-8 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
                                     <Feather name="users" size={32} color="#CBD5E0" />
                                     <Text className="text-gray-400 text-sm mt-2 text-center font-medium">
-                                        No new suggestions found
+                                        No new people to discover
                                     </Text>
                                 </View>
                             )}

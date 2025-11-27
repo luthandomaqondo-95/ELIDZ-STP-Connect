@@ -17,7 +17,9 @@ export default function SignupScreen() {
 	const { signup, signInWithGoogle } = useAuthContext();
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
-	const [address, setAddress] = useState('');
+	const [province, setProvince] = useState('Eastern Cape');
+	const [city, setCity] = useState('');
+	const [postalCode, setPostalCode] = useState('');
 	const [password, setPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [role, setRole] = useState<'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant'>('Entrepreneur');
@@ -26,11 +28,113 @@ export default function SignupScreen() {
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
 
+	const [showPostalSuggestions, setShowPostalSuggestions] = useState(false);
+
+	const provinces = [
+		'Eastern Cape',
+		'Free State',
+		'Gauteng',
+		'KwaZulu-Natal',
+		'Limpopo',
+		'Mpumalanga',
+		'North West',
+		'Northern Cape',
+		'Western Cape',
+	];
+
+	// Map of major cities/towns for each province
+	const citiesByProvince: Record<string, string[]> = {
+		'Eastern Cape': ['East London', 'Gqeberha (Port Elizabeth)', 'Mthatha', 'Bhisho', 'Uitenhage', 'Grahamstown', 'Queenstown', 'King William\'s Town', 'Other'],
+		'Free State': ['Bloemfontein', 'Welkom', 'Sasolburg', 'Parys', 'Phuthaditjhaba', 'Kroonstad', 'Other'],
+		'Gauteng': ['Johannesburg', 'Pretoria', 'Soweto', 'Centurion', 'Sandton', 'Midrand', 'Roodepoort', 'Kempton Park', 'Other'],
+		'KwaZulu-Natal': ['Durban', 'Pietermaritzburg', 'Richards Bay', 'Newcastle', 'Port Shepstone', 'Other'],
+		'Limpopo': ['Polokwane', 'Thohoyandou', 'Tzaneen', 'Mokopane', 'Bela-Bela', 'Other'],
+		'Mpumalanga': ['Mbombela (Nelspruit)', 'Witbank', 'Secunda', 'Middelburg', 'Other'],
+		'North West': ['Mahikeng', 'Klerksdorp', 'Rustenburg', 'Potchefstroom', 'Brits', 'Other'],
+		'Northern Cape': ['Kimberley', 'Upington', 'Springbok', 'De Aar', 'Other'],
+		'Western Cape': ['Cape Town', 'Stellenbosch', 'George', 'Paarl', 'Worcester', 'Mossel Bay', 'Knysna', 'Other'],
+	};
+
+	// Map of postal codes for cities
+	const postalCodesByCity: Record<string, string[]> = {
+		// Eastern Cape
+		'East London': ['5201', '5241', '5247', '5200', '5257', '5209', '5213', '5219'],
+		'Gqeberha (Port Elizabeth)': ['6001', '6011', '6025', '6045', '6070', '6000', '6006', '6019'],
+		'Mthatha': ['5100', '5099', '5101', '5102', '5103', '5104'],
+		'Bhisho': ['5605', '5606', '5607', '5608', '5609', '5604'],
+		'Uitenhage': ['6229', '6230', '6231', '6232', '6233', '6234'],
+		'Grahamstown': ['6139', '6140', '6141', '6142', '6143', '6144'],
+		'Queenstown': ['5319', '5320', '5321', '5322', '5323', '5324'],
+		'King William\'s Town': ['5600', '5601', '5602', '5603', '5604', '5605'],
+		
+		// Gauteng
+		'Johannesburg': ['2001', '2000', '2094', '2193', '2092', '2091', '2196', '2090'],
+		'Pretoria': ['0002', '0001', '0181', '0157', '0081', '0186', '0184', '0182'],
+		'Soweto': ['1804', '1809', '1863', '1818', '1852', '1860'],
+		'Centurion': ['0157', '0173', '0046', '0149', '0158', '0169'],
+		'Sandton': ['2196', '2146', '2031', '2057', '2191', '2128'],
+		'Midrand': ['1685', '1682', '1684', '1683', '1686', '1687'],
+		'Roodepoort': ['1724', '1709', '1725', '1710', '1730', '1735'],
+		'Kempton Park': ['1619', '1620', '1621', '1622', '1623', '1624'],
+
+		// Western Cape
+		'Cape Town': ['8000', '8001', '8005', '8060', '7441', '7100', '7700', '7780'],
+		'Stellenbosch': ['7600', '7599', '7601', '7602', '7603', '7604'],
+		'George': ['6529', '6530', '6531', '6532', '6533', '6534'],
+		'Paarl': ['7646', '7620', '7621', '7622', '7623', '7624'],
+		'Worcester': ['6850', '6849', '6851', '6852', '6853', '6854'],
+		'Mossel Bay': ['6500', '6506', '6501', '6502', '6503', '6504'],
+		'Knysna': ['6571', '6570', '6572', '6573', '6574', '6575'],
+
+		// KwaZulu-Natal
+		'Durban': ['4001', '4000', '4091', '4052', '4022', '4051', '4062', '4068'],
+		'Pietermaritzburg': ['3201', '3200', '3202', '3203', '3204', '3205'],
+		'Richards Bay': ['3900', '3901', '3902', '3903', '3904', '3905'],
+		'Newcastle': ['2940', '2942', '2943', '2944', '2945', '2946'],
+		'Port Shepstone': ['4240', '4241', '4242', '4243', '4244', '4245'],
+
+		// Free State
+		'Bloemfontein': ['9301', '9300', '9332', '9323', '9312', '9320', '9317', '9307'],
+		'Welkom': ['9459', '9460', '9461', '9462', '9463', '9464'],
+		'Sasolburg': ['1947', '1949', '1948', '1950', '1951', '1952'],
+		'Parys': ['9585', '9586', '9587', '9588', '9589', '9590'],
+		'Phuthaditjhaba': ['9866', '9867', '9868', '9869', '9870', '9871'],
+		'Kroonstad': ['9499', '9500', '9501', '9502', '9503', '9504'],
+
+		// Limpopo
+		'Polokwane': ['0699', '0700', '0750', '0787', '0704', '0716'],
+		'Thohoyandou': ['0950', '0948', '0951', '0952', '0953', '0954'],
+		'Tzaneen': ['0850', '0851', '0852', '0853', '0854', '0855'],
+		'Mokopane': ['0601', '0600', '0602', '0603', '0604', '0605'],
+		'Bela-Bela': ['0480', '0481', '0482', '0483', '0484', '0485'],
+
+		// Mpumalanga
+		'Mbombela (Nelspruit)': ['1201', '1200', '1211', '1209', '1210', '1212'],
+		'Witbank': ['1035', '1034', '1036', '1037', '1038', '1039'],
+		'Secunda': ['2302', '2303', '2304', '2305', '2306', '2307'],
+		'Middelburg': ['1055', '1050', '1051', '1052', '1053', '1054'],
+
+		// North West
+		'Mahikeng': ['2745', '2735', '2750', '2791', '2736', '2737'],
+		'Klerksdorp': ['2571', '2570', '2572', '2573', '2574', '2575'],
+		'Rustenburg': ['0299', '0300', '0301', '0302', '0303', '0304'],
+		'Potchefstroom': ['2531', '2520', '2532', '2533', '2534', '2535'],
+		'Brits': ['0250', '0251', '0252', '0253', '0254', '0255'],
+
+		// Northern Cape
+		'Kimberley': ['8301', '8300', '8345', '8309', '8302', '8303'],
+		'Upington': ['8801', '8800', '8802', '8803', '8804', '8805'],
+		'Springbok': ['8240', '8241', '8242', '8243', '8244', '8245'],
+		'De Aar': ['7000', '7001', '7002', '7003', '7004', '7005'],
+	};
+
 	async function handleSignup() {
-		if (!name || !email || !password || !address) {
+		if (!name || !email || !password || !province || !city || !postalCode) {
 			Alert.alert('Error', 'Please fill in all fields');
 			return;
 		}
+
+		const fullAddress = `${city}, ${province}, ${postalCode}`;
 
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+(\.[^\s@]+)*$/;
 		if (!emailRegex.test(email.trim())) {
@@ -55,7 +159,7 @@ export default function SignupScreen() {
 
 		setIsLoading(true);
 		try {
-			await signup(name, email, password, role, address);
+			await signup(name, email, password, role, fullAddress);
 			// If we get here, email confirmation is not required or user is already confirmed
 			router.replace('/(tabs)');
 		} catch (error: any) {
@@ -146,18 +250,96 @@ export default function SignupScreen() {
 						/>
 					</View>
 
-					{/* Address Input */}
-					<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14">
-						<Ionicons name="location-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
-						<TextInput
-							className="flex-1 text-base text-[#333]"
-							value={address}
-							onChangeText={setAddress}
-							placeholder="Address"
-							placeholderTextColor="#D4A03B"
-							autoCapitalize="words"
-							autoComplete="street-address"
-						/>
+					{/* Province Picker */}
+					<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 pl-4 h-14">
+						<Ionicons name="map-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+						<View className="flex-1 ml-1">
+							<Picker
+								selectedValue={province}
+								onValueChange={(value) => {
+									setProvince(value);
+									setCity(''); // Reset city when province changes
+								}}
+								style={{ flex: 1, color: '#333' }}
+								dropdownIconColor="#D4A03B"
+							>
+								{provinces.map((p) => (
+									<Picker.Item key={p} label={p} value={p} color="#333" />
+								))}
+							</Picker>
+						</View>
+					</View>
+
+					{/* City Picker */}
+					<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 pl-4 h-14">
+						<Ionicons name="business-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+						<View className="flex-1 ml-1">
+							<Picker
+								selectedValue={city}
+								onValueChange={(value) => setCity(value)}
+								style={{ flex: 1, color: '#333' }}
+								dropdownIconColor="#D4A03B"
+							>
+								<Picker.Item label="Select City" value="" color="#888" />
+								{citiesByProvince[province]?.map((c) => (
+									<Picker.Item key={c} label={c} value={c} color="#333" />
+								))}
+							</Picker>
+						</View>
+					</View>
+
+					{/* Postal Code Input */}
+					<View className="relative" style={{ zIndex: 100, elevation: 5 }}>
+						<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14">
+							<Ionicons name="location-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+							<TextInput
+								className="flex-1 text-base text-[#333]"
+								value={postalCode}
+								onChangeText={(text) => {
+									setPostalCode(text);
+									if (!showPostalSuggestions) setShowPostalSuggestions(true);
+								}}
+								onFocus={() => setShowPostalSuggestions(true)}
+								onBlur={() => {
+									// Small delay to allow clicking suggestions
+									setTimeout(() => setShowPostalSuggestions(false), 200);
+								}}
+								placeholder={city ? `Postal Code for ${city}` : "Select City First"}
+								placeholderTextColor="#D4A03B"
+								keyboardType="numeric"
+								maxLength={4}
+								editable={!!city}
+							/>
+						</View>
+						
+						{/* Postal Code Suggestions */}
+						{showPostalSuggestions && city && postalCodesByCity[city] && (
+							<View 
+								className="absolute top-14 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg max-h-40 overflow-hidden"
+								style={{ zIndex: 1000, elevation: 10 }}
+							>
+								{postalCodesByCity[city]
+									.filter(code => code.startsWith(postalCode))
+									.slice(0, 5) // Limit suggestions
+									.map((code) => (
+										<TouchableOpacity
+											key={code}
+											className="p-3 border-b border-gray-100 last:border-0 bg-white active:bg-gray-50"
+											onPress={() => {
+												setPostalCode(code);
+												setShowPostalSuggestions(false);
+											}}
+										>
+											<Text className="text-[#333] text-base font-medium">{code}</Text>
+										</TouchableOpacity>
+									))}
+								{postalCodesByCity[city].filter(code => code.startsWith(postalCode)).length === 0 && (
+									<View className="p-3">
+										<Text className="text-gray-400 text-sm">No matches found</Text>
+									</View>
+								)}
+							</View>
+						)}
 					</View>
 
 					{/* Password Input */}

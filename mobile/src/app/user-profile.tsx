@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, Pressable } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '../components/ScreenScrollView';
@@ -9,147 +9,121 @@ import { Spacing, BorderRadius, Typography, Shadow } from '../constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { withAuthGuard } from '@/components/withAuthGuard';
+import { supabase } from '@/lib/supabase';
+import { connectionService } from '@/services/connection.service';
+import { Profile } from '@/types';
 
 
-// Mock data - in production, fetch from Supabase based on id
-const users: Record<string, any> = {
-	'1': {
-		id: '1',
-		name: 'Sarah Johnson',
-		role: 'CEO',
-		org: 'TechVenture Solutions',
-		avatar: 'blue',
-		bio: 'Passionate entrepreneur with 15+ years of experience in technology and innovation. Leading TechVenture Solutions to new heights.',
-		email: 'sarah.johnson@techventure.co.za',
-		location: 'Digital Hub, ELIDZ-STP',
-		connected: true,
-		expertise: ['Technology', 'Business Strategy', 'Innovation'],
-	},
-	'2': {
-		id: '2',
-		name: 'Michael Chen',
-		role: 'Researcher',
-		org: 'Renewable Energy Centre',
-		avatar: 'green',
-		bio: 'Research scientist specializing in renewable energy technologies and sustainable solutions.',
-		email: 'michael.chen@renewable.co.za',
-		location: 'Renewable Energy Centre',
-		connected: true,
-		expertise: ['Renewable Energy', 'Research', 'Sustainability'],
-	},
-	'3': {
-		id: '3',
-		name: 'Amara Nkosi',
-		role: 'Product Designer',
-		org: 'Creative Design Studio',
-		avatar: 'orange',
-		bio: 'Creative designer focused on user experience and innovative product design.',
-		email: 'amara@creativedesign.co.za',
-		location: 'Design Centre',
-		connected: true,
-		expertise: ['Design', 'UX/UI', 'Product Development'],
-	},
-	'4': {
-		id: '4',
-		name: 'David Williams',
-		role: 'Manufacturing Lead',
-		org: 'AutoParts Manufacturing',
-		avatar: 'blue',
-		bio: 'Expert in manufacturing processes and automotive parts production.',
-		email: 'david.williams@autoparts.co.za',
-		location: 'Automotive Incubator',
-		connected: true,
-		expertise: ['Manufacturing', 'Automotive', 'Production'],
-	},
-	'5': {
-		id: '5',
-		name: 'Lisa Thompson',
-		role: 'Investor',
-		org: 'Growth Capital Partners',
-		avatar: 'green',
-		bio: 'Venture capitalist focused on early-stage technology startups and innovation.',
-		email: 'lisa.thompson@growthcapital.co.za',
-		location: 'Main Building',
-		connected: false,
-		connectionStatus: 'pending',
-		expertise: ['Investment', 'Finance', 'Startups'],
-	},
-	'6': {
-		id: '6',
-		name: 'James Martinez',
-		role: 'CTO',
-		org: 'IoT Solutions Africa',
-		avatar: 'orange',
-		bio: 'Chief Technology Officer with expertise in IoT, cloud computing, and enterprise solutions.',
-		email: 'james.martinez@iotafrica.co.za',
-		location: 'Digital Hub',
-		connected: false,
-		connectionStatus: 'pending',
-		expertise: ['IoT', 'Cloud Computing', 'Enterprise Tech'],
-	},
-	'7': {
-		id: '7',
-		name: 'Emma Davis',
-		role: 'Sustainability Consultant',
-		org: 'GreenPower Innovations',
-		avatar: 'blue',
-		bio: 'Consultant specializing in sustainable business practices and green technology.',
-		email: 'emma.davis@greenpower.co.za',
-		location: 'Renewable Energy Centre',
-		connected: false,
-		expertise: ['Sustainability', 'Consulting', 'Green Tech'],
-	},
-	'8': {
-		id: '8',
-		name: 'Robert Lee',
-		role: 'Quality Assurance',
-		org: 'FoodSafe Labs',
-		avatar: 'green',
-		bio: 'Quality assurance specialist ensuring food safety and compliance standards.',
-		email: 'robert.lee@foodsafe.co.za',
-		location: 'Testing Lab',
-		connected: false,
-		expertise: ['Quality Assurance', 'Food Safety', 'Compliance'],
-	},
-	'9': {
-		id: '9',
-		name: 'Fatima Ahmed',
-		role: 'Business Developer',
-		org: 'Sustainable Packaging Co',
-		avatar: 'orange',
-		bio: 'Business development professional focused on sustainable packaging solutions.',
-		email: 'fatima.ahmed@sustainablepack.co.za',
-		location: 'Main Building',
-		connected: false,
-		expertise: ['Business Development', 'Sustainability', 'Packaging'],
-	},
-};
 
 
 function UserProfileScreen() {
 	const { colors } = useTheme();
 	const { profile: currentUser } = useAuthContext();
 	const params = useLocalSearchParams<{ id?: string; userId?: string; name?: string }>();
-	// Handle both 'id' and 'userId' params, and fallback to current user
-	const id = params?.id || params?.userId || currentUser?.id;
-	const name = params?.name || currentUser?.name || 'User';
 
-	const profileUser = users[id as keyof typeof users] || {
-		id,
-		name,
-		role: 'Member',
-		org: 'ELIDZ-STP',
-		avatar: 'blue',
-		bio: 'Member of the ELIDZ-STP community.',
-		email: 'user@elidz.co.za',
-		location: 'ELIDZ-STP',
-		connected: false,
-		expertise: [],
-	};
+	const [profileUser, setProfileUser] = useState<Profile | null>(null);
+	const [connectionStatus, setConnectionStatus] = useState<'connected' | 'pending_sent' | 'pending_received' | 'available' | null>(null);
+	const [loading, setLoading] = useState(true);
+	const [connectionId, setConnectionId] = useState<string | null>(null);
 
-	const isOwnProfile = currentUser?.id === id;
-	const isConnected = profileUser.connected;
-	const isPending = profileUser.connectionStatus === 'pending';
+	// Handle both 'id' and 'userId' params
+	const userId = params?.id || params?.userId;
+
+	const isOwnProfile = currentUser?.id === userId;
+
+	useEffect(() => {
+		console.log('useEffect triggered, userId:', userId, 'currentUser:', currentUser);
+		if (!userId) {
+			console.log('No userId provided, setting loading to false');
+			setLoading(false);
+			return;
+		}
+
+		// Continue with profile fetch even if not logged in
+
+		const fetchUserData = async () => {
+			try {
+				setLoading(true);
+				console.log('Starting to fetch user data for:', userId);
+
+				// Fetch user profile
+				const { data: userData, error: userError } = await supabase
+					.from('profiles')
+					.select('*')
+					.eq('id', userId)
+					.single();
+
+				if (userError) {
+					console.error('Error fetching user:', userError);
+					return;
+				}
+
+				setProfileUser(userData);
+
+				// If it's the current user's profile or no user is logged in, skip connection check
+				if (isOwnProfile || !currentUser) {
+					setConnectionStatus(null);
+					setLoading(false);
+					return;
+				}
+
+				// Check connection status - first try direct database query for accuracy
+				console.log('Checking connection status for userId:', userId, 'currentUserId:', currentUser.id);
+				try {
+					// Direct query to check connection status
+					const { data: directConnection, error: directError } = await supabase
+						.from('connections')
+						.select('*')
+						.or(`and(requester_id.eq.${currentUser.id},addressee_id.eq.${userId}),and(requester_id.eq.${userId},addressee_id.eq.${currentUser.id})`)
+						.maybeSingle();
+
+					if (directConnection) {
+						console.log('Direct connection found:', directConnection);
+						if (directConnection.status === 'accepted') {
+							setConnectionStatus('connected');
+							setConnectionId(directConnection.id);
+						} else if (directConnection.status === 'pending') {
+							if (directConnection.requester_id === currentUser.id) {
+								setConnectionStatus('pending_sent');
+							} else {
+								setConnectionStatus('pending_received');
+							}
+							setConnectionId(directConnection.id);
+						} else {
+							setConnectionStatus('available');
+						}
+					} else {
+						// Fallback to getAllContacts if direct query doesn't find it
+						console.log('No direct connection found, checking getAllContacts');
+						const contacts = await connectionService.getAllContacts(currentUser.id);
+						console.log('Found contacts:', contacts.length, 'contacts');
+						const contact = contacts.find(c => c.id === userId);
+						console.log('Contact found in getAllContacts:', contact);
+
+						if (contact) {
+							console.log('Setting connection status from getAllContacts:', contact.connectionStatus);
+							setConnectionStatus(contact.connectionStatus);
+							setConnectionId(contact.connectionId || null);
+						} else {
+							console.log('No contact found, setting status to available');
+							setConnectionStatus('available');
+						}
+					}
+				} catch (error) {
+					console.error('Error fetching connection status:', error);
+					// If connection service fails, assume available for connection
+					setConnectionStatus('available');
+				}
+
+			} catch (error) {
+				console.error('Error fetching user data:', error);
+			} finally {
+				setLoading(false);
+			}
+		};
+
+		fetchUserData();
+	}, [userId, currentUser?.id, isOwnProfile]);
 
 	const getAvatarSource = (avatar?: string) => {
 		switch (avatar) {
@@ -161,34 +135,123 @@ function UserProfileScreen() {
 	};
 
 	const handleMessage = () => {
-		if (!id) {
-			console.error('Cannot message: user ID is missing');
+		if (!profileUser) {
+			console.error('Cannot message: user data is missing');
 			return;
 		}
-		router.push({ pathname: '/message', params: { userId: id, userName: name } });
+		router.push({ pathname: '/message', params: { userId: profileUser.id, userName: profileUser.name } });
 	};
 
-	const handleConnect = () => {
-		if (!id) {
-			console.error('Cannot connect: user ID is missing');
+	const handleConnect = async () => {
+		if (!profileUser || !currentUser) {
+			console.error('Cannot connect: user data is missing');
 			return;
 		}
-		// TODO: Implement connection request with Supabase
-		console.log('Connect clicked for user:', id);
-		// For now, show a success message
-		// In production, this would create a connection request in Supabase
+
+		try {
+			await connectionService.sendConnectionRequest(currentUser.id, profileUser.id);
+			Alert.alert('Success', `Connection request sent to ${profileUser.name}!`);
+			setConnectionStatus('pending_sent');
+		} catch (error: any) {
+			console.error('Error sending connection request:', error);
+			Alert.alert('Error', error.message || 'Failed to send connection request.');
+		}
 	};
 
-	const handleAcceptConnection = () => {
-		if (!id) {
-			console.error('Cannot accept connection: user ID is missing');
+	const handleAcceptConnection = async () => {
+		if (!connectionId) {
+			console.error('Cannot accept connection: connection ID is missing');
 			return;
 		}
-		// TODO: Implement accept connection with Supabase
-		console.log('Accept connection for user:', id);
-		// For now, show a success message
-		// In production, this would update the connection status in Supabase
+
+		try {
+			await connectionService.acceptConnectionRequest(connectionId);
+			Alert.alert('Success', `You are now connected with ${profileUser?.name}!`);
+			setConnectionStatus('connected');
+		} catch (error: any) {
+			console.error('Error accepting connection:', error);
+			Alert.alert('Error', error.message || 'Failed to accept connection request.');
+		}
 	};
+
+	const handleDeclineConnection = async () => {
+		if (!connectionId) {
+			console.error('Cannot decline connection: connection ID is missing');
+			return;
+		}
+
+		try {
+			await connectionService.declineConnectionRequest(connectionId);
+			Alert.alert('Request Declined', `Connection request from ${profileUser?.name} has been declined.`);
+			setConnectionStatus('available');
+			setConnectionId(null);
+		} catch (error: any) {
+			console.error('Error declining connection:', error);
+			Alert.alert('Error', error.message || 'Failed to decline connection request.');
+		}
+	};
+
+	const handleCancelConnection = async () => {
+		if (!connectionId) {
+			console.error('Cannot cancel connection: connection ID is missing');
+			return;
+		}
+
+		Alert.alert(
+			'Cancel Connection Request',
+			`Are you sure you want to cancel the connection request to ${profileUser?.name}?`,
+			[
+				{
+					text: 'No',
+					style: 'cancel',
+				},
+				{
+					text: 'Yes, Cancel',
+					style: 'destructive',
+					onPress: async () => {
+						try {
+							await connectionService.cancelConnectionRequest(connectionId);
+							Alert.alert('Request Cancelled', `Connection request to ${profileUser?.name} has been cancelled.`);
+							setConnectionStatus('available');
+							setConnectionId(null);
+						} catch (error: any) {
+							console.error('Error cancelling connection:', error);
+							Alert.alert('Error', error.message || 'Failed to cancel connection request.');
+						}
+					},
+				},
+			]
+		);
+	};
+
+	if (loading) {
+		return (
+			<ScreenScrollView>
+				<View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
+					<View style={[styles.avatar, { backgroundColor: '#FFFFFF20' }]} />
+					<View style={{ width: 200, height: 24, backgroundColor: '#FFFFFF20', borderRadius: 4, marginTop: Spacing.lg }} />
+					<View style={{ width: 150, height: 16, backgroundColor: '#FFFFFF15', borderRadius: 4, marginTop: Spacing.xs }} />
+					<View style={{ width: 120, height: 14, backgroundColor: '#FFFFFF10', borderRadius: 4, marginTop: Spacing.xs }} />
+				</View>
+			</ScreenScrollView>
+		);
+	}
+
+	if (!profileUser) {
+		return (
+			<ScreenScrollView>
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl }}>
+					<Feather name="user-x" size={48} color={colors.textSecondary} />
+					<Text style={[Typography.h3, { color: colors.text, marginTop: Spacing.lg, marginBottom: Spacing.md }]}>
+						User Not Found
+					</Text>
+					<Text style={[Typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>
+						The user you're looking for doesn't exist or has been removed.
+					</Text>
+				</View>
+			</ScreenScrollView>
+		);
+	}
 
 	return (
 		<ScreenScrollView>
@@ -201,13 +264,13 @@ function UserProfileScreen() {
 					{profileUser.role}
 				</Text>
 				<Text style={[Typography.caption, { color: '#FFFFFF', opacity: 0.8, marginTop: Spacing.xs }]}>
-					{profileUser.org}
+					{profileUser.organization || 'No organization'}
 				</Text>
 			</View>
 
-			{!isOwnProfile && (
+			{!isOwnProfile && currentUser && (
 				<View style={styles.actionButtons}>
-					{isConnected ? (
+					{connectionStatus === 'connected' ? (
 						<Pressable
 							style={({ pressed }) => [
 								styles.actionButton,
@@ -220,29 +283,71 @@ function UserProfileScreen() {
 								Message
 							</Text>
 						</Pressable>
-					) : isPending ? (
-						<Pressable
-							style={({ pressed }) => [
-								styles.actionButton,
-								{ backgroundColor: colors.success, opacity: pressed ? 0.7 : 1 },
-							]}
-							onPress={handleAcceptConnection}
-						>
-							<Feather name="check" size={20} color="#FFFFFF" />
-							<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
-								Accept Request
-							</Text>
-						</Pressable>
+					) : connectionStatus === 'pending_received' ? (
+						<>
+							<Pressable
+								style={({ pressed }) => [
+									styles.actionButton,
+									{ backgroundColor: colors.success, opacity: pressed ? 0.7 : 1 },
+								]}
+								onPress={handleAcceptConnection}
+							>
+								<Feather name="check" size={20} color="#FFFFFF" />
+								<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+									Accept Request
+								</Text>
+							</Pressable>
+							<Pressable
+								style={({ pressed }) => [
+									styles.actionButton,
+									{ backgroundColor: '#dc3545', opacity: pressed ? 0.7 : 1 },
+								]}
+								onPress={handleDeclineConnection}
+							>
+								<Feather name="x" size={20} color="#FFFFFF" />
+								<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+									Decline Request
+								</Text>
+							</Pressable>
+						</>
+					) : connectionStatus === 'pending_sent' ? (
+						<>
+							<Pressable
+								style={({ pressed }) => [
+									styles.actionButton,
+									{ backgroundColor: '#6c757d', opacity: pressed ? 0.7 : 1 },
+								]}
+								disabled
+							>
+								<Feather name="clock" size={20} color="#FFFFFF" />
+								<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+									Request Sent
+								</Text>
+							</Pressable>
+							<Pressable
+								style={({ pressed }) => [
+									styles.actionButton,
+									{ backgroundColor: '#dc3545', opacity: pressed ? 0.7 : 1 },
+								]}
+								onPress={handleCancelConnection}
+							>
+								<Feather name="x-circle" size={20} color="#FFFFFF" />
+								<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+									Cancel Request
+								</Text>
+							</Pressable>
+						</>
 					) : (
 						<Pressable
 							style={({ pressed }) => [
 								styles.actionButton,
-								{ backgroundColor: colors.accent, opacity: pressed ? 0.7 : 1 },
+								{ backgroundColor: colors.accent || '#FF6600', opacity: pressed ? 0.8 : 1 },
+								styles.connectButton,
 							]}
 							onPress={handleConnect}
 						>
-							<Feather name="user-plus" size={20} color="#FFFFFF" />
-							<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+							<Feather name="user-plus" size={22} color="#FFFFFF" />
+							<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '700', fontSize: 16 }]}>
 								Connect
 							</Text>
 						</Pressable>
@@ -267,28 +372,17 @@ function UserProfileScreen() {
 						{profileUser.email}
 					</Text>
 				</View>
-				<View style={[styles.infoRow, { marginTop: Spacing.md }]}>
-					<Feather name="map-pin" size={18} color={colors.textSecondary} />
-					<Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md }]}>
-						{profileUser.location}
-					</Text>
-				</View>
+				{profileUser.address && (
+					<View style={[styles.infoRow, { marginTop: Spacing.md }]}>
+						<Feather name="map-pin" size={18} color={colors.textSecondary} />
+						<Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md }]}>
+							{profileUser.address}
+						</Text>
+					</View>
+				)}
 			</View>
 
-			{profileUser.expertise && profileUser.expertise.length > 0 && (
-				<View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-					<Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Areas of Expertise</Text>
-					<View style={styles.expertiseContainer}>
-						{profileUser.expertise.map((area: string, index: number) => (
-							<View style={[styles.expertiseTag, { backgroundColor: colors.backgroundSecondary }]}>
-								<Text style={[Typography.small, { color: colors.text }]}>{area}</Text>
-							</View>
-						))}
-					</View>
-				</View>
-			)}
-
-			{isConnected && (
+			{connectionStatus === 'connected' && (
 				<View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
 					<Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Connection Status</Text>
 					<View style={styles.connectionStatus}>
@@ -327,6 +421,13 @@ const styles = StyleSheet.create({
 		height: Spacing.buttonHeight,
 		borderRadius: BorderRadius.button,
 		marginBottom: Spacing.md,
+	},
+	connectButton: {
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.25,
+		shadowRadius: 3.84,
+		elevation: 5,
 	},
 	card: {
 		padding: Spacing.lg,

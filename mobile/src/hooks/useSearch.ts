@@ -42,6 +42,7 @@ export const useChatSearch = (userId: string, search: string = '') => {
   });
 };
 
+
 export const useContactsSearch = (userId: string, search: string = '') => {
   return useQuery({
     queryKey: ['contacts', userId, search],

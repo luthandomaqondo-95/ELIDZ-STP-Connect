@@ -142,29 +142,29 @@ export default function ServicesScreen() {
 
 					{/* Facilities List */}
 					{!loading && (
-						<View className="px-6 py-4">
+					<View className="px-6 py-4">
 							{facilities.map((facility) => (
-								<Pressable
-									key={facility.id}
-									className="bg-white rounded-2xl mb-4 p-4 shadow-sm border border-gray-100 active:opacity-95"
-									onPress={() => handleFacilitySelect(facility.id)}
-								>
-									<View className="flex-row items-center">
-										<View className="w-16 h-16 rounded-xl items-center justify-center mr-4" style={{ backgroundColor: facility.color }}>
-											<Feather name={facility.icon as any} size={28} color="#FFFFFF" />
-										</View>
-										<View className="flex-1">
-											<Text className="text-lg font-bold text-[#002147] mb-1">{facility.name}</Text>
-											<Text className="text-gray-600 text-sm mb-2">{facility.description}</Text>
-											<View className="flex-row items-center">
-												<Text className="text-xs text-gray-500">{facility.location}</Text>
-												<Feather name="chevron-right" size={16} color="#FF6600" style={{ marginLeft: 'auto' }} />
-											</View>
+							<Pressable
+								key={facility.id}
+								className="bg-white rounded-2xl mb-4 p-4 shadow-sm border border-gray-100 active:opacity-95"
+								onPress={() => handleFacilitySelect(facility.id)}
+							>
+								<View className="flex-row items-center">
+									<View className="w-16 h-16 rounded-xl items-center justify-center mr-4" style={{ backgroundColor: facility.color }}>
+										<Feather name={facility.icon as any} size={28} color="#FFFFFF" />
+									</View>
+									<View className="flex-1">
+										<Text className="text-lg font-bold text-[#002147] mb-1">{facility.name}</Text>
+										<Text className="text-gray-600 text-sm mb-2">{facility.description}</Text>
+										<View className="flex-row items-center">
+											<Text className="text-xs text-gray-500">{facility.location}</Text>
+											<Feather name="chevron-right" size={16} color="#FF6600" style={{ marginLeft: 'auto' }} />
 										</View>
 									</View>
-								</Pressable>
-							))}
-						</View>
+								</View>
+							</Pressable>
+						))}
+					</View>
 					)}
 				</ScrollView>
 			)}
@@ -197,8 +197,8 @@ export default function ServicesScreen() {
 
 					{/* Services List */}
 					{!loadingTour && (
-						<View className="px-6 py-4">
-							<Text className="text-xl font-bold text-[#002147] mb-4">Available Services</Text>
+					<View className="px-6 py-4">
+						<Text className="text-xl font-bold text-[#002147] mb-4">Available Services</Text>
 							{facilityWithTour.sections.map((service, index) => (
 							<Pressable
 								key={index}
@@ -215,17 +215,17 @@ export default function ServicesScreen() {
 													<Text className="text-[#002147] text-[10px] font-medium">{detail}</Text>
 												</View>
 											))}
+										</View>
 									</View>
-								</View>
 								{service.has_vr ? (
-									<View className="ml-4">
-										<Feather name="eye" size={24} color="#FF6600" />
-									</View>
-								) : null}
-							</View>
-						</Pressable>
-					))}
-				</View>
+										<View className="ml-4">
+											<Feather name="eye" size={24} color="#FF6600" />
+										</View>
+									) : null}
+								</View>
+							</Pressable>
+						))}
+					</View>
 					)}
 
 					{/* Tenants */}

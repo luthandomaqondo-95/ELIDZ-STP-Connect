@@ -90,7 +90,7 @@ class VerificationService {
 
         return data as SMMEVerification;
     }
-
+    
     // Submit multiple documents at once
     async submitMultipleDocuments(userId: string, documents: { url: string; type: DocumentType }[]): Promise<void> {
         const promises = documents.map(doc => 
@@ -121,7 +121,7 @@ class VerificationService {
             
             // Convert blob to ArrayBuffer for Supabase
             const arrayBuffer = await new Response(blob).arrayBuffer();
-            
+        
             // Determine content type
             const contentType = this.getContentType(fileExtension);
 
