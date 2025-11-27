@@ -36,7 +36,7 @@ export default function ProtectedAppRoutes() {
             <Stack.Screen name="resources" options={{ title: 'Resources', headerShown: true }} />
             <Stack.Screen name="resource-detail" options={{ title: 'Resource Details', headerShown: true }} />
             <Stack.Screen name="settings" options={{ title: 'Settings', headerShown: true }} />
-            <Stack.Screen name="user-profile" options={{ title: 'Profile', headerShown: true }} />
+            <Stack.Screen name="user-profile" options={{ title: 'Profile', headerShown: false }} />
             <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile', headerShown: false }} />
             <Stack.Screen name="center-detail" options={{ title: 'Center Details', headerShown: false }} />
             <Stack.Screen name="tenant-detail" options={{ title: 'Tenant Details', headerShown: false }} />
