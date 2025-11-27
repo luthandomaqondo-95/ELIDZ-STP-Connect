@@ -5,7 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthContext } from '@/hooks/use-auth-context';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { TabsLayoutHeader } from '@/components/Header';
 import { verificationService } from '@/services/verification.service';
 import type { SMMEVerification } from '@/services/verification.service';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
@@ -158,6 +158,9 @@ function ProfileScreen() {
 
     return (
         <View className="flex-1 bg-background">
+            <View className="pt-12 pb-2 bg-background">
+                <TabsLayoutHeader title="Profile" />
+            </View>
 
             <ScrollView
                 className="flex-1"
@@ -165,8 +168,8 @@ function ProfileScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Profile Card */}
-                <View className="pt-28 px-6 mb-6">
-                    <View className="bg-card p-6 rounded-3xl shadow-sm items-center relative">
+                <View className="pt-6 px-6 mb-6">
+                    <View className="bg-card p-6 rounded-3xl shadow-sm items-center relative mt-8">
                         {/* Edit Button Absolute */}
                         {isLoggedIn && (
                             <Pressable

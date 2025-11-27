@@ -5,8 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { notificationService, Notification, NotificationType } from '@/services/notification.service';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
-import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
+import { TabsLayoutHeader } from '@/components/Header';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 
 const { width } = Dimensions.get('window');
@@ -189,25 +188,14 @@ export default function NotificationsScreen() {
     if (!isLoggedIn || !profile) {
         return (
             <View className="flex-1 bg-background">
-                <View
-                    className="pt-12 pb-6 mb-6"
-                    style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-                >
+                <View className="pt-12 pb-6 mb-6 bg-background">
+                    <TabsLayoutHeader title="Notifications" />
                     <View 
-                        style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
                     >
-                        <View className="flex-row items-center justify-end mb-2">
-                            <HeaderNotificationIcon />
-                            <HeaderAvatar />
-                        </View>
-                        <View className="items-start mb-2">
-                            <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
-                                Notifications
-                            </Text>
-                            <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-                                Stay updated with important communications.
-                            </Text>
-                        </View>
+                        <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
+                            Stay updated with important communications.
+                        </Text>
                     </View>
                 </View>
                 <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
@@ -244,43 +232,32 @@ export default function NotificationsScreen() {
                 }
             >
                 {/* Header */}
-                <View
-                    className="pt-12 pb-6"
-                    style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-                >
+                <View className="pt-12 pb-6 bg-background">
+                    <TabsLayoutHeader title="Notifications" />
                     <View 
-                        style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
                     >
-                        <View className="flex-row items-center justify-end mb-2">
-                            <HeaderNotificationIcon />
-                            <HeaderAvatar />
-                        </View>
-                        <View className="items-start mb-2">
-                            <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
-                                Notifications
-                            </Text>
-                            <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-                                {unreadCount > 0
-                                    ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
-                                    : 'All caught up!'}
-                            </Text>
-                        </View>
-                    </View>
+                        <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
+                            {unreadCount > 0
+                                ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
+                                : 'All caught up!'}
+                        </Text>
 
-                    {/* Mark All as Read Button */}
-                    {unreadCount > 0 && (
-                        <Pressable
-                            onPress={handleMarkAllAsRead}
-                            className="bg-muted border border-border px-4 py-2 rounded-xl self-start active:opacity-80 mt-4"
-                        >
-                            <View className="flex-row items-center">
-                                <Feather name="check" size={16} color="#1F2937" />
-                                <Text className="text-foreground text-sm font-semibold ml-2">
-                                    Mark All as Read
-                                </Text>
-                            </View>
-                        </Pressable>
-                    )}
+                        {/* Mark All as Read Button */}
+                        {unreadCount > 0 && (
+                            <Pressable
+                                onPress={handleMarkAllAsRead}
+                                className="bg-muted border border-border px-4 py-2 rounded-xl self-start active:opacity-80 mt-4"
+                            >
+                                <View className="flex-row items-center">
+                                    <Feather name="check" size={16} color="#1F2937" />
+                                    <Text className="text-foreground text-sm font-semibold ml-2">
+                                        Mark All as Read
+                                    </Text>
+                                </View>
+                            </Pressable>
+                        )}
+                    </View>
                 </View>
 
                 {/* Notifications List */}

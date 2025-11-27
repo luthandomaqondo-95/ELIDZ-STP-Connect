@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
+import { TabsLayoutHeader } from '@/components/Header';
 import { FACILITIES, TENANTS } from '@/data/vrToursData';
 // import ARCarDemo from '@/components/mixed-experiences/ar-demos/ARCarDemo';
 
@@ -31,11 +32,13 @@ export default function VRToursScreen() {
 
 	return (
 		<ScreenScrollView>
-			<View className="p-6 pb-4">
-				<Text className="text-3xl font-bold text-foreground">Virtual Tour</Text>
-				<Text className="text-muted-foreground text-base mt-2">
-					Explore the ELIDZ Science & Technology Park campus virtually.
-				</Text>
+			<View className="pt-12 pb-6 bg-background">
+				<TabsLayoutHeader title="Virtual Tour" />
+				<View className="px-5">
+					<Text className="text-muted-foreground text-base">
+						Explore the ELIDZ Science & Technology Park campus virtually.
+					</Text>
+				</View>
 			</View>
 
 			{/* <ARCarDemo /> */}

@@ -12,8 +12,7 @@ import { useContactsSearch, useChatSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
-import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
+import { TabsLayoutHeader } from '@/components/Header';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -407,25 +406,14 @@ function MessagesScreen() {
     if (!isLoggedIn) {
          return (
             <View className="flex-1 bg-background">
-                 <View
-                    className="pt-12 pb-6 mb-6"
-                    style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-                >
+                 <View className="pt-12 pb-6 mb-6 bg-background">
+                    <TabsLayoutHeader title="Network" />
                     <View 
-                        style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
                     >
-                        <View className="flex-row items-center justify-end mb-2">
-                            <HeaderNotificationIcon />
-                            <HeaderAvatar />
-                        </View>
-                        <View className="items-start mb-2">
-                            <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
-                                Network
-                            </Text>
-                            <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-                                Connect with innovators and partners.
-                            </Text>
-                        </View>
+                        <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
+                            Connect with innovators and partners.
+                        </Text>
                     </View>
                  </View>
                  <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
@@ -457,40 +445,28 @@ function MessagesScreen() {
         <View className="flex-1 bg-background">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Header */}
-                <View
-                    className="pt-12 pb-6"
-                    style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-                >
+                <View className="pt-12 pb-6 bg-background">
+                    <TabsLayoutHeader title="Network" />
                     <View 
-                        style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
                     >
-                        <View className="flex-row items-center justify-end mb-2">
-                            <HeaderNotificationIcon />
-                            <HeaderAvatar />
-                        </View>
-                        <View className="items-start mb-2">
-                            <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
-                                Network
-                            </Text>
-                            <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-                                Connect with innovators and partners.
-                            </Text>
-                        </View>
-                    </View>
+                        <Text className="text-muted-foreground mb-6" style={{ fontSize: isTablet ? 14 : 14 }}>
+                            Connect with innovators and partners.
+                        </Text>
 
-                    {/* Search Bar */}
-                    <View 
-                        className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
-                        style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                    >
-                        <Feather name="search" size={20} color="#9CA3AF" />
-                        <TextInput
-                            className="flex-1 ml-3 text-base text-foreground"
-                            placeholder="Search people, companies..."
-                            placeholderTextColor="#D1D5DB"
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                        />
+                        {/* Search Bar */}
+                        <View 
+                            className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4"
+                        >
+                            <Feather name="search" size={20} color="#9CA3AF" />
+                            <TextInput
+                                className="flex-1 ml-3 text-base text-foreground"
+                                placeholder="Search people, companies..."
+                                placeholderTextColor="#D1D5DB"
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                            />
+                        </View>
                     </View>
                 </View>
 

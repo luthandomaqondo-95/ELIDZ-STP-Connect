@@ -8,8 +8,7 @@ import { facilitiesService, type Facility, type FacilityWithTour, type VRScene, 
 import { getTenantsByLocation } from '@/data/vrToursData';
 import type { Tenant } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
-import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
+import { TabsLayoutHeader } from '@/components/Header';
 import { useDebounce } from '@/hooks/useDebounce';
 
 const { width } = Dimensions.get('window');
@@ -275,49 +274,42 @@ export default function ServicesScreen() {
 	return (
 		<View className="flex-1">
 			{/* Header */}
-			<View
-				className="pt-12 pb-6"
-				style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-			>
+			<View className="pt-12 pb-6 bg-background">
+				<TabsLayoutHeader title="Services" />
 				<View
-					style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+					style={{
+						paddingHorizontal: isTablet ? 24 : 20,
+						maxWidth: isTablet ? 1200 : '100%',
+						alignSelf: 'center',
+						width: '100%'
+					}}
 				>
-					<View className="flex-row items-center justify-end mb-2">
-						<HeaderNotificationIcon />
-						<HeaderAvatar />
-					</View>
-					<View className="items-start mb-2">
-						<Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
-							IDZ STP Services
-						</Text>
-						<Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-							Explore our world-class facilities and innovation centers
-						</Text>
-					</View>
-				</View>
+					<Text className="text-muted-foreground mb-6" style={{ fontSize: isTablet ? 14 : 14 }}>
+						Explore our world-class facilities and innovation centers
+					</Text>
 
-				{/* Search Bar */}
-				<View
-					className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
-					style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-				>
-					<Feather name="search" size={20} color="#9CA3AF" />
-					<TextInput
-						className="flex-1 ml-3 text-base text-foreground"
-						placeholder="Search facilities..."
-						placeholderTextColor="#D1D5DB"
-						value={searchQuery}
-						onChangeText={setSearchQuery}
-					/>
-					{searchQuery.length > 0 && (
-						<Pressable
-							onPress={() => setSearchQuery('')}
-							className="ml-2"
-							hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-						>
-							<Feather name="x" size={18} color="#9CA3AF" />
-						</Pressable>
-					)}
+					{/* Search Bar */}
+					<View
+						className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4"
+					>
+						<Feather name="search" size={20} color="#9CA3AF" />
+						<TextInput
+							className="flex-1 ml-3 text-base text-foreground"
+							placeholder="Search facilities..."
+							placeholderTextColor="#D1D5DB"
+							value={searchQuery}
+							onChangeText={setSearchQuery}
+						/>
+						{searchQuery.length > 0 && (
+							<Pressable
+								onPress={() => setSearchQuery('')}
+								className="ml-2"
+								hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+							>
+								<Feather name="x" size={18} color="#9CA3AF" />
+							</Pressable>
+						)}
+					</View>
 				</View>
 			</View>
 			{screenMode === 'list' && (
