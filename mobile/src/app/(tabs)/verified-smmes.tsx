@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Pressable, TextInput, ScrollView, Image } from 'react-native';
+import { View, Pressable, TextInput, ScrollView, Image, Dimensions } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -7,8 +7,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { SMMEWithServicesProducts, SMMEServiceProduct } from '@/services/smme.service';
 import { TenantLogo } from '@/components/TenantLogo';
+import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
 import { useBusinessSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 interface Product {
     id: string;
@@ -103,7 +108,6 @@ function mapSMMEToSMME(smmme: SMMEWithServicesProducts): SMME {
 
 export default function VerifiedSMMEsScreen() {
     const { profile: user } = useAuthContext();
-    const isSMME = user?.role === 'SMME';
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [expandedSMME, setExpandedSMME] = useState<string | null>(null);
@@ -147,46 +151,54 @@ export default function VerifiedSMMEsScreen() {
         <View className="flex-1 bg-background">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Header */}
-                <LinearGradient
-                    colors={['#002147', '#003366']}
-                    className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
+                <View
+                    className="pt-12 pb-6"
+                    style={{ paddingHorizontal: isTablet ? 24 : 24 }}
                 >
-                    <View className="flex-row justify-between items-start mb-2">
-                        <View className="flex-1">
-                            <Text className="text-white text-3xl font-bold mb-2">Verified SMMEs</Text>
-                            <Text className="text-white/80 text-base">
-                                Discover verified partners and their services.
-                            </Text>
-                        </View>
-                        {isSMME && (
-                            <Pressable
-                                className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl active:opacity-80 ml-4"
-                                onPress={() => router.push('/add-product-service')}
-                            >
-                                <View className="flex-row items-center">
-                                    <Feather name="plus" size={16} color="white" />
-                                    <Text className="text-white text-sm font-semibold ml-2">Post</Text>
-                                </View>
-                            </Pressable>
-                        )}
-                    </View>
+                    <View 
+                        style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                    >
+                         <View className="flex-row items-center justify-end mb-2">
+                             <HeaderNotificationIcon />
+                             <HeaderAvatar />
+                         </View>
+                         <View className="items-start mb-2">
+                             <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
+                                 Verified SMMEs
+                             </Text>
+                             <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
+                                 Discover verified partners and their services.
+                             </Text>
+                         </View>
+                     </View>
 
                     {/* Search Bar */}
-                    <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
-                        <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                    <View 
+                        className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
+                        style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                    >
+                        <Feather name="search" size={20} color="#9CA3AF" />
                         <TextInput
-                            className="flex-1 ml-3 text-base text-white"
+                            className="flex-1 ml-3 text-base text-foreground"
                             placeholder="Search SMMEs, products..."
-                            placeholderTextColor="rgba(255,255,255,0.5)"
+                            placeholderTextColor="#D1D5DB"
                             value={searchQuery}
                             onChangeText={setSearchQuery}
                         />
                     </View>
-                </LinearGradient>
+                </View>
 
                 {/* Category Filters */}
-                <View className="mt-6 mb-2">
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
+                <View 
+                  className="mt-6 mb-2"
+                  style={{ 
+                    paddingHorizontal: isTablet ? 24 : 20,
+                    maxWidth: isTablet ? 1200 : '100%',
+                    alignSelf: 'center',
+                    width: '100%'
+                  }}
+                >
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: isTablet ? 0 : 0 }}>
                         {categories.map((category) => (
                             <Pressable
                                 key={category}
@@ -206,7 +218,15 @@ export default function VerifiedSMMEsScreen() {
                 </View>
 
                 {/* Results Count */}
-                <View className="mx-5 mb-4 mt-2">
+                <View 
+                  className="mb-4 mt-2"
+                  style={{ 
+                    paddingHorizontal: isTablet ? 24 : 20,
+                    maxWidth: isTablet ? 1200 : '100%',
+                    alignSelf: 'center',
+                    width: '100%'
+                  }}
+                >
                     {loading ? (
                         <Text className="text-base font-semibold text-foreground">Loading...</Text>
                     ) : (
@@ -218,7 +238,14 @@ export default function VerifiedSMMEsScreen() {
 
                 {/* Loading State */}
                 {loading && (
-                    <View className="mx-5">
+                    <View 
+                      style={{ 
+                        paddingHorizontal: isTablet ? 24 : 20,
+                        maxWidth: isTablet ? 1200 : '100%',
+                        alignSelf: 'center',
+                        width: '100%'
+                      }}
+                    >
                         {Array.from({ length: 3 }).map((_, index) => (
                             <View key={index} className="bg-card mb-4 rounded-2xl border border-border shadow-sm p-4">
                                 <View className="flex-row items-start">
@@ -236,7 +263,14 @@ export default function VerifiedSMMEsScreen() {
 
                 {/* SMMEs List */}
                 {!loading && (
-                    <View className="mx-5">
+                    <View 
+                      style={{ 
+                        paddingHorizontal: isTablet ? 24 : 20,
+                        maxWidth: isTablet ? 1200 : '100%',
+                        alignSelf: 'center',
+                        width: '100%'
+                      }}
+                    >
                         {filteredSMMEs.map((smme) => {
                             const isExpanded = expandedSMME === smme.id;
 

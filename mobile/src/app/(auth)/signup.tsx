@@ -161,7 +161,33 @@ export default function SignupScreen() {
 		try {
 			await signup(name, email, password, role, fullAddress);
 			// If we get here, email confirmation is not required or user is already confirmed
-			router.replace('/(tabs)');
+			
+			// Show verification notice for SMME users
+			if (role === 'SMME') {
+				Alert.alert(
+					'Welcome, SMME Partner!',
+					'To access all features and appear in the Verified SMMEs directory, you need to complete business verification. This requires uploading 3 documents: Business Registration, ID Document, and Business Profile.\n\nYou can start the verification process from your profile page.',
+					[
+						{
+							text: 'Go to Profile',
+							onPress: () => {
+								router.replace('/(tabs)');
+								// Navigate to profile after a short delay to ensure tabs are loaded
+								setTimeout(() => {
+									router.push('/(tabs)/profile');
+								}, 500);
+							}
+						},
+						{
+							text: 'Later',
+							style: 'cancel',
+							onPress: () => router.replace('/(tabs)')
+						}
+					]
+				);
+			} else {
+				router.replace('/(tabs)');
+			}
 		} catch (error: any) {
 			const errorMessage = error?.message || 'Failed to sign up. Please try again.';
 			
@@ -169,7 +195,7 @@ export default function SignupScreen() {
 			if (errorMessage.includes('EMAIL_CONFIRMATION_REQUIRED')) {
 				Alert.alert(
 					'Account Created Successfully',
-					'Please check your email to confirm your account. You will be able to log in after confirming your email address.',
+					'Please check your email to confirm your account. You will be able to log in after confirming your email address.' + (role === 'SMME' ? '\n\nNote: As an SMME, you will need to complete business verification after logging in to access all features.' : ''),
 					[
 						{ 
 							text: 'OK', 

@@ -6,7 +6,12 @@ import { useTheme } from '../hooks/useTheme';
 import { Spacing, BorderRadius, Typography, Shadow } from '../constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
-import { LinearGradient } from 'expo-linear-gradient';
+import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
+import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 import { TenantLogo } from '@/components/TenantLogo';
 import { tenantService } from '@/services/tenant.service';
 import { Tenant } from '@/types';
@@ -89,22 +94,33 @@ function TenantDetailScreen() {
   return (
     <View className="flex-1 bg-background">
       {/* Header */}
-      <LinearGradient
-        colors={['#002147', '#003366']}
-        className="pt-12 pb-6 px-4 rounded-b-[30px] shadow-lg z-10"
+      <View
+        className="pt-12 pb-6 z-10"
+        style={{ paddingHorizontal: isTablet ? 24 : 16 }}
       >
-        <View className="flex-row items-center">
-          <Pressable 
-            onPress={() => router.back()}
-            className="p-2 bg-white/10 rounded-full mr-4"
-          >
-            <Feather name="arrow-left" size={24} color="white" />
-          </Pressable>
-          <Text className="text-white text-xl font-bold flex-1" numberOfLines={1}>
-            {name}
-          </Text>
+        <View 
+          style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+        >
+          <View className="flex-row items-center justify-between mb-2">
+            <Pressable 
+              onPress={() => router.back()}
+              className="p-2 bg-gray-100 rounded-full"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Feather name="arrow-left" size={20} color="#1F2937" />
+            </Pressable>
+            <View className="flex-row items-center">
+              <HeaderNotificationIcon />
+              <HeaderAvatar />
+            </View>
+          </View>
+          <View className="items-start">
+            <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }} numberOfLines={1}>
+              {name}
+            </Text>
+          </View>
         </View>
-      </LinearGradient>
+      </View>
 
       <ScrollView 
         className="flex-1" 

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View, ActivityIndicator, Linking, Alert, TextInput } from 'react-native';
+import { Pressable, ScrollView, View, ActivityIndicator, Linking, Alert, TextInput, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -9,7 +9,11 @@ import { getTenantsByLocation } from '@/data/vrToursData';
 import type { Tenant } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
 import { useDebounce } from '@/hooks/useDebounce';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 type ViewMode = 'panorama' | 'sections';
 type ScreenMode = 'list' | 'detail' | 'vr-tour';
@@ -273,40 +277,62 @@ export default function ServicesScreen() {
 			{screenMode === 'list' && (
 				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
 					{/* Header */}
-					<LinearGradient
-						colors={['#002147', '#003366']}
-						className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
+					<View
+						className="pt-12 pb-6"
+						style={{ paddingHorizontal: isTablet ? 24 : 24 }}
 					>
-						<View className="flex-row justify-between items-center mb-2">
-							<View className="flex-1">
-								<Text className="text-white text-3xl font-bold mb-2">IDZ STP Services</Text>
-								<Text className="text-white/80 text-base">
+						<View 
+							style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+						>
+							<View className="flex-row items-center justify-end mb-2">
+								<HeaderNotificationIcon />
+								<HeaderAvatar />
+							</View>
+							<View className="items-start mb-2">
+								<Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
+									IDZ STP Services
+								</Text>
+								<Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
 									Explore our world-class facilities and innovation centers
 								</Text>
 							</View>
-							<HeaderAvatar />
 						</View>
 
 						{/* Search Bar */}
-						<View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
-							<Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+						<View 
+							className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
+							style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+						>
+							<Feather name="search" size={20} color="#9CA3AF" />
 							<TextInput
-								className="flex-1 ml-3 text-base text-white"
+								className="flex-1 ml-3 text-base text-foreground"
 								placeholder="Search facilities..."
-								placeholderTextColor="rgba(255,255,255,0.5)"
+								placeholderTextColor="#D1D5DB"
 								value={searchQuery}
 								onChangeText={setSearchQuery}
 							/>
 							{searchQuery.length > 0 && (
-								<Pressable onPress={() => setSearchQuery('')} className="ml-2">
-									<Feather name="x" size={18} color="rgba(255,255,255,0.7)" />
+								<Pressable 
+									onPress={() => setSearchQuery('')} 
+									className="ml-2"
+									hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+								>
+									<Feather name="x" size={18} color="#9CA3AF" />
 								</Pressable>
 							)}
 						</View>
-					</LinearGradient>
+					</View>
 
 					{/* Facilities List */}
-					<View className="mx-5 py-4">
+					<View 
+						className="py-4"
+						style={{ 
+							paddingHorizontal: isTablet ? 24 : 20,
+							maxWidth: isTablet ? 1200 : '100%',
+							alignSelf: 'center',
+							width: '100%'
+						}}
+					>
 						{loading ? (
 							<View className="items-center py-12">
 								<ActivityIndicator size="large" color="#002147" />

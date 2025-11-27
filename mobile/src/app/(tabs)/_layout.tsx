@@ -1,10 +1,12 @@
 import React from 'react';
+import { View } from 'react-native';
 import { Tabs } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { NAV_THEME } from '@/theme/colors';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { NotificationBadge } from '@/components/NotificationBadge';
 
 export default function TabLayout() {
     const { colorScheme } = useColorScheme();
@@ -60,6 +62,13 @@ export default function TabLayout() {
                 options={{
                     title: 'Messages',
                     tabBarIcon: ({ color }) => <Feather name="message-circle" size={24} color={color} />,
+                }}
+            />
+            <Tabs.Screen
+                name="notifications"
+                options={{
+                    title: 'Notifications',
+                    href: null, // Hide from tab bar
                 }}
             />
             

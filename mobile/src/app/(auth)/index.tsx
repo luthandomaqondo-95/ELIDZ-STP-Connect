@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
@@ -8,15 +8,65 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Stars } from '@/components/Stars';
+import { verificationService } from '@/services/verification.service';
 
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
-    const { login, signInWithGoogle } = useAuthContext();
+    const { login, signInWithGoogle, profile } = useAuthContext();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+
+    // Track if we've already shown the verification alert for this session
+    const [hasCheckedVerification, setHasCheckedVerification] = useState(false);
+
+    // Check verification status for SMME users after login
+    useEffect(() => {
+        async function checkSMMEVerification() {
+            // Only check once per session and only if user is SMME and logged in
+            if (!hasCheckedVerification && profile?.role === 'SMME' && profile?.id) {
+                setHasCheckedVerification(true);
+                try {
+                    const allDocs = await verificationService.getAllVerifications(profile.id);
+                    const requiredTypes = ['Business Registration', 'ID Document', 'Business Profile'];
+                    const requiredDocs = allDocs.filter(doc => requiredTypes.includes(doc.document_type));
+                    const allVerified = requiredDocs.length === 3 && requiredDocs.every(doc => doc.status === 'verified');
+                    
+                    if (!allVerified) {
+                        // Small delay to ensure navigation is complete
+                        setTimeout(() => {
+                            Alert.alert(
+                                'Verification Required',
+                                'To access all features and appear in the Verified SMMEs directory, you need to complete business verification. This requires uploading 3 documents: Business Registration, ID Document, and Business Profile.\n\nYou can start the verification process from your profile page.',
+                                [
+                                    {
+                                        text: 'Go to Profile',
+                                        onPress: () => {
+                                            router.push('/(tabs)/profile');
+                                        }
+                                    },
+                                    {
+                                        text: 'Later',
+                                        style: 'cancel'
+                                    }
+                                ]
+                            );
+                        }, 1000);
+                    }
+                } catch (error) {
+                    // Silently fail - verification check is not critical for login
+                    console.error('Error checking verification status:', error);
+                }
+            }
+        }
+        
+        // Only check if we have a profile (user is logged in) and haven't checked yet
+        if (profile && !hasCheckedVerification) {
+            checkSMMEVerification();
+        }
+    }, [profile, hasCheckedVerification]);
 
     async function handleLogin() {
         if (!email || !password) {
