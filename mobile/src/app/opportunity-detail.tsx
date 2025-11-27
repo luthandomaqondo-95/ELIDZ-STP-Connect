@@ -278,41 +278,36 @@ function OpportunityDetailScreen() {
       {opportunity.sectors && opportunity.sectors.length > 0 && (
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
           <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Sectors / Themes</Text>
-          {React.Children.toArray(
-            opportunity.sectors.map((sector: string) => (
-              <View style={styles.listItem}>
-                <Feather name="target" size={18} color={colors.secondary} />
-                <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{sector}</Text>
-              </View>
-            ))
-          )}
+          {opportunity.sectors.map((sector: string, index: number) => (
+            <View key={`sector-${index}`} style={styles.listItem}>
+              <Feather name="target" size={18} color={colors.secondary} />
+              <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{sector}</Text>
+            </View>
+          ))}
         </View>
       )}
 
       {opportunity.eligibility && opportunity.eligibility.length > 0 && (
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
           <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Eligibility Requirements</Text>
-          {React.Children.toArray(
-            opportunity.eligibility.map((req: string) => (
-              <View style={styles.listItem}>
-                <Feather name="check-circle" size={18} color={colors.secondary} />
-                <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{req}</Text>
-              </View>
-            )))}
+          {opportunity.eligibility.map((req: string, index: number) => (
+            <View key={`eligibility-${index}`} style={styles.listItem}>
+              <Feather name="check-circle" size={18} color={colors.secondary} />
+              <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{req}</Text>
+            </View>
+          ))}
         </View>
       )}
 
       {opportunity.benefits && opportunity.benefits.length > 0 && (
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
           <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Benefits</Text>
-          {React.Children.toArray(
-            opportunity.benefits.map((benefit: string) => (
-              <View style={styles.listItem}>
-                <Feather name="star" size={18} color={colors.accent} />
-                <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{benefit}</Text>
-              </View>
-            ))
-          )}
+          {opportunity.benefits.map((benefit: string, index: number) => (
+            <View key={`benefit-${index}`} style={styles.listItem}>
+              <Feather name="star" size={18} color={colors.accent} />
+              <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{benefit}</Text>
+            </View>
+          ))}
         </View>
       )}
 

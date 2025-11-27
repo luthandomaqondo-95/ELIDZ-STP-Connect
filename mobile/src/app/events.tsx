@@ -3,8 +3,12 @@ import { View, Pressable, ScrollView, TextInput } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
+import { Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 interface Event {
   id: string;
@@ -125,30 +129,40 @@ export default function EventsScreen() {
     <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
-        <LinearGradient
-          colors={['#002147', '#003366']}
-          className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
+        <View
+          className="pt-12 pb-6"
+          style={{ paddingHorizontal: isTablet ? 24 : 24 }}
         >
-          <View className="flex-row justify-between items-center mb-2">
-            <View className="flex-1">
-              <Text className="text-white text-3xl font-bold mb-2">Events</Text>
-              <Text className="text-white/80 text-base">
+          <View 
+            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+          >
+            <View className="flex-row items-center justify-end mb-2">
+              <HeaderNotificationIcon />
+              <HeaderAvatar />
+            </View>
+            <View className="items-start mb-2">
+              <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
+                Events
+              </Text>
+              <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
                 Discover upcoming events, workshops, and networking opportunities
               </Text>
             </View>
-            <HeaderAvatar />
           </View>
 
           {/* Search Bar */}
-          <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
-            <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+          <View 
+            className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
+            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+          >
+            <Feather name="search" size={20} color="#9CA3AF" />
             <TextInput
-              className="flex-1 ml-3 text-base text-white"
+              className="flex-1 ml-3 text-base text-foreground"
               placeholder="Search events..."
-              placeholderTextColor="rgba(255,255,255,0.5)"
+              placeholderTextColor="#D1D5DB"
             />
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Events List */}
         <View className="px-6 mt-6">

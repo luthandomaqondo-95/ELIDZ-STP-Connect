@@ -3,8 +3,12 @@ import { View, Pressable, TextInput, FlatList } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
+import { Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 import { useTenantsSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { TenantLogo } from '@/components/TenantLogo';
@@ -67,30 +71,42 @@ export default function TenantsScreen() {
     return (
         <View className="flex-1">
             {/* Header */}
-            <LinearGradient
-                colors={['#002147', '#003366']}
-                className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
+            <View
+                className="pt-12 pb-6"
+                style={{ paddingHorizontal: isTablet ? 24 : 24 }}
             >
-                <View className="flex-row justify-between items-center">
-                    <Text className="text-white text-3xl font-bold mb-2">Tenants</Text>
-                    <HeaderAvatar />
+                <View 
+                    style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                >
+                    <View className="flex-row items-center justify-end mb-2">
+                        <HeaderNotificationIcon />
+                        <HeaderAvatar />
+                    </View>
+                    <View className="items-start mb-2">
+                        <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
+                            Tenants
+                        </Text>
+                        <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
+                            Discover our innovative partners and residents.
+                        </Text>
+                    </View>
                 </View>
-                <Text className="text-white/80 text-base">
-                    Discover our innovative partners and residents.
-                </Text>
 
                 {/* Search Bar */}
-                <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
-                    <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                <View 
+                    className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
+                    style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                >
+                    <Feather name="search" size={20} color="#9CA3AF" />
                     <TextInput
-                        className="flex-1 ml-3 text-base text-white"
+                        className="flex-1 ml-3 text-base text-foreground"
                         placeholder="Search tenants..."
-                        placeholderTextColor="rgba(255,255,255,0.5)"
+                        placeholderTextColor="#D1D5DB"
                         value={searchQuery}
                         onChangeText={setSearchQuery}
                     />
                 </View>
-            </LinearGradient>
+            </View>
 
             <View className="px-6 mt-4 flex-1">
                 <View>

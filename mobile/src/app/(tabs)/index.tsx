@@ -15,6 +15,7 @@ import { Tenant } from '@/types';
 import { TenantLogo } from '@/components/TenantLogo';
 import { TabsLayoutHeader } from '@/components/Header';
 import { Button } from '@/components/ui/button';
+import { verificationService } from '@/services/verification.service';
 
 const { width } = Dimensions.get('window');
 
@@ -30,6 +31,42 @@ export default function DashboardScreen() {
     const [featuredTenants, setFeaturedTenants] = useState<Tenant[]>([]);
     const [centersOfExcellence, setCentersOfExcellence] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isSMMEVerified, setIsSMMEVerified] = useState<boolean | null>(null);
+    const [hasSubmittedDocuments, setHasSubmittedDocuments] = useState<boolean>(false);
+    const [loadingVerification, setLoadingVerification] = useState(false);
+
+    // Load verification status for SMME users
+    useEffect(() => {
+        async function checkVerificationStatus() {
+            if (profile?.role === 'SMME' && profile?.id) {
+                setLoadingVerification(true);
+                try {
+                    const allDocs = await verificationService.getAllVerifications(profile.id);
+                    const requiredTypes = ['Business Registration', 'ID Document', 'Business Profile'];
+                    const requiredDocs = allDocs.filter(doc => requiredTypes.includes(doc.document_type));
+                    
+                    // Check if any documents have been submitted (regardless of status)
+                    const hasSubmitted = requiredDocs.length > 0;
+                    setHasSubmittedDocuments(hasSubmitted);
+                    
+                    // Check if fully verified
+                    const verified = requiredDocs.length === 3 && requiredDocs.every(doc => doc.status === 'verified');
+                    setIsSMMEVerified(verified);
+                } catch (error) {
+                    console.error('Error checking verification status:', error);
+                    setIsSMMEVerified(false);
+                    setHasSubmittedDocuments(false);
+                } finally {
+                    setLoadingVerification(false);
+                }
+            } else {
+                setIsSMMEVerified(null);
+                setHasSubmittedDocuments(false);
+            }
+        }
+
+        checkVerificationStatus();
+    }, [profile]);
 
     // Load dashboard data
     useEffect(() => {
@@ -94,7 +131,29 @@ export default function DashboardScreen() {
 
     return (
         <ScreenScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-            <TabsLayoutHeader title="Home" className="sticky top-0 z-10" />
+            <TabsLayoutHeader title="Home" className="sticky top-0 z-10" profile={profile} />
+            
+            {/* SMME Verification Banner - Only show if no documents have been submitted */}
+            {profile?.role === 'SMME' && isSMMEVerified === false && !hasSubmittedDocuments && (
+                <View className="mx-5 mb-3 rounded-lg bg-[#FF6600]/5 border border-[#FF6600]/20 p-3">
+                    <View className="flex-row items-center">
+                        <Feather name="info" size={14} color="#FF6600" />
+                        <Text className="text-[#FF6600] text-xs font-medium ml-2 flex-1">
+                            Verification required to access all features
+                        </Text>
+                        <Pressable
+                            onPress={() => router.push('/(tabs)/profile')}
+                            className="ml-2"
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                        >
+                            <Text className="text-[#FF6600] text-xs font-semibold underline">
+                                Verify
+                            </Text>
+                        </Pressable>
+                    </View>
+                </View>
+            )}
+            
             {/* Hero Banner */}
             <View className="mx-5 mb-6 shadow-md rounded-3xl overflow-hidden">
                 <LinearGradient
@@ -156,7 +215,8 @@ export default function DashboardScreen() {
                     {productLines.map((line) => (
                         <Pressable
                             key={line.id}
-                            className="w-36 mr-4 rounded-2xl bg-card active:opacity-90 shadow-sm p-3 border border-border/50"
+                            className="mr-4 rounded-2xl bg-card active:opacity-90 shadow-sm p-3 border border-border/50"
+                            style={{ width: Math.min(144, width * 0.38), minHeight: 120 }}
                             onPress={() => router.push({ pathname: '/center-detail', params: { name: line.name } })}
                         >
                             <View className="w-12 h-12 rounded-full bg-primary/5 justify-center items-center mb-3">
@@ -293,7 +353,8 @@ export default function DashboardScreen() {
                         return (
                             <Pressable
                                 key={event.id}
-                                className="w-64 p-4 mr-4 rounded-2xl bg-card active:opacity-90 shadow-sm border border-border/40"
+                                className="p-4 mr-4 rounded-2xl bg-card active:opacity-90 shadow-sm border border-border/40"
+                                style={{ width: Math.min(256, width * 0.75), minHeight: 140 }}
                                 onPress={() => router.push({ pathname: '/event-detail', params: { id: event.id } })}
                             >
                                 <View className="flex-row justify-between items-start mb-3">
@@ -338,7 +399,8 @@ export default function DashboardScreen() {
                     {featuredTenants.map((tenant) => (
                         <Pressable
                             key={tenant.id}
-                            className="w-28 mr-4 items-center active:opacity-90"
+                            className="mr-4 items-center active:opacity-90"
+                            style={{ width: Math.min(112, width * 0.25), minWidth: 80 }}
                             onPress={() => router.push({ pathname: '/tenant-detail', params: { id: tenant.id } })}
                         >
                             <View className="w-16 h-16 rounded-full bg-white border border-border/60 justify-center items-center mb-2 overflow-hidden shadow-sm">

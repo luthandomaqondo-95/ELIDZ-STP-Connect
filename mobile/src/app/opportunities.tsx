@@ -7,8 +7,12 @@ import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { OpportunityService } from '@/services/opportunity.service';
 import { Opportunity } from '@/types';
-import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
+import { Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 import { useDebounce } from '@/hooks/useDebounce';
 
 function OpportunitiesScreen() {
@@ -159,37 +163,51 @@ function OpportunitiesScreen() {
     <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
-        <LinearGradient
-          colors={['#002147', '#003366']}
-          className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
+        <View
+          className="pt-12 pb-6"
+          style={{ paddingHorizontal: isTablet ? 24 : 24 }}
         >
-          <View className="flex-row justify-between items-center mb-2">
-            <View className="flex-1">
-              <Text className="text-white text-3xl font-bold mb-2">Opportunities</Text>
-              <Text className="text-white/80 text-base">
+          <View 
+            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+          >
+            <View className="flex-row items-center justify-end mb-2">
+              <HeaderNotificationIcon />
+              <HeaderAvatar />
+            </View>
+            <View className="items-start mb-2">
+              <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
+                Opportunities
+              </Text>
+              <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
                 Discover funding, jobs, and growth opportunities
               </Text>
             </View>
-            <HeaderAvatar />
           </View>
 
           {/* Search Bar */}
-          <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
-            <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+          <View 
+            className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
+            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+          >
+            <Feather name="search" size={20} color="#9CA3AF" />
             <TextInput
-              className="flex-1 ml-3 text-base text-white"
+              className="flex-1 ml-3 text-base text-foreground"
               placeholder="Search opportunities..."
-              placeholderTextColor="rgba(255,255,255,0.5)"
+              placeholderTextColor="#D1D5DB"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
             {searchQuery.length > 0 && (
-              <Pressable onPress={() => setSearchQuery('')} className="ml-2">
-                <Feather name="x" size={18} color="rgba(255,255,255,0.7)" />
+              <Pressable 
+                onPress={() => setSearchQuery('')} 
+                className="ml-2"
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Feather name="x" size={18} color="#9CA3AF" />
               </Pressable>
             )}
           </View>
-        </LinearGradient>
+        </View>
 
         {/* Filter Chips */}
         <View className="mx-5 pt-6 pb-4">

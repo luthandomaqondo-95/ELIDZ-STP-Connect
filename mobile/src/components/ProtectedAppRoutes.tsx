@@ -31,7 +31,7 @@ export default function ProtectedAppRoutes() {
             </Stack.Protected>
 
             {/* Standalone protected screens - each uses withAuthGuard HOC for auth protection */}
-            <Stack.Screen name="opportunities" options={{ title: 'Opportunities', headerShown: true }} />
+            <Stack.Screen name="opportunities" options={{ headerShown: false }} />
             <Stack.Screen name="opportunity-detail" options={{ title: 'Opportunity Details', headerShown: false }} />
             <Stack.Screen name="resources" options={{ title: 'Resources', headerShown: true }} />
             <Stack.Screen name="resource-detail" options={{ title: 'Resource Details', headerShown: true }} />

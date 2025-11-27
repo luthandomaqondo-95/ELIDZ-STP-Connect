@@ -113,7 +113,7 @@ function ProfileScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         await logout();
-                        // router.replace('/(auth)');
+                        router.replace('/(auth)');
                     },
                 },
             ]
@@ -158,16 +158,6 @@ function ProfileScreen() {
 
     return (
         <View className="flex-1 bg-background">
-            {/* Header Background */}
-            <View className="h-64 w-full absolute top-0 left-0 z-0">
-                <LinearGradient
-                    colors={['#002147', '#003366']}
-                    className="w-full h-full"
-                />
-                {/* Decorative circles */}
-                <View className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/5" />
-                <View className="absolute top-10 -left-10 w-32 h-32 rounded-full bg-white/5" />
-            </View>
 
             <ScrollView
                 className="flex-1"
@@ -395,6 +385,7 @@ function ProfileScreen() {
                         </Text>
                         <View className="bg-card rounded-2xl px-4 shadow-sm">
                             {renderMenuItem('user', 'Personal Information', 'Manage your profile details', () => router.push('/edit-profile'), false, !isLoggedIn)}
+                            {renderMenuItem('bell', 'Notifications', 'View admin communications', () => router.push('/(tabs)/notifications'), false, !isLoggedIn)}
                             {renderMenuItem('settings', 'Settings', 'Notifications, privacy & more', () => router.push('/settings'), false, !isLoggedIn)}
                             {renderMenuItem('star', 'Premium Features', 'Manage subscription', () => router.push('/(modals)/premium-upgrade'), false, !isLoggedIn, true)}
                         </View>
