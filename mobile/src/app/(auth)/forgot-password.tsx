@@ -99,7 +99,7 @@ export default function ForgotPasswordScreen() {
                 style={{ zIndex: 2 }}
             >
                 {/* Form Fields */}
-                <View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: 20, paddingTop: 50 }}>
+                <View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: 30, paddingTop: 50 }}>
                     {!isEmailSent ? (
                         <>
                             {/* Email Input */}

@@ -250,7 +250,7 @@ export default function SignupScreen() {
 				style={{ zIndex: 2 }}
 			>
 				{/* Form Fields */}
-				<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: -10 }}>
+				<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: 10 }}>
 					{/* Full Name Input */}
 					<View className="hidden" />
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
