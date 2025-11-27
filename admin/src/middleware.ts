@@ -48,8 +48,8 @@ export async function middleware(request: NextRequest) {
       .eq('id', user.id)
       .single()
 
-    // If no profile or role is not Admin, redirect to unauthorized page
-    if (!profile || profile.role !== 'Admin') {
+    // If no profile or role is not Admin or Super Admin, redirect to unauthorized page
+    if (!profile || (profile.role !== 'Admin' && profile.role !== 'Super Admin')) {
       return NextResponse.redirect(new URL('/auth/unauthorized', request.url))
     }
   }

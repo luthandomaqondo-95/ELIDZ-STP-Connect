@@ -85,6 +85,7 @@ export function InviteUserDialog() {
                             <SelectValue placeholder="Select a role" />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="Super Admin">Super Admin</SelectItem>
                             <SelectItem value="Admin">Admin</SelectItem>
                             <SelectItem value="Tenant">Tenant</SelectItem>
                             <SelectItem value="Entrepreneur">Entrepreneur</SelectItem>
