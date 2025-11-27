@@ -406,15 +406,16 @@ function MessagesScreen() {
     if (!isLoggedIn) {
          return (
             <View className="flex-1 bg-background">
-                 <View className="pt-12 pb-6 mb-6 bg-background">
-                    <TabsLayoutHeader title="Network" />
-                    <View 
-                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                    >
-                        <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-                            Connect with innovators and partners.
-                        </Text>
-                    </View>
+                 <View className="bg-background">
+                    <TabsLayoutHeader title="Network" variant="navy">
+                        <View 
+                            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                        >
+                            <Text className="text-white/80 text-base">
+                                Connect with innovators and partners.
+                            </Text>
+                        </View>
+                    </TabsLayoutHeader>
                  </View>
                  <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
@@ -445,29 +446,30 @@ function MessagesScreen() {
         <View className="flex-1 bg-background">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Header */}
-                <View className="pt-12 pb-6 bg-background">
-                    <TabsLayoutHeader title="Network" />
-                    <View 
-                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                    >
-                        <Text className="text-muted-foreground mb-6" style={{ fontSize: isTablet ? 14 : 14 }}>
-                            Connect with innovators and partners.
-                        </Text>
-
-                        {/* Search Bar */}
+                <View className="bg-background">
+                    <TabsLayoutHeader title="Network" variant="navy">
                         <View 
-                            className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4"
+                            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
                         >
-                            <Feather name="search" size={20} color="#9CA3AF" />
-                            <TextInput
-                                className="flex-1 ml-3 text-base text-foreground"
-                                placeholder="Search people, companies..."
-                                placeholderTextColor="#D1D5DB"
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                            />
+                            <Text className="text-white/80 text-base mb-6">
+                                Connect with innovators and partners.
+                            </Text>
+
+                            {/* Search Bar */}
+                            <View 
+                                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+                            >
+                                <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                                <TextInput
+                                    className="flex-1 ml-3 text-base text-white"
+                                    placeholder="Search people, companies..."
+                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                />
+                            </View>
                         </View>
-                    </View>
+                    </TabsLayoutHeader>
                 </View>
 
                 {/* Tabs */}

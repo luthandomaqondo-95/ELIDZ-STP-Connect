@@ -7,9 +7,11 @@ import { notificationService } from '@/services/notification.service';
 import { cn } from '@/lib/utils';
 
 export const HeaderNotificationIcon = ({
-    className = ""
+    className = "",
+    color = "#1F2937"
 }: {
     className?: string;
+    color?: string;
 }) => {
     const { profile, isLoggedIn } = useAuthContext();
     const [unreadCount, setUnreadCount] = useState(0);
@@ -48,7 +50,7 @@ export const HeaderNotificationIcon = ({
             className={cn("relative active:opacity-70 mr-3", className)}
             hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
         >
-            <Feather name="bell" size={20} color="#1F2937" />
+            <Feather name="bell" size={20} color={color} />
             {unreadCount > 0 && (
                 <View className="absolute -top-1 -right-1 bg-[#FF6600] rounded-full justify-center items-center min-w-[18px] px-1 h-[18px]">
                     <Text className="text-white text-[10px] font-bold">

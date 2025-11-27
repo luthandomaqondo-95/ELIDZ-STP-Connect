@@ -32,18 +32,19 @@ export default function VRToursScreen() {
 
 	return (
 		<ScreenScrollView>
-			<View className="pt-12 pb-6 bg-background">
-				<TabsLayoutHeader title="Virtual Tour" />
-				<View className="px-5">
-					<Text className="text-muted-foreground text-base">
-						Explore the ELIDZ Science & Technology Park campus virtually.
-					</Text>
-				</View>
+			<View className="bg-background">
+				<TabsLayoutHeader title="Virtual Tour" variant="navy">
+					<View className="px-0">
+						<Text className="text-white/80 text-base">
+							Explore the ELIDZ Science & Technology Park campus virtually.
+						</Text>
+					</View>
+				</TabsLayoutHeader>
 			</View>
 
 			{/* <ARCarDemo /> */}
 
-			<View className="flex-row items-center px-4 h-12 rounded-lg border border-border mx-6 mb-6 bg-card">
+			<View className="flex-row items-center px-4 h-12 rounded-lg border border-border mx-6 mb-6 bg-card mt-6">
 				<Feather name="search" size={20} color="rgb(var(--muted-foreground))" />
 				<TextInput
 					className="flex-1 ml-3 text-base text-foreground"

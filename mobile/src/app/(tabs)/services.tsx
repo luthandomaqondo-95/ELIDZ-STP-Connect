@@ -14,8 +14,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
-type ViewMode = 'panorama' | 'sections';
-type ScreenMode = 'list' | 'detail' | 'vr-tour';
+type ScreenMode = 'list' | 'detail';
 
 export default function ServicesScreen() {
 	const params = useLocalSearchParams<{ id?: string }>();
@@ -38,10 +37,6 @@ export default function ServicesScreen() {
 		() => (facilityWithTour ? getTenantsByLocation(facilityWithTour.location) : []),
 		[facilityWithTour]
 	);
-
-	const [viewMode, setViewMode] = useState<ViewMode>('panorama');
-	const [currentSection, setCurrentSection] = useState(0);
-	const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
 
 	// Fetch all facilities on mount
 	useEffect(() => {
@@ -95,12 +90,6 @@ export default function ServicesScreen() {
 		}
 	};
 
-	useEffect(() => {
-		setCurrentSection(0);
-		setCurrentSceneId(null);
-		setViewMode('panorama');
-	}, [facilityId]);
-
 	// Handle facility selection
 	const handleFacilitySelect = (facilityId: string) => {
 		setSelectedFacilityId(facilityId);
@@ -111,9 +100,10 @@ export default function ServicesScreen() {
 	// Handle service selection for VR tour
 	const handleServiceSelect = (service: VRSection) => {
 		if (service.has_vr) {
-			setSelectedService(service);
-			setCurrentSceneId(service.vr_scene_id || facilityWithTour?.initialSceneId || null);
-			setScreenMode('vr-tour');
+			router.push({
+				pathname: '/vr-tour',
+				params: { id: facilityWithTour?.id }
+			});
 		}
 	};
 
@@ -123,26 +113,6 @@ export default function ServicesScreen() {
 		setSelectedService(null);
 		setScreenMode('list');
 		router.setParams({});
-	};
-
-	// Handle back to facility detail
-	const handleBackToDetail = () => {
-		setSelectedService(null);
-		setScreenMode('detail');
-	};
-
-	const activeSceneId = currentSceneId ?? facilityWithTour?.initialSceneId;
-	const activeScene = activeSceneId && facilityWithTour?.scenes
-		? facilityWithTour.scenes.find(s => s.id === activeSceneId)
-		: null;
-	const hasSections = facilityWithTour?.sections ? facilityWithTour.sections.length > 0 : false;
-
-	const handleHotspotClick = (hotspotId: string) => {
-		if (!activeScene || !activeScene.hotspots) return;
-		const hotspot = activeScene.hotspots.find((h) => h.id === hotspotId);
-		if (hotspot?.target_scene_id) {
-			setCurrentSceneId(hotspot.target_scene_id);
-		}
 	};
 
 	// Handle service access actions
@@ -274,43 +244,43 @@ export default function ServicesScreen() {
 	return (
 		<View className="flex-1">
 			{/* Header */}
-			<View className="pt-12 pb-6 bg-background">
-				<TabsLayoutHeader title="Services" />
-				<View
-					style={{
-						paddingHorizontal: isTablet ? 24 : 20,
-						maxWidth: isTablet ? 1200 : '100%',
-						alignSelf: 'center',
-						width: '100%'
-					}}
-				>
-					<Text className="text-muted-foreground mb-6" style={{ fontSize: isTablet ? 14 : 14 }}>
-						Explore our world-class facilities and innovation centers
-					</Text>
-
-					{/* Search Bar */}
+			<View className="bg-background">
+				<TabsLayoutHeader title="Services" variant="navy">
 					<View
-						className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4"
+						style={{
+							maxWidth: isTablet ? 1200 : '100%',
+							alignSelf: 'center',
+							width: '100%'
+						}}
 					>
-						<Feather name="search" size={20} color="#9CA3AF" />
-						<TextInput
-							className="flex-1 ml-3 text-base text-foreground"
-							placeholder="Search facilities..."
-							placeholderTextColor="#D1D5DB"
-							value={searchQuery}
-							onChangeText={setSearchQuery}
-						/>
-						{searchQuery.length > 0 && (
-							<Pressable
-								onPress={() => setSearchQuery('')}
-								className="ml-2"
-								hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-							>
-								<Feather name="x" size={18} color="#9CA3AF" />
-							</Pressable>
-						)}
+						<Text className="text-white/80 text-base mb-6">
+							Explore our world-class facilities and innovation centers
+						</Text>
+
+						{/* Search Bar */}
+						<View
+							className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+						>
+							<Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+							<TextInput
+								className="flex-1 ml-3 text-base text-white"
+								placeholder="Search facilities..."
+								placeholderTextColor="rgba(255,255,255,0.5)"
+								value={searchQuery}
+								onChangeText={setSearchQuery}
+							/>
+							{searchQuery.length > 0 && (
+								<Pressable
+									onPress={() => setSearchQuery('')}
+									className="ml-2"
+									hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+								>
+									<Feather name="x" size={18} color="rgba(255,255,255,0.7)" />
+								</Pressable>
+							)}
+						</View>
 					</View>
-				</View>
+				</TabsLayoutHeader>
 			</View>
 			{screenMode === 'list' && (
 				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
@@ -557,188 +527,6 @@ export default function ServicesScreen() {
 						</View>
 					)}
 				</ScrollView>
-			)}
-
-			{screenMode === 'vr-tour' && facilityWithTour && selectedService && (
-				<View className="flex-1 bg-background">
-					<View className="px-6 pt-12 pb-6 flex-row items-center justify-between" style={{ backgroundColor: facilityWithTour.color }}>
-						<Pressable onPress={handleBackToDetail} className="p-2 bg-white/20 rounded-full">
-							<Feather name="arrow-left" size={24} color="#FFFFFF" />
-						</Pressable>
-						<View className="items-center">
-							<Text className="text-white text-lg font-bold">{selectedService.title}</Text>
-							<Text className="text-white/80 text-xs">
-								{viewMode === 'panorama' && activeScene ? activeScene.title : 'Virtual Tour'}
-							</Text>
-						</View>
-						<View className="flex-row gap-2">
-							<Pressable
-								className={`p-2 rounded-full ${viewMode === 'panorama' ? 'bg-white text-primary' : 'bg-white/20'}`}
-								onPress={() => setViewMode('panorama')}
-							>
-								<Feather name="globe" size={20} color={viewMode === 'panorama' ? facilityWithTour.color : '#FFFFFF'} />
-							</Pressable>
-							<Pressable
-								className={`p-2 rounded-full ${viewMode === 'sections' ? 'bg-white text-primary' : 'bg-white/20'}`}
-								onPress={() => hasSections && setViewMode('sections')}
-								disabled={!hasSections}
-							>
-								<Feather name="list" size={20} color={viewMode === 'sections' ? facilityWithTour.color : '#FFFFFF'} />
-							</Pressable>
-						</View>
-					</View>
-
-					{/* VR Panorama Viewer */}
-					{viewMode === 'panorama' && activeScene ? (
-						<PanoramaViewer
-							imageUrl={facilitiesService.getImageUrl(activeScene.image_url, facilityWithTour.id)}
-							title={activeScene.title}
-							hotspots={activeScene.hotspots || []}
-							onHotspotClick={handleHotspotClick}
-						/>
-					) : (
-						<ScrollView className="flex-1 px-6 py-6" showsVerticalScrollIndicator={false}>
-							{/* Service Overview */}
-							<View className="bg-card rounded-2xl p-6 shadow-sm border border-border mb-6">
-								<View className="flex-row items-center mb-4">
-									<View className="w-12 h-12 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: facilityWithTour.color }}>
-										<Feather name={facilityWithTour.icon as any} size={24} color="#FFFFFF" />
-									</View>
-									<View className="flex-1">
-										<Text className="text-xl font-bold text-foreground">{selectedService.title}</Text>
-										<Text className="text-sm text-muted-foreground">{facilityWithTour.location}</Text>
-									</View>
-								</View>
-								<Text className="text-base text-muted-foreground leading-6">
-									{selectedService.description}
-								</Text>
-							</View>
-
-							{/* Service Details */}
-							<View className="bg-card rounded-2xl p-6 shadow-sm border border-border mb-6">
-								<Text className="text-lg font-semibold text-foreground mb-4">Key Features & Services</Text>
-								{selectedService.details.map((detail: string, index: number) => (
-									<View key={index} className="flex-row items-center mb-3">
-										<View className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: facilityWithTour.color }} />
-										<Text className="text-base text-foreground flex-1">{detail}</Text>
-									</View>
-								))}
-							</View>
-
-							{/* Access Actions */}
-							<View className="bg-card rounded-2xl p-6 shadow-sm border border-border mb-6">
-								<Text className="text-lg font-semibold text-foreground mb-4">Access This Service</Text>
-								<View className="gap-3">
-									<Pressable
-										onPress={() => handleRequestAccess(selectedService)}
-										className="bg-primary py-4 rounded-lg active:opacity-90"
-									>
-										<View className="flex-row items-center justify-center">
-											<Feather name="user-plus" size={18} color="white" />
-											<Text className="text-white font-semibold text-base ml-2">Request Access</Text>
-										</View>
-									</Pressable>
-									<Pressable
-										onPress={() => {
-											if (facilityWithTour) {
-												router.push({
-													pathname: '/enquiry-form',
-													params: {
-														type: 'Facility',
-														facilityId: facilityWithTour.id,
-														subject: `Enquiry about ${selectedService.title}`,
-													},
-												});
-											}
-										}}
-										className="border border-primary py-4 rounded-lg active:opacity-90"
-									>
-										<View className="flex-row items-center justify-center">
-											<Feather name="mail" size={18} color="#002147" />
-											<Text className="text-primary font-semibold text-base ml-2">Contact Facility</Text>
-										</View>
-									</Pressable>
-									<Pressable
-										onPress={() => Linking.openURL('https://www.elidz.co.za')}
-										className="border border-border py-4 rounded-lg active:opacity-90"
-									>
-										<View className="flex-row items-center justify-center">
-											<Feather name="globe" size={18} color="#002147" />
-											<Text className="text-primary font-semibold text-base ml-2">Visit ELIDZ Website</Text>
-										</View>
-									</Pressable>
-								</View>
-							</View>
-
-							{/* Tenants */}
-							<View className="mb-6">
-								<Text className="text-lg font-semibold text-foreground mb-4">Tenants in this Facility</Text>
-								<Text className="text-sm text-muted-foreground mb-4">
-									Connect with tenants offering services in this facility
-								</Text>
-								{tenants.length === 0 && (
-									<Text className="text-muted-foreground">No tenants listed for this facility.</Text>
-								)}
-								{tenants.map(tenant => (
-									<Pressable
-										key={tenant.id}
-										onPress={() => router.push(`/tenant-detail?id=${tenant.id}`)}
-										className="bg-card p-4 rounded-xl mb-3 flex-row items-center border border-border active:opacity-95"
-									>
-										<View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-											<Text className="text-primary font-bold">{tenant.name.charAt(0)}</Text>
-										</View>
-										<View className="flex-1">
-											<Text className="font-semibold text-foreground">{tenant.name}</Text>
-											<Text className="text-xs text-muted-foreground mt-1" numberOfLines={2}>{tenant.description}</Text>
-											{(tenant.contact_email || tenant.contact_phone || tenant.website) && (
-												<View className="flex-row items-center mt-2 gap-3">
-													{tenant.contact_email && (
-														<Pressable
-															onPress={(e) => {
-																e.stopPropagation();
-																Linking.openURL(`mailto:${tenant.contact_email}`);
-															}}
-															className="flex-row items-center"
-														>
-															<Feather name="mail" size={12} color="#002147" />
-															<Text className="text-primary text-[10px] ml-1">Email</Text>
-														</Pressable>
-													)}
-													{tenant.contact_phone && (
-														<Pressable
-															onPress={(e) => {
-																e.stopPropagation();
-																Linking.openURL(`tel:${tenant.contact_phone}`);
-															}}
-															className="flex-row items-center"
-														>
-															<Feather name="phone" size={12} color="#002147" />
-															<Text className="text-primary text-[10px] ml-1">Call</Text>
-														</Pressable>
-													)}
-													{tenant.website && (
-														<Pressable
-															onPress={(e) => {
-																e.stopPropagation();
-																Linking.openURL(tenant.website!);
-															}}
-															className="flex-row items-center"
-														>
-															<Feather name="globe" size={12} color="#002147" />
-															<Text className="text-primary text-[10px] ml-1">Website</Text>
-														</Pressable>
-													)}
-												</View>
-											)}
-										</View>
-										<Feather name="chevron-right" size={18} color="#FF6600" />
-									</Pressable>
-								))}
-							</View>
-						</ScrollView>
-					)}
-				</View>
 			)}
 		</View>
 	);

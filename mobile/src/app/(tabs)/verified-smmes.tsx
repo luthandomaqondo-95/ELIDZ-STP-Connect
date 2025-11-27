@@ -150,29 +150,30 @@ export default function VerifiedSMMEsScreen() {
         <View className="flex-1 bg-background">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Header */}
-                <View className="pt-12 pb-6 bg-background">
-                    <TabsLayoutHeader title="Verified SMMEs" />
-                    <View 
-                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                    >
-                        <Text className="text-muted-foreground mb-6" style={{ fontSize: isTablet ? 14 : 14 }}>
-                            Discover verified partners and their services.
-                        </Text>
-
-                        {/* Search Bar */}
+                <View className="bg-background">
+                    <TabsLayoutHeader title="Verified SMMEs" variant="navy">
                         <View 
-                            className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4"
+                            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
                         >
-                            <Feather name="search" size={20} color="#9CA3AF" />
-                            <TextInput
-                                className="flex-1 ml-3 text-base text-foreground"
-                                placeholder="Search SMMEs, products..."
-                                placeholderTextColor="#D1D5DB"
-                                value={searchQuery}
-                                onChangeText={setSearchQuery}
-                            />
+                            <Text className="text-white/80 text-base mb-6">
+                                Discover verified partners and their services.
+                            </Text>
+
+                            {/* Search Bar */}
+                            <View 
+                                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+                            >
+                                <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                                <TextInput
+                                    className="flex-1 ml-3 text-base text-white"
+                                    placeholder="Search SMMEs, products..."
+                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                    value={searchQuery}
+                                    onChangeText={setSearchQuery}
+                                />
+                            </View>
                         </View>
-                    </View>
+                    </TabsLayoutHeader>
                 </View>
 
                 {/* Category Filters */}

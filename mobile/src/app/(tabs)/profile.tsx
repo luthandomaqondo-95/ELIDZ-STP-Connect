@@ -158,8 +158,8 @@ function ProfileScreen() {
 
     return (
         <View className="flex-1 bg-background">
-            <View className="pt-12 pb-2 bg-background">
-                <TabsLayoutHeader title="Profile" />
+            <View className="bg-background">
+                <TabsLayoutHeader title="Profile" variant="navy" />
             </View>
 
             <ScrollView
@@ -168,8 +168,8 @@ function ProfileScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Profile Card */}
-                <View className="pt-6 px-6 mb-6">
-                    <View className="bg-card p-6 rounded-3xl shadow-sm items-center relative mt-8">
+                <View className="px-6 mb-6">
+                    <View className="bg-card p-6 rounded-3xl shadow-sm items-center relative -mt-8">
                         {/* Edit Button Absolute */}
                         {isLoggedIn && (
                             <Pressable

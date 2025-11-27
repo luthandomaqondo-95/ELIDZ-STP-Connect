@@ -58,38 +58,39 @@ export default function NewsScreen() {
     <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
-        <View className="pt-12 pb-6 bg-background">
-          <TabsLayoutHeader title="News" />
-          <View
-            style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-          >
-            <Text className="text-muted-foreground mb-6" style={{ fontSize: isTablet ? 14 : 14 }}>
-              Stay updated with the latest from ELIDZ-STP
-            </Text>
-
-            {/* Search Bar */}
-            <View 
-              className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4"
+        <View className="bg-background">
+          <TabsLayoutHeader title="News" variant="navy">
+            <View
+              style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
             >
-              <Feather name="search" size={20} color="#9CA3AF" />
-              <TextInput
-                className="flex-1 ml-3 text-base text-foreground"
-                placeholder="Search news..."
-                placeholderTextColor="#D1D5DB"
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-              />
-              {searchQuery.length > 0 && (
-                <Pressable 
-                  onPress={() => setSearchQuery('')} 
-                  className="ml-2"
-                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-                >
-                  <Feather name="x" size={18} color="#9CA3AF" />
-                </Pressable>
-              )}
+              <Text className="text-white/80 text-base mb-6">
+                Stay updated with the latest from ELIDZ-STP
+              </Text>
+
+              {/* Search Bar */}
+              <View 
+                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+              >
+                <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                <TextInput
+                  className="flex-1 ml-3 text-base text-white"
+                  placeholder="Search news..."
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <Pressable 
+                    onPress={() => setSearchQuery('')} 
+                    className="ml-2"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Feather name="x" size={18} color="rgba(255,255,255,0.7)" />
+                  </Pressable>
+                )}
+              </View>
             </View>
-          </View>
+          </TabsLayoutHeader>
         </View>
 
         {/* News List */}

@@ -188,15 +188,16 @@ export default function NotificationsScreen() {
     if (!isLoggedIn || !profile) {
         return (
             <View className="flex-1 bg-background">
-                <View className="pt-12 pb-6 mb-6 bg-background">
-                    <TabsLayoutHeader title="Notifications" />
-                    <View 
-                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                    >
-                        <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-                            Stay updated with important communications.
-                        </Text>
-                    </View>
+                <View className="bg-background">
+                    <TabsLayoutHeader title="Notifications" variant="navy">
+                        <View 
+                            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                        >
+                            <Text className="text-white/80 text-base">
+                                Stay updated with important communications.
+                            </Text>
+                        </View>
+                    </TabsLayoutHeader>
                 </View>
                 <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
@@ -232,32 +233,33 @@ export default function NotificationsScreen() {
                 }
             >
                 {/* Header */}
-                <View className="pt-12 pb-6 bg-background">
-                    <TabsLayoutHeader title="Notifications" />
-                    <View 
-                        style={{ paddingHorizontal: isTablet ? 24 : 20, maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                    >
-                        <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-                            {unreadCount > 0
-                                ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
-                                : 'All caught up!'}
-                        </Text>
+                <View className="bg-background">
+                    <TabsLayoutHeader title="Notifications" variant="navy">
+                        <View 
+                            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+                        >
+                            <Text className="text-white/80 text-base">
+                                {unreadCount > 0
+                                    ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
+                                    : 'All caught up!'}
+                            </Text>
 
-                        {/* Mark All as Read Button */}
-                        {unreadCount > 0 && (
-                            <Pressable
-                                onPress={handleMarkAllAsRead}
-                                className="bg-muted border border-border px-4 py-2 rounded-xl self-start active:opacity-80 mt-4"
-                            >
-                                <View className="flex-row items-center">
-                                    <Feather name="check" size={16} color="#1F2937" />
-                                    <Text className="text-foreground text-sm font-semibold ml-2">
-                                        Mark All as Read
-                                    </Text>
-                                </View>
-                            </Pressable>
-                        )}
-                    </View>
+                            {/* Mark All as Read Button */}
+                            {unreadCount > 0 && (
+                                <Pressable
+                                    onPress={handleMarkAllAsRead}
+                                    className="bg-white/10 border border-white/20 px-4 py-2 rounded-xl self-start active:opacity-80 mt-4 backdrop-blur-sm"
+                                >
+                                    <View className="flex-row items-center">
+                                        <Feather name="check" size={16} color="white" />
+                                        <Text className="text-white text-sm font-semibold ml-2">
+                                            Mark All as Read
+                                        </Text>
+                                    </View>
+                                </Pressable>
+                            )}
+                        </View>
+                    </TabsLayoutHeader>
                 </View>
 
                 {/* Notifications List */}
