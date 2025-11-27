@@ -3,11 +3,30 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbP
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Activity, Briefcase, Users, Zap } from "lucide-react"
+import { createClient } from "@/lib/supabase/server"
 
-export default function Page({ children }: { children: React.ReactNode }) {
+export default async function Page({ children }: { children: React.ReactNode }) {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    let userData = {
+        name: "Guest",
+        email: "",
+        avatar: ""
+    }
+
+    if (user) {
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+        userData = {
+            name: profile?.name || user.email || "User",
+            email: user.email || "",
+            avatar: profile?.avatar || ""
+        }
+    }
+
     return (
         <SidebarProvider>
-            <AppSidebar />
+            <AppSidebar user={userData} />
             <SidebarInset>
                 <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
                     <div className="flex items-center gap-2 px-4">

@@ -160,21 +160,22 @@ const data = {
 	],
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: { name: string; email: string; avatar: string } }) {
+    const sidebarData = { ...data, user: user || data.user }
+
 	return (
 		<Sidebar collapsible="icon" {...props}>
 			<SidebarHeader>
-				<TeamSwitcher teams={data.teams} />
+				<TeamSwitcher teams={sidebarData.teams} />
 			</SidebarHeader>
 			<SidebarContent>
-				<NavMain items={data.navMain} />
-				<NavProjects projects={data.projects} />
+				<NavMain items={sidebarData.navMain} />
+				<NavProjects projects={sidebarData.projects} />
 			</SidebarContent>
 			<SidebarFooter>
-				<NavUser user={data.user} />
+				<NavUser user={sidebarData.user} />
 			</SidebarFooter>
 			<SidebarRail />
 		</Sidebar>
 	)
 }
-
