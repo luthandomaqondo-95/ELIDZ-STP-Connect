@@ -5,19 +5,16 @@ import Image from "next/image"
 import {
 	BarChart3,
 	Bell,
-	BookOpen,
-	Bot,
 	Briefcase,
-	Building2,
 	Car,
 	Cpu,
 	FlaskConical,
 	LayoutDashboard,
 	PenTool,
-	Settings2,
 	Users,
 	Zap,
 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
@@ -38,12 +35,19 @@ const ElidzLogo = ({ className }: { className?: string }) => (
 	</div>
 )
 
-const data = {
-	user: {
-		name: "Admin User",
-		email: "admin@elidz.co.za",
-		avatar: "/avatars/admin.jpg",
-	},
+// Icon mapping for dynamic facilities
+const iconMap: Record<string, any> = {
+    'droplet': FlaskConical,
+    'pen-tool': PenTool,
+    'monitor': Cpu,
+    'settings': Car,
+    'zap': Zap,
+    'default': Building2
+}
+
+import { Building2 } from "lucide-react"
+
+const baseData = {
 	teams: [
 		{
 			name: "ELIDZ Admin",
@@ -131,37 +135,43 @@ const data = {
 			],
 		}
 	],
-	projects: [
-		{
-			name: "Food & Water Lab",
-			url: "/dashboard/projects/food-water-lab",
-			icon: FlaskConical,
-		},
-		{
-			name: "Design Centre",
-			url: "/dashboard/projects/design-centre",
-			icon: PenTool,
-		},
-		{
-			name: "Digital Hub",
-			url: "/dashboard/projects/digital-hub",
-			icon: Cpu,
-		},
-		{
-			name: "Automotive & Mfg",
-			url: "/dashboard/projects/automotive",
-			icon: Car,
-		},
-		{
-			name: "Renewable Energy",
-			url: "/dashboard/projects/renewable-energy",
-			icon: Zap,
-		},
-	],
+    // Initial empty projects, will be populated from DB
+	projects: [],
+    user: {
+		name: "Admin User",
+		email: "admin@elidz.co.za",
+		avatar: "/avatars/admin.jpg",
+	},
 }
 
 export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: { name: string; email: string; avatar: string } }) {
-    const sidebarData = { ...data, user: user || data.user }
+    const [projects, setProjects] = React.useState<any[]>([])
+    const supabase = createClient()
+
+    React.useEffect(() => {
+        async function fetchFacilities() {
+            try {
+                const { data } = await supabase.from('facilities').select('*')
+                if (data) {
+                    const mappedProjects = data.map(facility => ({
+                        name: facility.name,
+                        url: `/dashboard/projects/${facility.id}`,
+                        icon: iconMap[facility.icon] || iconMap['default']
+                    }))
+                    setProjects(mappedProjects)
+                }
+            } catch (error) {
+                console.error("Error fetching facilities:", error)
+            }
+        }
+        fetchFacilities()
+    }, [supabase])
+
+    const sidebarData = { 
+        ...baseData, 
+        user: user || baseData.user,
+        projects: projects.length > 0 ? projects : baseData.projects
+    }
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
