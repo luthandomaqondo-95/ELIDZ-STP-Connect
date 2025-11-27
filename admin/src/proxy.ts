@@ -12,10 +12,23 @@ export default async function middleware(req: NextRequest) {
     const session = await auth();
     const pathname = req.nextUrl.pathname;
 
-    // If user is not authenticated, redirect to login (except for login page itself)
+    // Public routes that don't require authentication
+    const publicRoutes = [
+        "/auth/login",
+        "/auth/signup",
+        "/auth/forgot-password",
+        "/auth/reset-password",
+        "/",
+    ];
+
+    // Check if route is public
+    const isPublicRoute = publicRoutes.some(route => 
+        pathname === route || pathname.startsWith(route + "/")
+    );
+
+    // If user is not authenticated, redirect to login (except for public routes)
     if (!session) {
-        // Don't redirect if already on login page to avoid loops
-        if (pathname === "/auth/login" || pathname.startsWith("/auth/")) {
+        if (isPublicRoute) {
             return NextResponse.next();
         }
         return NextResponse.redirect(new URL("/auth/login", req.url));
@@ -25,8 +38,12 @@ export default async function middleware(req: NextRequest) {
     const userType = session.user?.userType || session.user?.role;
     const userRole = reverseRoleMap[userType?.toString() || ""];
 
+    // Check if user is banned (check in database for fresh status)
+    // Note: This is a basic check. For production, you might want to check the database
+    // For now, we'll rely on the JWT callback to invalidate banned users
+
     // If user is authenticated but on login page, redirect to dashboard
-    if (pathname === "/auth/login") {
+    if (pathname === "/auth/login" || pathname === "/auth/signup") {
         return NextResponse.redirect(new URL("/dashboard", req.url));
     }
 
