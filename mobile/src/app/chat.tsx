@@ -60,13 +60,13 @@ function ChatsScreen() {
       onPress={() => router.push({ pathname: '/message', params: { userName: item.name, opportunityId: item.id } })}
     >
       <View className="flex-row items-center">
-        <View className="w-12 h-12 rounded-full bg-blue-500 justify-center items-center mr-3">
-          <Text className="text-lg font-bold text-white">
+        <View className="w-12 h-12 rounded-full bg-primary justify-center items-center mr-3">
+          <Text className="text-lg font-bold text-primary-foreground">
             {item.name.charAt(0).toUpperCase()}
           </Text>
         </View>
         <View className="flex-1">
-          <Text className="text-base font-semibold">
+          <Text className="text-base font-semibold text-foreground">
             {item.name}
           </Text>
           {item.opportunity && (
@@ -77,7 +77,7 @@ function ChatsScreen() {
         </View>
         {item.unread > 0 && (
           <View className="min-w-6 h-6 rounded-full justify-center items-center px-2 bg-accent">
-            <Text className="text-sm text-white font-semibold">
+            <Text className="text-sm text-accent-foreground font-semibold">
               {item.unread}
             </Text>
           </View>
@@ -99,12 +99,12 @@ function ChatsScreen() {
         onPress={handleStartChat}
       >
         <Feather name="plus" size={20} color="#FFFFFF" />
-        <Text className="text-base text-white ml-3 font-semibold">
+        <Text className="text-base text-primary-foreground ml-3 font-semibold">
           Share Opportunity
         </Text>
       </Pressable>
 
-      <Text className="text-lg font-bold mt-6 mb-4">
+      <Text className="text-lg font-bold text-foreground mt-6 mb-4">
         Active Conversations
       </Text>
 

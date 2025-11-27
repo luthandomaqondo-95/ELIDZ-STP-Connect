@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity } from 'react-native';
+import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -43,7 +43,7 @@ export default function LoginScreen() {
     }
 
     return (
-        <View className="flex-1 bg-white">
+        <View className="flex-1 bg-background">
             <LinearGradient
                 colors={['#0a1628', '#122a4d', '#1a3a5c']}
                 className="absolute inset-0"
@@ -67,7 +67,12 @@ export default function LoginScreen() {
                 {/* Title */}
                 <View className="items-center mt-4">
                     <Text className="text-3xl font-bold text-white mb-2">Sign In</Text>
-                    <Text className="text-white/80 text-base">Welcome to ELIDZ-STP</Text>
+                    <Text className="text-white/80 text-base mb-4">Welcome to ELIDZ-STP</Text>
+                    <Image
+                        source={require('../../../assets/logos/blue text-idz logo.png')}
+                        style={{ width: 300, height: 130 }}
+                        resizeMode="contain"
+                    />
                 </View>
             </View>
 
@@ -75,17 +80,17 @@ export default function LoginScreen() {
                 contentContainerClassName="flex-grow"
                 style={{ zIndex: 2 }}
             >
-                {/* White Card Form */}
-                <View className="flex-1 bg-white w-full px-6 pb-10 pt-12" style={{ borderTopLeftRadius: 50, borderTopRightRadius: 50, marginTop: -70 }}>
+                {/* Form Fields */}
+                <View className="w-full px-6 pb-10 pt-12" style={{ marginTop: -70 }}>
                     {/* Email Input */}
-                    <View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14 border border-[#D4A03B]/20">
-                        <Ionicons name="mail-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+                    <View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
+                        <Ionicons name="mail-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
                         <TextInput
-                            className="flex-1 text-base text-[#333]"
+                            className="flex-1 text-base text-foreground"
                             value={email}
                             onChangeText={setEmail}
                             placeholder="Email"
-                            placeholderTextColor="#D4A03B"
+                            placeholderTextColor="#9CA3AF"
                             keyboardType="email-address"
                             autoCapitalize="none"
                             autoComplete="email"
@@ -93,14 +98,14 @@ export default function LoginScreen() {
                     </View>
 
                     {/* Password Input */}
-                    <View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-2 px-4 h-14 border border-[#D4A03B]/20">
-                        <Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+                    <View className="flex-row items-center bg-input rounded-full mb-2 px-4 h-14 border border-border">
+                        <Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
                         <TextInput
-                            className="flex-1 text-base text-[#333]"
+                            className="flex-1 text-base text-foreground"
                             value={password}
                             onChangeText={setPassword}
                             placeholder="Password"
-                            placeholderTextColor="#D4A03B"
+                            placeholderTextColor="#9CA3AF"
                             secureTextEntry={!showPassword}
                             autoCapitalize="none"
                             autoComplete="password"
@@ -112,7 +117,7 @@ export default function LoginScreen() {
                             <Ionicons
                                 name={showPassword ? "eye-outline" : "eye-off-outline"}
                                 size={20}
-                                color="#D4A03B"
+                                color="#FF6600"
                             />
                         </Pressable>
                     </View>
@@ -120,7 +125,7 @@ export default function LoginScreen() {
                     {/* Forgot Password */}
                     <View className="flex-row justify-end mb-6">
                         <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
-                            <Text className="text-[#D4A03B] text-sm">
+                            <Text className="text-accent text-sm">
                                 Forgot Password?
                             </Text>
                         </Pressable>
@@ -128,7 +133,7 @@ export default function LoginScreen() {
 
                     {/* Sign In Button */}
                     <Button
-                        className="h-14 rounded-full bg-[#D4A03B] justify-center items-center mb-8 shadow-lg"
+                        className="h-14 rounded-full bg-accent justify-center items-center mb-8 shadow-lg"
                         onPress={handleLogin}
                         disabled={isLoading}
                     >
@@ -139,16 +144,16 @@ export default function LoginScreen() {
 
                     {/* Divider */}
                     <View className="flex-row items-center my-6">
-                        <View className="flex-1 h-px bg-[#D4A03B]/20" />
-                        <Text className="text-[#8a8a8a] mx-4 text-sm font-medium">
+                        <View className="flex-1 h-px bg-border" />
+                        <Text className="text-muted-foreground mx-4 text-sm font-medium">
                             Or continue with
                         </Text>
-                        <View className="flex-1 h-px bg-[#D4A03B]/20" />
+                        <View className="flex-1 h-px bg-border" />
                     </View>
 
                     {/* Google Sign In Button */}
                     <Pressable
-                        className="h-14 rounded-full bg-white border-2 border-gray-200 flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+                        className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
                         onPress={async () => {
                             try {
                                 await signInWithGoogle();
@@ -158,16 +163,16 @@ export default function LoginScreen() {
                         }}
                     >
                         <Ionicons name="logo-google" size={20} color="#4285F4" style={{ marginRight: 12 }} />
-                        <Text className="text-base font-semibold text-gray-700">
+                        <Text className="text-base font-semibold text-foreground">
                             Continue with Google
                         </Text>
                     </Pressable>
 
                     {/* Sign Up Link */}
                     <View className="flex-row justify-center items-center">
-                        <Text className="text-sm text-[#8a8a8a]">Don't have an account? </Text>
+                        <Text className="text-sm text-muted-foreground">Don't have an account? </Text>
                         <Pressable onPress={() => router.push('/(auth)/signup')}>
-                            <Text className="text-sm font-semibold text-[#D4A03B] underline">Sign Up</Text>
+                            <Text className="text-sm font-semibold text-accent underline">Sign Up</Text>
                         </Pressable>
                     </View>
                 </View>

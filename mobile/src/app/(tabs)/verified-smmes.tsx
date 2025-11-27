@@ -144,7 +144,7 @@ export default function VerifiedSMMEsScreen() {
     };
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-background">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Header */}
                 <LinearGradient
@@ -192,11 +192,11 @@ export default function VerifiedSMMEsScreen() {
                                 key={category}
                                 className={`px-5 py-2.5 rounded-full border mr-3 shadow-sm ${selectedCategory === category
                                         ? 'bg-[#002147] border-[#002147]'
-                                        : 'bg-white border-gray-200'
+                                        : 'bg-card border-border'
                                     }`}
                                 onPress={() => setSelectedCategory(category)}
                             >
-                                <Text className={`text-sm font-semibold ${selectedCategory === category ? 'text-white' : 'text-gray-600'
+                                <Text className={`text-sm font-semibold ${selectedCategory === category ? 'text-white' : 'text-foreground'
                                     }`}>
                                     {category}
                                 </Text>
@@ -206,11 +206,11 @@ export default function VerifiedSMMEsScreen() {
                 </View>
 
                 {/* Results Count */}
-                <View className="px-6 mb-4 mt-2">
+                <View className="mx-5 mb-4 mt-2">
                     {loading ? (
-                        <Text className="text-base font-semibold text-[#002147]">Loading...</Text>
+                        <Text className="text-base font-semibold text-foreground">Loading...</Text>
                     ) : (
-                        <Text className="text-base font-semibold text-[#002147]">
+                        <Text className="text-base font-semibold text-foreground">
                             {filteredSMMEs.length} Verified Partner{filteredSMMEs.length !== 1 ? 's' : ''}
                         </Text>
                     )}
@@ -218,9 +218,9 @@ export default function VerifiedSMMEsScreen() {
 
                 {/* Loading State */}
                 {loading && (
-                    <View className="px-6">
+                    <View className="mx-5">
                         {Array.from({ length: 3 }).map((_, index) => (
-                            <View key={index} className="bg-white mb-4 rounded-2xl border border-gray-100 shadow-sm p-4">
+                            <View key={index} className="bg-card mb-4 rounded-2xl border border-border shadow-sm p-4">
                                 <View className="flex-row items-start">
                                     <View className="w-14 h-14 rounded-xl bg-gray-200 animate-pulse" />
                                     <View className="flex-1 ml-4">
@@ -236,14 +236,14 @@ export default function VerifiedSMMEsScreen() {
 
                 {/* SMMEs List */}
                 {!loading && (
-                    <View className="px-6">
+                    <View className="mx-5">
                         {filteredSMMEs.map((smme) => {
                             const isExpanded = expandedSMME === smme.id;
 
                             return (
                                 <View
                                     key={smme.id}
-                                    className="bg-white mb-4 rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
+                                    className="bg-card mb-4 rounded-2xl border border-border shadow-sm overflow-hidden"
                                 >
                                     {/* SMME Header */}
                                     <Pressable
@@ -259,7 +259,7 @@ export default function VerifiedSMMEsScreen() {
                                             {/* Info */}
                                             <View className="flex-1 ml-4">
                                                 <View className="flex-row items-center justify-between mb-1">
-                                                    <Text className="text-base font-bold text-[#002147] flex-1 mr-2" numberOfLines={1}>
+                                                    <Text className="text-base font-bold text-foreground flex-1 mr-2" numberOfLines={1}>
                                                         {smme.name}
                                                     </Text>
                                                     <Feather
@@ -281,7 +281,7 @@ export default function VerifiedSMMEsScreen() {
                                                     )}
                                                 </View>
 
-                                                <Text className="text-gray-500 text-xs" numberOfLines={2}>
+                                                <Text className="text-muted-foreground text-xs" numberOfLines={2}>
                                                     {smme.description}
                                                 </Text>
                                             </View>

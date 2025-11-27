@@ -286,29 +286,29 @@ export default function SMMEVerificationScreen() {
                     <View className="w-20 h-20 bg-blue-50 rounded-full items-center justify-center mb-4">
                         <Feather name="shield" size={40} color="#002147" />
                     </View>
-                    <Text className="text-2xl font-bold text-[#002147] text-center">
+                    <Text className="text-2xl font-bold text-foreground text-center">
                         Verify Your Business
                     </Text>
-                    <Text className="text-gray-500 text-center mt-2">
+                    <Text className="text-muted-foreground text-center mt-2">
                         Upload the 3 required documents to prove your business legitimacy and gain access to exclusive SMME benefits.
                     </Text>
                 </View>
 
                 {/* Required Documents Section */}
                 <View className="mb-6">
-                    <Text className="text-sm font-bold text-[#002147] mb-4 uppercase tracking-wide">
+                    <Text className="text-sm font-bold text-foreground mb-4 uppercase tracking-wide">
                         Required Documents (3)
                     </Text>
                     
                     {documents.map((doc, index) => (
-                        <View key={doc.type} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
+                        <View key={doc.type} className="bg-card p-5 rounded-2xl shadow-sm border border-border mb-4">
                             <View className="flex-row items-center mb-3">
-                                <View className="w-10 h-10 bg-[#002147]/5 rounded-full items-center justify-center mr-3">
+                                <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
                                     <Feather name={doc.icon as any} size={20} color="#002147" />
                                 </View>
                                 <View className="flex-1">
-                                    <Text className="font-bold text-[#002147] text-base">{doc.label}</Text>
-                                    <Text className="text-xs text-gray-500 mt-0.5">{doc.description}</Text>
+                                    <Text className="font-bold text-foreground text-base">{doc.label}</Text>
+                                    <Text className="text-xs text-muted-foreground mt-0.5">{doc.description}</Text>
                                 </View>
                                 {doc.uri && (
                                     <View className="w-6 h-6 bg-[#28A745] rounded-full items-center justify-center">
@@ -319,19 +319,19 @@ export default function SMMEVerificationScreen() {
                             
                             <Pressable 
                                 onPress={() => pickDocument(index)}
-                                className={`border-2 border-dashed rounded-xl h-32 items-center justify-center ${doc.uri ? 'border-[#28A745] bg-green-50' : 'border-gray-300 bg-gray-50'}`}
+                                className={`border-2 border-dashed rounded-xl h-32 items-center justify-center ${doc.uri ? 'border-constructive bg-constructive/10' : 'border-border bg-muted'}`}
                             >
                                 {doc.uri ? (
                                     <View className="items-center">
                                         <Image source={{ uri: doc.uri }} className="w-16 h-16 rounded-lg mb-2" resizeMode="cover" />
-                                        <Text className="text-[#28A745] font-semibold text-sm">Document Uploaded</Text>
-                                        <Text className="text-xs text-gray-500 mt-1">Tap to change</Text>
+                                        <Text className="text-constructive font-semibold text-sm">Document Uploaded</Text>
+                                        <Text className="text-xs text-muted-foreground mt-1">Tap to change</Text>
                                     </View>
                                 ) : (
                                     <View className="items-center">
                                         <Feather name="upload-cloud" size={32} color="#9CA3AF" />
-                                        <Text className="text-gray-500 font-medium text-sm mt-2">Tap to upload</Text>
-                                        <Text className="text-xs text-gray-400 mt-1">JPG, PNG supported</Text>
+                                        <Text className="text-muted-foreground font-medium text-sm mt-2">Tap to upload</Text>
+                                        <Text className="text-xs text-muted-foreground mt-1">JPG, PNG supported</Text>
                                     </View>
                                 )}
                             </Pressable>
@@ -340,16 +340,16 @@ export default function SMMEVerificationScreen() {
                 </View>
 
                 {/* Progress Indicator */}
-                <View className="bg-white p-4 rounded-xl mb-6 border border-gray-100">
+                <View className="bg-card p-4 rounded-xl mb-6 border border-border">
                     <View className="flex-row items-center justify-between mb-2">
-                        <Text className="text-sm font-semibold text-[#002147]">Upload Progress</Text>
-                        <Text className="text-sm font-bold text-[#002147]">
+                        <Text className="text-sm font-semibold text-foreground">Upload Progress</Text>
+                        <Text className="text-sm font-bold text-foreground">
                             {documents.filter(d => d.uri).length}/3
                         </Text>
                     </View>
-                    <View className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                    <View className="h-2 bg-muted rounded-full overflow-hidden">
                         <View 
-                            className="h-full bg-[#28A745] rounded-full"
+                            className="h-full bg-constructive rounded-full"
                             style={{ width: `${(documents.filter(d => d.uri).length / 3) * 100}%` }}
                         />
                     </View>
@@ -367,12 +367,12 @@ export default function SMMEVerificationScreen() {
                 </Button>
 
                 {/* Info Box */}
-                <View className="bg-blue-50 p-5 rounded-xl border border-blue-100 mb-6">
+                <View className="bg-primary/10 p-5 rounded-xl border border-primary/20 mb-6">
                     <View className="flex-row items-start">
                         <Feather name="info" size={20} color="#002147" style={{ marginTop: 2, marginRight: 12 }} />
                         <View className="flex-1">
-                            <Text className="text-[#002147] font-semibold mb-2">Verification Process</Text>
-                            <Text className="text-[#002147] text-sm leading-5">
+                            <Text className="text-foreground font-semibold mb-2">Verification Process</Text>
+                            <Text className="text-foreground text-sm leading-5">
                                 • All 3 documents are required for verification{'\n'}
                                 • Admin review typically takes 24-48 hours{'\n'}
                                 • You'll be notified via email once approved{'\n'}
@@ -390,8 +390,8 @@ export default function SMMEVerificationScreen() {
                                 <Feather name="package" size={20} color="#002147" />
                             </View>
                             <View>
-                                <Text className="text-lg font-bold text-[#002147]">Products & Services</Text>
-                                <Text className="text-gray-500 text-xs mt-0.5">
+                                <Text className="text-lg font-bold text-foreground">Products & Services</Text>
+                                <Text className="text-muted-foreground text-xs mt-0.5">
                                     List your business offerings ({servicesProducts.products.length + servicesProducts.services.length} items)
                                 </Text>
                             </View>
@@ -411,9 +411,9 @@ export default function SMMEVerificationScreen() {
 
                     {/* Add/Edit Form */}
                     {showAddForm && (
-                        <View className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
+                        <View className="bg-card p-5 rounded-2xl shadow-sm border border-border mb-4">
                             <View className="flex-row items-center justify-between mb-4">
-                                <Text className="text-lg font-bold text-[#002147]">
+                                <Text className="text-lg font-bold text-foreground">
                                     {editingItem ? 'Edit' : 'Add'} {formType}
                                 </Text>
                                 <Pressable onPress={resetForm}>
@@ -423,21 +423,21 @@ export default function SMMEVerificationScreen() {
 
                             {/* Type Selector */}
                             <View className="mb-4">
-                                <Text className="text-[#002147] font-semibold mb-2">Type *</Text>
+                                <Text className="text-foreground font-semibold mb-2">Type *</Text>
                                 <View className="flex-row gap-3">
                                     <Pressable
-                                        className={`flex-1 py-3 rounded-lg border-2 ${formType === 'Service' ? 'border-[#002147] bg-[#002147]/5' : 'border-gray-200'}`}
+                                        className={`flex-1 py-3 rounded-lg border-2 ${formType === 'Service' ? 'border-primary bg-primary/10' : 'border-border'}`}
                                         onPress={() => setFormType('Service')}
                                     >
-                                        <Text className={`text-center font-semibold ${formType === 'Service' ? 'text-[#002147]' : 'text-gray-500'}`}>
+                                        <Text className={`text-center font-semibold ${formType === 'Service' ? 'text-primary' : 'text-muted-foreground'}`}>
                                             Service
                                         </Text>
                                     </Pressable>
                                     <Pressable
-                                        className={`flex-1 py-3 rounded-lg border-2 ${formType === 'Product' ? 'border-[#002147] bg-[#002147]/5' : 'border-gray-200'}`}
+                                        className={`flex-1 py-3 rounded-lg border-2 ${formType === 'Product' ? 'border-primary bg-primary/10' : 'border-border'}`}
                                         onPress={() => setFormType('Product')}
                                     >
-                                        <Text className={`text-center font-semibold ${formType === 'Product' ? 'text-[#002147]' : 'text-gray-500'}`}>
+                                        <Text className={`text-center font-semibold ${formType === 'Product' ? 'text-primary' : 'text-muted-foreground'}`}>
                                             Product
                                         </Text>
                                     </Pressable>
@@ -446,9 +446,9 @@ export default function SMMEVerificationScreen() {
 
                             {/* Name */}
                             <View className="mb-4">
-                                <Text className="text-[#002147] font-semibold mb-2">Name *</Text>
+                                <Text className="text-foreground font-semibold mb-2">Name *</Text>
                                 <TextInput
-                                    className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                    className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                     value={formName}
                                     onChangeText={setFormName}
                                     placeholder="Enter name"
@@ -458,9 +458,9 @@ export default function SMMEVerificationScreen() {
 
                             {/* Description */}
                             <View className="mb-4">
-                                <Text className="text-[#002147] font-semibold mb-2">Description *</Text>
+                                <Text className="text-foreground font-semibold mb-2">Description *</Text>
                                 <TextInput
-                                    className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base min-h-[100px]"
+                                    className="bg-input border border-border rounded-lg px-4 py-3 text-base min-h-[100px] text-foreground"
                                     value={formDescription}
                                     onChangeText={setFormDescription}
                                     placeholder="Describe your offering"
@@ -472,8 +472,8 @@ export default function SMMEVerificationScreen() {
 
                             {/* Category */}
                             <View className="mb-4">
-                                <Text className="text-[#002147] font-semibold mb-2">Category *</Text>
-                                <View className="bg-gray-50 border border-gray-200 rounded-lg">
+                                <Text className="text-foreground font-semibold mb-2">Category *</Text>
+                                <View className="bg-input border border-border rounded-lg">
                                     <Picker
                                         selectedValue={formCategory}
                                         onValueChange={setFormCategory}
@@ -490,9 +490,9 @@ export default function SMMEVerificationScreen() {
                             {/* Price (only for products) */}
                             {formType === 'Product' && (
                                 <View className="mb-4">
-                                    <Text className="text-[#002147] font-semibold mb-2">Price (Optional)</Text>
+                                    <Text className="text-foreground font-semibold mb-2">Price (Optional)</Text>
                                     <TextInput
-                                        className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                        className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                         value={formPrice}
                                         onChangeText={setFormPrice}
                                         placeholder="e.g., R500 or Contact for quote"
@@ -503,12 +503,12 @@ export default function SMMEVerificationScreen() {
 
                             {/* Contact Information (Optional) */}
                             <View className="mb-4">
-                                <Text className="text-[#002147] font-semibold mb-3">Contact Information (Optional)</Text>
+                                <Text className="text-foreground font-semibold mb-3">Contact Information (Optional)</Text>
                                 
                                 <View className="mb-3">
-                                    <Text className="text-gray-600 text-sm mb-1">Email</Text>
+                                    <Text className="text-muted-foreground text-sm mb-1">Email</Text>
                                     <TextInput
-                                        className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                        className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                         value={formContactEmail}
                                         onChangeText={setFormContactEmail}
                                         placeholder="contact@example.com"
@@ -519,9 +519,9 @@ export default function SMMEVerificationScreen() {
                                 </View>
 
                                 <View className="mb-3">
-                                    <Text className="text-gray-600 text-sm mb-1">Phone</Text>
+                                    <Text className="text-muted-foreground text-sm mb-1">Phone</Text>
                                     <TextInput
-                                        className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                        className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                         value={formContactPhone}
                                         onChangeText={setFormContactPhone}
                                         placeholder="+27 12 345 6789"
@@ -531,9 +531,9 @@ export default function SMMEVerificationScreen() {
                                 </View>
 
                                 <View>
-                                    <Text className="text-gray-600 text-sm mb-1">Website</Text>
+                                    <Text className="text-muted-foreground text-sm mb-1">Website</Text>
                                     <TextInput
-                                        className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                        className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                         value={formWebsiteUrl}
                                         onChangeText={setFormWebsiteUrl}
                                         placeholder="https://example.com"
@@ -547,10 +547,10 @@ export default function SMMEVerificationScreen() {
                             {/* Form Actions */}
                             <View className="flex-row gap-3">
                                 <Pressable
-                                    className="flex-1 py-3 bg-gray-200 rounded-lg items-center active:opacity-90"
+                                    className="flex-1 py-3 bg-muted rounded-lg items-center active:opacity-90"
                                     onPress={resetForm}
                                 >
-                                    <Text className="text-gray-700 font-semibold">Cancel</Text>
+                                    <Text className="text-foreground font-semibold">Cancel</Text>
                                 </Pressable>
                                 <Pressable
                                     className="flex-1 py-3 bg-[#002147] rounded-lg items-center active:opacity-90"
@@ -578,30 +578,30 @@ export default function SMMEVerificationScreen() {
                         <>
                             {servicesProducts.products.length > 0 && (
                                 <View className="mb-4">
-                                    <Text className="text-[#002147] font-semibold mb-3">Products ({servicesProducts.products.length})</Text>
+                                    <Text className="text-foreground font-semibold mb-3">Products ({servicesProducts.products.length})</Text>
                                     {servicesProducts.products.map((product) => (
-                                        <View key={product.id} className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm">
+                                        <View key={product.id} className="bg-card rounded-xl p-4 mb-3 border border-border shadow-sm">
                                             <View className="flex-row items-start justify-between">
                                                 <View className="flex-1">
-                                                    <Text className="text-[#002147] font-bold text-base">{product.name}</Text>
-                                                    <Text className="text-gray-500 text-sm mt-1">{product.description}</Text>
+                                                    <Text className="text-foreground font-bold text-base">{product.name}</Text>
+                                                    <Text className="text-muted-foreground text-sm mt-1">{product.description}</Text>
                                                     {product.price && (
-                                                        <Text className="text-[#FF6600] font-bold text-sm mt-1">{product.price}</Text>
+                                                        <Text className="text-accent font-bold text-sm mt-1">{product.price}</Text>
                                                     )}
-                                                    <View className="bg-gray-100 self-start px-2 py-1 rounded-md mt-2">
-                                                        <Text className="text-gray-600 text-xs">{product.category}</Text>
+                                                    <View className="bg-muted self-start px-2 py-1 rounded-md mt-2">
+                                                        <Text className="text-foreground text-xs">{product.category}</Text>
                                                     </View>
                                                 </View>
                                                 <View className="flex-row gap-2">
                                                     <Pressable
                                                         onPress={() => handleEdit(product)}
-                                                        className="p-2 bg-blue-50 rounded-lg"
+                                                        className="p-2 bg-primary/10 rounded-lg"
                                                     >
                                                         <Feather name="edit" size={16} color="#002147" />
                                                     </Pressable>
                                                     <Pressable
                                                         onPress={() => handleDelete(product)}
-                                                        className="p-2 bg-red-50 rounded-lg"
+                                                        className="p-2 bg-destructive/10 rounded-lg"
                                                     >
                                                         <Feather name="trash-2" size={16} color="#EF4444" />
                                                     </Pressable>
@@ -615,27 +615,27 @@ export default function SMMEVerificationScreen() {
                             {/* Services List */}
                             {servicesProducts.services.length > 0 && (
                                 <View className="mb-4">
-                                    <Text className="text-[#002147] font-semibold mb-3">Services ({servicesProducts.services.length})</Text>
+                                    <Text className="text-foreground font-semibold mb-3">Services ({servicesProducts.services.length})</Text>
                                     {servicesProducts.services.map((service) => (
-                                        <View key={service.id} className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm">
+                                        <View key={service.id} className="bg-card rounded-xl p-4 mb-3 border border-border shadow-sm">
                                             <View className="flex-row items-start justify-between">
                                                 <View className="flex-1">
-                                                    <Text className="text-[#002147] font-bold text-base">{service.name}</Text>
-                                                    <Text className="text-gray-500 text-sm mt-1">{service.description}</Text>
-                                                    <View className="bg-gray-100 self-start px-2 py-1 rounded-md mt-2">
-                                                        <Text className="text-gray-600 text-xs">{service.category}</Text>
+                                                    <Text className="text-foreground font-bold text-base">{service.name}</Text>
+                                                    <Text className="text-muted-foreground text-sm mt-1">{service.description}</Text>
+                                                    <View className="bg-muted self-start px-2 py-1 rounded-md mt-2">
+                                                        <Text className="text-foreground text-xs">{service.category}</Text>
                                                     </View>
                                                 </View>
                                                 <View className="flex-row gap-2">
                                                     <Pressable
                                                         onPress={() => handleEdit(service)}
-                                                        className="p-2 bg-blue-50 rounded-lg"
+                                                        className="p-2 bg-primary/10 rounded-lg"
                                                     >
                                                         <Feather name="edit" size={16} color="#002147" />
                                                     </Pressable>
                                                     <Pressable
                                                         onPress={() => handleDelete(service)}
-                                                        className="p-2 bg-red-50 rounded-lg"
+                                                        className="p-2 bg-destructive/10 rounded-lg"
                                                     >
                                                         <Feather name="trash-2" size={16} color="#EF4444" />
                                                     </Pressable>
@@ -648,12 +648,12 @@ export default function SMMEVerificationScreen() {
 
                             {/* Empty State */}
                             {servicesProducts.products.length === 0 && servicesProducts.services.length === 0 && !showAddForm && (
-                                <View className="items-center py-8 bg-white rounded-2xl border border-gray-100 border-dashed">
+                                <View className="items-center py-8 bg-card rounded-2xl border border-border border-dashed">
                                     <Feather name="package" size={48} color="#CBD5E0" />
-                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                    <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                         No products or services listed yet
                                     </Text>
-                                    <Text className="text-gray-400 text-sm mt-2 text-center">
+                                    <Text className="text-muted-foreground text-sm mt-2 text-center">
                                         Add your offerings to appear in the verified SMMEs directory
                                     </Text>
                                 </View>

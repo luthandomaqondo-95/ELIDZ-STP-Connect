@@ -7,6 +7,7 @@ export interface Profile {
   organization?: string;
   bio?: string;
   avatar?: string;
+  isPremium?: boolean;
   created_at: string;
 }
 

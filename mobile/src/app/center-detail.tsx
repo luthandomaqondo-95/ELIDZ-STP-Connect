@@ -213,7 +213,7 @@ function CenterDetailScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-background">
       {/* Header */}
       <LinearGradient
         colors={['#002147', '#003366']}
@@ -254,7 +254,7 @@ function CenterDetailScreen() {
           marginBottom: Spacing.xl,
         }}>
         <View style={{ flex: 1, marginRight: (id === '1' || id === '2' || id === '5' || id === '6' || id === '7' || id === '8') ? Spacing.lg : 0 }}>
-        <Text style={[Typography.h3, { marginBottom: Spacing.lg }]}>Services & Capabilities</Text>
+        <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.lg }]}>Services & Capabilities</Text>
           {data.services.map((service: string, index: number) => {
             const incubatorInfo = parseIncubatorService(service);
             return (
@@ -440,7 +440,7 @@ function CenterDetailScreen() {
       </View>
 
       <View style={{ marginBottom: Spacing.xl }}>
-        <Text style={[Typography.h3, { marginBottom: Spacing.lg }]}>Equipment & Facilities</Text>
+        <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.lg }]}>Equipment & Facilities</Text>
         {data.equipment.map((item: string, index: number) => (
           <EquipmentRow
             key={index}
@@ -458,13 +458,13 @@ function CenterDetailScreen() {
           backgroundColor: colors.backgroundDefault,
           ...Shadow.card,
         }}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Contact Information</Text>
+          <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.md }]}>Contact Information</Text>
           <View style={{
             flexDirection: 'row',
             alignItems: 'center',
           }}>
             <Feather name="user" size={18} color={colors.primary} />
-            <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>
+            <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md, flex: 1 }]}>
               {data.contact.name}
             </Text>
           </View>
@@ -541,7 +541,7 @@ function CenterDetailScreen() {
           backgroundColor: colors.backgroundDefault,
           ...Shadow.card,
         }}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Intellectual Property</Text>
+          <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.md }]}>Intellectual Property</Text>
           <Text style={[Typography.body, { color: colors.text, lineHeight: 22 }]}>
             {data.additionalInfo}
           </Text>
@@ -613,12 +613,12 @@ const ServiceRow: React.FC<ServiceRowProps> = ({ service, incubatorInfo, colors,
               {incubatorInfo.name}
             </Text>
           </Pressable>
-          <Text style={[Typography.body]}>
+          <Text style={[Typography.body, { color: colors.text }]}>
             {service.replace(new RegExp(`^${incubatorInfo.name}\\s*-`), ' -').replace(/Website:\s*www\.\S+/i, '')}
           </Text>
         </View>
       ) : (
-        <Text style={[Typography.body]}>
+        <Text style={[Typography.body, { color: colors.text }]}>
           {service}
         </Text>
       )}
@@ -638,7 +638,7 @@ const EquipmentRow: React.FC<EquipmentRowProps> = ({ item, colors }) => (
     marginBottom: Spacing.md,
   }}>
     <Feather name="settings" size={20} color={colors.primary} />
-    <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>
+    <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md, flex: 1 }]}>
       {item}
     </Text>
   </View>

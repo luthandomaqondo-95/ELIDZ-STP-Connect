@@ -98,6 +98,79 @@ class ProfileService {
     console.log('ProfileService.updateProfile succeeded:', data);
     return data as Profile;
   }
+
+  /**
+   * Upload a profile picture to Supabase Storage
+   * @param fileUri - Local file URI from the device
+   * @param userId - User ID for organizing files
+   * @returns Public URL of the uploaded image
+   */
+  async uploadProfilePicture(fileUri: string, userId: string): Promise<string> {
+    try {
+      console.log('ProfileService.uploadProfilePicture called for userId:', userId);
+
+      // Get file extension from URI
+      const fileExtension = fileUri.split('.').pop()?.toLowerCase() || 'jpg';
+      const timestamp = Date.now();
+      const fileName = `avatar_${timestamp}.${fileExtension}`;
+      // File path should NOT include bucket name - just the folder structure
+      const filePath = `${userId}/${fileName}`;
+
+      // Read the file
+      const response = await fetch(fileUri);
+      const blob = await response.blob();
+      
+      // Convert blob to ArrayBuffer for Supabase
+      const arrayBuffer = await new Response(blob).arrayBuffer();
+  
+      // Determine content type
+      const contentType = this.getContentType(fileExtension);
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('profile-avatars')
+        .upload(filePath, arrayBuffer, {
+          contentType: contentType,
+          cacheControl: '3600',
+          upsert: true // Allow overwriting existing avatar
+        });
+
+      if (error) {
+        console.error('ProfileService.uploadProfilePicture storage error:', error);
+        throw new Error(`Failed to upload profile picture: ${error.message}`);
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-avatars')
+        .getPublicUrl(filePath);
+
+      if (!publicUrl) {
+        throw new Error('Failed to get public URL for uploaded profile picture');
+      }
+
+      console.log('ProfileService.uploadProfilePicture succeeded:', publicUrl);
+      return publicUrl;
+    } catch (error: any) {
+      console.error('ProfileService.uploadProfilePicture error:', error);
+      throw new Error(error.message || 'Failed to upload profile picture. Please try again.');
+    }
+  }
+
+  /**
+   * Get the appropriate content type for a file extension
+   */
+  private getContentType(extension: string): string {
+    const contentTypes: Record<string, string> = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'webp': 'image/webp',
+      'heic': 'image/heic',
+      'heif': 'image/heif',
+    };
+    return contentTypes[extension] || 'image/jpeg';
+  }
 }
 
 export const profileService = new ProfileService();

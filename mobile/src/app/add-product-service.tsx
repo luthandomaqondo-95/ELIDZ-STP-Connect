@@ -78,7 +78,7 @@ export default function AddProductServiceScreen() {
     };
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-background">
             <LinearGradient
                 colors={['#002147', '#003366']}
                 className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
@@ -97,22 +97,22 @@ export default function AddProductServiceScreen() {
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 <View className="px-6 mt-6">
                     {/* Type Selector */}
-                    <View className="bg-white rounded-xl p-4 mb-4 border border-gray-100 shadow-sm">
-                        <Text className="text-[#002147] font-semibold mb-2">Type *</Text>
+                    <View className="bg-card rounded-xl p-4 mb-4 border border-border shadow-sm">
+                        <Text className="text-foreground font-semibold mb-2">Type *</Text>
                         <View className="flex-row gap-3">
                             <Pressable
-                                className={`flex-1 py-3 rounded-lg border-2 ${type === 'Service' ? 'border-[#002147] bg-[#002147]/5' : 'border-gray-200'}`}
+                                className={`flex-1 py-3 rounded-lg border-2 ${type === 'Service' ? 'border-primary bg-primary/10' : 'border-border'}`}
                                 onPress={() => setType('Service')}
                             >
-                                <Text className={`text-center font-semibold ${type === 'Service' ? 'text-[#002147]' : 'text-gray-500'}`}>
+                                <Text className={`text-center font-semibold ${type === 'Service' ? 'text-primary' : 'text-muted-foreground'}`}>
                                     Service
                                 </Text>
                             </Pressable>
                             <Pressable
-                                className={`flex-1 py-3 rounded-lg border-2 ${type === 'Product' ? 'border-[#002147] bg-[#002147]/5' : 'border-gray-200'}`}
+                                className={`flex-1 py-3 rounded-lg border-2 ${type === 'Product' ? 'border-primary bg-primary/10' : 'border-border'}`}
                                 onPress={() => setType('Product')}
                             >
-                                <Text className={`text-center font-semibold ${type === 'Product' ? 'text-[#002147]' : 'text-gray-500'}`}>
+                                <Text className={`text-center font-semibold ${type === 'Product' ? 'text-primary' : 'text-muted-foreground'}`}>
                                     Product
                                 </Text>
                             </Pressable>
@@ -120,10 +120,10 @@ export default function AddProductServiceScreen() {
                     </View>
 
                     {/* Name */}
-                    <View className="bg-white rounded-xl p-4 mb-4 border border-gray-100 shadow-sm">
-                        <Text className="text-[#002147] font-semibold mb-2">Name *</Text>
+                    <View className="bg-card rounded-xl p-4 mb-4 border border-border shadow-sm">
+                        <Text className="text-foreground font-semibold mb-2">Name *</Text>
                         <TextInput
-                            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                            className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                             value={name}
                             onChangeText={setName}
                             placeholder="Enter name"
@@ -132,10 +132,10 @@ export default function AddProductServiceScreen() {
                     </View>
 
                     {/* Description */}
-                    <View className="bg-white rounded-xl p-4 mb-4 border border-gray-100 shadow-sm">
-                        <Text className="text-[#002147] font-semibold mb-2">Description *</Text>
+                    <View className="bg-card rounded-xl p-4 mb-4 border border-border shadow-sm">
+                        <Text className="text-foreground font-semibold mb-2">Description *</Text>
                         <TextInput
-                            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base min-h-[100px]"
+                            className="bg-input border border-border rounded-lg px-4 py-3 text-base min-h-[100px] text-foreground"
                             value={description}
                             onChangeText={setDescription}
                             placeholder="Describe your offering"
@@ -146,9 +146,9 @@ export default function AddProductServiceScreen() {
                     </View>
 
                     {/* Category */}
-                    <View className="bg-white rounded-xl p-4 mb-4 border border-gray-100 shadow-sm">
-                        <Text className="text-[#002147] font-semibold mb-2">Category *</Text>
-                        <View className="bg-gray-50 border border-gray-200 rounded-lg">
+                    <View className="bg-card rounded-xl p-4 mb-4 border border-border shadow-sm">
+                        <Text className="text-foreground font-semibold mb-2">Category *</Text>
+                        <View className="bg-input border border-border rounded-lg">
                             <Picker
                                 selectedValue={category}
                                 onValueChange={setCategory}
@@ -164,10 +164,10 @@ export default function AddProductServiceScreen() {
 
                     {/* Price (only for products) */}
                     {type === 'Product' && (
-                        <View className="bg-white rounded-xl p-4 mb-4 border border-gray-100 shadow-sm">
-                            <Text className="text-[#002147] font-semibold mb-2">Price (Optional)</Text>
+                        <View className="bg-card rounded-xl p-4 mb-4 border border-border shadow-sm">
+                            <Text className="text-foreground font-semibold mb-2">Price (Optional)</Text>
                             <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                 value={price}
                                 onChangeText={setPrice}
                                 placeholder="e.g., R500 or Contact for quote"
@@ -178,13 +178,13 @@ export default function AddProductServiceScreen() {
                     )}
 
                     {/* Contact Information (Optional) */}
-                    <View className="bg-white rounded-xl p-4 mb-4 border border-gray-100 shadow-sm">
-                        <Text className="text-[#002147] font-semibold mb-3">Contact Information (Optional)</Text>
+                    <View className="bg-card rounded-xl p-4 mb-4 border border-border shadow-sm">
+                        <Text className="text-foreground font-semibold mb-3">Contact Information (Optional)</Text>
                         
                         <View className="mb-3">
-                            <Text className="text-gray-600 text-sm mb-1">Email</Text>
+                            <Text className="text-muted-foreground text-sm mb-1">Email</Text>
                             <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                 value={contactEmail}
                                 onChangeText={setContactEmail}
                                 placeholder="contact@example.com"
@@ -195,9 +195,9 @@ export default function AddProductServiceScreen() {
                         </View>
 
                         <View className="mb-3">
-                            <Text className="text-gray-600 text-sm mb-1">Phone</Text>
+                            <Text className="text-muted-foreground text-sm mb-1">Phone</Text>
                             <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                 value={contactPhone}
                                 onChangeText={setContactPhone}
                                 placeholder="+27 12 345 6789"
@@ -207,9 +207,9 @@ export default function AddProductServiceScreen() {
                         </View>
 
                         <View>
-                            <Text className="text-gray-600 text-sm mb-1">Website</Text>
+                            <Text className="text-muted-foreground text-sm mb-1">Website</Text>
                             <TextInput
-                                className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                className="bg-input border border-border rounded-lg px-4 py-3 text-base text-foreground"
                                 value={websiteUrl}
                                 onChangeText={setWebsiteUrl}
                                 placeholder="https://example.com"

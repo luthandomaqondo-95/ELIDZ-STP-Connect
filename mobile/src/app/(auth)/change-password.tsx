@@ -129,14 +129,14 @@ export default function ChangePasswordScreen() {
 							Update your password regularly to keep your ELIDZ-STP account secure.
 						</Text>
 
-						<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14 border border-[#D4A03B]/30">
-							<Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+						<View className="flex-row items-center bg-white/10 rounded-full mb-4 px-4 h-14 border border-white/20">
+							<Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
 							<TextInput
 								className="flex-1 text-base text-white"
 								value={currentPassword}
 								onChangeText={setCurrentPassword}
 								placeholder="Current Password"
-								placeholderTextColor="#D4A03B"
+								placeholderTextColor="#9CA3AF"
 								secureTextEntry={!showCurrentPassword}
 								autoCapitalize="none"
 								autoComplete="password"
@@ -148,19 +148,19 @@ export default function ChangePasswordScreen() {
 								<Ionicons
 									name={showCurrentPassword ? 'eye-outline' : 'eye-off-outline'}
 									size={20}
-									color="#D4A03B"
+									color="#FF6600"
 								/>
 							</Pressable>
 						</View>
 
-						<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14 border border-[#D4A03B]/30">
-							<Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+						<View className="flex-row items-center bg-white/10 rounded-full mb-4 px-4 h-14 border border-white/20">
+							<Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
 							<TextInput
 								className="flex-1 text-base text-white"
 								value={newPassword}
 								onChangeText={setNewPassword}
 								placeholder="New Password"
-								placeholderTextColor="#D4A03B"
+								placeholderTextColor="#9CA3AF"
 								secureTextEntry={!showNewPassword}
 								autoCapitalize="none"
 								autoComplete="password-new"
@@ -172,19 +172,19 @@ export default function ChangePasswordScreen() {
 								<Ionicons
 									name={showNewPassword ? 'eye-outline' : 'eye-off-outline'}
 									size={20}
-									color="#D4A03B"
+									color="#FF6600"
 								/>
 							</Pressable>
 						</View>
 
-						<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-6 px-4 h-14 border border-[#D4A03B]/30">
-							<Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+						<View className="flex-row items-center bg-white/10 rounded-full mb-6 px-4 h-14 border border-white/20">
+							<Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
 							<TextInput
 								className="flex-1 text-base text-white"
 								value={confirmPassword}
 								onChangeText={setConfirmPassword}
 								placeholder="Confirm New Password"
-								placeholderTextColor="#D4A03B"
+								placeholderTextColor="#9CA3AF"
 								secureTextEntry={!showConfirmPassword}
 								autoCapitalize="none"
 								autoComplete="password-new"
@@ -196,13 +196,13 @@ export default function ChangePasswordScreen() {
 								<Ionicons
 									name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
 									size={20}
-									color="#D4A03B"
+									color="#FF6600"
 								/>
 							</Pressable>
 						</View>
 
 						<Button
-							className="h-14 rounded-full bg-[#D4A03B] justify-center items-center mb-4 active:opacity-80 active:scale-95"
+							className="h-14 rounded-full bg-accent justify-center items-center mb-4 active:opacity-80 active:scale-95"
 							onPress={handleChangePassword}
 							disabled={isLoading}
 						>

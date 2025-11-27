@@ -199,7 +199,7 @@ function MessagesScreen() {
         return (
             <Pressable
                 key={chat.id}
-                className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm overflow-hidden active:opacity-95"
+                className="bg-card mb-3 rounded-2xl border border-border shadow-sm overflow-hidden active:opacity-95"
                 onPress={() => {
                     const userName = chat.type === 'direct' && chat.otherUser ? chat.otherUser.name : displayName;
                     router.push(`/message?chatId=${chat.id}&userName=${encodeURIComponent(userName)}`);
@@ -224,11 +224,11 @@ function MessagesScreen() {
 
                     <View className="flex-1 ml-3">
                         <View className="flex-row items-center justify-between mb-1">
-                            <Text className="text-base font-bold text-[#002147] flex-1" numberOfLines={1}>
+                            <Text className="text-base font-bold text-foreground flex-1" numberOfLines={1}>
                                 {displayName}
                             </Text>
                             {chat.lastMessage && (
-                                <Text className="text-xs text-gray-400 ml-2">
+                                <Text className="text-xs text-muted-foreground ml-2">
                                     {formatTimeAgo(chat.lastMessage.created_at)}
                                 </Text>
                             )}
@@ -245,18 +245,18 @@ function MessagesScreen() {
                                 </Text>
                             </View>
                             {chat.type === 'direct' && chat.otherUser?.organization && (
-                                <Text className="text-gray-400 text-xs ml-2" numberOfLines={1}>
+                                <Text className="text-muted-foreground text-xs ml-2" numberOfLines={1}>
                                     • {chat.otherUser.organization}
                                 </Text>
                             )}
                         </View>
 
                         {chat.lastMessage ? (
-                            <Text className={`text-sm ${chat.unreadCount && chat.unreadCount > 0 ? 'text-[#002147] font-semibold' : 'text-gray-500'}`} numberOfLines={1}>
+                            <Text className={`text-sm ${chat.unreadCount && chat.unreadCount > 0 ? 'text-foreground font-semibold' : 'text-muted-foreground'}`} numberOfLines={1}>
                                 {chat.lastMessage.content}
                             </Text>
                         ) : (
-                            <Text className="text-xs text-gray-400 italic">
+                            <Text className="text-xs text-muted-foreground italic">
                                 No messages yet
                             </Text>
                         )}
@@ -281,7 +281,7 @@ function MessagesScreen() {
         return (
             <Pressable
                 key={contact.id}
-                className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm overflow-hidden active:opacity-95"
+                className="bg-card mb-3 rounded-2xl border border-border shadow-sm overflow-hidden active:opacity-95"
                 onPress={() => {
                     if (contact.connectionStatus === 'connected') {
                         handleMessage(contact);
@@ -305,11 +305,11 @@ function MessagesScreen() {
 
                     <View className="flex-1 ml-3">
                         <View className="flex-row items-center justify-between mb-1">
-                            <Text className="text-base font-bold text-[#002147] flex-1" numberOfLines={1}>
+                            <Text className="text-base font-bold text-foreground flex-1" numberOfLines={1}>
                                 {contact.name}
                             </Text>
                             {contact.lastMessageTime && (
-                                <Text className="text-xs text-gray-400 ml-2">
+                                <Text className="text-xs text-muted-foreground ml-2">
                                     {contact.lastMessageTime}
                                 </Text>
                             )}
@@ -325,17 +325,17 @@ function MessagesScreen() {
                                     {contact.role}
                                 </Text>
                             </View>
-                            <Text className="text-gray-400 text-xs ml-2" numberOfLines={1}>
+                            <Text className="text-muted-foreground text-xs ml-2" numberOfLines={1}>
                                 • {contact.organization || 'No organization'}
                             </Text>
                         </View>
 
                         {contact.lastMessage ? (
-                            <Text className={`text-sm ${contact.hasUnreadMessages ? 'text-[#002147] font-semibold' : 'text-gray-500'}`} numberOfLines={1}>
+                            <Text className={`text-sm ${contact.hasUnreadMessages ? 'text-foreground font-semibold' : 'text-muted-foreground'}`} numberOfLines={1}>
                                 {contact.lastMessage}
                             </Text>
                         ) : (
-                            <Text className="text-xs text-gray-400 italic">
+                            <Text className="text-xs text-muted-foreground italic">
                                 {contact.connectionStatus === 'connected' ? 'Tap to message' :
                                  contact.connectionStatus === 'available' ? 'Tap to connect' :
                                  contact.connectionStatus === 'pending_sent' ? 'Request sent' :
@@ -366,9 +366,9 @@ function MessagesScreen() {
                     )}
 
                     {contact.connectionStatus === 'pending_sent' && (
-                        <View className="flex-row items-center ml-2 bg-gray-100 px-3 py-1.5 rounded-full">
+                        <View className="flex-row items-center ml-2 bg-muted px-3 py-1.5 rounded-full">
                             <Feather name="clock" size={14} color="#6C757D" style={{ marginRight: 6 }} />
-                            <Text className="text-xs font-medium text-gray-500">Requested</Text>
+                            <Text className="text-xs font-medium text-muted-foreground">Requested</Text>
                         </View>
                     )}
 
@@ -394,7 +394,7 @@ function MessagesScreen() {
 
     if (!isLoggedIn) {
          return (
-            <View className="flex-1 bg-gray-50">
+            <View className="flex-1 bg-background">
                  <LinearGradient
                     colors={['#002147', '#003366']}
                     className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg mb-6"
@@ -404,16 +404,16 @@ function MessagesScreen() {
                         Connect with innovators and partners.
                     </Text>
                  </LinearGradient>
-                 <View className="mx-6 p-5 rounded-2xl bg-white border border-[#002147]/10 shadow-sm">
+                 <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
                         <View className="bg-[#FF6600]/10 p-2 rounded-full mr-3">
                             <Feather name="lock" size={18} color="#FF6600" />
                         </View>
-                        <Text className="text-[#002147] text-lg font-bold">
+                        <Text className="text-foreground text-lg font-bold">
                             Sign Up for Full Networking
                         </Text>
                     </View>
-                    <Text className="text-gray-500 text-sm mb-4 ml-1">
+                    <Text className="text-muted-foreground text-sm mb-4 ml-1">
                         Create an account to connect with all users, send messages, and build your professional network.
                     </Text>
                     <Pressable
@@ -430,7 +430,7 @@ function MessagesScreen() {
     }
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-background">
             <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
                 {/* Header */}
                 <LinearGradient
@@ -456,14 +456,14 @@ function MessagesScreen() {
                 </LinearGradient>
 
                 {/* Tabs */}
-                <View className="mt-6 mx-6 mb-4">
-                    <View className="flex-row bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
+                <View className="mt-6 mx-5 mb-4">
+                    <View className="flex-row bg-card rounded-xl p-1 border border-border shadow-sm">
                         <Pressable
                             className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'messages' ? 'bg-[#002147]' : ''}`}
                             onPress={() => setActiveTab('messages')}
                         >
                             <Feather name="message-circle" size={18} color={activeTab === 'messages' ? '#FFFFFF' : '#6C757D'} />
-                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'messages' ? 'text-white' : 'text-gray-600'}`}>
+                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'messages' ? 'text-white' : 'text-foreground'}`}>
                                 Messages
                             </Text>
                             {connectedContacts.length > 0 && (
@@ -477,7 +477,7 @@ function MessagesScreen() {
                             onPress={() => setActiveTab('requests')}
                         >
                             <Feather name="user-check" size={18} color={activeTab === 'requests' ? '#FFFFFF' : '#6C757D'} />
-                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'requests' ? 'text-white' : 'text-gray-600'}`}>
+                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'requests' ? 'text-white' : 'text-foreground'}`}>
                                 Requests
                             </Text>
                             {(pendingReceivedContacts.length + pendingSentContacts.length) > 0 && (
@@ -491,7 +491,7 @@ function MessagesScreen() {
                             onPress={() => setActiveTab('discover')}
                         >
                             <Feather name="users" size={18} color={activeTab === 'discover' ? '#FFFFFF' : '#6C757D'} />
-                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'discover' ? 'text-white' : 'text-gray-600'}`}>
+                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'discover' ? 'text-white' : 'text-foreground'}`}>
                                 Discover
                             </Text>
                             {availableContacts.length > 0 && (
@@ -511,12 +511,12 @@ function MessagesScreen() {
                                 <Pressable
                                     key={role}
                                     className={`px-4 py-2 rounded-full border mr-2 shadow-sm ${selectedRole === role
-                                        ? 'bg-[#002147] border-[#002147]'
-                                        : 'bg-white border-gray-200'
+                                        ? 'bg-primary border-primary'
+                                        : 'bg-card border-border'
                                         }`}
                                     onPress={() => setSelectedRole(role)}
                                 >
-                                    <Text className={`text-xs font-semibold ${selectedRole === role ? 'text-white' : 'text-gray-600'
+                                    <Text className={`text-xs font-semibold ${selectedRole === role ? 'text-primary-foreground' : 'text-foreground'
                                         }`}>
                                         {role}
                                     </Text>
@@ -530,14 +530,14 @@ function MessagesScreen() {
                 <View className="pb-6 pt-2">
                     {/* Loading State */}
                     {loading && (
-                        <View className="px-6">
+                        <View className="mx-5">
                             {Array.from({ length: 3 }).map((_, index) => (
-                                <View key={`loading-${index}`} className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm p-4">
+                                <View key={`loading-${index}`} className="bg-card mb-3 rounded-2xl border border-border shadow-sm p-4">
                                     <View className="flex-row items-center">
-                                        <View className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+                                        <View className="w-12 h-12 rounded-full bg-muted animate-pulse" />
                                         <View className="flex-1 ml-3">
-                                            <View className="h-4 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
-                                            <View className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
+                                            <View className="h-4 bg-muted rounded mb-2 w-3/4 animate-pulse" />
+                                            <View className="h-3 bg-muted rounded w-1/2 animate-pulse" />
                                         </View>
                                     </View>
                                 </View>
@@ -550,25 +550,25 @@ function MessagesScreen() {
                         <View className="mb-6">
                             {connectedContacts.length > 0 ? (
                                 <>
-                                    <View className="flex-row items-center justify-between mx-6 mb-3">
-                                        <Text className="text-lg font-bold text-[#002147]">
+                                    <View className="flex-row items-center justify-between mx-5 mb-3">
+                                        <Text className="text-lg font-bold text-foreground">
                                             Messages
                                         </Text>
-                                        <View className="bg-gray-200 px-2 py-0.5 rounded-full">
-                                            <Text className="text-xs font-bold text-gray-600">{connectedContacts.length}</Text>
+                                        <View className="bg-muted px-2 py-0.5 rounded-full">
+                                            <Text className="text-xs font-bold text-foreground">{connectedContacts.length}</Text>
                                         </View>
                                     </View>
-                                    <View className="px-6">
+                                    <View className="mx-5">
                                         {connectedContacts.map(renderContact)}
                                     </View>
                                 </>
                             ) : (
-                                <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
+                                <View className="items-center py-12 mx-5 bg-card rounded-2xl border border-border border-dashed">
                                     <Feather name="message-circle" size={48} color="#CBD5E0" />
-                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                    <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                         No messages yet
                                     </Text>
-                                    <Text className="text-gray-400 text-sm mt-2 text-center">
+                                    <Text className="text-muted-foreground text-sm mt-2 text-center">
                                         Connect with people to start messaging
                                     </Text>
                                 </View>
@@ -581,10 +581,10 @@ function MessagesScreen() {
                         <View className="mb-6">
                             {pendingReceivedContacts.length > 0 && (
                                 <View className="mb-6">
-                                    <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
+                                    <Text className="text-lg font-bold mx-5 mb-3 text-foreground">
                                         Received Requests ({pendingReceivedContacts.length})
                                     </Text>
-                                    <View className="px-6">
+                                    <View className="mx-5">
                                         {pendingReceivedContacts.map(renderContact)}
                                     </View>
                                 </View>
@@ -592,22 +592,22 @@ function MessagesScreen() {
 
                             {pendingSentContacts.length > 0 && (
                                 <View className="mb-6">
-                                    <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
+                                    <Text className="text-lg font-bold mx-5 mb-3 text-foreground">
                                         Sent Requests ({pendingSentContacts.length})
                                     </Text>
-                                    <View className="px-6">
+                                    <View className="mx-5">
                                         {pendingSentContacts.map(renderContact)}
                                     </View>
                                 </View>
                             )}
 
                             {pendingReceivedContacts.length === 0 && pendingSentContacts.length === 0 && (
-                                <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
+                                <View className="items-center py-12 mx-5 bg-card rounded-2xl border border-border border-dashed">
                                     <Feather name="user-check" size={48} color="#CBD5E0" />
-                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                    <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                         No pending requests
                                     </Text>
-                                    <Text className="text-gray-400 text-sm mt-2 text-center">
+                                    <Text className="text-muted-foreground text-sm mt-2 text-center">
                                         Connection requests will appear here
                                     </Text>
                                 </View>
@@ -619,27 +619,27 @@ function MessagesScreen() {
                     {!loading && activeTab === 'discover' && (
                         <View className="mb-6">
                             <View className="flex-row items-center justify-between mx-6 mb-3">
-                                <Text className="text-lg font-bold text-[#002147]">
+                                <Text className="text-lg font-bold text-foreground">
                                     Discover People
                                 </Text>
                                 {availableContacts.length > 0 && (
-                                    <View className="bg-gray-200 px-2 py-0.5 rounded-full">
-                                        <Text className="text-xs font-bold text-gray-600">{availableContacts.length}</Text>
+                                    <View className="bg-muted px-2 py-0.5 rounded-full">
+                                        <Text className="text-xs font-bold text-foreground">{availableContacts.length}</Text>
                                     </View>
                                 )}
                             </View>
 
                             {availableContacts.length > 0 ? (
-                                <View className="px-6">
+                                <View className="mx-5">
                                     {availableContacts.map(renderContact)}
                                 </View>
                             ) : (
-                                <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
+                                <View className="items-center py-12 mx-5 bg-card rounded-2xl border border-border border-dashed">
                                     <Feather name="users" size={48} color="#CBD5E0" />
-                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                    <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                         No new people to discover
                                     </Text>
-                                    <Text className="text-gray-400 text-sm mt-2 text-center">
+                                    <Text className="text-muted-foreground text-sm mt-2 text-center">
                                         Try adjusting your search or filters
                                     </Text>
                                 </View>

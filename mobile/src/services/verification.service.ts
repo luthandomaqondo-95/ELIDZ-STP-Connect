@@ -113,7 +113,8 @@ class VerificationService {
             const fileExtension = fileUri.split('.').pop()?.toLowerCase() || 'jpg';
             const timestamp = Date.now();
             const fileName = `${userId || 'unknown'}_${documentType?.replace(/\s+/g, '_') || 'document'}_${timestamp}.${fileExtension}`;
-            const filePath = `verification-documents/${userId}/${fileName}`;
+            // File path should NOT include bucket name - just the folder structure
+            const filePath = `${userId}/${fileName}`;
 
             // Read the file as base64 (for React Native)
             const response = await fetch(fileUri);
@@ -179,12 +180,14 @@ class VerificationService {
     async deleteDocument(documentUrl: string): Promise<void> {
         try {
             // Extract file path from public URL
+            // URL format: https://[project].supabase.co/storage/v1/object/public/verification-documents/[userId]/[filename]
             const urlParts = documentUrl.split('/verification-documents/');
             if (urlParts.length < 2) {
                 throw new Error('Invalid document URL');
             }
             
-            const filePath = `verification-documents/${urlParts[1]}`;
+            // File path should NOT include bucket name - just the folder structure
+            const filePath = urlParts[1];
 
             const { error } = await supabase.storage
                 .from('verification-documents')

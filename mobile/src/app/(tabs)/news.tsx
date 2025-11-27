@@ -52,7 +52,7 @@ export default function NewsScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <LinearGradient
@@ -88,29 +88,29 @@ export default function NewsScreen() {
         </LinearGradient>
 
         {/* News List */}
-        <View className="px-6 mt-6">
+        <View className="mx-5 mt-6">
           {isLoading ? (
             <View className="items-center py-12">
               <ActivityIndicator size="large" color="#002147" />
-              <Text className="text-gray-500 mt-4">Loading news...</Text>
+              <Text className="text-muted-foreground mt-4">Loading news...</Text>
             </View>
           ) : error ? (
-            <View className="items-center py-12 bg-white rounded-2xl border border-red-100">
+            <View className="items-center py-12 bg-card rounded-2xl border border-destructive">
               <Feather name="alert-circle" size={48} color="#EF4444" />
-              <Text className="text-red-600 text-base mt-4 text-center font-medium">
+              <Text className="text-destructive text-base mt-4 text-center font-medium">
                 Failed to load news
               </Text>
-              <Text className="text-gray-500 text-sm mt-2 text-center">
+              <Text className="text-muted-foreground text-sm mt-2 text-center">
                 Please try again later
               </Text>
             </View>
           ) : !news || news.length === 0 ? (
-            <View className="items-center py-12 bg-white rounded-2xl border border-gray-100 border-dashed">
+            <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
               <Feather name="file-text" size={48} color="#CBD5E0" />
-              <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+              <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                 {searchQuery ? 'No news found' : 'No news available'}
               </Text>
-              <Text className="text-gray-400 text-sm mt-2 text-center">
+              <Text className="text-muted-foreground text-sm mt-2 text-center">
                 {searchQuery ? 'Try a different search term' : 'Check back soon for updates'}
               </Text>
             </View>
@@ -118,7 +118,7 @@ export default function NewsScreen() {
             news.map((item) => (
               <Pressable
                 key={item.id}
-                className="bg-white rounded-2xl p-4 mb-4 border border-gray-100 shadow-sm active:opacity-95"
+                className="bg-card rounded-2xl p-4 mb-4 border border-border shadow-sm active:opacity-95"
                 onPress={() => router.push(`/news-detail?id=${item.id}`)}
               >
                 <View className="flex-row items-start">
@@ -157,21 +157,21 @@ export default function NewsScreen() {
                     )}
                     {!item.category && (
                       <View className="flex-row justify-end mb-2">
-                        <Text className="text-gray-400 text-xs">
+                        <Text className="text-muted-foreground text-xs">
                           {item.formattedDate || new Date(item.published_at).toLocaleDateString()}
                         </Text>
                       </View>
                     )}
-                    <Text className="text-[#002147] text-base font-bold mb-2" numberOfLines={2}>
+                    <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
                       {item.title}
                     </Text>
-                    <Text className="text-gray-500 text-sm" numberOfLines={2}>
+                    <Text className="text-muted-foreground text-sm" numberOfLines={2}>
                       {item.excerpt || item.content?.substring(0, 150) + '...'}
                     </Text>
                     {item.author && (
                       <View className="flex-row items-center mt-2">
                         <Feather name="user" size={12} color="#6C757D" />
-                        <Text className="text-gray-400 text-xs ml-1">
+                        <Text className="text-muted-foreground text-xs ml-1">
                           {item.author.name}
                         </Text>
                       </View>

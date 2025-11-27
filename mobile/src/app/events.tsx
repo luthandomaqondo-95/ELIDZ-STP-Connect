@@ -46,13 +46,13 @@ export default function EventsScreen() {
   function getMonthEvents(monthName: string, monthEvents: Event[]) {
     return (
       <View className="mb-6">
-        <Text className="text-xl font-semibold mb-4 text-[#002147]">{monthName}</Text>
+        <Text className="text-xl font-semibold mb-4 text-foreground">{monthName}</Text>
         {monthEvents.map((event) => {
           const dateInfo = parseDate(event.date);
           return (
             <Pressable
               key={event.id}
-              className="bg-white rounded-2xl p-4 mb-4 border border-gray-100 shadow-sm active:opacity-95"
+              className="bg-card rounded-2xl p-4 mb-4 border border-border shadow-sm active:opacity-95"
               onPress={() => router.push(`/event-detail?id=${event.id}`)}
             >
               <View className="flex-row items-start">
@@ -65,34 +65,34 @@ export default function EventsScreen() {
                   </Text>
                 </View>
                 <View className="flex-1">
-                  <Text className="text-[#002147] text-base font-bold mb-2" numberOfLines={2}>
+                  <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
                     {event.title}
                   </Text>
                   {event.endDate ? (
-                    <Text className="text-[#FF6600] font-semibold text-sm mb-2">
+                    <Text className="text-accent font-semibold text-sm mb-2">
                       {event.date} - {event.endDate}
                     </Text>
                   ) : (
-                    <Text className="text-[#FF6600] font-semibold text-sm mb-2">
+                    <Text className="text-accent font-semibold text-sm mb-2">
                       {event.date}
                     </Text>
                   )}
                   <View className="flex-row items-center mt-2">
                     <Feather name="clock" size={14} color="#6C757D" />
-                    <Text className="text-gray-500 text-sm ml-2">
+                    <Text className="text-muted-foreground text-sm ml-2">
                       {event.time}
                     </Text>
                   </View>
                   <View className="flex-row items-center mt-2">
                     <Feather name="map-pin" size={14} color="#6C757D" />
-                    <Text className="text-gray-500 text-sm ml-2 flex-1" numberOfLines={1}>
+                    <Text className="text-muted-foreground text-sm ml-2 flex-1" numberOfLines={1}>
                       {event.location}
                     </Text>
                   </View>
                   {event.theme && (
                     <View className="flex-row items-center mt-2">
                       <Feather name="tag" size={14} color="#FF6600" />
-                      <Text className="text-[#FF6600] text-sm ml-2 italic">
+                      <Text className="text-accent text-sm ml-2 italic">
                         {event.theme}
                       </Text>
                     </View>
@@ -100,7 +100,7 @@ export default function EventsScreen() {
                   {event.attendees && (
                     <View className="flex-row items-center mt-2">
                       <Feather name="users" size={14} color="#002147" />
-                      <Text className="text-gray-500 text-xs ml-2">
+                      <Text className="text-muted-foreground text-xs ml-2">
                         {event.attendees} attending
                       </Text>
                       {event.rsvp && (
@@ -122,7 +122,7 @@ export default function EventsScreen() {
   const novemberEvents = events.filter(e => e.date.includes('Nov'));
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <LinearGradient
@@ -155,12 +155,12 @@ export default function EventsScreen() {
           {novemberEvents.length > 0 ? (
             getMonthEvents('November 2025', novemberEvents)
           ) : (
-            <View className="items-center py-12 bg-white rounded-2xl border border-gray-100 border-dashed">
+            <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
               <Feather name="calendar" size={48} color="#CBD5E0" />
-              <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+              <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                 No upcoming events scheduled
               </Text>
-              <Text className="text-gray-400 text-sm mt-2 text-center">
+              <Text className="text-muted-foreground text-sm mt-2 text-center">
                 Check back soon for new events and workshops
               </Text>
             </View>

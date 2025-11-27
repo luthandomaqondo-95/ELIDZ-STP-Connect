@@ -68,7 +68,7 @@ export default function ManageProductsServicesScreen() {
     };
 
     return (
-        <View className="flex-1 bg-gray-50">
+        <View className="flex-1 bg-background">
             <LinearGradient
                 colors={['#002147', '#003366']}
                 className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
@@ -99,30 +99,30 @@ export default function ManageProductsServicesScreen() {
                 {loadingList ? (
                     <View className="items-center py-12">
                         <ActivityIndicator size="large" color="#002147" />
-                        <Text className="text-gray-500 mt-4">Loading...</Text>
+                        <Text className="text-muted-foreground mt-4">Loading...</Text>
                     </View>
                 ) : (
                     <View className="px-6">
                         {/* Products Section */}
                         {servicesProducts.products.length > 0 && (
                             <View className="mb-6">
-                                <Text className="text-[#002147] text-lg font-bold mb-3">Products ({servicesProducts.products.length})</Text>
+                                <Text className="text-foreground text-lg font-bold mb-3">Products ({servicesProducts.products.length})</Text>
                                 {servicesProducts.products.map((product) => (
-                                    <View key={product.id} className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm">
+                                    <View key={product.id} className="bg-card rounded-xl p-4 mb-3 border border-border shadow-sm">
                                         <View className="flex-row items-start justify-between mb-2">
                                             <View className="flex-1">
-                                                <Text className="text-[#002147] font-bold text-base">{product.name}</Text>
-                                                <Text className="text-gray-500 text-sm mt-1">{product.description}</Text>
+                                                <Text className="text-foreground font-bold text-base">{product.name}</Text>
+                                                <Text className="text-muted-foreground text-sm mt-1">{product.description}</Text>
                                                 {product.price && (
-                                                    <Text className="text-[#FF6600] font-bold text-sm mt-1">{product.price}</Text>
+                                                    <Text className="text-accent font-bold text-sm mt-1">{product.price}</Text>
                                                 )}
-                                                <View className="bg-gray-100 self-start px-2 py-1 rounded-md mt-2">
-                                                    <Text className="text-gray-600 text-xs">{product.category}</Text>
+                                                <View className="bg-muted self-start px-2 py-1 rounded-md mt-2">
+                                                    <Text className="text-foreground text-xs">{product.category}</Text>
                                                 </View>
                                             </View>
                                             <Pressable
                                                 onPress={() => handleDelete(product)}
-                                                className="p-2 bg-red-50 rounded-lg ml-2"
+                                                className="p-2 bg-destructive/10 rounded-lg ml-2"
                                             >
                                                 <Feather name="trash-2" size={18} color="#EF4444" />
                                             </Pressable>
@@ -135,20 +135,20 @@ export default function ManageProductsServicesScreen() {
                         {/* Services Section */}
                         {servicesProducts.services.length > 0 && (
                             <View className="mb-6">
-                                <Text className="text-[#002147] text-lg font-bold mb-3">Services ({servicesProducts.services.length})</Text>
+                                <Text className="text-foreground text-lg font-bold mb-3">Services ({servicesProducts.services.length})</Text>
                                 {servicesProducts.services.map((service) => (
-                                    <View key={service.id} className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm">
+                                    <View key={service.id} className="bg-card rounded-xl p-4 mb-3 border border-border shadow-sm">
                                         <View className="flex-row items-start justify-between mb-2">
                                             <View className="flex-1">
-                                                <Text className="text-[#002147] font-bold text-base">{service.name}</Text>
-                                                <Text className="text-gray-500 text-sm mt-1">{service.description}</Text>
-                                                <View className="bg-gray-100 self-start px-2 py-1 rounded-md mt-2">
-                                                    <Text className="text-gray-600 text-xs">{service.category}</Text>
+                                                <Text className="text-foreground font-bold text-base">{service.name}</Text>
+                                                <Text className="text-muted-foreground text-sm mt-1">{service.description}</Text>
+                                                <View className="bg-muted self-start px-2 py-1 rounded-md mt-2">
+                                                    <Text className="text-foreground text-xs">{service.category}</Text>
                                                 </View>
                                             </View>
                                             <Pressable
                                                 onPress={() => handleDelete(service)}
-                                                className="p-2 bg-red-50 rounded-lg ml-2"
+                                                className="p-2 bg-destructive/10 rounded-lg ml-2"
                                             >
                                                 <Feather name="trash-2" size={18} color="#EF4444" />
                                             </Pressable>
@@ -160,12 +160,12 @@ export default function ManageProductsServicesScreen() {
 
                         {/* Empty State */}
                         {servicesProducts.products.length === 0 && servicesProducts.services.length === 0 && (
-                            <View className="items-center py-12 bg-white rounded-2xl border border-gray-100 border-dashed">
+                            <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
                                 <Feather name="package" size={48} color="#CBD5E0" />
-                                <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                     No products or services listed yet
                                 </Text>
-                                <Text className="text-gray-400 text-sm mt-2 text-center">
+                                <Text className="text-muted-foreground text-sm mt-2 text-center">
                                     Add your offerings to appear in the verified SMMEs directory
                                 </Text>
                             </View>

@@ -51,8 +51,8 @@ export default function SplashScreen() {
 				<Image
 					source={require('../../../assets/logos/blue text-idz logo.png')}
 					style={{
-						width: 280,
-						height: 120,
+						width: 350,
+						height: 150,
 						marginBottom: 40,
 					}}
 					resizeMode="contain"

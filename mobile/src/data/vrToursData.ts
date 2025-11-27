@@ -55,6 +55,10 @@ export interface Tenant {
     name: string;
     location: string;
     description: string;
+    contact_email?: string;
+    contact_phone?: string;
+    website?: string;
+    application_url?: string;
 }
 
 // Mock Data from Tenants/Facilities

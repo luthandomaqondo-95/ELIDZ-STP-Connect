@@ -87,7 +87,7 @@ function TenantDetailScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-background">
       {/* Header */}
       <LinearGradient
         colors={['#002147', '#003366']}
@@ -125,17 +125,17 @@ function TenantDetailScreen() {
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>About</Text>
+          <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.md }]}>About</Text>
           <Text style={[Typography.body, { color: colors.text }]}>
             {description}
           </Text>
         </View>
 
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Industry</Text>
+          <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.md }]}>Industry</Text>
           <View style={styles.infoRow}>
             <Feather name="briefcase" size={18} color={colors.primary} />
-            <Text style={[Typography.body, { marginLeft: Spacing.md }]}>
+            <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md }]}>
               {industry}
             </Text>
           </View>
@@ -144,7 +144,7 @@ function TenantDetailScreen() {
         {/* Address */}
         {tenant?.address && (
           <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-            <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Address</Text>
+            <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.md }]}>Address</Text>
             <View style={styles.infoRow}>
               <Feather name="map-pin" size={18} color={colors.primary} />
               <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>
@@ -156,10 +156,10 @@ function TenantDetailScreen() {
 
         {/* Location */}
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Location</Text>
+          <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.md }]}>Location</Text>
           <View style={styles.infoRow}>
             <Feather name="map-pin" size={18} color={colors.primary} />
-            <Text style={[Typography.body, { marginLeft: Spacing.md }]}>
+            <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md }]}>
               {location}, ELIDZ-STP
             </Text>
           </View>
@@ -170,7 +170,7 @@ function TenantDetailScreen() {
           <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
             <View style={styles.sectionHeader}>
               <Feather name="briefcase" size={20} color={colors.primary} />
-              <Text style={[Typography.h3, { marginLeft: Spacing.sm }]}>Services</Text>
+              <Text style={[Typography.h3, { color: colors.text, marginLeft: Spacing.sm }]}>Services</Text>
             </View>
             <Text style={[Typography.body, { color: colors.text, marginTop: Spacing.md, lineHeight: 22 }]}>
               {tenant.services}
@@ -183,7 +183,7 @@ function TenantDetailScreen() {
           <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
             <View style={styles.sectionHeader}>
               <Feather name="zap" size={20} color={colors.primary} />
-              <Text style={[Typography.h3, { marginLeft: Spacing.sm }]}>Capabilities</Text>
+              <Text style={[Typography.h3, { color: colors.text, marginLeft: Spacing.sm }]}>Capabilities</Text>
             </View>
             <Text style={[Typography.body, { color: colors.text, marginTop: Spacing.md, lineHeight: 22 }]}>
               {tenant.capabilities}
@@ -196,7 +196,7 @@ function TenantDetailScreen() {
           <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
             <View style={styles.sectionHeader}>
               <Feather name="users" size={20} color={colors.primary} />
-              <Text style={[Typography.h3, { marginLeft: Spacing.sm }]}>Key Personnel</Text>
+              <Text style={[Typography.h3, { color: colors.text, marginLeft: Spacing.sm }]}>Key Personnel</Text>
             </View>
             <Text style={[Typography.body, { color: colors.text, marginTop: Spacing.md, lineHeight: 22 }]}>
               {tenant.key_personnel}
@@ -209,7 +209,7 @@ function TenantDetailScreen() {
           <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
             <View style={styles.sectionHeader}>
               <Feather name="handshake" size={20} color={colors.primary} />
-              <Text style={[Typography.h3, { marginLeft: Spacing.sm }]}>Partners</Text>
+              <Text style={[Typography.h3, { color: colors.text, marginLeft: Spacing.sm }]}>Partners</Text>
             </View>
             <Text style={[Typography.body, { color: colors.text, marginTop: Spacing.md, lineHeight: 22 }]}>
               {tenant.partners}
@@ -234,7 +234,7 @@ function TenantDetailScreen() {
 
         {/* Contact Information */}
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Contact Information</Text>
+          <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.md }]}>Contact Information</Text>
           
           {tenant?.contact_email && (
             <Pressable
@@ -311,7 +311,7 @@ function TenantDetailScreen() {
         {/* Social Media Links */}
         {tenant?.social_media_links && parseSocialLinks(tenant.social_media_links).length > 0 && (
           <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-            <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Social Media</Text>
+            <Text style={[Typography.h3, { color: colors.text, marginBottom: Spacing.md }]}>Social Media</Text>
             {parseSocialLinks(tenant.social_media_links).map((link, index) => (
               <Pressable
                 key={index}
