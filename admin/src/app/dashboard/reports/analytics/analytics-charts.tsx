@@ -1,17 +1,17 @@
 "use client"
 
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardHeader,
+    CardTitle,
 } from "@/components/ui/card"
-import { 
+import {
     PieChart,
     Pie,
     Cell,
-    Tooltip, 
+    Tooltip,
     ResponsiveContainer,
     Legend
 } from "recharts"
