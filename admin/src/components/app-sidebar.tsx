@@ -72,10 +72,6 @@ const baseData = {
 					url: "/dashboard/users/all",
 				},
 				{
-					title: "Registrations",
-					url: "/dashboard/users/registrations",
-				},
-				{
 					title: "Verified SMMEs",
 					url: "/dashboard/verified-smmes",
 				},

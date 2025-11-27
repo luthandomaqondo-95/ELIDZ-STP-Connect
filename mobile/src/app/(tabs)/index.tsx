@@ -265,7 +265,7 @@ export default function DashboardScreen() {
                 <View className="mb-8">
                     <View className="flex-row justify-between items-center mx-5 mb-4">
                         <View className="flex-row items-center">
-                            <Feather name="sparkles" size={20} color="#FF6600" className="mr-2" />
+                            <Feather name="star" size={20} color="#FF6600" className="mr-2" />
                             <Text className="text-xl font-bold text-foreground tracking-tight">Recommended for You</Text>
                         </View>
                         <Pressable onPress={() => router.push('/opportunities')}>

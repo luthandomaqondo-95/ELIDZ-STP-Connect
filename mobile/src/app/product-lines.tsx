@@ -4,6 +4,7 @@ import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import { analyticsService } from '@/services/analytics.service';
 
 export default function ProductLinesScreen() {
   const productLines = [
@@ -87,7 +88,10 @@ export default function ProductLinesScreen() {
             <View className="mb-4" key={index}>
               <Pressable
                 className="flex-row items-center p-4 rounded-xl bg-card active:opacity-70 mb-2 shadow-sm"
-                onPress={() => router.push({ pathname: '/center-detail', params: { id: line.id, name: line.name } })}
+                onPress={() => {
+                  analyticsService.recordVisit('product', line.id, line.name);
+                  router.push({ pathname: '/center-detail', params: { id: line.id, name: line.name } });
+                }}
               >
                 <View className={`w-14 h-14 rounded-xl justify-center items-center ${line.colorClass}`}>
                   <Feather name={line.icon} size={28} color="#FFFFFF" />

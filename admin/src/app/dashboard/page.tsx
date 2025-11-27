@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Activity, Briefcase, Users, Zap } from "lucide-react"
+import { Activity, Briefcase, Users } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 
 import {
@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { UserDemographicsCharts } from "./reports/demographics/demographics-charts"
+import { AnalyticsCharts } from "./reports/analytics/analytics-charts"
 
 export default async function Page() {
     const supabase = await createClient()
@@ -16,9 +17,36 @@ export default async function Page() {
     // Fetch real counts from Supabase
     const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
     const { count: opportunityCount } = await supabase.from('opportunities').select('*', { count: 'exact', head: true }).eq('status', 'active')
+    const { count: visitCountResult } = await supabase.from('analytics_visits').select('*', { count: 'exact', head: true })
     
-    // Placeholder for visits - assuming 0 for now or mock
-    const visitCount = 573 
+    // Fetch all analytics data for charts
+    const { data: visits } = await supabase
+        .from('analytics_visits')
+        .select('*')
+
+    // Process Analytics Data
+    const visitsByTypeMap: Record<string, number> = {}
+    const visitsByNameMap: Record<string, number> = {}
+
+    visits?.forEach(visit => {
+        // By Type
+        const type = visit.entity_type === 'service' ? 'Service' : 'Product'
+        visitsByTypeMap[type] = (visitsByTypeMap[type] || 0) + 1
+
+        // By Name
+        const name = visit.entity_name || 'Unknown'
+        visitsByNameMap[name] = (visitsByNameMap[name] || 0) + 1
+    })
+
+    const visitsByType = Object.entries(visitsByTypeMap).map(([name, count]) => ({ name, count }))
+    
+    const topEntities = Object.entries(visitsByNameMap)
+        .map(([name, count]) => ({ name, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 5)
+
+    // Fallback if null
+    const visitCount = visitCountResult || 0
 
     // Fetch profile data for charts
     const { data: profiles } = await supabase
@@ -81,7 +109,7 @@ export default async function Page() {
 
     return (
     <>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -104,25 +132,20 @@ export default async function Page() {
             </Card>
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Product Line Visits</CardTitle>
+                    <CardTitle className="text-sm font-medium">Total Visits</CardTitle>
                     <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{visitCount}</div>
-                    <p className="text-xs text-muted-foreground">+19% since last hour</p>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">System Health</CardTitle>
-                    <Zap className="h-4 w-4 text-muted-foreground" />
-                </CardHeader>
-                <CardContent>
-                    <div className="text-2xl font-bold">99.9%</div>
-                    <p className="text-xs text-muted-foreground">All systems operational</p>
+                    <p className="text-xs text-muted-foreground">Product & Service Views</p>
                 </CardContent>
             </Card>
         </div>
+
+        <AnalyticsCharts 
+            visitsByType={visitsByType}
+            topEntities={topEntities}
+        />
 
         <UserDemographicsCharts 
             roleData={rolesChartData} 

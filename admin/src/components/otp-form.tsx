@@ -8,11 +8,11 @@ import { ShieldCheck } from "lucide-react";
 export function OTPForm({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <Card className="border-zinc-800 bg-zinc-900/50 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden">
+            <Card className="shadow-2xl rounded-3xl overflow-hidden">
                 <CardHeader className="text-center pb-8">
                     <div className="flex items-center justify-center gap-2 mb-2">
                         <ShieldCheck className="h-6 w-6 text-indigo-400" />
-                        <CardTitle className="text-2xl font-bold text-white">Verify OTP</CardTitle>
+                        <CardTitle className="text-2xl font-bold">Verify OTP</CardTitle>
                     </div>
                     <CardDescription className="text-zinc-400">
                         Enter the one-time password sent to your email.

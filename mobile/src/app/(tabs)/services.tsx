@@ -10,6 +10,7 @@ import type { Tenant } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useDebounce } from '@/hooks/useDebounce';
+import { analyticsService } from '@/services/analytics.service';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -92,6 +93,10 @@ export default function ServicesScreen() {
 
 	// Handle facility selection
 	const handleFacilitySelect = (facilityId: string) => {
+		const facility = facilities.find(f => f.id === facilityId);
+		if (facility) {
+			analyticsService.recordVisit('service', facility.id, facility.name);
+		}
 		setSelectedFacilityId(facilityId);
 		setSelectedService(null);
 		setScreenMode('detail');

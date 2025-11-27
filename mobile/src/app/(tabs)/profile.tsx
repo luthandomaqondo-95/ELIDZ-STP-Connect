@@ -168,7 +168,7 @@ function ProfileScreen() {
                 showsVerticalScrollIndicator={false}
             >
                 {/* Profile Card */}
-                <View className="px-6 mb-6">
+                <View className="px-6 mb-6 pt-16">
                     <View className="bg-card p-6 rounded-3xl shadow-sm items-center relative -mt-8">
                         {/* Edit Button Absolute */}
                         {isLoggedIn && (
