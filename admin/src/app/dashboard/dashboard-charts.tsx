@@ -128,7 +128,7 @@ export function DashboardCharts() {
                                 strokeWidth={5}
                             >
                                 <Label
-                                    content={({ viewBox }: { viewBox: { cx: number; cy: number } }) => {
+                                    content={({ viewBox }: any) => {
                                         if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                                             return (
                                                 <text
