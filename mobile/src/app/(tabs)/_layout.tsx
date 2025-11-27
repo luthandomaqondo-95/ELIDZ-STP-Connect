@@ -51,7 +51,7 @@ export default function TabLayout() {
                 name="verified-smmes"
                 options={{
                     title: 'Verified SMMEs',
-                    tabBarLabel: 'Verified',
+                    tabBarLabel: "SMME's",
                     tabBarIcon: ({ color }) => <Feather name="shield" size={24} color={color} />,
                 }}
             />

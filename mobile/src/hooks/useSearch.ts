@@ -5,6 +5,7 @@ import { OpportunityService } from '@/services/opportunity.service';
 import { chatService } from '@/services/chat.service';
 import { ResourceService } from '@/services/resource.service';
 import { connectionService } from '@/services/connection.service';
+import { NewsService } from '@/services/news.service';
 
 export const useTenantsSearch = (search: string = '') => {
   return useQuery({
@@ -57,5 +58,14 @@ export const useResourcesSearch = (search: string = '') => {
   return useQuery({
     queryKey: ['resources', search],
     queryFn: () => ResourceService.getServicesResources(search),
+  });
+};
+
+export const useNewsSearch = (search: string = '') => {
+  return useQuery({
+    queryKey: ['news', search],
+    queryFn: () => NewsService.getAllNews(search),
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
 };

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
@@ -7,13 +7,96 @@ import { useTheme } from '@/hooks/useTheme';
 import { Spacing, BorderRadius, Typography, Shadow } from '@/constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
+import { NewsService, News } from '@/services/news.service';
 
 function NewsDetailScreen() {
   const { colors } = useTheme();
   const { id } = useLocalSearchParams<{ id: string }>();
+  const [news, setNews] = useState<News | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Verified news data from ELIDZ website (searched using Playwright MCP)
-  const newsItems: Record<string, any> = {
+  useEffect(() => {
+    async function loadNews() {
+      if (!id) {
+        setError('News ID is required');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const newsItem = await NewsService.getNewsById(id);
+        if (newsItem) {
+          setNews(newsItem);
+        } else {
+          setError('News article not found');
+        }
+      } catch (err: any) {
+        console.error('Error loading news:', err);
+        setError(err.message || 'Failed to load news article');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadNews();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <ScreenScrollView>
+        <View style={{ padding: Spacing.xl, alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={[Typography.body, { color: colors.textSecondary, marginTop: Spacing.lg }]}>
+            Loading news article...
+          </Text>
+        </View>
+      </ScreenScrollView>
+    );
+  }
+
+  if (error || !news) {
+    return (
+      <ScreenScrollView>
+        <View style={{ padding: Spacing.xl, alignItems: 'center', justifyContent: 'center', minHeight: 400 }}>
+          <Feather name="alert-circle" size={48} color={colors.error || '#EF4444'} />
+          <Text style={[Typography.h3, { color: colors.error || '#EF4444', marginTop: Spacing.lg, textAlign: 'center' }]}>
+            {error || 'News article not found'}
+          </Text>
+          <Text style={[Typography.body, { color: colors.textSecondary, marginTop: Spacing.md, textAlign: 'center' }]}>
+            Please try again later
+          </Text>
+        </View>
+      </ScreenScrollView>
+    );
+  }
+
+  // Fallback category mapping (can be removed when category is added to DB)
+  const getCategoryFromTitle = (title: string): string => {
+    const titleLower = title.toLowerCase();
+    if (titleLower.includes('agm') || titleLower.includes('performance') || titleLower.includes('financial')) {
+      return 'Corporate';
+    }
+    if (titleLower.includes('audit') || titleLower.includes('achievement') || titleLower.includes('elected') || titleLower.includes('president')) {
+      return 'Achievements';
+    }
+    if (titleLower.includes('training') || titleLower.includes('workshop') || titleLower.includes('certificate')) {
+      return 'Training';
+    }
+    if (titleLower.includes('community') || titleLower.includes('school') || titleLower.includes('laboratory')) {
+      return 'Community';
+    }
+    if (titleLower.includes('partnership') || titleLower.includes('unisa') || titleLower.includes('challenge')) {
+      return 'Partnership';
+    }
+    return 'News';
+  };
+
+  const category = news.category || getCategoryFromTitle(news.title);
+
+  // Legacy news data for backward compatibility (can be removed once all news is in DB)
+  const legacyNewsItems: Record<string, any> = {
     '1': {
       id: '1',
       title: 'ELIDZ AGM Reflects on 2024/25 Performance and Reaffirms Commitment to Vision 2030',
@@ -124,28 +207,7 @@ The programme will provide digital literacy training to 90 Grade 11 students in 
 
 This project also supports long-term community development goals. A Memorandum of Understanding (MOU) signed by all parties ensures sustainability and operational continuity, marking a milestone in the Eastern Cape's socio-economic growth strategy. In addition to empowering learners, the project includes accredited training opportunities for Umtiza High School's educators to improve teaching quality through technology integration.`,
     },
-    '6': {
-      id: '6',
-      title: 'East London IDZ STP in partnership with UNISA launches Eastern Cape Innovation Challenge 2025',
-      category: 'Partnership',
-      date: 'Recent',
-      author: 'ELIDZ Communications',
-      image: 'users',
-      content: `The East London Industrial Development Zone (ELIDZ) in partnership with UNISA is proud to announce the official launch of the Eastern Cape Innovation Challenge 2025, a province-wide initiative led through the ELIDZ Science and Technology Park (STP) to drive socio-economic innovation.
-
-This initiative aims to identify, support, and scale innovative solutions that address key challenges facing the Eastern Cape province. The challenge is open to innovators, entrepreneurs, researchers, and students across the region who are developing solutions in areas such as advanced manufacturing, ICT, renewable energy, Agri-tech, digital services, and research commercialisation.
-
-The Eastern Cape Innovation Challenge 2025 represents a significant investment in the province's innovation ecosystem, providing participants with access to incubation support, prototype development assistance, technical mentorship, business development services, and market access facilitation.
-
-Through this partnership with UNISA, the ELIDZ-STP is leveraging academic expertise and research capabilities to support the translation of innovative ideas into commercial solutions that can drive economic growth and social development in the Eastern Cape.
-
-The challenge aligns with the ELIDZ-STP's broader mission to position the Eastern Cape as a hub for high-impact innovation, research translation, and enterprise development. By supporting innovators at various stages of development, from concept to commercialisation, the initiative aims to create a pipeline of investable technologies and scalable businesses that can contribute to the province's economic transformation.
-
-Participants in the Eastern Cape Innovation Challenge 2025 will have the opportunity to showcase their innovations during the Eastern Cape Innovation & Entrepreneurship Week (IEW) 2025, where winners will be announced and provided with comprehensive support packages to accelerate their growth.`,
-    },
   };
-
-  const news = newsItems[id] || newsItems['1'];
 
   const categoryColors: Record<string, string> = {
     Corporate: colors.primary,
@@ -154,6 +216,26 @@ Participants in the Eastern Cape Innovation Challenge 2025 will have the opportu
     Community: colors.primary,
     Partnership: colors.secondary,
     Events: colors.accent,
+    News: colors.primary,
+  };
+
+  const getCategoryIcon = (cat?: string): keyof typeof Feather.glyphMap => {
+    switch (cat) {
+      case 'Corporate':
+        return 'trending-up';
+      case 'Achievements':
+        return 'award';
+      case 'Training':
+        return 'zap';
+      case 'Community':
+        return 'monitor';
+      case 'Partnership':
+        return 'users';
+      case 'Events':
+        return 'calendar';
+      default:
+        return 'file-text';
+    }
   };
 
   return (
@@ -162,24 +244,34 @@ Participants in the Eastern Cape Innovation Challenge 2025 will have the opportu
         padding: Spacing.xl,
         borderRadius: BorderRadius.card,
         marginBottom: Spacing.lg,
-        backgroundColor: categoryColors[news.category] || colors.primary,
+        backgroundColor: categoryColors[category] || colors.primary,
       }}>
-        <View style={{
-          alignSelf: 'flex-start',
-          paddingHorizontal: Spacing.md,
-          paddingVertical: Spacing.xs,
-          borderRadius: BorderRadius.button,
-          backgroundColor: colors.buttonText,
-        }}>
-          <Text style={[Typography.small, { color: categoryColors[news.category] || colors.primary }]}>
-            {news.category}
-          </Text>
-        </View>
+        {category && (
+          <View style={{
+            alignSelf: 'flex-start',
+            paddingHorizontal: Spacing.md,
+            paddingVertical: Spacing.xs,
+            borderRadius: BorderRadius.button,
+            backgroundColor: colors.buttonText,
+          }}>
+            <Text style={[Typography.small, { color: categoryColors[category] || colors.primary }]}>
+              {category}
+            </Text>
+          </View>
+        )}
         <View style={{
           marginTop: Spacing.lg,
           alignItems: 'center',
         }}>
-          <Feather name={news.image as any} size={48} color={colors.buttonText} />
+          {news.image_url ? (
+            <Image
+              source={{ uri: news.image_url }}
+              style={{ width: 120, height: 120, borderRadius: BorderRadius.card }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Feather name={getCategoryIcon(category)} size={48} color={colors.buttonText} />
+          )}
         </View>
         <Text style={[Typography.h2, { color: colors.buttonText, marginTop: Spacing.lg }]}>
           {news.title}
@@ -205,19 +297,21 @@ Participants in the Eastern Cape Innovation Challenge 2025 will have the opportu
           }}>
             <Feather name="calendar" size={16} color={colors.textSecondary} />
             <Text style={[Typography.caption, { color: colors.textSecondary, marginLeft: Spacing.xs }]}>
-              {news.date}
+              {news.formattedDate || new Date(news.published_at).toLocaleDateString()}
             </Text>
           </View>
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            marginBottom: Spacing.sm,
-          }}>
-            <Feather name="user" size={16} color={colors.textSecondary} />
-            <Text style={[Typography.caption, { color: colors.textSecondary, marginLeft: Spacing.xs }]}>
-              {news.author}
-            </Text>
-          </View>
+          {news.author && (
+            <View style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              marginBottom: Spacing.sm,
+            }}>
+              <Feather name="user" size={16} color={colors.textSecondary} />
+              <Text style={[Typography.caption, { color: colors.textSecondary, marginLeft: Spacing.xs }]}>
+                {news.author.name || 'ELIDZ Communications'}
+              </Text>
+            </View>
+          )}
         </View>
       </View>
 

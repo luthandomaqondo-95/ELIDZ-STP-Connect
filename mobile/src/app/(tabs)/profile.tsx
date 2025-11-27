@@ -247,12 +247,12 @@ function ProfileScreen() {
                                     </View>
                                 </View>
                                 <Pressable
-                                    onPress={() => router.push('/manage-products-services')}
+                                    onPress={() => router.push('/smme-verification')}
                                     className="px-4 py-2 bg-[#002147] rounded-lg active:opacity-90"
                                 >
                                     <View className="flex-row items-center">
-                                        <Feather name="plus" size={16} color="white" />
-                                        <Text className="text-white font-semibold text-sm ml-1">Add</Text>
+                                        <Feather name="edit" size={16} color="white" />
+                                        <Text className="text-white font-semibold text-sm ml-1">Manage</Text>
                                     </View>
                                 </Pressable>
                             </View>
@@ -313,7 +313,7 @@ function ProfileScreen() {
                                     )}
 
                                     <Pressable
-                                        onPress={() => router.push('/manage-products-services')}
+                                        onPress={() => router.push('/smme-verification')}
                                         className="mt-4 py-2 border border-[#002147] rounded-lg active:opacity-90"
                                     >
                                         <Text className="text-[#002147] font-semibold text-sm text-center">

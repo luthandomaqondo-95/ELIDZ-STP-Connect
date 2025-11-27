@@ -1,64 +1,19 @@
-import React from 'react';
-import { View, Pressable, ScrollView, TextInput } from 'react-native';
+import React, { useState } from 'react';
+import { View, Pressable, ScrollView, TextInput, ActivityIndicator, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { useNewsSearch } from '@/hooks/useSearch';
+import { useDebounce } from '@/hooks/useDebounce';
 
 export default function NewsScreen() {
-  const news = [
-    {
-      id: '1',
-      title: 'ELIDZ AGM Reflects on 2024/25 Performance and Reaffirms Commitment to Vision 2030',
-      category: 'Corporate',
-      date: 'November 13, 2025',
-      excerpt: 'ELIDZ held its Annual General Meeting, presenting 2024/25 financial year performance highlights and strategic developments driving industrial growth.',
-      image: 'trending-up',
-    },
-    {
-      id: '2',
-      title: 'ELIDZ Marks 10 Years of Clean Audits – A Decade of Excellence, Integrity, and Impact',
-      category: 'Achievements',
-      date: 'August 15, 2025',
-      excerpt: 'ELIDZ announces its 10th consecutive clean audit opinion from the Auditor General of South Africa for the 2024/25 financial year.',
-      image: 'award',
-    },
-    {
-      id: '3',
-      title: 'ELIDZ-STP Hosts an Innovative Training Workshop on Electric Vehicle Fundamentals',
-      category: 'Training',
-      date: 'March 27, 2025',
-      excerpt: 'ELIDZ-STP hosted a five-day Professional Certificate of Competency in Fundamentals of Electric Vehicles training workshop.',
-      image: 'zap',
-    },
-    {
-      id: '4',
-      title: 'THE ELIDZ Science and Technology Park Head Elected as IASP Africa Division President',
-      category: 'Achievements',
-      date: 'December 3, 2024',
-      excerpt: 'Ludwe Macingwane, Head of ELIDZ-STP, has been elected as the new Africa Division President of the International Association of Science Parks.',
-      image: 'star',
-    },
-    {
-      id: '5',
-      title: 'MEC FOR DEDEAT UNVEILS NEW 4IR COMPUTER LABORATORY AT UMTIZA HIGH SCHOOL',
-      category: 'Community',
-      date: 'October 31, 2024',
-      excerpt: 'MEC for DEDEAT unveiled a state-of-the-art Community-Based Digital (4IR) Computer Laboratory at Umtiza High School in partnership with Microsoft South Africa.',
-      image: 'monitor',
-    },
-    {
-      id: '6',
-      title: 'East London IDZ STP in partnership with UNISA launches Eastern Cape Innovation Challenge 2025',
-      category: 'Partnership',
-      date: 'Recent',
-      excerpt: 'ELIDZ-STP in partnership with UNISA launched the Eastern Cape Innovation Challenge 2025, a province-wide initiative to drive socio-economic innovation.',
-      image: 'users',
-    },
-  ];
+  const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, 300);
+  const { data: news, isLoading, error } = useNewsSearch(debouncedSearch);
 
-  const getCategoryColor = (category: string): string => {
+  const getCategoryColor = (category?: string): string => {
     switch (category) {
       case 'Corporate':
         return '#002147';
@@ -74,6 +29,25 @@ export default function NewsScreen() {
         return '#E83E8C';
       default:
         return '#002147';
+    }
+  };
+
+  const getCategoryIcon = (category?: string): keyof typeof Feather.glyphMap => {
+    switch (category) {
+      case 'Corporate':
+        return 'trending-up';
+      case 'Achievements':
+        return 'award';
+      case 'Training':
+        return 'zap';
+      case 'Community':
+        return 'monitor';
+      case 'Partnership':
+        return 'users';
+      case 'Events':
+        return 'calendar';
+      default:
+        return 'file-text';
     }
   };
 
@@ -102,52 +76,111 @@ export default function NewsScreen() {
               className="flex-1 ml-3 text-base text-white"
               placeholder="Search news..."
               placeholderTextColor="rgba(255,255,255,0.5)"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
+            {searchQuery.length > 0 && (
+              <Pressable onPress={() => setSearchQuery('')} className="ml-2">
+                <Feather name="x" size={18} color="rgba(255,255,255,0.7)" />
+              </Pressable>
+            )}
           </View>
         </LinearGradient>
 
         {/* News List */}
         <View className="px-6 mt-6">
-          {news.map((item) => (
-            <Pressable
-              key={item.id}
-              className="bg-white rounded-2xl p-4 mb-4 border border-gray-100 shadow-sm active:opacity-95"
-              onPress={() => router.push(`/news-detail?id=${item.id}`)}
-            >
-              <View className="flex-row items-start">
-                <View 
-                  className="w-14 h-14 rounded-xl justify-center items-center"
-                  style={{ backgroundColor: getCategoryColor(item.category) }}
-                >
-                  <Feather name={item.image as any} size={24} color="#FFFFFF" />
-                </View>
-                <View className="flex-1 ml-4">
-                  <View className="flex-row justify-between items-center mb-2">
+          {isLoading ? (
+            <View className="items-center py-12">
+              <ActivityIndicator size="large" color="#002147" />
+              <Text className="text-gray-500 mt-4">Loading news...</Text>
+            </View>
+          ) : error ? (
+            <View className="items-center py-12 bg-white rounded-2xl border border-red-100">
+              <Feather name="alert-circle" size={48} color="#EF4444" />
+              <Text className="text-red-600 text-base mt-4 text-center font-medium">
+                Failed to load news
+              </Text>
+              <Text className="text-gray-500 text-sm mt-2 text-center">
+                Please try again later
+              </Text>
+            </View>
+          ) : !news || news.length === 0 ? (
+            <View className="items-center py-12 bg-white rounded-2xl border border-gray-100 border-dashed">
+              <Feather name="file-text" size={48} color="#CBD5E0" />
+              <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                {searchQuery ? 'No news found' : 'No news available'}
+              </Text>
+              <Text className="text-gray-400 text-sm mt-2 text-center">
+                {searchQuery ? 'Try a different search term' : 'Check back soon for updates'}
+              </Text>
+            </View>
+          ) : (
+            news.map((item) => (
+              <Pressable
+                key={item.id}
+                className="bg-white rounded-2xl p-4 mb-4 border border-gray-100 shadow-sm active:opacity-95"
+                onPress={() => router.push(`/news-detail?id=${item.id}`)}
+              >
+                <View className="flex-row items-start">
+                  {item.image_url ? (
+                    <Image
+                      source={{ uri: item.image_url }}
+                      className="w-14 h-14 rounded-xl"
+                      resizeMode="cover"
+                    />
+                  ) : (
                     <View 
-                      className="px-3 py-1 rounded-lg"
-                      style={{ backgroundColor: `${getCategoryColor(item.category)}20` }}
+                      className="w-14 h-14 rounded-xl justify-center items-center"
+                      style={{ backgroundColor: getCategoryColor(item.category) }}
                     >
-                      <Text 
-                        className="text-xs font-semibold"
-                        style={{ color: getCategoryColor(item.category) }}
-                      >
-                        {item.category}
-                      </Text>
+                      <Feather name={getCategoryIcon(item.category)} size={24} color="#FFFFFF" />
                     </View>
-                    <Text className="text-gray-400 text-xs">
-                      {item.date}
+                  )}
+                  <View className="flex-1 ml-4">
+                    {item.category && (
+                      <View className="flex-row justify-between items-center mb-2">
+                        <View 
+                          className="px-3 py-1 rounded-lg"
+                          style={{ backgroundColor: `${getCategoryColor(item.category)}20` }}
+                        >
+                          <Text 
+                            className="text-xs font-semibold"
+                            style={{ color: getCategoryColor(item.category) }}
+                          >
+                            {item.category}
+                          </Text>
+                        </View>
+                        <Text className="text-gray-400 text-xs">
+                          {item.formattedDate || new Date(item.published_at).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    )}
+                    {!item.category && (
+                      <View className="flex-row justify-end mb-2">
+                        <Text className="text-gray-400 text-xs">
+                          {item.formattedDate || new Date(item.published_at).toLocaleDateString()}
+                        </Text>
+                      </View>
+                    )}
+                    <Text className="text-[#002147] text-base font-bold mb-2" numberOfLines={2}>
+                      {item.title}
                     </Text>
+                    <Text className="text-gray-500 text-sm" numberOfLines={2}>
+                      {item.excerpt || item.content?.substring(0, 150) + '...'}
+                    </Text>
+                    {item.author && (
+                      <View className="flex-row items-center mt-2">
+                        <Feather name="user" size={12} color="#6C757D" />
+                        <Text className="text-gray-400 text-xs ml-1">
+                          {item.author.name}
+                        </Text>
+                      </View>
+                    )}
                   </View>
-                  <Text className="text-[#002147] text-base font-bold mb-2" numberOfLines={2}>
-                    {item.title}
-                  </Text>
-                  <Text className="text-gray-500 text-sm" numberOfLines={2}>
-                    {item.excerpt}
-                  </Text>
                 </View>
-              </View>
-            </Pressable>
-          ))}
+              </Pressable>
+            ))
+          )}
         </View>
       </ScrollView>
     </View>

@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Alert, Pressable, ScrollView, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Alert, Pressable, ScrollView, Image, TextInput, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,9 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import * as ImagePicker from 'expo-image-picker';
 import { verificationService } from '@/services/verification.service';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
+import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
+import { useQueryClient } from '@tanstack/react-query';
+import { Picker } from '@react-native-picker/picker';
 
 interface DocumentSlot {
     type: 'Business Registration' | 'ID Document' | 'Business Profile';
@@ -19,6 +22,7 @@ interface DocumentSlot {
 
 export default function SMMEVerificationScreen() {
     const { profile } = useAuthContext();
+    const queryClient = useQueryClient();
     const [documents, setDocuments] = useState<DocumentSlot[]>([
         {
             type: 'Business Registration',
@@ -43,6 +47,171 @@ export default function SMMEVerificationScreen() {
         }
     ]);
     const [isUploading, setIsUploading] = useState(false);
+    
+    // Products/Services state
+    const [servicesProducts, setServicesProducts] = useState<{ services: SMMEServiceProduct[]; products: SMMEServiceProduct[] }>({ services: [], products: [] });
+    const [loadingServicesProducts, setLoadingServicesProducts] = useState(false);
+    const [showAddForm, setShowAddForm] = useState(false);
+    const [editingItem, setEditingItem] = useState<SMMEServiceProduct | null>(null);
+    
+    // Form state
+    const [formType, setFormType] = useState<'Service' | 'Product'>('Service');
+    const [formName, setFormName] = useState('');
+    const [formDescription, setFormDescription] = useState('');
+    const [formCategory, setFormCategory] = useState('');
+    const [formPrice, setFormPrice] = useState('');
+    const [formContactEmail, setFormContactEmail] = useState('');
+    const [formContactPhone, setFormContactPhone] = useState('');
+    const [formWebsiteUrl, setFormWebsiteUrl] = useState('');
+    const [submittingForm, setSubmittingForm] = useState(false);
+
+    const categories = [
+        'Technology',
+        'Manufacturing',
+        'Agriculture',
+        'Food & Beverage',
+        'Retail',
+        'Healthcare',
+        'Education',
+        'Construction',
+        'Transportation',
+        'Energy',
+        'Other',
+    ];
+
+    useEffect(() => {
+        if (profile?.id) {
+            loadServicesProducts();
+        }
+    }, [profile?.id]);
+
+    const loadServicesProducts = async () => {
+        if (!profile?.id) return;
+        setLoadingServicesProducts(true);
+        try {
+            const data = await smmmeService.getServicesProductsBySMME(profile.id);
+            setServicesProducts(data);
+        } catch (error) {
+            console.error('Error loading services/products:', error);
+        } finally {
+            setLoadingServicesProducts(false);
+        }
+    };
+
+    const resetForm = () => {
+        setFormType('Service');
+        setFormName('');
+        setFormDescription('');
+        setFormCategory('');
+        setFormPrice('');
+        setFormContactEmail('');
+        setFormContactPhone('');
+        setFormWebsiteUrl('');
+        setEditingItem(null);
+        setShowAddForm(false);
+    };
+
+    const handleEdit = (item: SMMEServiceProduct) => {
+        setEditingItem(item);
+        setFormType(item.type);
+        setFormName(item.name);
+        setFormDescription(item.description || '');
+        setFormCategory(item.category || '');
+        setFormPrice(item.price || '');
+        setFormContactEmail(item.contact_email || '');
+        setFormContactPhone(item.contact_phone || '');
+        setFormWebsiteUrl(item.website_url || '');
+        setShowAddForm(true);
+    };
+
+    const handleDelete = async (item: SMMEServiceProduct) => {
+        Alert.alert(
+            'Delete Item',
+            `Are you sure you want to delete "${item.name}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const { supabase } = await import('@/lib/supabase');
+                            const { error } = await supabase
+                                .from('sme_services_products')
+                                .update({ status: 'inactive' })
+                                .eq('id', item.id);
+
+                            if (error) throw error;
+                            
+                            Alert.alert('Success', 'Item deleted successfully');
+                            loadServicesProducts();
+                            queryClient.invalidateQueries({ queryKey: ['businesses'] });
+                        } catch (error: any) {
+                            Alert.alert('Error', error.message || 'Failed to delete item');
+                        }
+                    },
+                },
+            ]
+        );
+    };
+
+    const handleSubmitForm = async () => {
+        if (!formName.trim() || !formDescription.trim() || !formCategory.trim()) {
+            Alert.alert('Error', 'Please fill in all required fields');
+            return;
+        }
+
+        if (!profile?.id) {
+            Alert.alert('Error', 'User not authenticated');
+            return;
+        }
+
+        setSubmittingForm(true);
+        try {
+            if (editingItem) {
+                // Update existing item
+                const { supabase } = await import('@/lib/supabase');
+                const { error } = await supabase
+                    .from('sme_services_products')
+                    .update({
+                        type: formType,
+                        name: formName.trim(),
+                        description: formDescription.trim(),
+                        category: formCategory.trim(),
+                        price: formPrice.trim() || null,
+                        contact_email: formContactEmail.trim() || null,
+                        contact_phone: formContactPhone.trim() || null,
+                        website_url: formWebsiteUrl.trim() || null,
+                    })
+                    .eq('id', editingItem.id);
+
+                if (error) throw error;
+                Alert.alert('Success', `${formType} updated successfully!`);
+            } else {
+                // Create new item
+                await smmmeService.createServiceProduct(profile.id, {
+                    type: formType,
+                    name: formName.trim(),
+                    description: formDescription.trim(),
+                    category: formCategory.trim(),
+                    price: formPrice.trim() || undefined,
+                    contact_email: formContactEmail.trim() || undefined,
+                    contact_phone: formContactPhone.trim() || undefined,
+                    website_url: formWebsiteUrl.trim() || undefined,
+                });
+                Alert.alert('Success', `${formType} added successfully!`);
+            }
+
+            queryClient.invalidateQueries({ queryKey: ['businesses'] });
+            loadServicesProducts();
+            resetForm();
+        } catch (error: any) {
+            console.error('Error saving service/product:', error);
+            Alert.alert('Error', error.message || 'Failed to save item');
+        } finally {
+            setSubmittingForm(false);
+        }
+    };
 
     const pickDocument = async (index: number) => {
         // We are using ImagePicker as a proxy for document picking since expo-document-picker is not installed
@@ -198,7 +367,7 @@ export default function SMMEVerificationScreen() {
                 </Button>
 
                 {/* Info Box */}
-                <View className="bg-blue-50 p-5 rounded-xl border border-blue-100">
+                <View className="bg-blue-50 p-5 rounded-xl border border-blue-100 mb-6">
                     <View className="flex-row items-start">
                         <Feather name="info" size={20} color="#002147" style={{ marginTop: 2, marginRight: 12 }} />
                         <View className="flex-1">
@@ -211,6 +380,286 @@ export default function SMMEVerificationScreen() {
                             </Text>
                         </View>
                     </View>
+                </View>
+
+                {/* Products & Services Section */}
+                <View className="mb-6">
+                    <View className="flex-row items-center justify-between mb-4">
+                        <View className="flex-row items-center">
+                            <View className="w-10 h-10 bg-[#002147]/5 rounded-full items-center justify-center mr-3">
+                                <Feather name="package" size={20} color="#002147" />
+                            </View>
+                            <View>
+                                <Text className="text-lg font-bold text-[#002147]">Products & Services</Text>
+                                <Text className="text-gray-500 text-xs mt-0.5">
+                                    List your business offerings ({servicesProducts.products.length + servicesProducts.services.length} items)
+                                </Text>
+                            </View>
+                        </View>
+                        {!showAddForm && (
+                            <Pressable
+                                onPress={() => setShowAddForm(true)}
+                                className="px-4 py-2 bg-[#002147] rounded-lg active:opacity-90"
+                            >
+                                <View className="flex-row items-center">
+                                    <Feather name="plus" size={16} color="white" />
+                                    <Text className="text-white font-semibold text-sm ml-1">Add</Text>
+                                </View>
+                            </Pressable>
+                        )}
+                    </View>
+
+                    {/* Add/Edit Form */}
+                    {showAddForm && (
+                        <View className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-4">
+                            <View className="flex-row items-center justify-between mb-4">
+                                <Text className="text-lg font-bold text-[#002147]">
+                                    {editingItem ? 'Edit' : 'Add'} {formType}
+                                </Text>
+                                <Pressable onPress={resetForm}>
+                                    <Feather name="x" size={20} color="#6C757D" />
+                                </Pressable>
+                            </View>
+
+                            {/* Type Selector */}
+                            <View className="mb-4">
+                                <Text className="text-[#002147] font-semibold mb-2">Type *</Text>
+                                <View className="flex-row gap-3">
+                                    <Pressable
+                                        className={`flex-1 py-3 rounded-lg border-2 ${formType === 'Service' ? 'border-[#002147] bg-[#002147]/5' : 'border-gray-200'}`}
+                                        onPress={() => setFormType('Service')}
+                                    >
+                                        <Text className={`text-center font-semibold ${formType === 'Service' ? 'text-[#002147]' : 'text-gray-500'}`}>
+                                            Service
+                                        </Text>
+                                    </Pressable>
+                                    <Pressable
+                                        className={`flex-1 py-3 rounded-lg border-2 ${formType === 'Product' ? 'border-[#002147] bg-[#002147]/5' : 'border-gray-200'}`}
+                                        onPress={() => setFormType('Product')}
+                                    >
+                                        <Text className={`text-center font-semibold ${formType === 'Product' ? 'text-[#002147]' : 'text-gray-500'}`}>
+                                            Product
+                                        </Text>
+                                    </Pressable>
+                                </View>
+                            </View>
+
+                            {/* Name */}
+                            <View className="mb-4">
+                                <Text className="text-[#002147] font-semibold mb-2">Name *</Text>
+                                <TextInput
+                                    className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                    value={formName}
+                                    onChangeText={setFormName}
+                                    placeholder="Enter name"
+                                    placeholderTextColor="#9CA3AF"
+                                />
+                            </View>
+
+                            {/* Description */}
+                            <View className="mb-4">
+                                <Text className="text-[#002147] font-semibold mb-2">Description *</Text>
+                                <TextInput
+                                    className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base min-h-[100px]"
+                                    value={formDescription}
+                                    onChangeText={setFormDescription}
+                                    placeholder="Describe your offering"
+                                    placeholderTextColor="#9CA3AF"
+                                    multiline
+                                    numberOfLines={4}
+                                />
+                            </View>
+
+                            {/* Category */}
+                            <View className="mb-4">
+                                <Text className="text-[#002147] font-semibold mb-2">Category *</Text>
+                                <View className="bg-gray-50 border border-gray-200 rounded-lg">
+                                    <Picker
+                                        selectedValue={formCategory}
+                                        onValueChange={setFormCategory}
+                                        style={{ color: '#002147' }}
+                                    >
+                                        <Picker.Item label="Select Category" value="" color="#9CA3AF" />
+                                        {categories.map((cat) => (
+                                            <Picker.Item key={cat} label={cat} value={cat} color="#002147" />
+                                        ))}
+                                    </Picker>
+                                </View>
+                            </View>
+
+                            {/* Price (only for products) */}
+                            {formType === 'Product' && (
+                                <View className="mb-4">
+                                    <Text className="text-[#002147] font-semibold mb-2">Price (Optional)</Text>
+                                    <TextInput
+                                        className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                        value={formPrice}
+                                        onChangeText={setFormPrice}
+                                        placeholder="e.g., R500 or Contact for quote"
+                                        placeholderTextColor="#9CA3AF"
+                                    />
+                                </View>
+                            )}
+
+                            {/* Contact Information (Optional) */}
+                            <View className="mb-4">
+                                <Text className="text-[#002147] font-semibold mb-3">Contact Information (Optional)</Text>
+                                
+                                <View className="mb-3">
+                                    <Text className="text-gray-600 text-sm mb-1">Email</Text>
+                                    <TextInput
+                                        className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                        value={formContactEmail}
+                                        onChangeText={setFormContactEmail}
+                                        placeholder="contact@example.com"
+                                        placeholderTextColor="#9CA3AF"
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                    />
+                                </View>
+
+                                <View className="mb-3">
+                                    <Text className="text-gray-600 text-sm mb-1">Phone</Text>
+                                    <TextInput
+                                        className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                        value={formContactPhone}
+                                        onChangeText={setFormContactPhone}
+                                        placeholder="+27 12 345 6789"
+                                        placeholderTextColor="#9CA3AF"
+                                        keyboardType="phone-pad"
+                                    />
+                                </View>
+
+                                <View>
+                                    <Text className="text-gray-600 text-sm mb-1">Website</Text>
+                                    <TextInput
+                                        className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-base"
+                                        value={formWebsiteUrl}
+                                        onChangeText={setFormWebsiteUrl}
+                                        placeholder="https://example.com"
+                                        placeholderTextColor="#9CA3AF"
+                                        keyboardType="url"
+                                        autoCapitalize="none"
+                                    />
+                                </View>
+                            </View>
+
+                            {/* Form Actions */}
+                            <View className="flex-row gap-3">
+                                <Pressable
+                                    className="flex-1 py-3 bg-gray-200 rounded-lg items-center active:opacity-90"
+                                    onPress={resetForm}
+                                >
+                                    <Text className="text-gray-700 font-semibold">Cancel</Text>
+                                </Pressable>
+                                <Pressable
+                                    className="flex-1 py-3 bg-[#002147] rounded-lg items-center active:opacity-90"
+                                    onPress={handleSubmitForm}
+                                    disabled={submittingForm}
+                                >
+                                    {submittingForm ? (
+                                        <ActivityIndicator color="white" />
+                                    ) : (
+                                        <Text className="text-white font-semibold">
+                                            {editingItem ? 'Update' : 'Add'} {formType}
+                                        </Text>
+                                    )}
+                                </Pressable>
+                            </View>
+                        </View>
+                    )}
+
+                    {/* Products List */}
+                    {loadingServicesProducts ? (
+                        <View className="items-center py-8">
+                            <ActivityIndicator size="large" color="#002147" />
+                        </View>
+                    ) : (
+                        <>
+                            {servicesProducts.products.length > 0 && (
+                                <View className="mb-4">
+                                    <Text className="text-[#002147] font-semibold mb-3">Products ({servicesProducts.products.length})</Text>
+                                    {servicesProducts.products.map((product) => (
+                                        <View key={product.id} className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm">
+                                            <View className="flex-row items-start justify-between">
+                                                <View className="flex-1">
+                                                    <Text className="text-[#002147] font-bold text-base">{product.name}</Text>
+                                                    <Text className="text-gray-500 text-sm mt-1">{product.description}</Text>
+                                                    {product.price && (
+                                                        <Text className="text-[#FF6600] font-bold text-sm mt-1">{product.price}</Text>
+                                                    )}
+                                                    <View className="bg-gray-100 self-start px-2 py-1 rounded-md mt-2">
+                                                        <Text className="text-gray-600 text-xs">{product.category}</Text>
+                                                    </View>
+                                                </View>
+                                                <View className="flex-row gap-2">
+                                                    <Pressable
+                                                        onPress={() => handleEdit(product)}
+                                                        className="p-2 bg-blue-50 rounded-lg"
+                                                    >
+                                                        <Feather name="edit" size={16} color="#002147" />
+                                                    </Pressable>
+                                                    <Pressable
+                                                        onPress={() => handleDelete(product)}
+                                                        className="p-2 bg-red-50 rounded-lg"
+                                                    >
+                                                        <Feather name="trash-2" size={16} color="#EF4444" />
+                                                    </Pressable>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+
+                            {/* Services List */}
+                            {servicesProducts.services.length > 0 && (
+                                <View className="mb-4">
+                                    <Text className="text-[#002147] font-semibold mb-3">Services ({servicesProducts.services.length})</Text>
+                                    {servicesProducts.services.map((service) => (
+                                        <View key={service.id} className="bg-white rounded-xl p-4 mb-3 border border-gray-100 shadow-sm">
+                                            <View className="flex-row items-start justify-between">
+                                                <View className="flex-1">
+                                                    <Text className="text-[#002147] font-bold text-base">{service.name}</Text>
+                                                    <Text className="text-gray-500 text-sm mt-1">{service.description}</Text>
+                                                    <View className="bg-gray-100 self-start px-2 py-1 rounded-md mt-2">
+                                                        <Text className="text-gray-600 text-xs">{service.category}</Text>
+                                                    </View>
+                                                </View>
+                                                <View className="flex-row gap-2">
+                                                    <Pressable
+                                                        onPress={() => handleEdit(service)}
+                                                        className="p-2 bg-blue-50 rounded-lg"
+                                                    >
+                                                        <Feather name="edit" size={16} color="#002147" />
+                                                    </Pressable>
+                                                    <Pressable
+                                                        onPress={() => handleDelete(service)}
+                                                        className="p-2 bg-red-50 rounded-lg"
+                                                    >
+                                                        <Feather name="trash-2" size={16} color="#EF4444" />
+                                                    </Pressable>
+                                                </View>
+                                            </View>
+                                        </View>
+                                    ))}
+                                </View>
+                            )}
+
+                            {/* Empty State */}
+                            {servicesProducts.products.length === 0 && servicesProducts.services.length === 0 && !showAddForm && (
+                                <View className="items-center py-8 bg-white rounded-2xl border border-gray-100 border-dashed">
+                                    <Feather name="package" size={48} color="#CBD5E0" />
+                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                        No products or services listed yet
+                                    </Text>
+                                    <Text className="text-gray-400 text-sm mt-2 text-center">
+                                        Add your offerings to appear in the verified SMMEs directory
+                                    </Text>
+                                </View>
+                            )}
+                        </>
+                    )}
                 </View>
             </View>
         </ScreenScrollView>

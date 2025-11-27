@@ -15,10 +15,13 @@ import { supabase } from '@/lib/supabase';
 
 type UserRole = 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
 
+type TabType = 'messages' | 'requests' | 'discover';
+
 function MessagesScreen() {
     const { profile, isLoggedIn } = useAuthContext();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRole, setSelectedRole] = useState<UserRole | 'All'>('All');
+    const [activeTab, setActiveTab] = useState<TabType>('messages');
     const queryClient = useQueryClient();
 
     const debouncedSearch = useDebounce(searchQuery, 300);
@@ -452,118 +455,170 @@ function MessagesScreen() {
                     </View>
                 </LinearGradient>
 
-                {/* Role Filters */}
-                <View className="mt-6 mb-2">
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-                        {roles.map((role) => (
-                            <Pressable
-                                key={role}
-                                className={`px-4 py-2 rounded-full border mr-2 shadow-sm ${selectedRole === role
-                                    ? 'bg-[#002147] border-[#002147]'
-                                    : 'bg-white border-gray-200'
-                                    }`}
-                                onPress={() => setSelectedRole(role)}
-                            >
-                                <Text className={`text-xs font-semibold ${selectedRole === role ? 'text-white' : 'text-gray-600'
-                                    }`}>
-                                    {role}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </ScrollView>
+                {/* Tabs */}
+                <View className="mt-6 mx-6 mb-4">
+                    <View className="flex-row bg-white rounded-xl p-1 border border-gray-200 shadow-sm">
+                        <Pressable
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'messages' ? 'bg-[#002147]' : ''}`}
+                            onPress={() => setActiveTab('messages')}
+                        >
+                            <Feather name="message-circle" size={18} color={activeTab === 'messages' ? '#FFFFFF' : '#6C757D'} />
+                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'messages' ? 'text-white' : 'text-gray-600'}`}>
+                                Messages
+                            </Text>
+                            {connectedContacts.length > 0 && (
+                                <View className="absolute -top-1 -right-1 bg-[#FF6600] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                    <Text className="text-white text-[10px] font-bold">{connectedContacts.length}</Text>
+                                </View>
+                            )}
+                        </Pressable>
+                        <Pressable
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'requests' ? 'bg-[#002147]' : ''}`}
+                            onPress={() => setActiveTab('requests')}
+                        >
+                            <Feather name="user-check" size={18} color={activeTab === 'requests' ? '#FFFFFF' : '#6C757D'} />
+                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'requests' ? 'text-white' : 'text-gray-600'}`}>
+                                Requests
+                            </Text>
+                            {(pendingReceivedContacts.length + pendingSentContacts.length) > 0 && (
+                                <View className="absolute -top-1 -right-1 bg-[#FF6600] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                    <Text className="text-white text-[10px] font-bold">{pendingReceivedContacts.length + pendingSentContacts.length}</Text>
+                                </View>
+                            )}
+                        </Pressable>
+                        <Pressable
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'discover' ? 'bg-[#002147]' : ''}`}
+                            onPress={() => setActiveTab('discover')}
+                        >
+                            <Feather name="users" size={18} color={activeTab === 'discover' ? '#FFFFFF' : '#6C757D'} />
+                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'discover' ? 'text-white' : 'text-gray-600'}`}>
+                                Discover
+                            </Text>
+                            {availableContacts.length > 0 && (
+                                <View className="absolute -top-1 -right-1 bg-gray-400 rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                    <Text className="text-white text-[10px] font-bold">{availableContacts.length}</Text>
+                                </View>
+                            )}
+                        </Pressable>
+                    </View>
                 </View>
+
+                {/* Role Filters - Only show on Discover tab */}
+                {activeTab === 'discover' && (
+                    <View className="mb-2">
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
+                            {roles.map((role) => (
+                                <Pressable
+                                    key={role}
+                                    className={`px-4 py-2 rounded-full border mr-2 shadow-sm ${selectedRole === role
+                                        ? 'bg-[#002147] border-[#002147]'
+                                        : 'bg-white border-gray-200'
+                                        }`}
+                                    onPress={() => setSelectedRole(role)}
+                                >
+                                    <Text className={`text-xs font-semibold ${selectedRole === role ? 'text-white' : 'text-gray-600'
+                                        }`}>
+                                        {role}
+                                    </Text>
+                                </Pressable>
+                            ))}
+                        </ScrollView>
+                    </View>
+                )}
 
                 {/* Content */}
                 <View className="pb-6 pt-2">
                     {/* Loading State */}
                     {loading && (
                         <View className="px-6">
-                            {/* Loading Messages */}
-                            <View className="mb-6">
-                                <View className="flex-row items-center justify-between mx-6 mb-3 mt-2">
-                                    <Text className="text-lg font-bold text-[#002147]">
-                                        Messages
-                                    </Text>
-                                </View>
-                                {Array.from({ length: 2 }).map((_, index) => (
-                                    <View key={`loading-msg-${index}`} className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm p-4">
-                                        <View className="flex-row items-center">
-                                            <View className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
-                                            <View className="flex-1 ml-3">
-                                                <View className="h-4 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
-                                                <View className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
-                                            </View>
+                            {Array.from({ length: 3 }).map((_, index) => (
+                                <View key={`loading-${index}`} className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm p-4">
+                                    <View className="flex-row items-center">
+                                        <View className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
+                                        <View className="flex-1 ml-3">
+                                            <View className="h-4 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
+                                            <View className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
                                         </View>
                                     </View>
-                                ))}
-                            </View>
-
-                            {/* Loading People */}
-                            <View className="mb-6">
-                                <View className="flex-row items-center justify-between mx-6 mb-3 mt-2">
-                                    <Text className="text-lg font-bold text-[#002147]">
-                                        Discover People
-                                    </Text>
                                 </View>
-                                {Array.from({ length: 3 }).map((_, index) => (
-                                    <View key={`loading-people-${index}`} className="bg-white mb-3 rounded-2xl border border-gray-100 shadow-sm p-4">
-                                        <View className="flex-row items-center">
-                                            <View className="w-12 h-12 rounded-full bg-gray-200 animate-pulse" />
-                                            <View className="flex-1 ml-3">
-                                                <View className="h-4 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
-                                                <View className="h-3 bg-gray-200 rounded w-1/2 animate-pulse" />
-                                            </View>
+                            ))}
+                        </View>
+                    )}
+
+                    {/* Messages Tab */}
+                    {!loading && activeTab === 'messages' && (
+                        <View className="mb-6">
+                            {connectedContacts.length > 0 ? (
+                                <>
+                                    <View className="flex-row items-center justify-between mx-6 mb-3">
+                                        <Text className="text-lg font-bold text-[#002147]">
+                                            Messages
+                                        </Text>
+                                        <View className="bg-gray-200 px-2 py-0.5 rounded-full">
+                                            <Text className="text-xs font-bold text-gray-600">{connectedContacts.length}</Text>
                                         </View>
                                     </View>
-                                ))}
-                            </View>
-                        </View>
-                    )}
-                    {/* Connected Contacts (Messages) */}
-                    {!loading && connectedContacts.length > 0 && (
-                        <View className="mb-6">
-                            <View className="flex-row items-center justify-between mx-6 mb-3 mt-2">
-                                <Text className="text-lg font-bold text-[#002147]">
-                                    Messages
-                                </Text>
-                                <View className="bg-gray-200 px-2 py-0.5 rounded-full">
-                                    <Text className="text-xs font-bold text-gray-600">{connectedContacts.length}</Text>
+                                    <View className="px-6">
+                                        {connectedContacts.map(renderContact)}
+                                    </View>
+                                </>
+                            ) : (
+                                <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
+                                    <Feather name="message-circle" size={48} color="#CBD5E0" />
+                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                        No messages yet
+                                    </Text>
+                                    <Text className="text-gray-400 text-sm mt-2 text-center">
+                                        Connect with people to start messaging
+                                    </Text>
                                 </View>
-                            </View>
-                            <View className="px-6">
-                                {connectedContacts.map(renderContact)}
-                            </View>
+                            )}
                         </View>
                     )}
 
-                    {/* Pending Requests Received */}
-                    {!loading && pendingReceivedContacts.length > 0 && (
+                    {/* Requests Tab */}
+                    {!loading && activeTab === 'requests' && (
                         <View className="mb-6">
-                            <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
-                                Connection Requests ({pendingReceivedContacts.length})
-                            </Text>
-                            <View className="px-6">
-                                {pendingReceivedContacts.map(renderContact)}
-                            </View>
+                            {pendingReceivedContacts.length > 0 && (
+                                <View className="mb-6">
+                                    <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
+                                        Received Requests ({pendingReceivedContacts.length})
+                                    </Text>
+                                    <View className="px-6">
+                                        {pendingReceivedContacts.map(renderContact)}
+                                    </View>
+                                </View>
+                            )}
+
+                            {pendingSentContacts.length > 0 && (
+                                <View className="mb-6">
+                                    <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
+                                        Sent Requests ({pendingSentContacts.length})
+                                    </Text>
+                                    <View className="px-6">
+                                        {pendingSentContacts.map(renderContact)}
+                                    </View>
+                                </View>
+                            )}
+
+                            {pendingReceivedContacts.length === 0 && pendingSentContacts.length === 0 && (
+                                <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
+                                    <Feather name="user-check" size={48} color="#CBD5E0" />
+                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                        No pending requests
+                                    </Text>
+                                    <Text className="text-gray-400 text-sm mt-2 text-center">
+                                        Connection requests will appear here
+                                    </Text>
+                                </View>
+                            )}
                         </View>
                     )}
 
-                    {/* Pending Requests Sent */}
-                    {!loading && pendingSentContacts.length > 0 && (
+                    {/* Discover Tab */}
+                    {!loading && activeTab === 'discover' && (
                         <View className="mb-6">
-                            <Text className="text-lg font-bold mx-6 mb-3 text-[#002147]">
-                                Sent Requests ({pendingSentContacts.length})
-                            </Text>
-                            <View className="px-6">
-                                {pendingSentContacts.map(renderContact)}
-                            </View>
-                        </View>
-                    )}
-
-                    {/* Available to Connect */}
-                    {!loading && (
-                        <View className="mb-6">
-                            <View className="flex-row items-center justify-between mx-6 mb-3 text-[#002147]">
+                            <View className="flex-row items-center justify-between mx-6 mb-3">
                                 <Text className="text-lg font-bold text-[#002147]">
                                     Discover People
                                 </Text>
@@ -579,10 +634,13 @@ function MessagesScreen() {
                                     {availableContacts.map(renderContact)}
                                 </View>
                             ) : (
-                                <View className="items-center py-8 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
-                                    <Feather name="users" size={32} color="#CBD5E0" />
-                                    <Text className="text-gray-400 text-sm mt-2 text-center font-medium">
+                                <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
+                                    <Feather name="users" size={48} color="#CBD5E0" />
+                                    <Text className="text-gray-400 text-base mt-4 text-center font-medium">
                                         No new people to discover
+                                    </Text>
+                                    <Text className="text-gray-400 text-sm mt-2 text-center">
+                                        Try adjusting your search or filters
                                     </Text>
                                 </View>
                             )}

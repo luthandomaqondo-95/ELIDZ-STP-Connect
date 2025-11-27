@@ -4,7 +4,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenFlatList } from '@/components/ScreenFlatList';
 import { useAuthContext } from '@/hooks/use-auth-context';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { OpportunityService } from '@/services/opportunity.service';
@@ -13,7 +12,6 @@ import { Opportunity } from '@/types';
 function OpportunitiesScreen() {
   const params = useLocalSearchParams<{ filter?: string }>();
   const { profile: user } = useAuthContext();
-  const insets = useSafeAreaInsets();
   
   // Get initial filter from params or role-based default
   const getInitialFilter = () => {
@@ -153,13 +151,6 @@ function OpportunitiesScreen() {
           ) : null
         }
       />
-      <Pressable
-        className="absolute right-5 w-14 h-14 rounded-full bg-accent justify-center items-center active:opacity-90 shadow-lg"
-        style={{ bottom: insets.bottom + 20 }}
-        onPress={() => router.push('/post-opportunity')}
-      >
-        <Feather name="plus" size={24} color="#FFFFFF" />
-      </Pressable>
     </>
   );
 }
