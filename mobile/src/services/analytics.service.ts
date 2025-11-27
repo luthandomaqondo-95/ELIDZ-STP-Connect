@@ -1,7 +1,7 @@
 import { supabase } from '@/lib/supabase';
 
 export const analyticsService = {
-    async recordVisit(entityType: 'service' | 'product', entityId: string, entityName: string) {
+    async recordVisit(entityType: 'service' | 'product' | 'facility' | 'lab', entityId: string, entityName: string) {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             

@@ -95,7 +95,7 @@ export default function ServicesScreen() {
 	const handleFacilitySelect = (facilityId: string) => {
 		const facility = facilities.find(f => f.id === facilityId);
 		if (facility) {
-			analyticsService.recordVisit('service', facility.id, facility.name);
+			analyticsService.recordVisit('facility', facility.id, facility.name);
 		}
 		setSelectedFacilityId(facilityId);
 		setSelectedService(null);

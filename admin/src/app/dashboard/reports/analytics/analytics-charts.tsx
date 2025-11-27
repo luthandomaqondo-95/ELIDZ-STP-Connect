@@ -17,7 +17,7 @@ import {
 } from "recharts"
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
-const TYPE_COLORS = ['#8884d8', '#82ca9d'];
+const TYPE_COLORS = ['#8884d8', '#82ca9d', '#FFBB28', '#0088FE'];
 
 interface AnalyticsChartsProps {
     visitsByType: { name: string; count: number }[]
@@ -31,7 +31,7 @@ export function AnalyticsCharts({ visitsByType, topEntities }: AnalyticsChartsPr
             <Card className="col-span-2 md:col-span-1">
                 <CardHeader>
                     <CardTitle>Visits by Type</CardTitle>
-                    <CardDescription>Comparison of Product vs Service visits</CardDescription>
+                    <CardDescription>Comparison of Facilities vs Labs</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">

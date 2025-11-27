@@ -30,7 +30,14 @@ export default async function Page() {
 
     visits?.forEach(visit => {
         // By Type
-        const type = visit.entity_type === 'service' ? 'Service' : 'Product'
+        let type = 'Unknown'
+        switch (visit.entity_type) {
+            case 'service': type = 'Service'; break;
+            case 'product': type = 'Product'; break;
+            case 'facility': type = 'Facility'; break;
+            case 'lab': type = 'Lab'; break;
+            default: type = visit.entity_type;
+        }
         visitsByTypeMap[type] = (visitsByTypeMap[type] || 0) + 1
 
         // By Name

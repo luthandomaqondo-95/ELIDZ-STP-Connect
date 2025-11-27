@@ -89,7 +89,7 @@ export default function ProductLinesScreen() {
               <Pressable
                 className="flex-row items-center p-4 rounded-xl bg-card active:opacity-70 mb-2 shadow-sm"
                 onPress={() => {
-                  analyticsService.recordVisit('product', line.id, line.name);
+                  analyticsService.recordVisit('lab', line.id, line.name);
                   router.push({ pathname: '/center-detail', params: { id: line.id, name: line.name } });
                 }}
               >
