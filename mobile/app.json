@@ -22,6 +22,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.elidzstp.app"
@@ -79,6 +81,12 @@
       "eas": {
         "projectId": "dc718464-724f-4f89-9098-d94149a275ff"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/dc718464-724f-4f89-9098-d94149a275ff"
     }
   }
 }

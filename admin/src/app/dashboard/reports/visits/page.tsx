@@ -35,7 +35,7 @@ export default function ProductLineVisitsPage() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" tickLine={false} axisLine={false} />
                                 <Tooltip />
-                                <Line type="monotone" dataKey="visits" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
+                                <Line type="monotone" dataKey="visits" stroke="var(--primary)" strokeWidth={2} dot={false} />
                             </LineChart>
                         </ResponsiveContainer>
                     </CardContent>

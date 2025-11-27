@@ -31,7 +31,7 @@ const chartDataUserGrowth = [
 const chartConfigUserGrowth = {
   users: {
     label: "Users",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
 } satisfies ChartConfig
 
@@ -48,19 +48,19 @@ const chartConfigServices = {
   },
   fw: {
     label: "Food & Water Lab",
-    color: "hsl(var(--chart-1))",
+    color: "var(--chart-1)",
   },
   re: {
     label: "Renewable Energy",
-    color: "hsl(var(--chart-2))",
+    color: "var(--chart-2)",
   },
   dc: {
     label: "Design Centre",
-    color: "hsl(var(--chart-3))",
+    color: "var(--chart-3)",
   },
   ai: {
     label: "Automotive Incubator",
-    color: "hsl(var(--chart-4))",
+    color: "var(--chart-4)",
   },
 } satisfies ChartConfig
 

@@ -97,18 +97,18 @@ export default function LoginScreen() {
             <LinearGradient
                 colors={['#0a1628', '#122a4d', '#1a3a5c']}
                 className="absolute inset-0"
-                style={{ height: height * 0.35 }}
+                style={{ height: height * 0.4 }}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
             />
             <Stars />
             {/* Header Section */}
-            <View className="px-6 pt-1" style={{ height: height * 0.25 }}>
+            <View className="px-6 pt-1 rounded-3xl" style={{ height: height * 0.25 }}>
                 {/* Back Button - Optional, if needed */}
                 <TouchableOpacity
                     className="w-10 h-10 rounded-full flex-row justify-center items-center"
                     style={{ marginTop: 40 }}
-                    onPress={() => router.back()}
+                    onPress={() => router.push('/(tabs)')}
                 >
                     <Ionicons name="chevron-back" size={24} color="#fff" />
                     <Text className="text-white text-sm">Back</Text>
@@ -127,11 +127,11 @@ export default function LoginScreen() {
             </View>
 
             <ScreenKeyboardAwareScrollView
-                contentContainerClassName="flex-grow"
+                contentContainerClassName="flex-grow mt-4 rounded-3xl"
                 style={{ zIndex: 2 }}
             >
                 {/* Form Fields */}
-                <View className="w-full px-6 pb-10 pt-12" style={{ marginTop: -70 }}>
+                <View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: -10 }}>
                     {/* Email Input */}
                     <View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
                         <Ionicons name="mail-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />

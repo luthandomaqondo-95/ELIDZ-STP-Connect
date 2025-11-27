@@ -35,7 +35,7 @@ export default function UserDemographicsPage() {
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" tickLine={false} axisLine={false} />
                                 <Tooltip />
-                                <Bar dataKey="users" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey="users" fill="var(--primary)" radius={[4, 4, 0, 0]} />
                             </BarChart>
                         </ResponsiveContainer>
                     </CardContent>

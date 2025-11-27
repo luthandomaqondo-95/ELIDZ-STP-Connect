@@ -66,7 +66,7 @@ export default function SignupScreen() {
 		'Grahamstown': ['6139', '6140', '6141', '6142', '6143', '6144'],
 		'Queenstown': ['5319', '5320', '5321', '5322', '5323', '5324'],
 		'King William\'s Town': ['5600', '5601', '5602', '5603', '5604', '5605'],
-		
+
 		// Gauteng
 		'Johannesburg': ['2001', '2000', '2094', '2193', '2092', '2091', '2196', '2090'],
 		'Pretoria': ['0002', '0001', '0181', '0157', '0081', '0186', '0184', '0182'],
@@ -161,7 +161,7 @@ export default function SignupScreen() {
 		try {
 			await signup(name, email, password, role, fullAddress);
 			// If we get here, email confirmation is not required or user is already confirmed
-			
+
 			// Show verification notice for SMME users
 			if (role === 'SMME') {
 				Alert.alert(
@@ -190,16 +190,16 @@ export default function SignupScreen() {
 			}
 		} catch (error: any) {
 			const errorMessage = error?.message || 'Failed to sign up. Please try again.';
-			
+
 			// Check if this is an email confirmation error
 			if (errorMessage.includes('EMAIL_CONFIRMATION_REQUIRED')) {
 				Alert.alert(
 					'Account Created Successfully',
 					'Please check your email to confirm your account. You will be able to log in after confirming your email address.' + (role === 'SMME' ? '\n\nNote: As an SMME, you will need to complete business verification after logging in to access all features.' : ''),
 					[
-						{ 
-							text: 'OK', 
-							onPress: () => router.replace('/(auth)') 
+						{
+							text: 'OK',
+							onPress: () => router.replace('/(auth)')
 						}
 					]
 				);
@@ -216,7 +216,7 @@ export default function SignupScreen() {
 			<LinearGradient
 				colors={['#0a1628', '#122a4d', '#1a3a5c']}
 				className="absolute inset-0"
-				style={{ height: height * 0.35 }}
+				style={{ height: height * 0.4 }}
 				start={{ x: 0.5, y: 0 }}
 				end={{ x: 0.5, y: 1 }}
 			/>
@@ -246,11 +246,11 @@ export default function SignupScreen() {
 			</View>
 
 			<ScreenKeyboardAwareScrollView
-				contentContainerClassName="flex-grow"
+				contentContainerClassName="flex-grow mt-4 rounded-3xl"
 				style={{ zIndex: 2 }}
 			>
 				{/* Form Fields */}
-				<View className="w-full px-6 pb-10 -mt-16 pt-12 " style={{ marginTop: -70, paddingTop: 50 }}>
+				<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: -10 }}>
 					{/* Full Name Input */}
 					<View className="hidden" />
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
@@ -342,10 +342,10 @@ export default function SignupScreen() {
 								editable={!!city}
 							/>
 						</View>
-						
+
 						{/* Postal Code Suggestions */}
 						{showPostalSuggestions && city && postalCodesByCity[city] && (
-							<View 
+							<View
 								className="absolute top-14 left-0 right-0 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-hidden"
 								style={{ zIndex: 1000, elevation: 10 }}
 							>

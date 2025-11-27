@@ -62,7 +62,7 @@ export default function ForgotPasswordScreen() {
         <LinearGradient
             colors={['#0a1628', '#122a4d', '#1a3a5c']}
             className="absolute inset-0"
-            style={{ height: height * 0.35 }}
+            style={{ height: height * 0.4 }}
             start={{ x: 0.5, y: 0 }}
             end={{ x: 0.5, y: 1 }}
         />
@@ -93,13 +93,13 @@ export default function ForgotPasswordScreen() {
                 </View>
             </View>
 
+
             <ScreenKeyboardAwareScrollView
-                contentContainerClassName="flex-grow"
+                contentContainerClassName="flex-grow mt-4 rounded-3xl"
                 style={{ zIndex: 2 }}
-                showsVerticalScrollIndicator={false}
             >
                 {/* Form Fields */}
-				<View className="w-full px-6 pb-10 pt-12 " style={{ marginTop: -70, paddingTop: 50 }}>
+                <View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: 20, paddingTop: 50 }}>
                     {!isEmailSent ? (
                         <>
                             {/* Email Input */}
