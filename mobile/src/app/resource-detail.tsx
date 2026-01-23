@@ -220,7 +220,7 @@ function ResourceDetailScreen() {
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
           <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Specifications</Text>
           {resource.specifications.map((spec: string, index: number) => (
-            <View style={styles.specItem}>
+            <View key={`${index}-${spec}`} style={styles.specItem}>
               <Feather name="check-circle" size={18} color={colors.secondary} />
               <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>
                 {spec}

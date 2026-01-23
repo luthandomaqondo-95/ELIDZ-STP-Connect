@@ -283,7 +283,7 @@ export default function NotificationsScreen() {
                                 No notifications yet
                             </Text>
                             <Text className="text-muted-foreground text-sm mt-2 text-center">
-                                You'll see important updates and communications here
+                                You&apos;ll see important updates and communications here
                             </Text>
                         </View>
                     ) : (

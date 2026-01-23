@@ -375,7 +375,7 @@ export default function SMMEVerificationScreen() {
                             <Text className="text-foreground text-sm leading-5">
                                 • All 3 documents are required for verification{'\n'}
                                 • Admin review typically takes 24-48 hours{'\n'}
-                                • You'll be notified via email once approved{'\n'}
+                                • You&apos;ll be notified via email once approved{'\n'}
                                 • Ensure documents are clear and legible
                             </Text>
                         </View>

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Stars } from '@/components/Stars';
 import { verificationService } from '@/services/verification.service';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 export default function LoginScreen() {
     const { login, signInWithGoogle, profile } = useAuthContext();
@@ -220,7 +220,7 @@ export default function LoginScreen() {
 
                     {/* Sign Up Link */}
                     <View className="flex-row justify-center items-center">
-                        <Text className="text-sm text-muted-foreground">Don't have an account? </Text>
+                        <Text className="text-sm text-muted-foreground">Don&apos;t have an account? </Text>
                         <Pressable onPress={() => router.push('/(auth)/signup')}>
                             <Text className="text-sm font-semibold text-accent underline">Sign Up</Text>
                         </Pressable>

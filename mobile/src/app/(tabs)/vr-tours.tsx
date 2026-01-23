@@ -111,7 +111,7 @@ export default function VRToursScreen() {
 					<View className="items-center py-12">
 						<Feather name="map" size={48} color="rgb(var(--muted-foreground))" />
 						<Text className="text-muted-foreground text-base mt-4 text-center">
-							No facilities found matching "{searchQuery}"
+						No facilities found matching {"\""}{searchQuery}{"\""}
 						</Text>
 					</View>
 				)}

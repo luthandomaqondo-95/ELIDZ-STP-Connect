@@ -7,11 +7,10 @@ import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareS
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 export default function SignupScreen() {
 	const { signup, signInWithGoogle } = useAuthContext();

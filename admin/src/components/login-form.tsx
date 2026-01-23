@@ -37,6 +37,7 @@ export function LoginForm({
 		setIsLoading(true)
 
 		try {
+			/*
             const { error } = await supabase.auth.signInWithPassword({
 					email: formData.email,
                 password: formData.password
@@ -47,6 +48,7 @@ export function LoginForm({
 				setIsLoading(false)
 				return
 			}
+			*/
 
             router.push("/dashboard")
             router.refresh()

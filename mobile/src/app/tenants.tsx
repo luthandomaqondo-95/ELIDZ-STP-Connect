@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
-import { View, Pressable, TextInput, FlatList } from 'react-native';
+import { View, Pressable, TextInput, FlatList , Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
-import { Dimensions } from 'react-native';
 
-const { width } = Dimensions.get('window');
-const isTablet = width >= 768;
 import { useTenantsSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { TenantLogo } from '@/components/TenantLogo';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 export default function TenantsScreen() {
     const [searchQuery, setSearchQuery] = useState('');

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Pressable, ActivityIndicator, ScrollView, TextInput } from 'react-native';
+import { View, Pressable, ActivityIndicator, ScrollView, TextInput , Dimensions } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { useAuthContext } from '@/hooks/use-auth-context';
@@ -9,11 +9,11 @@ import { OpportunityService } from '@/services/opportunity.service';
 import { Opportunity } from '@/types';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
-import { Dimensions } from 'react-native';
+
+import { useDebounce } from '@/hooks/useDebounce';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
-import { useDebounce } from '@/hooks/useDebounce';
 
 function OpportunitiesScreen() {
   const params = useLocalSearchParams<{ filter?: string }>();

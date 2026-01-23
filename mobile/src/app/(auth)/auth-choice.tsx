@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Pressable, Image } from 'react-native';
+import { View, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';

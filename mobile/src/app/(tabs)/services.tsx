@@ -193,7 +193,7 @@ export default function ServicesScreen() {
 
 	const handleContactTenant = (tenant: any) => {
 		const options: string[] = [];
-		const actions: Array<{ text: string; onPress: () => void }> = [];
+		const actions: { text: string; onPress: () => void }[] = [];
 
 		if (tenant.contact_email) {
 			options.push('Email');

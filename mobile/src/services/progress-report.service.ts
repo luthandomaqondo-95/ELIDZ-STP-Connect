@@ -85,7 +85,7 @@ class ProgressReportService {
   /**
    * Get accepted funding applications for an SMME
    */
-  async getAcceptedFundingApplications(smmeId: string): Promise<Array<{
+  async getAcceptedFundingApplications(smmeId: string): Promise<{
     id: string;
     opportunity_id: string;
     opportunity: {
@@ -94,7 +94,7 @@ class ProgressReportService {
       type: string;
     };
     submitted_at: string;
-  }>> {
+  }[]> {
     // First get accepted applications
     const { data: applications, error: appsError } = await supabase
       .from('applications')

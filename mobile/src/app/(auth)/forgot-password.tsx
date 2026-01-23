@@ -9,7 +9,7 @@ import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
 export default function ForgotPasswordScreen() {
     const [email, setEmail] = useState('');
@@ -83,7 +83,7 @@ export default function ForgotPasswordScreen() {
                 <View className="items-center mt-4">
                     <Text className="text-3xl font-bold text-white mb-2">Forgot Password</Text>
                     <Text className="text-center text-white/80 px-4 mb-4">
-                        Enter your email address and we'll send you a link to reset your password
+                        Enter your email address and we&apos;ll send you a link to reset your password
                     </Text>
                     <Image
                         source={require('../../../assets/logos/blue text-idz logo.png')}
@@ -146,7 +146,7 @@ export default function ForgotPasswordScreen() {
 
                             <Text className="text-2xl font-bold text-center text-foreground mb-3">Check Your Email</Text>
                             <Text className="text-center text-muted-foreground mb-8 px-4 leading-6">
-                                We've sent a password reset link to{'\n'}
+                                We&apos;ve sent a password reset link to{'\n'}
                                 <Text className="font-bold text-foreground">{email}</Text>
                             </Text>
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Pressable, ScrollView, Linking, Alert } from 'react-native';
+import { View, StyleSheet, Pressable, ScrollView, Linking, Alert , Dimensions } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '../hooks/useTheme';
@@ -8,13 +8,13 @@ import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
-import { Dimensions } from 'react-native';
 
-const { width } = Dimensions.get('window');
-const isTablet = width >= 768;
 import { TenantLogo } from '@/components/TenantLogo';
 import { tenantService } from '@/services/tenant.service';
 import { Tenant } from '@/types';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 function TenantDetailScreen() {
   const { colors } = useTheme();
@@ -88,7 +88,7 @@ function TenantDetailScreen() {
         return { platform: parts[0].trim(), url: parts[1].trim() };
       }
       return null;
-    }).filter(Boolean) as Array<{ platform: string; url: string }>;
+    }).filter(Boolean) as { platform: string; url: string }[];
   };
 
   return (

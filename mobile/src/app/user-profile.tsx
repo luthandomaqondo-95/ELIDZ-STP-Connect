@@ -246,7 +246,7 @@ function UserProfileScreen() {
 						User Not Found
 					</Text>
 					<Text style={[Typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>
-						The user you're looking for doesn't exist or has been removed.
+						The user you&apos;re looking for doesn&apos;t exist or has been removed.
 					</Text>
 				</View>
 			</ScreenScrollView>

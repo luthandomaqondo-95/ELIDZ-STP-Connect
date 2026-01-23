@@ -1,11 +1,11 @@
 import React from 'react';
-import { View, Pressable, ScrollView, TextInput } from 'react-native';
+import { View, Pressable, ScrollView, TextInput , Dimensions } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
-import { Dimensions } from 'react-native';
+
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;

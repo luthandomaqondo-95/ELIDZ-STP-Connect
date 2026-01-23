@@ -7,11 +7,11 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import { Feather } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { OpportunityService } from '@/services/opportunity.service';
-import { EventService } from '@/services/event.service';
+import { EventService , Event } from '@/services/event.service';
 import { tenantService } from '@/services/tenant.service';
-import { Opportunity } from '@/types';
-import { Event } from '@/services/event.service';
-import { Tenant } from '@/types';
+import { Opportunity , Tenant } from '@/types';
+
+
 import { TenantLogo } from '@/components/TenantLogo';
 import { TabsLayoutHeader } from '@/components/Header';
 import { Button } from '@/components/ui/button';

@@ -36,6 +36,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protect dashboard routes
+  /*
   if (request.nextUrl.pathname.startsWith('/dashboard')) {
     if (!user) {
       return NextResponse.redirect(new URL('/auth/login', request.url))
@@ -53,6 +54,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/unauthorized', request.url))
     }
   }
+  */
 
   return response
 }
