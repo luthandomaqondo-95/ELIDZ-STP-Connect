@@ -8,10 +8,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 const { height } = Dimensions.get('window');
 
 export default function ForgotPasswordScreen() {
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isEmailSent, setIsEmailSent] = useState(false);
@@ -75,7 +79,7 @@ export default function ForgotPasswordScreen() {
                     style={{ marginTop: 40 }}
                     onPress={handleBackToLogin}
                 >
-                    <Ionicons name="chevron-back" size={24} color="#fff" />
+                    <Ionicons name="chevron-back" size={24} color={colors.white} />
                     <Text className="text-white text-sm">Back</Text>
                 </TouchableOpacity>
 
@@ -104,13 +108,13 @@ export default function ForgotPasswordScreen() {
                         <>
                             {/* Email Input */}
                             <View className="flex-row items-center bg-input rounded-full mb-6 px-4 h-14 border border-border">
-                                <Ionicons name="mail-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+                                <Ionicons name="mail-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
                                 <TextInput
                                     className="flex-1 text-base text-foreground h-full"
                                     value={email}
                                     onChangeText={setEmail}
                                     placeholder="Your email address"
-                                    placeholderTextColor="#9CA3AF"
+                                    placeholderTextColor={colors.placeholder}
                                     keyboardType="email-address"
                                     autoCapitalize="none"
                                     autoComplete="email"
@@ -141,7 +145,7 @@ export default function ForgotPasswordScreen() {
                         <View className="items-center pt-4">
                             {/* Success State */}
                             <View className="items-center mb-6 bg-accent/10 p-6 rounded-full">
-                                <Ionicons name="mail-open-outline" size={60} color="#FF6600" />
+                                <Ionicons name="mail-open-outline" size={60} color={colors.accent} />
                             </View>
 
                             <Text className="text-2xl font-bold text-center text-foreground mb-3">Check Your Email</Text>

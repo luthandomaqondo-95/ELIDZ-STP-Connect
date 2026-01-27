@@ -11,6 +11,8 @@ import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { Picker } from '@react-native-picker/picker';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 interface DocumentSlot {
     type: 'Business Registration' | 'ID Document' | 'Business Profile';
@@ -23,6 +25,8 @@ interface DocumentSlot {
 export default function SMMEVerificationScreen() {
     const { profile } = useAuthContext();
     const queryClient = useQueryClient();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [documents, setDocuments] = useState<DocumentSlot[]>([
         {
             type: 'Business Registration',
@@ -279,7 +283,7 @@ export default function SMMEVerificationScreen() {
         <ScreenScrollView>
             <View className="p-6">
                 <Pressable onPress={() => router.back()} className="mb-6">
-                    <Feather name="arrow-left" size={24} color="#002147" />
+                    <Feather name="arrow-left" size={24} color={colors.primary} />
                 </Pressable>
 
                 <View className="items-center mb-8">
@@ -304,15 +308,15 @@ export default function SMMEVerificationScreen() {
                         <View key={doc.type} className="bg-card p-5 rounded-2xl shadow-sm border border-border mb-4">
                             <View className="flex-row items-center mb-3">
                                 <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-                                    <Feather name={doc.icon as any} size={20} color="#002147" />
+                                    <Feather name={doc.icon as any} size={20} color={colors.primary} />
                                 </View>
                                 <View className="flex-1">
                                     <Text className="font-bold text-foreground text-base">{doc.label}</Text>
                                     <Text className="text-xs text-muted-foreground mt-0.5">{doc.description}</Text>
                                 </View>
                                 {doc.uri && (
-                                    <View className="w-6 h-6 bg-[#28A745] rounded-full items-center justify-center">
-                                        <Feather name="check" size={14} color="white" />
+                                    <View className="w-6 h-6 bg-[#28A745] rounded-full items-center justify-center" style={{ backgroundColor: colors.success }}>
+                                        <Feather name="check" size={14} color={colors.white} />
                                     </View>
                                 )}
                             </View>
@@ -357,7 +361,8 @@ export default function SMMEVerificationScreen() {
 
                 {/* Submit Button */}
                 <Button
-                    className="bg-[#002147] h-14 rounded-full mb-6"
+                    className="h-14 rounded-full mb-6"
+                    style={{ backgroundColor: colors.primary }}
                     onPress={handleUpload}
                     disabled={isUploading || documents.some(d => !d.uri)}
                 >
@@ -386,8 +391,8 @@ export default function SMMEVerificationScreen() {
                 <View className="mb-6">
                     <View className="flex-row items-center justify-between mb-4">
                         <View className="flex-row items-center">
-                            <View className="w-10 h-10 bg-[#002147]/5 rounded-full items-center justify-center mr-3">
-                                <Feather name="package" size={20} color="#002147" />
+                            <View className="w-10 h-10 rounded-full items-center justify-center mr-3" style={{ backgroundColor: `${colors.primary}15` }}>
+                                <Feather name="package" size={20} color={colors.primary} />
                             </View>
                             <View>
                                 <Text className="text-lg font-bold text-foreground">Products & Services</Text>
@@ -417,7 +422,7 @@ export default function SMMEVerificationScreen() {
                                     {editingItem ? 'Edit' : 'Add'} {formType}
                                 </Text>
                                 <Pressable onPress={resetForm}>
-                                    <Feather name="x" size={20} color="#6C757D" />
+                                    <Feather name="x" size={20} color={colors.iconGrayDark} />
                                 </Pressable>
                             </View>
 
@@ -477,11 +482,11 @@ export default function SMMEVerificationScreen() {
                                     <Picker
                                         selectedValue={formCategory}
                                         onValueChange={setFormCategory}
-                                        style={{ color: '#002147' }}
+                                        style={{ color: colors.primary }}
                                     >
-                                        <Picker.Item label="Select Category" value="" color="#9CA3AF" />
+                                        <Picker.Item label="Select Category" value="" color={colors.placeholder} />
                                         {categories.map((cat) => (
-                                            <Picker.Item key={cat} label={cat} value={cat} color="#002147" />
+                                            <Picker.Item key={cat} label={cat} value={cat} color={colors.primary} />
                                         ))}
                                     </Picker>
                                 </View>
@@ -553,14 +558,15 @@ export default function SMMEVerificationScreen() {
                                     <Text className="text-foreground font-semibold">Cancel</Text>
                                 </Pressable>
                                 <Pressable
-                                    className="flex-1 py-3 bg-[#002147] rounded-lg items-center active:opacity-90"
+                                    className="flex-1 py-3 rounded-lg items-center active:opacity-90"
+                                    style={{ backgroundColor: colors.primary }}
                                     onPress={handleSubmitForm}
                                     disabled={submittingForm}
                                 >
                                     {submittingForm ? (
                                         <ActivityIndicator color="white" />
                                     ) : (
-                                        <Text className="text-white font-semibold">
+                                        <Text className="font-semibold" style={{ color: colors.white }}>
                                             {editingItem ? 'Update' : 'Add'} {formType}
                                         </Text>
                                     )}
@@ -572,7 +578,7 @@ export default function SMMEVerificationScreen() {
                     {/* Products List */}
                     {loadingServicesProducts ? (
                         <View className="items-center py-8">
-                            <ActivityIndicator size="large" color="#002147" />
+                            <ActivityIndicator size="large" color={colors.primary} />
                         </View>
                     ) : (
                         <>
@@ -597,13 +603,13 @@ export default function SMMEVerificationScreen() {
                                                         onPress={() => handleEdit(product)}
                                                         className="p-2 bg-primary/10 rounded-lg"
                                                     >
-                                                        <Feather name="edit" size={16} color="#002147" />
+                                                        <Feather name="edit" size={16} color={colors.primary} />
                                                     </Pressable>
                                                     <Pressable
                                                         onPress={() => handleDelete(product)}
                                                         className="p-2 bg-destructive/10 rounded-lg"
                                                     >
-                                                        <Feather name="trash-2" size={16} color="#EF4444" />
+                                                        <Feather name="trash-2" size={16} color={colors.redLight} />
                                                     </Pressable>
                                                 </View>
                                             </View>
@@ -631,13 +637,13 @@ export default function SMMEVerificationScreen() {
                                                         onPress={() => handleEdit(service)}
                                                         className="p-2 bg-primary/10 rounded-lg"
                                                     >
-                                                        <Feather name="edit" size={16} color="#002147" />
+                                                        <Feather name="edit" size={16} color={colors.primary} />
                                                     </Pressable>
                                                     <Pressable
                                                         onPress={() => handleDelete(service)}
                                                         className="p-2 bg-destructive/10 rounded-lg"
                                                     >
-                                                        <Feather name="trash-2" size={16} color="#EF4444" />
+                                                        <Feather name="trash-2" size={16} color={colors.redLight} />
                                                     </Pressable>
                                                 </View>
                                             </View>
@@ -649,7 +655,7 @@ export default function SMMEVerificationScreen() {
                             {/* Empty State */}
                             {servicesProducts.products.length === 0 && servicesProducts.services.length === 0 && !showAddForm && (
                                 <View className="items-center py-8 bg-card rounded-2xl border border-border border-dashed">
-                                    <Feather name="package" size={48} color="#CBD5E0" />
+                                    <Feather name="package" size={48} color={colors.iconGray} />
                                     <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                         No products or services listed yet
                                     </Text>

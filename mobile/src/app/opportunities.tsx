@@ -9,7 +9,8 @@ import { OpportunityService } from '@/services/opportunity.service';
 import { Opportunity } from '@/types';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
-
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 import { useDebounce } from '@/hooks/useDebounce';
 
 const { width } = Dimensions.get('window');
@@ -18,6 +19,8 @@ const isTablet = width >= 768;
 function OpportunitiesScreen() {
   const params = useLocalSearchParams<{ filter?: string }>();
   const { profile: user } = useAuthContext();
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme];
   
   // Get initial filter from params or role-based default
   const getInitialFilter = () => {
@@ -97,14 +100,14 @@ function OpportunitiesScreen() {
 
   const getTypeColor = (type: string): string => {
     switch (type) {
-      case 'Tenders': return '#002147';
-      case 'Employment': return '#28A745';
-      case 'Training': return '#17A2B8';
-      case 'Internships': return '#6F42C1';
-      case 'Bursaries': return '#E83E8C';
-      case 'Incubation': return '#FF6600';
-      case 'Funding': return '#DC3545';
-      default: return '#002147';
+      case 'Tenders': return colors.primary;
+      case 'Employment': return colors.success;
+      case 'Training': return colors.info;
+      case 'Internships': return colors.purple;
+      case 'Bursaries': return colors.pink;
+      case 'Incubation': return colors.accent;
+      case 'Funding': return colors.destructive;
+      default: return colors.primary;
     }
   };
 
@@ -150,8 +153,8 @@ function OpportunitiesScreen() {
           {item.description}
         </Text>
         <View className="flex-row items-center mt-3 pt-3 border-t border-border">
-          <Feather name="chevron-right" size={16} color="#FF6600" />
-          <Text className="text-[#FF6600] text-xs font-semibold ml-1">
+          <Feather name="chevron-right" size={16} color={colors.accent} />
+          <Text className="text-xs font-semibold ml-1" style={{ color: colors.accent }}>
             View Details
           </Text>
         </View>
@@ -203,7 +206,7 @@ function OpportunitiesScreen() {
                 className="ml-2"
                 hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
               >
-                <Feather name="x" size={18} color="#9CA3AF" />
+                <Feather name="x" size={18} color={colors.placeholder} />
               </Pressable>
             )}
           </View>
@@ -244,12 +247,12 @@ function OpportunitiesScreen() {
         <View className="mx-5">
           {loading ? (
             <View className="items-center py-12">
-              <ActivityIndicator size="large" color="#002147" />
+              <ActivityIndicator size="large" color={colors.primary} />
               <Text className="text-muted-foreground mt-4">Loading opportunities...</Text>
             </View>
           ) : opportunities.length === 0 ? (
             <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
-              <Feather name="briefcase" size={48} color="#CBD5E0" />
+              <Feather name="briefcase" size={48} color={colors.iconGray} />
               <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                 {searchQuery ? 'No opportunities found' : `No ${selectedFilter === 'All' ? '' : selectedFilter.toLowerCase()} opportunities available`}
               </Text>

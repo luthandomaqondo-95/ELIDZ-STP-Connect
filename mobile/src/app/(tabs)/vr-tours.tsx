@@ -6,9 +6,13 @@ import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { TabsLayoutHeader } from '@/components/Header';
 import { FACILITIES, TENANTS } from '@/data/vrToursData';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 // import ARCarDemo from '@/components/mixed-experiences/ar-demos/ARCarDemo';
 
 export default function VRToursScreen() {
+	const { colorScheme } = useColorScheme();
+	const colors = COLORS[colorScheme];
 	const [searchQuery, setSearchQuery] = useState('');
 
 	const filteredItems = useMemo(() => {
@@ -45,11 +49,11 @@ export default function VRToursScreen() {
 			{/* <ARCarDemo /> */}
 
 			<View className="flex-row items-center px-4 h-12 rounded-lg border border-border mx-6 mb-6 bg-card mt-6">
-				<Feather name="search" size={20} color="rgb(var(--muted-foreground))" />
+				<Feather name="search" size={20} color={colors.textSecondary} />
 				<TextInput
 					className="flex-1 ml-3 text-base text-foreground"
 					placeholder="Search rooms, labs, or tenants..."
-					placeholderTextColor="rgb(var(--muted-foreground))"
+					placeholderTextColor={colors.textSecondary}
 					value={searchQuery}
 					onChangeText={setSearchQuery}
 				/>
@@ -69,7 +73,7 @@ export default function VRToursScreen() {
 								<Image source={facility.image} className="w-full h-full" resizeMode="cover" />
 								<View className="absolute inset-0 bg-black/30 flex-row items-center justify-center">
 									<View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center backdrop-blur-md">
-										<Feather name="play-circle" size={24} color="#FFFFFF" />
+										<Feather name="play-circle" size={24} color={colors.white} />
 									</View>
 								</View>
 							</View>
@@ -109,7 +113,7 @@ export default function VRToursScreen() {
 
 				{filteredItems.length === 0 && (
 					<View className="items-center py-12">
-						<Feather name="map" size={48} color="rgb(var(--muted-foreground))" />
+						<Feather name="map" size={48} color={colors.textSecondary} />
 						<Text className="text-muted-foreground text-base mt-4 text-center">
 						No facilities found matching {"\""}{searchQuery}{"\""}
 						</Text>

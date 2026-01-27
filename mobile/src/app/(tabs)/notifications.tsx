@@ -7,12 +7,16 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import { notificationService, Notification, NotificationType } from '@/services/notification.service';
 import { TabsLayoutHeader } from '@/components/Header';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
 export default function NotificationsScreen() {
     const { profile, isLoggedIn } = useAuthContext();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [notifications, setNotifications] = useState<Notification[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -175,7 +179,7 @@ export default function NotificationsScreen() {
                                     className="p-2"
                                     hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                 >
-                                    <Feather name="trash-2" size={16} color="#EF4444" />
+                                    <Feather name="trash-2" size={16} color={colors.redLight} />
                                 </Pressable>
                             </View>
                         </View>
@@ -202,7 +206,7 @@ export default function NotificationsScreen() {
                 <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
                         <View className="bg-[#FF6600]/10 p-2 rounded-full mr-3">
-                            <Feather name="lock" size={18} color="#FF6600" />
+                            <Feather name="lock" size={18} color={colors.accent} />
                         </View>
                         <Text className="text-foreground text-lg font-bold">
                             Sign In Required
@@ -278,7 +282,7 @@ export default function NotificationsScreen() {
                         </View>
                     ) : notifications.length === 0 ? (
                         <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
-                            <Feather name="bell-off" size={48} color="#CBD5E0" />
+                            <Feather name="bell-off" size={48} color={colors.iconGray} />
                             <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                 No notifications yet
                             </Text>

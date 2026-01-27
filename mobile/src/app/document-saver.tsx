@@ -81,7 +81,7 @@ function DocumentSaverScreen() {
     >
       <View style={styles.docHeader}>
         <View style={[styles.docIcon, { backgroundColor: colors.primary }]}>
-          <Feather name="file-text" size={24} color="#FFFFFF" />
+          <Feather name="file-text" size={24} color={colors.buttonText} />
         </View>
         <View style={styles.docInfo}>
           <Text style={[Typography.body, { fontWeight: '600' }]}>
@@ -121,7 +121,7 @@ function DocumentSaverScreen() {
             ]}
             onPress={() => setShowAddForm(true)}
           >
-            <Feather name="plus" size={20} color="#FFFFFF" />
+            <Feather name="plus" size={20} color={colors.buttonText} />
             <Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
               New Document
             </Text>
@@ -209,7 +209,7 @@ function DocumentSaverScreen() {
             ]}
             onPress={handleSaveDocument}
           >
-            <Feather name="save" size={20} color="#FFFFFF" style={{ marginRight: Spacing.sm }} />
+            <Feather name="save" size={20} color={colors.buttonText} style={{ marginRight: Spacing.sm }} />
             <Text style={[Typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
               Save Document
             </Text>

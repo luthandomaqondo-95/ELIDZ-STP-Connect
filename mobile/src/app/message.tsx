@@ -10,9 +10,13 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import { chatService, Message } from '@/services/chat.service';
 import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from '@/lib/supabase';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 function MessageScreen() {
   const insets = useSafeAreaInsets();
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme];
   const { userName, chatId } = useLocalSearchParams<{ userName: string; chatId: string }>();
   const { profile: user } = useAuthContext();
   const [message, setMessage] = useState('');
@@ -250,9 +254,10 @@ function MessageScreen() {
         <View 
             className={`max-w-[80%] p-4 rounded-2xl ${
                 isMe 
-                ? 'bg-[#002147] rounded-br-none' 
+                ? 'rounded-br-none' 
                 : 'bg-card border border-border rounded-bl-none shadow-sm'
             }`}
+            style={isMe ? { backgroundColor: colors.primary } : {}}
         >
           {item.attachment_url && (
             <View className="mb-2">
@@ -264,8 +269,8 @@ function MessageScreen() {
                     />
                 ) : (
                     <View className="flex-row items-center bg-black/10 p-2 rounded-lg">
-                        <Feather name="file-text" size={20} color={isMe ? 'white' : '#002147'} />
-                        <Text className={`ml-2 text-xs ${isMe ? 'text-white' : 'text-foreground'}`}>
+                        <Feather name="file-text" size={20} color={isMe ? colors.white : colors.primary} />
+                        <Text className={`ml-2 text-xs ${isMe ? '' : 'text-foreground'}`} style={isMe ? { color: colors.white } : {}}>
                             Attachment ({item.attachment_type})
                         </Text>
                     </View>
@@ -273,7 +278,7 @@ function MessageScreen() {
             </View>
           )}
           {item.content ? (
-            <Text className={`text-base ${isMe ? 'text-white' : 'text-foreground'}`}>
+            <Text className={`text-base ${isMe ? '' : 'text-foreground'}`} style={isMe ? { color: colors.white } : {}}>
                 {item.content}
             </Text>
           ) : null}
@@ -293,27 +298,27 @@ function MessageScreen() {
     >
       {/* Header */}
       <LinearGradient
-          colors={['#002147', '#003366']}
+          colors={[colors.primary, colors.gradientMessageEnd]}
           className="pt-12 pb-4 px-4 rounded-b-[24px] shadow-md z-10"
       >
           <View className="flex-row items-center">
               <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full mr-3">
-                  <Feather name="arrow-left" size={20} color="white" />
+                  <Feather name="arrow-left" size={20} color={colors.white} />
               </Pressable>
               
               <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center mr-3 border border-white/10">
-                  <Text className="text-white font-bold text-lg">
+                  <Text className="font-bold text-lg" style={{ color: colors.white }}>
                       {userName ? userName.charAt(0).toUpperCase() : '?'}
                   </Text>
               </View>
 
               <View className="flex-1">
-                  <Text className="text-white text-lg font-bold" numberOfLines={1}>
+                  <Text className="text-lg font-bold" style={{ color: colors.white }} numberOfLines={1}>
                       {userName || 'Chat'}
                   </Text>
                   <View className="flex-row items-center">
                       <View className="w-2 h-2 rounded-full bg-green-400 mr-1.5" />
-                      <Text className="text-white/70 text-xs">Online</Text>
+                      <Text className="text-xs" style={{ color: colors.whiteOpacity70 }}>Online</Text>
                   </View>
               </View>
 
@@ -322,7 +327,7 @@ function MessageScreen() {
                       className="p-2 bg-white/10 rounded-full ml-2"
                       onPress={() => setShowMenu(!showMenu)}
                   >
-                      <Feather name="more-vertical" size={20} color="white" />
+                      <Feather name="more-vertical" size={20} color={colors.white} />
                   </Pressable>
                   
                   {showMenu && (
@@ -331,7 +336,7 @@ function MessageScreen() {
                               className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
                               onPress={handleViewProfile}
                           >
-                              <Feather name="user" size={18} color="#002147" />
+                              <Feather name="user" size={18} color={colors.primary} />
                               <Text className="ml-3 text-base text-foreground">View Profile</Text>
                           </Pressable>
                           
@@ -339,7 +344,7 @@ function MessageScreen() {
                               className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
                               onPress={handleMuteNotifications}
                           >
-                              <Feather name="bell-off" size={18} color="#002147" />
+                              <Feather name="bell-off" size={18} color={colors.primary} />
                               <Text className="ml-3 text-base text-foreground">Mute Notifications</Text>
                           </Pressable>
                           
@@ -347,7 +352,7 @@ function MessageScreen() {
                               className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
                               onPress={handleClearChat}
                           >
-                              <Feather name="trash-2" size={18} color="#002147" />
+                              <Feather name="trash-2" size={18} color={colors.primary} />
                               <Text className="ml-3 text-base text-foreground">Clear Chat</Text>
                           </Pressable>
                           
@@ -355,7 +360,7 @@ function MessageScreen() {
                               className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
                               onPress={handleDeleteChat}
                           >
-                              <Feather name="x-circle" size={18} color="#EF4444" />
+                              <Feather name="x-circle" size={18} color={colors.redLight} />
                               <Text className="ml-3 text-base text-destructive">Delete Chat</Text>
                           </Pressable>
                           
@@ -363,7 +368,7 @@ function MessageScreen() {
                               className="flex-row items-center px-4 py-3 active:bg-muted"
                               onPress={handleBlockUser}
                           >
-                              <Feather name="slash" size={18} color="#EF4444" />
+                              <Feather name="slash" size={18} color={colors.redLight} />
                               <Text className="ml-3 text-base text-destructive">Block User</Text>
                           </Pressable>
                       </View>
@@ -382,7 +387,7 @@ function MessageScreen() {
       <View className="flex-1">
         {loading ? (
           <View className="flex-1 justify-center items-center">
-            <ActivityIndicator size="large" color="#002147" />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text className="text-muted-foreground mt-4">Loading messages...</Text>
           </View>
         ) : (
@@ -398,7 +403,7 @@ function MessageScreen() {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={
               <View className="items-center py-12">
-                <Feather name="message-square" size={48} color="#CBD5E0" />
+                <Feather name="message-square" size={48} color={colors.iconGray} />
                 <Text className="text-muted-foreground text-base mt-4 text-center">
                   No messages yet. Start the conversation!
                 </Text>
@@ -414,13 +419,13 @@ function MessageScreen() {
           {attachment && (
             <View className="flex-row items-center mb-2 bg-muted p-2 rounded-lg border border-border self-start">
                 <View className="w-8 h-8 bg-muted-foreground/20 rounded justify-center items-center mr-2">
-                    <Feather name={attachment.type === 'image' ? 'image' : 'file-text'} size={16} color="#666" />
+                    <Feather name={attachment.type === 'image' ? 'image' : 'file-text'} size={16} color={colors.gray600} />
                 </View>
                 <Text className="text-sm text-foreground mr-2 max-w-[200px]" numberOfLines={1}>
                     {attachment.name}
                 </Text>
                 <Pressable onPress={() => setAttachment(null)}>
-                    <Feather name="x" size={16} color="#FF4444" />
+                    <Feather name="x" size={16} color={colors.redLight} />
                 </Pressable>
             </View>
           )}
@@ -431,7 +436,7 @@ function MessageScreen() {
                 onPress={handlePickDocument}
                 disabled={sending}
             >
-                <Feather name="plus-circle" size={24} color="#002147" />
+                <Feather name="plus-circle" size={24} color={colors.primary} />
             </Pressable>
             <View className="flex-1 bg-input border border-border rounded-2xl px-4 py-2 min-h-[48px] max-h-[120px] flex-row items-center">
                 <TextInput
@@ -439,21 +444,22 @@ function MessageScreen() {
                     value={message}
                     onChangeText={setMessage}
                     placeholder="Type a message..."
-                    placeholderTextColor="#9CA3AF"
+                    placeholderTextColor={colors.placeholder}
                     multiline
                 />
             </View>
             <Pressable
               className={`w-12 h-12 rounded-full justify-center items-center ml-3 shadow-sm ${
-                  (message.trim() || attachment) && !sending ? 'bg-[#FF6600]' : 'bg-muted'
+                  (message.trim() || attachment) && !sending ? '' : 'bg-muted'
               }`}
+              style={(message.trim() || attachment) && !sending ? { backgroundColor: colors.accent } : {}}
               onPress={handleSend}
               disabled={(!message.trim() && !attachment) || sending}
             >
               {sending ? (
-                <ActivityIndicator size="small" color="white" />
+                <ActivityIndicator size="small" color={colors.white} />
               ) : (
-                <Feather name="send" size={20} color="white" />
+                <Feather name="send" size={20} color={colors.white} />
               )}
             </Pressable>
           </View>

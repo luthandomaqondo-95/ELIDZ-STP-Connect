@@ -7,11 +7,15 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useNewsSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
 export default function NewsScreen() {
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme];
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
   const { data: news, isLoading, error } = useNewsSearch(debouncedSearch);
@@ -19,15 +23,15 @@ export default function NewsScreen() {
   const getCategoryColor = (category?: string): string => {
     switch (category) {
       case 'Corporate':
-        return '#002147';
+        return colors.primary;
       case 'Achievements':
-        return '#FF6600';
+        return colors.accent;
       case 'Training':
-        return '#28A745';
+        return colors.success;
       case 'Community':
-        return '#17A2B8';
+        return colors.info;
       case 'Partnership':
-        return '#6F42C1';
+        return colors.purple;
       case 'Events':
         return '#E83E8C';
       default:
@@ -105,7 +109,7 @@ export default function NewsScreen() {
         >
           {isLoading ? (
             <View className="items-center py-12">
-              <ActivityIndicator size="large" color="#002147" />
+              <ActivityIndicator size="large" color={colors.primary} />
               <Text className="text-muted-foreground mt-4">Loading news...</Text>
             </View>
           ) : error ? (
@@ -120,7 +124,7 @@ export default function NewsScreen() {
             </View>
           ) : !news || news.length === 0 ? (
             <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
-              <Feather name="file-text" size={48} color="#CBD5E0" />
+              <Feather name="file-text" size={48} color={colors.iconGray} />
               <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                 {searchQuery ? 'No news found' : 'No news available'}
               </Text>
@@ -184,7 +188,7 @@ export default function NewsScreen() {
                     </Text>
                     {item.author && (
                       <View className="flex-row items-center mt-2">
-                        <Feather name="user" size={12} color="#6C757D" />
+                        <Feather name="user" size={12} color={colors.iconGrayDark} />
                         <Text className="text-muted-foreground text-xs ml-1">
                           {item.author.name}
                         </Text>

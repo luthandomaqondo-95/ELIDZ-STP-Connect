@@ -10,8 +10,8 @@ import { OpportunityService } from '@/services/opportunity.service';
 import { EventService , Event } from '@/services/event.service';
 import { tenantService } from '@/services/tenant.service';
 import { Opportunity , Tenant } from '@/types';
-
-
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 import { TenantLogo } from '@/components/TenantLogo';
 import { TabsLayoutHeader } from '@/components/Header';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,8 @@ const { width } = Dimensions.get('window');
 
 export default function DashboardScreen() {
     const { isLoggedIn, isLoading , profile} = useAuthContext();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
 
     // Check if user is guest (from route params or context)
     const isGuest = !profile;
@@ -191,7 +193,7 @@ export default function DashboardScreen() {
                                         <Text className="text-[#002147] font-bold text-sm mr-2">
                                             Explore Opportunity
                                         </Text>
-                                        <Feather name="arrow-right" size={16} color="#002147" />
+                                        <Feather name="arrow-right" size={16} color={colors.primary} />
                                     </Pressable>
                                 )}
                             </>
@@ -244,7 +246,7 @@ export default function DashboardScreen() {
                         onPress={() => router.push('/(tabs)/verified-smmes')}
                     >
                         <View className="w-10 h-10 rounded-full bg-blue-100 justify-center items-center mb-2">
-                            <Feather name="shield" size={20} color="#002147" />
+                            <Feather name="shield" size={20} color={colors.primary} />
                         </View>
                         <Text className="text-sm font-bold text-foreground">Verified SMMEs</Text>
                     </Pressable>
@@ -265,7 +267,7 @@ export default function DashboardScreen() {
                 <View className="mb-8">
                     <View className="flex-row justify-between items-center mx-5 mb-4">
                         <View className="flex-row items-center">
-                            <Feather name="star" size={20} color="#FF6600" className="mr-2" />
+                            <Feather name="star" size={20} color={colors.accent} className="mr-2" />
                             <Text className="text-xl font-bold text-foreground tracking-tight">Recommended for You</Text>
                         </View>
                         <Pressable onPress={() => router.push('/opportunities')}>
@@ -283,7 +285,7 @@ export default function DashboardScreen() {
                                     <Feather 
                                         name={opp.type === 'Funding' ? 'dollar-sign' : 'briefcase'} 
                                         size={18} 
-                                        color="#FF6600" 
+                                        color={colors.accent} 
                                     />
                                 </View>
                                 <View className="flex-1">
@@ -292,7 +294,7 @@ export default function DashboardScreen() {
                                         {opp.org} • {opp.deadline ? new Date(opp.deadline).toLocaleDateString() : 'No deadline'}
                                     </Text>
                                 </View>
-                                <Feather name="chevron-right" size={20} color="#FF6600" />
+                                <Feather name="chevron-right" size={20} color={colors.accent} />
                             </Pressable>
                         ))}
                     </View>
@@ -362,7 +364,7 @@ export default function DashboardScreen() {
                                         <Text className="text-[#002147] text-xs font-bold">Free</Text>
                                     </View>
                                     <View className="flex-row items-center">
-                                        <Feather name="calendar" size={12} color="#6C757D" className="mr-1" />
+                                        <Feather name="calendar" size={12} color={colors.iconGrayDark} className="mr-1" />
                                         <Text className="text-muted-foreground text-xs">{formattedDate}</Text>
                                     </View>
                                 </View>

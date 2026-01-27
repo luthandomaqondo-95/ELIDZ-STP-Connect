@@ -228,10 +228,10 @@ function UserProfileScreen() {
 		return (
 			<ScreenScrollView>
 				<View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
-					<View style={[styles.avatar, { backgroundColor: '#FFFFFF20' }]} />
-					<View style={{ width: 200, height: 24, backgroundColor: '#FFFFFF20', borderRadius: 4, marginTop: Spacing.lg }} />
-					<View style={{ width: 150, height: 16, backgroundColor: '#FFFFFF15', borderRadius: 4, marginTop: Spacing.xs }} />
-					<View style={{ width: 120, height: 14, backgroundColor: '#FFFFFF10', borderRadius: 4, marginTop: Spacing.xs }} />
+					<View style={[styles.avatar, { backgroundColor: colors.whiteOpacity20 }]} />
+					<View style={{ width: 200, height: 24, backgroundColor: colors.whiteOpacity20, borderRadius: 4, marginTop: Spacing.lg }} />
+					<View style={{ width: 150, height: 16, backgroundColor: colors.whiteOpacity15, borderRadius: 4, marginTop: Spacing.xs }} />
+					<View style={{ width: 120, height: 14, backgroundColor: colors.whiteOpacity10, borderRadius: 4, marginTop: Spacing.xs }} />
 				</View>
 			</ScreenScrollView>
 		);
@@ -263,7 +263,7 @@ function UserProfileScreen() {
 				<Text style={[Typography.body, { color: '#FFFFFF', opacity: 0.9, marginTop: Spacing.xs }]}>
 					{profileUser.role}
 				</Text>
-				<Text style={[Typography.caption, { color: '#FFFFFF', opacity: 0.8, marginTop: Spacing.xs }]}>
+				<Text style={[Typography.caption, { color: colors.buttonText, opacity: 0.8, marginTop: Spacing.xs }]}>
 					{profileUser.organization || 'No organization'}
 				</Text>
 			</View>
@@ -278,8 +278,8 @@ function UserProfileScreen() {
 							]}
 							onPress={handleMessage}
 						>
-							<Feather name="message-circle" size={20} color="#FFFFFF" />
-							<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+							<Feather name="message-circle" size={20} color={colors.buttonText} />
+							<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
 								Message
 							</Text>
 						</Pressable>
@@ -292,8 +292,8 @@ function UserProfileScreen() {
 								]}
 								onPress={handleAcceptConnection}
 							>
-								<Feather name="check" size={20} color="#FFFFFF" />
-								<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+								<Feather name="check" size={20} color={colors.buttonText} />
+								<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
 									Accept Request
 								</Text>
 							</Pressable>
@@ -304,8 +304,8 @@ function UserProfileScreen() {
 								]}
 								onPress={handleDeclineConnection}
 							>
-								<Feather name="x" size={20} color="#FFFFFF" />
-								<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+								<Feather name="x" size={20} color={colors.buttonText} />
+								<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
 									Decline Request
 								</Text>
 							</Pressable>
@@ -319,8 +319,8 @@ function UserProfileScreen() {
 								]}
 								disabled
 							>
-								<Feather name="clock" size={20} color="#FFFFFF" />
-								<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+								<Feather name="clock" size={20} color={colors.buttonText} />
+								<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
 									Request Sent
 								</Text>
 							</Pressable>
@@ -331,8 +331,8 @@ function UserProfileScreen() {
 								]}
 								onPress={handleCancelConnection}
 							>
-								<Feather name="x-circle" size={20} color="#FFFFFF" />
-								<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+								<Feather name="x-circle" size={20} color={colors.buttonText} />
+								<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
 									Cancel Request
 								</Text>
 							</Pressable>
@@ -341,12 +341,12 @@ function UserProfileScreen() {
 						<Pressable
 							style={({ pressed }) => [
 								styles.actionButton,
-								{ backgroundColor: colors.accent || '#FF6600', opacity: pressed ? 0.8 : 1 },
+								{ backgroundColor: colors.accent, opacity: pressed ? 0.8 : 1 },
 								styles.connectButton,
 							]}
 							onPress={handleConnect}
 						>
-							<Feather name="user-plus" size={22} color="#FFFFFF" />
+							<Feather name="user-plus" size={22} color={colors.buttonText} />
 							<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '700', fontSize: 16 }]}>
 								Connect
 							</Text>
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
 		height: 100,
 		borderRadius: 50,
 		borderWidth: 4,
-		borderColor: '#FFFFFF',
+		borderColor: colors.buttonText,
 	},
 	actionButtons: {
 		marginBottom: Spacing.lg,
@@ -423,7 +423,7 @@ const styles = StyleSheet.create({
 		marginBottom: Spacing.md,
 	},
 	connectButton: {
-		shadowColor: '#000',
+		shadowColor: colors.black,
 		shadowOffset: { width: 0, height: 2 },
 		shadowOpacity: 0.25,
 		shadowRadius: 3.84,

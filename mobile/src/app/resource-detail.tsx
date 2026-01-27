@@ -204,7 +204,7 @@ function ResourceDetailScreen() {
         <Text style={[Typography.h2, { color: colors.buttonText, marginTop: Spacing.lg }]}>
           {resource.name}
         </Text>
-        <View style={[styles.categoryBadge, { backgroundColor: 'rgba(255, 255, 255, 0.2)', marginTop: Spacing.sm }]}>
+        <View style={[styles.categoryBadge, { backgroundColor: colors.whiteOpacity20, marginTop: Spacing.sm }]}>
           <Text style={[Typography.small, { color: colors.buttonText }]}>{resource.category}</Text>
         </View>
       </View>

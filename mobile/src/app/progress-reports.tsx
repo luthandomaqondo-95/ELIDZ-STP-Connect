@@ -11,6 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import * as DocumentPicker from 'expo-document-picker';
 import { Picker } from '@react-native-picker/picker';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 interface AcceptedApplication {
   id: string;
@@ -25,6 +27,8 @@ interface AcceptedApplication {
 
 function ProgressReportsScreen() {
   const { profile } = useAuthContext();
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme];
   const [acceptedApplications, setAcceptedApplications] = useState<AcceptedApplication[]>([]);
   const [progressReports, setProgressReports] = useState<ProgressReport[]>([]);
   const [loading, setLoading] = useState(true);
@@ -167,7 +171,7 @@ function ProgressReportsScreen() {
   if (loading) {
     return (
       <View className="flex-1 bg-background justify-center items-center">
-        <ActivityIndicator size="large" color="#002147" />
+        <ActivityIndicator size="large" color={colors.primary} />
         <Text className="text-muted-foreground mt-4">Loading...</Text>
       </View>
     );
@@ -182,7 +186,7 @@ function ProgressReportsScreen() {
       >
         <View className="flex-row justify-between items-center mb-4">
           <Pressable onPress={() => router.back()} className="p-2">
-            <Feather name="arrow-left" size={24} color="#FFFFFF" />
+            <Feather name="arrow-left" size={24} color={colors.white} />
           </Pressable>
           <Text className="text-white text-xl font-bold">Progress Reports</Text>
           <HeaderAvatar />
@@ -195,7 +199,7 @@ function ProgressReportsScreen() {
           {acceptedApplications.length === 0 ? (
             <View className="bg-card rounded-2xl p-5 mb-6 border border-border">
               <View className="flex-row items-start">
-                <Feather name="info" size={20} color="#002147" style={{ marginRight: 12, marginTop: 2 }} />
+                <Feather name="info" size={20} color={colors.primary} style={{ marginRight: 12, marginTop: 2 }} />
                 <View className="flex-1">
                   <Text className="text-foreground text-base font-semibold mb-1">No Funding Received</Text>
                   <Text className="text-muted-foreground text-sm leading-5">

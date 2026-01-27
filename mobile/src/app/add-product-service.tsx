@@ -8,10 +8,14 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import { smmmeService } from '@/services/smme.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { Picker } from '@react-native-picker/picker';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 export default function AddProductServiceScreen() {
     const { profile } = useAuthContext();
     const queryClient = useQueryClient();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [loading, setLoading] = useState(false);
     const [type, setType] = useState<'Service' | 'Product'>('Service');
     const [name, setName] = useState('');
@@ -127,7 +131,7 @@ export default function AddProductServiceScreen() {
                             value={name}
                             onChangeText={setName}
                             placeholder="Enter name"
-                            placeholderTextColor="#9CA3AF"
+                            placeholderTextColor={colors.placeholder}
                         />
                     </View>
 
@@ -139,7 +143,7 @@ export default function AddProductServiceScreen() {
                             value={description}
                             onChangeText={setDescription}
                             placeholder="Describe your offering"
-                            placeholderTextColor="#9CA3AF"
+                            placeholderTextColor={colors.placeholder}
                             multiline
                             numberOfLines={4}
                         />
@@ -154,9 +158,9 @@ export default function AddProductServiceScreen() {
                                 onValueChange={setCategory}
                                 style={{ color: '#002147' }}
                             >
-                                <Picker.Item label="Select Category" value="" color="#9CA3AF" />
+                                <Picker.Item label="Select Category" value="" color={colors.placeholder} />
                                 {categories.map((cat) => (
-                                    <Picker.Item key={cat} label={cat} value={cat} color="#002147" />
+                                    <Picker.Item key={cat} label={cat} value={cat} color={colors.primary} />
                                 ))}
                             </Picker>
                         </View>
@@ -171,7 +175,7 @@ export default function AddProductServiceScreen() {
                                 value={price}
                                 onChangeText={setPrice}
                                 placeholder="e.g., R500 or Contact for quote"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                                 keyboardType="default"
                             />
                         </View>
@@ -188,7 +192,7 @@ export default function AddProductServiceScreen() {
                                 value={contactEmail}
                                 onChangeText={setContactEmail}
                                 placeholder="contact@example.com"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                             />
@@ -201,7 +205,7 @@ export default function AddProductServiceScreen() {
                                 value={contactPhone}
                                 onChangeText={setContactPhone}
                                 placeholder="+27 12 345 6789"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                                 keyboardType="phone-pad"
                             />
                         </View>
@@ -213,7 +217,7 @@ export default function AddProductServiceScreen() {
                                 value={websiteUrl}
                                 onChangeText={setWebsiteUrl}
                                 placeholder="https://example.com"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                                 keyboardType="url"
                                 autoCapitalize="none"
                             />

@@ -48,6 +48,46 @@ const ELIDZ_BRAND_COLORS = {
     offline: '#6C757D',
     pending: '#FFC107',
     unread: '#DC3545',
+
+    // Gradient Colors (for auth screens)
+    gradientStart: '#0a1628',      // Dark navy gradient start
+    gradientMid: '#122a4d',         // Medium navy gradient middle
+    gradientEnd: '#1a3a5c',         // Lighter navy gradient end
+    gradientMessageEnd: '#003366',  // Message header gradient end (lighter blue)
+
+    // Gray Scale Colors
+    gray50: '#F9FAFB',
+    gray100: '#F3F4F6',
+    gray200: '#E5E7EB',
+    gray300: '#D1D5DB',             // Light gray for placeholders
+    gray400: '#9CA3AF',             // Medium gray for placeholders
+    gray500: '#6B7280',
+    gray600: '#4B5563',
+    gray700: '#374151',
+    gray800: '#1F2937',             // Dark gray
+    gray900: '#111827',
+    grayMuted: 'rgb(153, 153, 158)', // Muted gray
+
+    // UI Utility Colors
+    googleBlue: '#4285F4',          // Google brand blue
+    white: '#FFFFFF',
+    black: '#000000',
+    red: '#DC3545',
+    redLight: '#EF4444',            // Light red variant
+    redDark: '#FE4336',             // Dark red variant
+    redDarker: '#FF382B',           // Darker red variant
+    iconGray: '#CBD5E0',            // Light gray for icons
+    iconGrayDark: '#6C757D',        // Dark gray for icons
+
+    // Opacity variants (for overlays and backgrounds)
+    whiteOpacity10: 'rgba(255, 255, 255, 0.1)',
+    whiteOpacity15: 'rgba(255, 255, 255, 0.15)',
+    whiteOpacity20: 'rgba(255, 255, 255, 0.2)',
+    whiteOpacity50: 'rgba(255, 255, 255, 0.5)',
+    whiteOpacity70: 'rgba(255, 255, 255, 0.7)',
+    whiteOpacity80: 'rgba(255, 255, 255, 0.8)',
+    blackOpacity50: 'rgba(0, 0, 0, 0.5)',
+    blackOpacity30: 'rgba(0, 0, 0, 0.3)',
 } as const;
 
 // System Colors with ELIDZ Branding
@@ -89,6 +129,50 @@ const SYSTEM_COLORS = {
         card: '#FFFFFF',
         input: '#FFFFFF',
         shadow: 'rgba(0, 0, 0, 0.1)',
+
+        // Gradient colors
+        gradientStart: ELIDZ_BRAND_COLORS.gradientStart,
+        gradientMid: ELIDZ_BRAND_COLORS.gradientMid,
+        gradientEnd: ELIDZ_BRAND_COLORS.gradientEnd,
+        gradientMessageEnd: ELIDZ_BRAND_COLORS.gradientMessageEnd,
+
+        // Gray scale
+        gray50: ELIDZ_BRAND_COLORS.gray50,
+        gray100: ELIDZ_BRAND_COLORS.gray100,
+        gray200: ELIDZ_BRAND_COLORS.gray200,
+        gray300: ELIDZ_BRAND_COLORS.gray300,
+        gray400: ELIDZ_BRAND_COLORS.gray400,
+        gray500: ELIDZ_BRAND_COLORS.gray500,
+        gray600: ELIDZ_BRAND_COLORS.gray600,
+        gray700: ELIDZ_BRAND_COLORS.gray700,
+        gray800: ELIDZ_BRAND_COLORS.gray800,
+        gray900: ELIDZ_BRAND_COLORS.gray900,
+        grayMuted: ELIDZ_BRAND_COLORS.grayMuted,
+
+        // Utility colors
+        googleBlue: ELIDZ_BRAND_COLORS.googleBlue,
+        white: ELIDZ_BRAND_COLORS.white,
+        black: ELIDZ_BRAND_COLORS.black,
+        red: ELIDZ_BRAND_COLORS.red,
+        redLight: ELIDZ_BRAND_COLORS.redLight,
+        redDark: ELIDZ_BRAND_COLORS.redDark,
+        redDarker: ELIDZ_BRAND_COLORS.redDarker,
+        iconGray: ELIDZ_BRAND_COLORS.iconGray,
+        iconGrayDark: ELIDZ_BRAND_COLORS.iconGrayDark,
+
+        // Opacity variants
+        whiteOpacity10: ELIDZ_BRAND_COLORS.whiteOpacity10,
+        whiteOpacity15: ELIDZ_BRAND_COLORS.whiteOpacity15,
+        whiteOpacity20: ELIDZ_BRAND_COLORS.whiteOpacity20,
+        whiteOpacity50: ELIDZ_BRAND_COLORS.whiteOpacity50,
+        whiteOpacity70: ELIDZ_BRAND_COLORS.whiteOpacity70,
+        whiteOpacity80: ELIDZ_BRAND_COLORS.whiteOpacity80,
+        blackOpacity50: ELIDZ_BRAND_COLORS.blackOpacity50,
+        blackOpacity30: ELIDZ_BRAND_COLORS.blackOpacity30,
+
+        // Placeholder colors (commonly used)
+        placeholder: ELIDZ_BRAND_COLORS.gray400,
+        placeholderLight: ELIDZ_BRAND_COLORS.gray300,
 
         // Extended palette
         blue: ELIDZ_BRAND_COLORS.blue,
@@ -149,6 +233,50 @@ const SYSTEM_COLORS = {
         card: '#2A2A2A',
         input: '#333333',
         shadow: 'rgba(0, 0, 0, 0.3)',
+
+        // Gradient colors (darker variants for dark mode)
+        gradientStart: '#0a1628',
+        gradientMid: '#122a4d',
+        gradientEnd: '#1a3a5c',
+        gradientMessageEnd: '#003366',
+
+        // Gray scale (lighter for dark mode)
+        gray50: '#1F2937',
+        gray100: '#374151',
+        gray200: '#4B5563',
+        gray300: '#6B7280',
+        gray400: '#9CA3AF',
+        gray500: '#D1D5DB',
+        gray600: '#E5E7EB',
+        gray700: '#F3F4F6',
+        gray800: '#F9FAFB',
+        gray900: '#FFFFFF',
+        grayMuted: 'rgba(255, 255, 255, 0.6)',
+
+        // Utility colors
+        googleBlue: ELIDZ_BRAND_COLORS.googleBlue,
+        white: ELIDZ_BRAND_COLORS.white,
+        black: ELIDZ_BRAND_COLORS.black,
+        red: ELIDZ_BRAND_COLORS.red,
+        redLight: ELIDZ_BRAND_COLORS.redLight,
+        redDark: ELIDZ_BRAND_COLORS.redDark,
+        redDarker: ELIDZ_BRAND_COLORS.redDarker,
+        iconGray: '#9CA3AF',
+        iconGrayDark: '#6C757D',
+
+        // Opacity variants
+        whiteOpacity10: ELIDZ_BRAND_COLORS.whiteOpacity10,
+        whiteOpacity15: ELIDZ_BRAND_COLORS.whiteOpacity15,
+        whiteOpacity20: ELIDZ_BRAND_COLORS.whiteOpacity20,
+        whiteOpacity50: ELIDZ_BRAND_COLORS.whiteOpacity50,
+        whiteOpacity70: ELIDZ_BRAND_COLORS.whiteOpacity70,
+        whiteOpacity80: ELIDZ_BRAND_COLORS.whiteOpacity80,
+        blackOpacity50: ELIDZ_BRAND_COLORS.blackOpacity50,
+        blackOpacity30: ELIDZ_BRAND_COLORS.blackOpacity30,
+
+        // Placeholder colors
+        placeholder: '#9CA3AF',
+        placeholderLight: '#6B7280',
 
         // Extended palette
         blue: ELIDZ_BRAND_COLORS.blue,

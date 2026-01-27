@@ -9,11 +9,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Stars } from '@/components/Stars';
 import { verificationService } from '@/services/verification.service';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 const { height } = Dimensions.get('window');
 
 export default function LoginScreen() {
     const { login, signInWithGoogle, profile } = useAuthContext();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -95,7 +99,7 @@ export default function LoginScreen() {
     return (
         <View className="flex-1 bg-background">
             <LinearGradient
-                colors={['#0a1628', '#122a4d', '#1a3a5c']}
+                colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
                 className="absolute inset-0"
                 style={{ height: height * 0.4 }}
                 start={{ x: 0.5, y: 0 }}
@@ -110,7 +114,7 @@ export default function LoginScreen() {
                     style={{ marginTop: 40 }}
                     onPress={() => router.push('/(tabs)')}
                 >
-                    <Ionicons name="chevron-back" size={24} color="#fff" />
+                    <Ionicons name="chevron-back" size={24} color={colors.white} />
                     <Text className="text-white text-sm">Back</Text>
                 </TouchableOpacity>
 
@@ -134,13 +138,13 @@ export default function LoginScreen() {
                 <View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: 10 }}>
                     {/* Email Input */}
                     <View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-                        <Ionicons name="mail-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+                        <Ionicons name="mail-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
                         <TextInput
                             className="flex-1 text-base text-foreground"
                             value={email}
                             onChangeText={setEmail}
                             placeholder="Email"
-                            placeholderTextColor="#9CA3AF"
+                            placeholderTextColor={colors.placeholder}
                             keyboardType="email-address"
                             autoCapitalize="none"
                             autoComplete="email"
@@ -149,13 +153,13 @@ export default function LoginScreen() {
 
                     {/* Password Input */}
                     <View className="flex-row items-center bg-input rounded-full mb-2 px-4 h-14 border border-border">
-                        <Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+                        <Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
                         <TextInput
                             className="flex-1 text-base text-foreground"
                             value={password}
                             onChangeText={setPassword}
                             placeholder="Password"
-                            placeholderTextColor="#9CA3AF"
+                            placeholderTextColor={colors.placeholder}
                             secureTextEntry={!showPassword}
                             autoCapitalize="none"
                             autoComplete="password"
@@ -167,7 +171,7 @@ export default function LoginScreen() {
                             <Ionicons
                                 name={showPassword ? "eye-outline" : "eye-off-outline"}
                                 size={20}
-                                color="#FF6600"
+                                color={colors.accent}
                             />
                         </Pressable>
                     </View>
@@ -212,7 +216,7 @@ export default function LoginScreen() {
                             }
                         }}
                     >
-                        <Ionicons name="logo-google" size={20} color="#4285F4" style={{ marginRight: 12 }} />
+                        <Ionicons name="logo-google" size={20} color={colors.googleBlue} style={{ marginRight: 12 }} />
                         <Text className="text-base font-semibold text-foreground">
                             Continue with Google
                         </Text>

@@ -10,6 +10,8 @@ import { TenantLogo } from '@/components/TenantLogo';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useBusinessSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -107,6 +109,8 @@ function mapSMMEToSMME(smmme: SMMEWithServicesProducts): SMME {
 
 export default function VerifiedSMMEsScreen() {
     const { profile: user } = useAuthContext();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [expandedSMME, setExpandedSMME] = useState<string | null>(null);
@@ -163,11 +167,11 @@ export default function VerifiedSMMEsScreen() {
                             <View 
                                 className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
                             >
-                                <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                                <Feather name="search" size={20} color={colors.whiteOpacity70} />
                                 <TextInput
                                     className="flex-1 ml-3 text-base text-white"
                                     placeholder="Search SMMEs, products..."
-                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                    placeholderTextColor={colors.whiteOpacity50}
                                     value={searchQuery}
                                     onChangeText={setSearchQuery}
                                 />
@@ -287,13 +291,13 @@ export default function VerifiedSMMEsScreen() {
                                                     <Feather
                                                         name={isExpanded ? 'chevron-up' : 'chevron-down'}
                                                         size={20}
-                                                        color="#CBD5E0"
+                                                        color={colors.iconGray}
                                                     />
                                                 </View>
 
                                                 <View className="flex-row items-center mb-2 flex-wrap">
                                                     <View className="bg-green-50 px-2 py-0.5 rounded-md mr-2 mb-1 flex-row items-center border border-green-100">
-                                                        <Feather name="shield" size={10} color="#28A745" className="mr-1" />
+                                                        <Feather name="shield" size={10} color={colors.success} className="mr-1" />
                                                         <Text className="text-green-700 text-[10px] font-bold uppercase">Verified</Text>
                                                     </View>
                                                     {smme.bbbee && (
@@ -329,7 +333,7 @@ export default function VerifiedSMMEsScreen() {
                                                     )}
                                                     {smme.contact.phone && (
                                                         <View className="flex-row items-center mb-1.5">
-                                                            <Feather name="phone" size={12} color="#6C757D" />
+                                                            <Feather name="phone" size={12} color={colors.iconGrayDark} />
                                                             <Text className="text-gray-600 text-xs ml-2 font-medium">
                                                                 {smme.contact.phone}
                                                             </Text>
@@ -349,7 +353,7 @@ export default function VerifiedSMMEsScreen() {
                                             {/* Products Section - Preview */}
                                             <View className="mt-5">
                                                 <View className="flex-row items-center mb-3">
-                                                    <Feather name="package" size={16} color="#002147" />
+                                                    <Feather name="package" size={16} color={colors.primary} />
                                                     <Text className="text-sm font-bold ml-2 text-[#002147]">
                                                         Products
                                                     </Text>
@@ -442,7 +446,7 @@ export default function VerifiedSMMEsScreen() {
                         {/* Empty State */}
                         {filteredSMMEs.length === 0 && (
                             <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
-                                <Feather name="search" size={48} color="#CBD5E0" />
+                                <Feather name="search" size={48} color={colors.iconGray} />
                                 <Text className="text-gray-400 text-base mt-4 text-center font-medium">
                                     {searchQuery || selectedCategory !== 'All'
                                         ? 'No verified SMMEs found matching your search'

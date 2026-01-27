@@ -13,6 +13,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { TabsLayoutHeader } from '@/components/Header';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -378,7 +380,7 @@ function MessagesScreen() {
 
                     {contact.connectionStatus === 'pending_sent' && (
                         <View className="flex-row items-center ml-2 bg-muted px-3 py-1.5 rounded-full">
-                            <Feather name="clock" size={14} color="#6C757D" style={{ marginRight: 6 }} />
+                            <Feather name="clock" size={14} color={colors.iconGrayDark} style={{ marginRight: 6 }} />
                             <Text className="text-xs font-medium text-muted-foreground">Requested</Text>
                         </View>
                     )}
@@ -395,7 +397,7 @@ function MessagesScreen() {
 
                     {contact.connectionStatus === 'connected' && (
                         <View className="ml-2 bg-[#002147]/10 p-2 rounded-full">
-                            <Feather name="message-circle" size={20} color="#002147" />
+                            <Feather name="message-circle" size={20} color={colors.primary} />
                         </View>
                     )}
                 </View>
@@ -420,7 +422,7 @@ function MessagesScreen() {
                  <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
                         <View className="bg-[#FF6600]/10 p-2 rounded-full mr-3">
-                            <Feather name="lock" size={18} color="#FF6600" />
+                            <Feather name="lock" size={18} color={colors.accent} />
                         </View>
                         <Text className="text-foreground text-lg font-bold">
                             Sign Up for Full Networking
@@ -459,11 +461,11 @@ function MessagesScreen() {
                             <View 
                                 className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
                             >
-                                <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                                <Feather name="search" size={20} color={colors.whiteOpacity70} />
                                 <TextInput
                                     className="flex-1 ml-3 text-base text-white"
                                     placeholder="Search people, companies..."
-                                    placeholderTextColor="rgba(255,255,255,0.5)"
+                                    placeholderTextColor={colors.whiteOpacity50}
                                     value={searchQuery}
                                     onChangeText={setSearchQuery}
                                 />
@@ -606,7 +608,7 @@ function MessagesScreen() {
                                 </>
                             ) : (
                                 <View className="items-center py-12 mx-5 bg-card rounded-2xl border border-border border-dashed">
-                                    <Feather name="message-circle" size={48} color="#CBD5E0" />
+                                    <Feather name="message-circle" size={48} color={colors.iconGray} />
                                     <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                         No messages yet
                                     </Text>
@@ -645,7 +647,7 @@ function MessagesScreen() {
 
                             {pendingReceivedContacts.length === 0 && pendingSentContacts.length === 0 && (
                                 <View className="items-center py-12 mx-5 bg-card rounded-2xl border border-border border-dashed">
-                                    <Feather name="user-check" size={48} color="#CBD5E0" />
+                                    <Feather name="user-check" size={48} color={colors.iconGray} />
                                     <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                         No pending requests
                                     </Text>
@@ -677,7 +679,7 @@ function MessagesScreen() {
                                 </View>
                             ) : (
                                 <View className="items-center py-12 mx-5 bg-card rounded-2xl border border-border border-dashed">
-                                    <Feather name="users" size={48} color="#CBD5E0" />
+                                    <Feather name="users" size={48} color={colors.iconGray} />
                                     <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                         No new people to discover
                                     </Text>

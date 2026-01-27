@@ -107,7 +107,7 @@ function TenantDetailScreen() {
               className="p-2 bg-gray-100 rounded-full"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Feather name="arrow-left" size={20} color="#1F2937" />
+              <Feather name="arrow-left" size={20} color={colors.text} />
             </Pressable>
             <View className="flex-row items-center">
               <HeaderNotificationIcon />
@@ -133,10 +133,10 @@ function TenantDetailScreen() {
 
         <View style={styles.tagsContainer}>
           <View style={[styles.tag, { backgroundColor: colors.primary }]}>
-            <Text style={[Typography.small, { color: '#FFFFFF' }]}>{industry}</Text>
+            <Text style={[Typography.small, { color: colors.buttonText }]}>{industry}</Text>
           </View>
           <View style={[styles.tag, { backgroundColor: colors.secondary }]}>
-            <Text style={[Typography.small, { color: '#FFFFFF' }]}>{location}</Text>
+            <Text style={[Typography.small, { color: colors.buttonText }]}>{location}</Text>
           </View>
         </View>
 
@@ -301,8 +301,8 @@ function TenantDetailScreen() {
             ]}
             onPress={() => handleOpenLink(tenant.website!)}
           >
-            <Feather name="globe" size={20} color="#FFFFFF" />
-            <Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+            <Feather name="globe" size={20} color={colors.buttonText} />
+            <Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
               Visit Website
             </Text>
           </Pressable>
@@ -352,8 +352,8 @@ function TenantDetailScreen() {
               { backgroundColor: colors.primary, opacity: pressed ? 0.7 : 1 },
             ]}
           >
-            <Feather name="mail" size={20} color="#FFFFFF" />
-            <Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '600' }]}>
+            <Feather name="mail" size={20} color={colors.buttonText} />
+            <Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
               Contact {name}
             </Text>
           </Pressable>

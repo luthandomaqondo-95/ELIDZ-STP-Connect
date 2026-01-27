@@ -9,8 +9,12 @@ import { enquiryService, CreateEnquiryData } from '@/services/enquiry.service';
 import { Picker } from '@react-native-picker/picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 function EnquiryFormScreen() {
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme];
   const params = useLocalSearchParams<{
     type?: string;
     facilityId?: string;
@@ -83,7 +87,7 @@ function EnquiryFormScreen() {
       >
         <View className="flex-row justify-between items-center mb-4">
           <Pressable onPress={() => router.back()} className="p-2">
-            <Feather name="arrow-left" size={24} color="#FFFFFF" />
+            <Feather name="arrow-left" size={24} color={colors.white} />
           </Pressable>
           <Text className="text-white text-xl font-bold">Submit Enquiry</Text>
           <HeaderAvatar />
@@ -102,12 +106,12 @@ function EnquiryFormScreen() {
                 style={{ color: '#002147' }}
                 dropdownIconColor="#FF6600"
               >
-                <Picker.Item label="General" value="General" color="#FF6600" />
-                <Picker.Item label="Product Line" value="Product Line" color="#FF6600" />
-                <Picker.Item label="Facility" value="Facility" color="#FF6600" />
-                <Picker.Item label="Tenant" value="Tenant" color="#FF6600" />
-                <Picker.Item label="Opportunity" value="Opportunity" color="#FF6600" />
-                <Picker.Item label="Other" value="Other" color="#FF6600" />
+                <Picker.Item label="General" value="General" color={colors.accent} />
+                <Picker.Item label="Product Line" value="Product Line" color={colors.accent} />
+                <Picker.Item label="Facility" value="Facility" color={colors.accent} />
+                <Picker.Item label="Tenant" value="Tenant" color={colors.accent} />
+                <Picker.Item label="Opportunity" value="Opportunity" color={colors.accent} />
+                <Picker.Item label="Other" value="Other" color={colors.accent} />
               </Picker>
             </View>
           </View>
@@ -116,13 +120,13 @@ function EnquiryFormScreen() {
           <View className="mb-6">
             <Text className="text-foreground text-base font-semibold mb-2">Subject</Text>
             <View className="flex-row items-center bg-input rounded-xl px-4 h-14 border border-border">
-              <Feather name="file-text" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+              <Feather name="file-text" size={20} color={colors.accent} style={{ marginRight: 12 }} />
               <TextInput
                 className="flex-1 text-base text-foreground h-full"
                 value={subject}
                 onChangeText={setSubject}
                 placeholder="Enter enquiry subject"
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.placeholder}
                 editable={!isSubmitting}
               />
             </View>
@@ -137,7 +141,7 @@ function EnquiryFormScreen() {
                 value={message}
                 onChangeText={setMessage}
                 placeholder="Please provide details about your enquiry..."
-                placeholderTextColor="#9CA3AF"
+                placeholderTextColor={colors.placeholder}
                 multiline
                 numberOfLines={8}
                 textAlignVertical="top"

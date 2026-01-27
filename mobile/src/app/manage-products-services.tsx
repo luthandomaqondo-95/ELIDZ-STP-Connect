@@ -7,10 +7,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { useQueryClient } from '@tanstack/react-query';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 export default function ManageProductsServicesScreen() {
     const { profile } = useAuthContext();
     const queryClient = useQueryClient();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [loading, setLoading] = useState(false);
     const [servicesProducts, setServicesProducts] = useState<{ services: SMMEServiceProduct[]; products: SMMEServiceProduct[] }>({ services: [], products: [] });
     const [loadingList, setLoadingList] = useState(true);
@@ -98,7 +102,7 @@ export default function ManageProductsServicesScreen() {
 
                 {loadingList ? (
                     <View className="items-center py-12">
-                        <ActivityIndicator size="large" color="#002147" />
+                        <ActivityIndicator size="large" color={colors.primary} />
                         <Text className="text-muted-foreground mt-4">Loading...</Text>
                     </View>
                 ) : (
@@ -124,7 +128,7 @@ export default function ManageProductsServicesScreen() {
                                                 onPress={() => handleDelete(product)}
                                                 className="p-2 bg-destructive/10 rounded-lg ml-2"
                                             >
-                                                <Feather name="trash-2" size={18} color="#EF4444" />
+                                                <Feather name="trash-2" size={18} color={colors.redLight} />
                                             </Pressable>
                                         </View>
                                     </View>
@@ -150,7 +154,7 @@ export default function ManageProductsServicesScreen() {
                                                 onPress={() => handleDelete(service)}
                                                 className="p-2 bg-destructive/10 rounded-lg ml-2"
                                             >
-                                                <Feather name="trash-2" size={18} color="#EF4444" />
+                                                <Feather name="trash-2" size={18} color={colors.redLight} />
                                             </Pressable>
                                         </View>
                                     </View>
@@ -161,7 +165,7 @@ export default function ManageProductsServicesScreen() {
                         {/* Empty State */}
                         {servicesProducts.products.length === 0 && servicesProducts.services.length === 0 && (
                             <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
-                                <Feather name="package" size={48} color="#CBD5E0" />
+                                <Feather name="package" size={48} color={colors.iconGray} />
                                 <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                     No products or services listed yet
                                 </Text>

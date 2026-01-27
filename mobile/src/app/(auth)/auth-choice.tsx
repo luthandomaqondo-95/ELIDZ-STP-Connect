@@ -5,8 +5,11 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Button } from '@/components/ui/button';
 import { COLORS } from '@/theme/colors';
+import { useColorScheme } from '@/hooks/use-theme-color';
 
 export default function AuthChoiceScreen() {
+	const { colorScheme } = useColorScheme();
+	const colors = COLORS[colorScheme];
 	return (
 		<View className="flex-1 justify-center px-6">
 			{/* Logo */}
@@ -52,7 +55,7 @@ export default function AuthChoiceScreen() {
 					onPress={() => router.push('/(auth)/signup')}
 				>
 					<View className="mr-3">
-						<Feather name="user-plus" size={20} color="#FFFFFF" />
+						<Feather name="user-plus" size={20} color={colors.white} />
 					</View>
 					<Text className="text-primary-foreground font-semibold text-base">
 						Sign Up

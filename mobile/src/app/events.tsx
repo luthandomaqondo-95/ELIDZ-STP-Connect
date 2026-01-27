@@ -5,6 +5,8 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 
 const { width } = Dimensions.get('window');
@@ -23,6 +25,8 @@ interface Event {
 }
 
 export default function EventsScreen() {
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme];
   // Verified events from ELIDZ website
   const events: Event[] = [
     {
@@ -60,7 +64,7 @@ export default function EventsScreen() {
               onPress={() => router.push(`/event-detail?id=${event.id}`)}
             >
               <View className="flex-row items-start">
-                <View className="w-16 h-20 rounded-xl bg-[#002147] justify-center items-center mr-4">
+                <View className="w-16 h-20 rounded-xl justify-center items-center mr-4" style={{ backgroundColor: colors.primary }}>
                   <Text className="text-white text-xs font-semibold uppercase">
                     {dateInfo.month}
                   </Text>
@@ -82,7 +86,7 @@ export default function EventsScreen() {
                     </Text>
                   )}
                   <View className="flex-row items-center mt-2">
-                    <Feather name="clock" size={14} color="#6C757D" />
+                    <Feather name="clock" size={14} color={colors.iconGrayDark} />
                     <Text className="text-muted-foreground text-sm ml-2">
                       {event.time}
                     </Text>
@@ -95,7 +99,7 @@ export default function EventsScreen() {
                   </View>
                   {event.theme && (
                     <View className="flex-row items-center mt-2">
-                      <Feather name="tag" size={14} color="#FF6600" />
+                      <Feather name="tag" size={14} color={colors.accent} />
                       <Text className="text-accent text-sm ml-2 italic">
                         {event.theme}
                       </Text>
@@ -103,7 +107,7 @@ export default function EventsScreen() {
                   )}
                   {event.attendees && (
                     <View className="flex-row items-center mt-2">
-                      <Feather name="users" size={14} color="#002147" />
+                      <Feather name="users" size={14} color={colors.primary} />
                       <Text className="text-muted-foreground text-xs ml-2">
                         {event.attendees} attending
                       </Text>
@@ -155,11 +159,11 @@ export default function EventsScreen() {
             className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
             style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
           >
-            <Feather name="search" size={20} color="#9CA3AF" />
+            <Feather name="search" size={20} color={colors.placeholder} />
             <TextInput
               className="flex-1 ml-3 text-base text-foreground"
               placeholder="Search events..."
-              placeholderTextColor="#D1D5DB"
+              placeholderTextColor={colors.placeholderLight}
             />
           </View>
         </View>
@@ -170,7 +174,7 @@ export default function EventsScreen() {
             getMonthEvents('November 2025', novemberEvents)
           ) : (
             <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
-              <Feather name="calendar" size={48} color="#CBD5E0" />
+              <Feather name="calendar" size={48} color={colors.iconGray} />
               <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                 No upcoming events scheduled
               </Text>

@@ -7,9 +7,13 @@ import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareS
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 export default function ChangePasswordScreen() {
 	const { profile: user } = useAuthContext();
+	const { colorScheme } = useColorScheme();
+	const colors = COLORS[colorScheme];
 	const [currentPassword, setCurrentPassword] = useState('');
 	const [newPassword, setNewPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
@@ -109,7 +113,7 @@ export default function ChangePasswordScreen() {
 						className="flex-row items-center gap-2 mb-6 w-24"
 						onPress={navigateBack}
 					>
-						<Ionicons name="chevron-back" size={20} color="#ffffff" />
+						<Ionicons name="chevron-back" size={20} color={colors.white} />
 						<Text className="text-white font-semibold">Back</Text>
 					</Pressable>
 
@@ -130,13 +134,13 @@ export default function ChangePasswordScreen() {
 						</Text>
 
 						<View className="flex-row items-center bg-white/10 rounded-full mb-4 px-4 h-14 border border-white/20">
-							<Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+							<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 							<TextInput
 								className="flex-1 text-base text-white"
 								value={currentPassword}
 								onChangeText={setCurrentPassword}
 								placeholder="Current Password"
-								placeholderTextColor="#9CA3AF"
+								placeholderTextColor={colors.placeholder}
 								secureTextEntry={!showCurrentPassword}
 								autoCapitalize="none"
 								autoComplete="password"
@@ -148,19 +152,19 @@ export default function ChangePasswordScreen() {
 								<Ionicons
 									name={showCurrentPassword ? 'eye-outline' : 'eye-off-outline'}
 									size={20}
-									color="#FF6600"
+									color={colors.accent}
 								/>
 							</Pressable>
 						</View>
 
 						<View className="flex-row items-center bg-white/10 rounded-full mb-4 px-4 h-14 border border-white/20">
-							<Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+							<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 							<TextInput
 								className="flex-1 text-base text-white"
 								value={newPassword}
 								onChangeText={setNewPassword}
 								placeholder="New Password"
-								placeholderTextColor="#9CA3AF"
+								placeholderTextColor={colors.placeholder}
 								secureTextEntry={!showNewPassword}
 								autoCapitalize="none"
 								autoComplete="password-new"
@@ -172,19 +176,19 @@ export default function ChangePasswordScreen() {
 								<Ionicons
 									name={showNewPassword ? 'eye-outline' : 'eye-off-outline'}
 									size={20}
-									color="#FF6600"
+									color={colors.accent}
 								/>
 							</Pressable>
 						</View>
 
 						<View className="flex-row items-center bg-white/10 rounded-full mb-6 px-4 h-14 border border-white/20">
-							<Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+							<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 							<TextInput
 								className="flex-1 text-base text-white"
 								value={confirmPassword}
 								onChangeText={setConfirmPassword}
 								placeholder="Confirm New Password"
-								placeholderTextColor="#9CA3AF"
+								placeholderTextColor={colors.placeholder}
 								secureTextEntry={!showConfirmPassword}
 								autoCapitalize="none"
 								autoComplete="password-new"
@@ -196,7 +200,7 @@ export default function ChangePasswordScreen() {
 								<Ionicons
 									name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
 									size={20}
-									color="#FF6600"
+									color={colors.accent}
 								/>
 							</Pressable>
 						</View>

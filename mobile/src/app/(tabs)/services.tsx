@@ -11,6 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useDebounce } from '@/hooks/useDebounce';
 import { analyticsService } from '@/services/analytics.service';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -266,11 +268,11 @@ export default function ServicesScreen() {
 						<View
 							className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
 						>
-							<Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+							<Feather name="search" size={20} color={colors.whiteOpacity70} />
 							<TextInput
 								className="flex-1 ml-3 text-base text-white"
 								placeholder="Search facilities..."
-								placeholderTextColor="rgba(255,255,255,0.5)"
+								placeholderTextColor={colors.whiteOpacity50}
 								value={searchQuery}
 								onChangeText={setSearchQuery}
 							/>
@@ -280,7 +282,7 @@ export default function ServicesScreen() {
 									className="ml-2"
 									hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 								>
-									<Feather name="x" size={18} color="rgba(255,255,255,0.7)" />
+									<Feather name="x" size={18} color={colors.whiteOpacity70} />
 								</Pressable>
 							)}
 						</View>

@@ -9,9 +9,13 @@ import { TabsLayoutHeader } from '@/components/Header';
 import { verificationService } from '@/services/verification.service';
 import type { SMMEVerification } from '@/services/verification.service';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 function ProfileScreen() {
     const { profile, isLoggedIn, isLoading, logout } = useAuthContext();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [verificationStatus, setVerificationStatus] = useState<SMMEVerification | null>(null);
     const [loadingVerification, setLoadingVerification] = useState(false);
 
@@ -152,7 +156,7 @@ function ProfileScreen() {
                 </View>
                 {subtitle && <Text className="text-muted-foreground text-xs mt-0.5">{subtitle}</Text>}
             </View>
-            <Feather name="chevron-right" size={20} color="#CBD5E0" />
+            <Feather name="chevron-right" size={20} color={colors.iconGray} />
         </Pressable>
     );
 
@@ -176,7 +180,7 @@ function ProfileScreen() {
                                 className="absolute top-4 right-4 p-2 bg-background rounded-full"
                                 onPress={() => router.push('/edit-profile')}
                             >
-                                <Feather name="edit-2" size={16} color="#002147" />
+                                <Feather name="edit-2" size={16} color={colors.primary} />
                             </Pressable>
                         )}
 
@@ -239,7 +243,7 @@ function ProfileScreen() {
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center flex-1">
                                     <View className="w-10 h-10 rounded-full bg-[#002147]/5 items-center justify-center mr-3">
-                                        <Feather name="briefcase" size={18} color="#002147" />
+                                        <Feather name="briefcase" size={18} color={colors.primary} />
                                     </View>
                                     <View className="flex-1">
                                         <Text className="text-foreground font-bold text-sm">Products & Services</Text>
@@ -272,7 +276,7 @@ function ProfileScreen() {
                             <View className="flex-row items-center justify-between">
                                 <View className="flex-row items-center flex-1">
                                     <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-3">
-                                        <Feather name="file-text" size={18} color="#FF6600" />
+                                        <Feather name="file-text" size={18} color={colors.accent} />
                                     </View>
                                     <View className="flex-1">
                                         <Text className="text-foreground font-bold text-sm">Progress Reports</Text>
@@ -281,7 +285,7 @@ function ProfileScreen() {
                                         </Text>
                                     </View>
                                 </View>
-                                <Feather name="chevron-right" size={20} color="#6C757D" />
+                                <Feather name="chevron-right" size={20} color={colors.iconGrayDark} />
                             </View>
                         </Pressable>
                     </View>
@@ -294,7 +298,7 @@ function ProfileScreen() {
                             <View className="flex-row items-center justify-between mb-3">
                                 <View className="flex-row items-center">
                                     <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center mr-3">
-                                        <Feather name="shield" size={20} color="#002147" />
+                                        <Feather name="shield" size={20} color={colors.primary} />
                                     </View>
                                     <View>
                                         <Text className="text-foreground font-bold text-base">Business Verification</Text>

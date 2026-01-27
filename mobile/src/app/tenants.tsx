@@ -5,7 +5,8 @@ import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
-
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 import { useTenantsSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { TenantLogo } from '@/components/TenantLogo';
@@ -14,6 +15,8 @@ const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
 export default function TenantsScreen() {
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedFilter, setSelectedFilter] = useState('All');
 
@@ -63,7 +66,7 @@ export default function TenantsScreen() {
                         {item.description}
                     </Text>
                 </View>
-                <Feather name="chevron-right" size={20} color="rgb(153, 153, 158)" />
+                <Feather name="chevron-right" size={20} color={colors.grayMuted} />
             </Pressable>
         );
     }
@@ -117,7 +120,8 @@ export default function TenantsScreen() {
                         keyExtractor={(item) => item}
                         renderItem={({ item }) => (
                             <Pressable
-                                className={`px-4 py-2 rounded-lg mr-3 active:opacity-70 ${selectedFilter === item ? 'bg-[#002147]' : 'bg-white border border-gray-200'}`}
+                                className={`px-4 py-2 rounded-lg mr-3 active:opacity-70 ${selectedFilter === item ? '' : 'bg-white border border-gray-200'}`}
+                                style={selectedFilter === item ? { backgroundColor: colors.primary } : {}}
                                 onPress={() => setSelectedFilter(item)}
                             >
                                 <Text className={`text-sm ${selectedFilter === item ? 'text-white' : 'text-gray-600'}`}>

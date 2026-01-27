@@ -9,11 +9,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { Picker } from '@react-native-picker/picker';
 import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 const { height } = Dimensions.get('window');
 
 export default function SignupScreen() {
 	const { signup, signInWithGoogle } = useAuthContext();
+	const { colorScheme } = useColorScheme();
+	const colors = COLORS[colorScheme];
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
 	const [province, setProvince] = useState('Eastern Cape');
@@ -213,7 +217,7 @@ export default function SignupScreen() {
 	return (
 		<View className="flex-1 bg-background">
 			<LinearGradient
-				colors={['#0a1628', '#122a4d', '#1a3a5c']}
+				colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
 				className="absolute inset-0"
 				style={{ height: height * 0.4 }}
 				start={{ x: 0.5, y: 0 }}
@@ -228,7 +232,7 @@ export default function SignupScreen() {
 					style={{ marginTop: 40 }}
 					onPress={() => router.back()}
 				>
-					<Ionicons name="chevron-back" size={24} color="#fff" />
+					<Ionicons name="chevron-back" size={24} color={colors.white} />
 					<Text className="text-white text-sm">Back</Text>
 				</TouchableOpacity>
 
@@ -259,7 +263,7 @@ export default function SignupScreen() {
 							value={name}
 							onChangeText={setName}
 							placeholder="Full Name"
-							placeholderTextColor="#9CA3AF"
+							placeholderTextColor={colors.placeholder}
 							autoCapitalize="words"
 							autoComplete="name"
 						/>
@@ -273,7 +277,7 @@ export default function SignupScreen() {
 							value={email}
 							onChangeText={setEmail}
 							placeholder="Your mail"
-							placeholderTextColor="#9CA3AF"
+							placeholderTextColor={colors.placeholder}
 							keyboardType="email-address"
 							autoCapitalize="none"
 							autoComplete="email"
@@ -282,7 +286,7 @@ export default function SignupScreen() {
 
 					{/* Province Picker */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border">
-						<Ionicons name="map-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+						<Ionicons name="map-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 						<View className="flex-1 ml-1">
 							<Picker
 								selectedValue={province}
@@ -302,7 +306,7 @@ export default function SignupScreen() {
 
 					{/* City Picker */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border">
-						<Ionicons name="business-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+						<Ionicons name="business-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 						<View className="flex-1 ml-1">
 							<Picker
 								selectedValue={city}
@@ -321,7 +325,7 @@ export default function SignupScreen() {
 					{/* Postal Code Input */}
 					<View className="relative" style={{ zIndex: 100, elevation: 5 }}>
 						<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-							<Ionicons name="location-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+							<Ionicons name="location-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 							<TextInput
 								className="flex-1 text-base text-foreground"
 								value={postalCode}
@@ -335,7 +339,7 @@ export default function SignupScreen() {
 									setTimeout(() => setShowPostalSuggestions(false), 200);
 								}}
 								placeholder={city ? `Postal Code for ${city}` : "Select City First"}
-								placeholderTextColor="#9CA3AF"
+								placeholderTextColor={colors.placeholder}
 								keyboardType="numeric"
 								maxLength={4}
 								editable={!!city}
@@ -380,7 +384,7 @@ export default function SignupScreen() {
 							value={password}
 							onChangeText={setPassword}
 							placeholder="Password"
-							placeholderTextColor="#9CA3AF"
+							placeholderTextColor={colors.placeholder}
 							secureTextEntry={!showPassword}
 							autoCapitalize="none"
 							autoComplete="password-new"
@@ -392,20 +396,20 @@ export default function SignupScreen() {
 							<Ionicons
 								name={showPassword ? "eye-outline" : "eye-off-outline"}
 								size={20}
-								color="#FF6600"
+								color={colors.accent}
 							/>
 						</Pressable>
 					</View>
 
 					{/* Confirm Password Input */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+						<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 						<TextInput
 							className="flex-1 text-base text-foreground"
 							value={confirmPassword}
 							onChangeText={setConfirmPassword}
 							placeholder="Confirm Password"
-							placeholderTextColor="#9CA3AF"
+							placeholderTextColor={colors.placeholder}
 							secureTextEntry={!showConfirmPassword}
 							autoCapitalize="none"
 							autoComplete="password-new"
@@ -424,7 +428,7 @@ export default function SignupScreen() {
 
 					{/* Role Picker */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border">
-						<Ionicons name="briefcase-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+						<Ionicons name="briefcase-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 						<View className="flex-1 ml-1">
 							<Picker
 								selectedValue={role}

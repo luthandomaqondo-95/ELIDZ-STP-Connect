@@ -11,9 +11,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import type { Profile } from '@/types';
 import { profileService } from '@/services/profile.service';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 function EditProfileScreen() {
     const { profile: user, updateProfile } = useAuthContext();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [address, setAddress] = useState<string>('');
@@ -143,7 +147,7 @@ function EditProfileScreen() {
                             <View className="w-28 h-28 rounded-full bg-white p-1 border-2 border-[#002147]/10 shadow-sm">
                                 <View className="w-full h-full rounded-full bg-[#002147]/5 justify-center items-center overflow-hidden">
                                     {isUploadingImage ? (
-                                        <ActivityIndicator size="large" color="#002147" />
+                                        <ActivityIndicator size="large" color={colors.primary} />
                                     ) : selectedImage ? (
                                         <Image 
                                             source={{ uri: selectedImage }} 
@@ -188,7 +192,7 @@ function EditProfileScreen() {
                                 onChangeText={setName}
                                 placeholder="Enter your full name"
                                 className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147]"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                             />
                         </View>
 
@@ -200,7 +204,7 @@ function EditProfileScreen() {
                                 onChangeText={setEmail}
                                 placeholder="Enter your email"
                                 className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147]"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
                             />
@@ -214,7 +218,7 @@ function EditProfileScreen() {
                                 onChangeText={setAddress}
                                 placeholder="Enter your address"
                                 className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147]"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                                 autoCapitalize="words"
                             />
                         </View>
@@ -227,7 +231,7 @@ function EditProfileScreen() {
                                 onChangeText={setOrganization}
                                 placeholder="Enter your organization"
                                 className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147]"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                             />
                         </View>
 
@@ -239,7 +243,7 @@ function EditProfileScreen() {
                                 onChangeText={setBio}
                                 placeholder="Tell us about yourself"
                                 className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147] min-h-[100px]"
-                                placeholderTextColor="#9CA3AF"
+                                placeholderTextColor={colors.placeholder}
                                 multiline
                                 numberOfLines={4}
                                 textAlignVertical="top"
@@ -253,7 +257,7 @@ function EditProfileScreen() {
                             <Text className="text-[#002147] text-xs font-bold uppercase mb-1">Current Role</Text>
                             <Text className="text-[#002147] text-base font-medium">{user?.role}</Text>
                         </View>
-                        <Feather name="shield" size={20} color="#002147" />
+                        <Feather name="shield" size={20} color={colors.primary} />
                     </View>
 
                     {/* Save Button */}

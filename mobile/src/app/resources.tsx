@@ -166,7 +166,7 @@ function ResourcesScreen() {
              {/* Resource List */}
              <View className="px-6">
                {loading ? (
-                 <ActivityIndicator size="large" color="#002147" />
+                 <ActivityIndicator size="large" color={colors.primary} />
                ) : (
                  <>
                     {filteredResources.length === 0 ? (
