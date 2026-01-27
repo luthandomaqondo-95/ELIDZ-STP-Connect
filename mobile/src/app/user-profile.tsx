@@ -256,11 +256,11 @@ function UserProfileScreen() {
 	return (
 		<ScreenScrollView>
 			<View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
-				<Image source={getAvatarSource(profileUser.avatar)} style={styles.avatar} contentFit="cover" />
-				<Text style={[Typography.h2, { color: '#FFFFFF', marginTop: Spacing.lg }]}>
+				<Image source={getAvatarSource(profileUser.avatar)} style={[styles.avatar, { borderColor: colors.buttonText }]} contentFit="cover" />
+				<Text style={[Typography.h2, { color: colors.buttonText, marginTop: Spacing.lg }]}>
 					{profileUser.name}
 				</Text>
-				<Text style={[Typography.body, { color: '#FFFFFF', opacity: 0.9, marginTop: Spacing.xs }]}>
+				<Text style={[Typography.body, { color: colors.buttonText, opacity: 0.9, marginTop: Spacing.xs }]}>
 					{profileUser.role}
 				</Text>
 				<Text style={[Typography.caption, { color: colors.buttonText, opacity: 0.8, marginTop: Spacing.xs }]}>
@@ -300,7 +300,7 @@ function UserProfileScreen() {
 							<Pressable
 								style={({ pressed }) => [
 									styles.actionButton,
-									{ backgroundColor: '#dc3545', opacity: pressed ? 0.7 : 1 },
+									{ backgroundColor: colors.error, opacity: pressed ? 0.7 : 1 },
 								]}
 								onPress={handleDeclineConnection}
 							>
@@ -315,7 +315,7 @@ function UserProfileScreen() {
 							<Pressable
 								style={({ pressed }) => [
 									styles.actionButton,
-									{ backgroundColor: '#6c757d', opacity: pressed ? 0.7 : 1 },
+									{ backgroundColor: colors.offline, opacity: pressed ? 0.7 : 1 },
 								]}
 								disabled
 							>
@@ -327,7 +327,7 @@ function UserProfileScreen() {
 							<Pressable
 								style={({ pressed }) => [
 									styles.actionButton,
-									{ backgroundColor: '#dc3545', opacity: pressed ? 0.7 : 1 },
+									{ backgroundColor: colors.error, opacity: pressed ? 0.7 : 1 },
 								]}
 								onPress={handleCancelConnection}
 							>
@@ -343,11 +343,12 @@ function UserProfileScreen() {
 								styles.actionButton,
 								{ backgroundColor: colors.accent, opacity: pressed ? 0.8 : 1 },
 								styles.connectButton,
+								{ shadowColor: colors.black },
 							]}
 							onPress={handleConnect}
 						>
 							<Feather name="user-plus" size={22} color={colors.buttonText} />
-							<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '700', fontSize: 16 }]}>
+							<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '700', fontSize: 16 }]}>
 								Connect
 							</Text>
 						</Pressable>
@@ -409,7 +410,6 @@ const styles = StyleSheet.create({
 		height: 100,
 		borderRadius: 50,
 		borderWidth: 4,
-		borderColor: colors.buttonText,
 	},
 	actionButtons: {
 		marginBottom: Spacing.lg,
@@ -423,7 +423,6 @@ const styles = StyleSheet.create({
 		marginBottom: Spacing.md,
 	},
 	connectButton: {
-		shadowColor: colors.black,
 		shadowOffset: { width: 0, height: 2 },
 		shadowOpacity: 0.25,
 		shadowRadius: 3.84,

@@ -213,10 +213,10 @@ const SYSTEM_COLORS = {
         textTertiary: '#808080',
         buttonText: '#FFFFFF',
 
-        // Brand colors
-        primary: ELIDZ_BRAND_COLORS.primaryDark,
-        secondary: ELIDZ_BRAND_COLORS.secondaryDark,
-        accent: ELIDZ_BRAND_COLORS.accentDark,
+        // Brand colors - Use lighter variants for better visibility on dark backgrounds
+        primary: '#2E4A6F',  // Lighter navy blue for dark mode (better contrast on dark backgrounds)
+        secondary: ELIDZ_BRAND_COLORS.secondary,  // Keep original orange for visibility
+        accent: ELIDZ_BRAND_COLORS.accent,  // Keep original orange for visibility
 
         // Semantic colors
         success: ELIDZ_BRAND_COLORS.success,
@@ -227,18 +227,18 @@ const SYSTEM_COLORS = {
         constructive: ELIDZ_BRAND_COLORS.constructive,
         notification: ELIDZ_BRAND_COLORS.notification,
 
-        // UI elements
+        // UI elements (improved contrast for dark mode)
         border: '#404040',
-        borderLight: '#333333',
-        card: '#2A2A2A',
-        input: '#333333',
-        shadow: 'rgba(0, 0, 0, 0.3)',
+        borderLight: '#3A3A3A',  // Slightly lighter for better visibility
+        card: '#1E1E1E',  // Slightly darker for better contrast with background
+        input: '#2A2A2A',  // Lighter than card for better input visibility
+        shadow: 'rgba(0, 0, 0, 0.5)',  // Stronger shadow for dark mode
 
-        // Gradient colors (darker variants for dark mode)
-        gradientStart: '#0a1628',
-        gradientMid: '#122a4d',
-        gradientEnd: '#1a3a5c',
-        gradientMessageEnd: '#003366',
+        // Gradient colors (slightly lighter for dark mode to maintain visibility)
+        gradientStart: '#0d1f3a',
+        gradientMid: '#1a3a5c',
+        gradientEnd: '#244a6f',
+        gradientMessageEnd: '#004477',  // Slightly lighter for dark mode
 
         // Gray scale (lighter for dark mode)
         gray50: '#1F2937',
@@ -258,11 +258,11 @@ const SYSTEM_COLORS = {
         white: ELIDZ_BRAND_COLORS.white,
         black: ELIDZ_BRAND_COLORS.black,
         red: ELIDZ_BRAND_COLORS.red,
-        redLight: ELIDZ_BRAND_COLORS.redLight,
+        redLight: '#FF6B6B',  // Slightly brighter red for dark mode visibility
         redDark: ELIDZ_BRAND_COLORS.redDark,
         redDarker: ELIDZ_BRAND_COLORS.redDarker,
-        iconGray: '#9CA3AF',
-        iconGrayDark: '#6C757D',
+        iconGray: '#B0B0B0',  // Lighter gray for better visibility on dark backgrounds
+        iconGrayDark: '#808080',  // Lighter for dark mode
 
         // Opacity variants
         whiteOpacity10: ELIDZ_BRAND_COLORS.whiteOpacity10,
@@ -296,11 +296,11 @@ const SYSTEM_COLORS = {
         roleInvestor: ELIDZ_BRAND_COLORS.role.investor,
         roleTenant: ELIDZ_BRAND_COLORS.role.tenant,
 
-        // Status colors
-        online: ELIDZ_BRAND_COLORS.online,
-        offline: ELIDZ_BRAND_COLORS.offline,
-        pending: ELIDZ_BRAND_COLORS.pending,
-        unread: ELIDZ_BRAND_COLORS.unread,
+        // Status colors (slightly brighter for dark mode visibility)
+        online: '#34D399',  // Brighter green for dark mode
+        offline: '#9CA3AF',  // Lighter gray for visibility
+        pending: '#FBBF24',  // Brighter yellow for dark mode
+        unread: '#FF6B6B',  // Brighter red for dark mode
     },
 } as const;
 

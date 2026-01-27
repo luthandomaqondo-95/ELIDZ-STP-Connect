@@ -71,6 +71,12 @@ class FacilitiesService {
      * Get all facilities
      */
     async getAllFacilities(): Promise<Facility[]> {
+        console.log('FacilitiesService.getAllFacilities: Starting query...');
+        
+        // Verify Supabase connection
+        const { data: healthCheck } = await supabase.from('facilities').select('id').limit(1);
+        console.log('Supabase connection check:', healthCheck !== null ? 'Connected' : 'Failed');
+        
         const { data, error } = await supabase
             .from('facilities')
             .select('*')
@@ -78,10 +84,32 @@ class FacilitiesService {
 
         if (error) {
             console.error('FacilitiesService.getAllFacilities error:', error);
+            console.error('Error details:', {
+                message: error.message,
+                code: error.code,
+                details: error.details,
+                hint: error.hint
+            });
+            
+            // Check for common issues
+            if (error.code === 'PGRST301' || error.message?.includes('permission denied')) {
+                console.error('RLS Policy Issue: Check Row Level Security policies for the facilities table');
+            }
+            if (error.code === '42P01') {
+                console.error('Table does not exist: The facilities table may not exist in the database');
+            }
+            
             throw error;
         }
 
-        return data as Facility[];
+        console.log('FacilitiesService.getAllFacilities: Query successful, returned', data?.length || 0, 'facilities');
+        if (data && data.length > 0) {
+            console.log('Sample facility:', JSON.stringify(data[0], null, 2));
+        } else {
+            console.warn('No facilities found in database. Table may be empty or RLS policies are blocking access.');
+        }
+        
+        return (data || []) as Facility[];
     }
 
     /**

@@ -25,6 +25,8 @@ type TabType = 'messages' | 'requests' | 'discover';
 
 function MessagesScreen() {
     const { profile, isLoggedIn } = useAuthContext();
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRole, setSelectedRole] = useState<UserRole | 'All'>('All');
     const [activeTab, setActiveTab] = useState<TabType>('messages');
