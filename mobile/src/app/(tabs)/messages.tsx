@@ -24,9 +24,9 @@ type UserRole = 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' 
 type TabType = 'messages' | 'requests' | 'discover';
 
 function MessagesScreen() {
-    const { profile, isLoggedIn } = useAuthContext();
     const { colorScheme } = useColorScheme();
-    const colors = COLORS[colorScheme];
+    const colors = COLORS[colorScheme ?? 'light'];
+    const { profile, isLoggedIn } = useAuthContext();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRole, setSelectedRole] = useState<UserRole | 'All'>('All');
     const [activeTab, setActiveTab] = useState<TabType>('messages');

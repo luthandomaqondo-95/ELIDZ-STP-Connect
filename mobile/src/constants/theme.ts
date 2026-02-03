@@ -27,16 +27,10 @@ export const Colors = {
     error: COLORS.light.destructive,
     tabIconDefault: COLORS.light.textSecondary,
     tabIconSelected: COLORS.light.primary,
-    online: COLORS.light.online,
-    offline: COLORS.light.offline,
-    pending: COLORS.light.pending,
-    unread: COLORS.light.unread,
+    black: COLORS.light.black,
     whiteOpacity10: COLORS.light.whiteOpacity10,
     whiteOpacity15: COLORS.light.whiteOpacity15,
     whiteOpacity20: COLORS.light.whiteOpacity20,
-    whiteOpacity50: COLORS.light.whiteOpacity50,
-    whiteOpacity70: COLORS.light.whiteOpacity70,
-    black: COLORS.light.black,
   },
   dark: {
     // Map COLORS.dark to the expected structure
@@ -57,16 +51,10 @@ export const Colors = {
     error: COLORS.dark.destructive,
     tabIconDefault: COLORS.dark.textSecondary,
     tabIconSelected: COLORS.dark.primary,
-    online: COLORS.dark.online,
-    offline: COLORS.dark.offline,
-    pending: COLORS.dark.pending,
-    unread: COLORS.dark.unread,
+    black: COLORS.dark.black,
     whiteOpacity10: COLORS.dark.whiteOpacity10,
     whiteOpacity15: COLORS.dark.whiteOpacity15,
     whiteOpacity20: COLORS.dark.whiteOpacity20,
-    whiteOpacity50: COLORS.dark.whiteOpacity50,
-    whiteOpacity70: COLORS.dark.whiteOpacity70,
-    black: COLORS.dark.black,
   },
 };
 
@@ -90,42 +78,7 @@ export const BorderRadius = {
   '2xl': 16,
 };
 
-// Shadow definitions - Note: Components should use theme-aware shadows
-// For dark mode, shadows are less visible, so we use stronger opacity
 export const Shadow = {
-  light: {
-    card: {
-      shadowColor: COLORS.light.black,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
-      shadowRadius: 3,
-      elevation: 2,
-    },
-    fab: {
-      shadowColor: COLORS.light.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 4,
-    },
-  },
-  dark: {
-    card: {
-      shadowColor: COLORS.dark.black,
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.3,
-      shadowRadius: 3,
-      elevation: 2,
-    },
-    fab: {
-      shadowColor: COLORS.dark.black,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.4,
-      shadowRadius: 2,
-      elevation: 4,
-    },
-  },
-  // Legacy support - defaults to light
   card: {
     shadowColor: COLORS.light.black,
     shadowOffset: { width: 0, height: 1 },

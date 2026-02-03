@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { View, StyleSheet, Pressable, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -16,8 +16,10 @@ import { Profile } from '@/types';
 
 
 
+
 function UserProfileScreen() {
 	const { colors } = useTheme();
+	const styles = useMemo(() => createStyles(colors), [colors]);
 	const { profile: currentUser } = useAuthContext();
 	const params = useLocalSearchParams<{ id?: string; userId?: string; name?: string }>();
 
@@ -256,11 +258,11 @@ function UserProfileScreen() {
 	return (
 		<ScreenScrollView>
 			<View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
-				<Image source={getAvatarSource(profileUser.avatar)} style={[styles.avatar, { borderColor: colors.buttonText }]} contentFit="cover" />
-				<Text style={[Typography.h2, { color: colors.buttonText, marginTop: Spacing.lg }]}>
+				<Image source={getAvatarSource(profileUser.avatar)} style={styles.avatar} contentFit="cover" />
+				<Text style={[Typography.h2, { color: '#FFFFFF', marginTop: Spacing.lg }]}>
 					{profileUser.name}
 				</Text>
-				<Text style={[Typography.body, { color: colors.buttonText, opacity: 0.9, marginTop: Spacing.xs }]}>
+				<Text style={[Typography.body, { color: '#FFFFFF', opacity: 0.9, marginTop: Spacing.xs }]}>
 					{profileUser.role}
 				</Text>
 				<Text style={[Typography.caption, { color: colors.buttonText, opacity: 0.8, marginTop: Spacing.xs }]}>
@@ -300,7 +302,7 @@ function UserProfileScreen() {
 							<Pressable
 								style={({ pressed }) => [
 									styles.actionButton,
-									{ backgroundColor: colors.error, opacity: pressed ? 0.7 : 1 },
+									{ backgroundColor: '#dc3545', opacity: pressed ? 0.7 : 1 },
 								]}
 								onPress={handleDeclineConnection}
 							>
@@ -315,7 +317,7 @@ function UserProfileScreen() {
 							<Pressable
 								style={({ pressed }) => [
 									styles.actionButton,
-									{ backgroundColor: colors.offline, opacity: pressed ? 0.7 : 1 },
+									{ backgroundColor: '#6c757d', opacity: pressed ? 0.7 : 1 },
 								]}
 								disabled
 							>
@@ -327,7 +329,7 @@ function UserProfileScreen() {
 							<Pressable
 								style={({ pressed }) => [
 									styles.actionButton,
-									{ backgroundColor: colors.error, opacity: pressed ? 0.7 : 1 },
+									{ backgroundColor: '#dc3545', opacity: pressed ? 0.7 : 1 },
 								]}
 								onPress={handleCancelConnection}
 							>
@@ -343,12 +345,11 @@ function UserProfileScreen() {
 								styles.actionButton,
 								{ backgroundColor: colors.accent, opacity: pressed ? 0.8 : 1 },
 								styles.connectButton,
-								{ shadowColor: colors.black },
 							]}
 							onPress={handleConnect}
 						>
 							<Feather name="user-plus" size={22} color={colors.buttonText} />
-							<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '700', fontSize: 16 }]}>
+							<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '700', fontSize: 16 }]}>
 								Connect
 							</Text>
 						</Pressable>
@@ -398,62 +399,65 @@ function UserProfileScreen() {
 	);
 }
 
-const styles = StyleSheet.create({
-	headerCard: {
-		padding: Spacing.xl,
-		borderRadius: BorderRadius.card,
-		marginBottom: Spacing.lg,
-		alignItems: 'center',
-	},
-	avatar: {
-		width: 100,
-		height: 100,
-		borderRadius: 50,
-		borderWidth: 4,
-	},
-	actionButtons: {
-		marginBottom: Spacing.lg,
-	},
-	actionButton: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		alignItems: 'center',
-		height: Spacing.buttonHeight,
-		borderRadius: BorderRadius.button,
-		marginBottom: Spacing.md,
-	},
-	connectButton: {
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.25,
-		shadowRadius: 3.84,
-		elevation: 5,
-	},
-	card: {
-		padding: Spacing.lg,
-		borderRadius: BorderRadius.card,
-		marginBottom: Spacing.lg,
-	},
-	infoRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-	},
-	expertiseContainer: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		marginTop: Spacing.sm,
-	},
-	expertiseTag: {
-		paddingHorizontal: Spacing.md,
-		paddingVertical: Spacing.xs,
-		borderRadius: BorderRadius.button,
-		marginRight: Spacing.sm,
-		marginBottom: Spacing.sm,
-	},
-	connectionStatus: {
-		flexDirection: 'row',
-		alignItems: 'center',
-	},
-});
+const createStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
+	StyleSheet.create({
+		headerCard: {
+			padding: Spacing.xl,
+			borderRadius: BorderRadius.card,
+			marginBottom: Spacing.lg,
+			alignItems: 'center',
+		},
+		avatar: {
+			width: 100,
+			height: 100,
+			borderRadius: 50,
+			borderWidth: 4,
+			borderColor: colors.buttonText,
+		},
+		actionButtons: {
+			marginBottom: Spacing.lg,
+		},
+		actionButton: {
+			flexDirection: 'row',
+			justifyContent: 'center',
+			alignItems: 'center',
+			height: Spacing.buttonHeight,
+			borderRadius: BorderRadius.button,
+			marginBottom: Spacing.md,
+		},
+		connectButton: {
+			shadowColor: colors.black,
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.25,
+			shadowRadius: 3.84,
+			elevation: 5,
+		},
+		card: {
+			padding: Spacing.lg,
+			borderRadius: BorderRadius.card,
+			marginBottom: Spacing.lg,
+		},
+		infoRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+		},
+		expertiseContainer: {
+			flexDirection: 'row',
+			flexWrap: 'wrap',
+			marginTop: Spacing.sm,
+		},
+		expertiseTag: {
+			paddingHorizontal: Spacing.md,
+			paddingVertical: Spacing.xs,
+			borderRadius: BorderRadius.button,
+			marginRight: Spacing.sm,
+			marginBottom: Spacing.sm,
+		},
+		connectionStatus: {
+			flexDirection: 'row',
+			alignItems: 'center',
+		},
+	});
 
 export default withAuthGuard(UserProfileScreen);
 

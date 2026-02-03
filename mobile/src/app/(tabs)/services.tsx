@@ -20,12 +20,12 @@ const isTablet = width >= 768;
 type ScreenMode = 'list' | 'detail';
 
 export default function ServicesScreen() {
+	const { colorScheme } = useColorScheme();
+	const colors = COLORS[colorScheme ?? 'light'];
 	const params = useLocalSearchParams<{ id?: string }>();
 	const [screenMode, setScreenMode] = useState<ScreenMode>('list');
 	const [selectedFacilityId, setSelectedFacilityId] = useState<string | null>(null);
 	const [selectedService, setSelectedService] = useState<VRSection | null>(null);
-	const { colorScheme } = useColorScheme();
-	const colors = COLORS[colorScheme];
 
 	// Data states
 	const [facilities, setFacilities] = useState<Facility[]>([]);
@@ -58,16 +58,7 @@ export default function ServicesScreen() {
 	const loadFacilities = async () => {
 		setLoading(true);
 		try {
-			console.log('Loading facilities...');
 			const data = await facilitiesService.getAllFacilities();
-			console.log('Facilities loaded:', data?.length || 0, 'facilities');
-			
-			if (!data) {
-				console.warn('No data returned from getAllFacilities');
-				setFacilities([]);
-				return;
-			}
-			
 			// Filter by search query if provided
 			let filteredData = data;
 			if (debouncedSearch.trim()) {
@@ -76,23 +67,10 @@ export default function ServicesScreen() {
 					facility.description.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
 					facility.location.toLowerCase().includes(debouncedSearch.toLowerCase())
 				);
-				console.log('Filtered facilities:', filteredData.length);
 			}
-			setFacilities(filteredData || []);
-		} catch (error: any) {
+			setFacilities(filteredData);
+		} catch (error) {
 			console.error('Error loading facilities:', error);
-			console.error('Error details:', {
-				message: error?.message,
-				code: error?.code,
-				details: error?.details,
-				hint: error?.hint
-			});
-			Alert.alert(
-				'Error Loading Facilities',
-				error?.message || 'Failed to load facilities. Please check your connection and try again.',
-				[{ text: 'OK' }]
-			);
-			setFacilities([]);
 		} finally {
 			setLoading(false);
 		}
@@ -108,28 +86,10 @@ export default function ServicesScreen() {
 	const loadFacilityTour = async (id: string) => {
 		setLoadingTour(true);
 		try {
-			console.log('Loading facility tour for ID:', id);
 			const data = await facilitiesService.getFacilityWithTour(id);
-			console.log('Facility tour loaded:', data ? 'Success' : 'No data');
-			
-			if (!data) {
-				console.warn('No facility tour data returned for ID:', id);
-				Alert.alert('Not Found', 'Facility tour not found.');
-			}
 			setFacilityWithTour(data);
-		} catch (error: any) {
+		} catch (error) {
 			console.error('Error loading facility tour:', error);
-			console.error('Error details:', {
-				message: error?.message,
-				code: error?.code,
-				details: error?.details,
-				hint: error?.hint
-			});
-			Alert.alert(
-				'Error Loading Tour',
-				error?.message || 'Failed to load facility tour. Please try again.',
-				[{ text: 'OK' }]
-			);
 		} finally {
 			setLoadingTour(false);
 		}
@@ -347,12 +307,12 @@ export default function ServicesScreen() {
 					>
 						{loading ? (
 							<View className="items-center py-12">
-								<ActivityIndicator size="large" color={colors.primary} />
+								<ActivityIndicator size="large" color="#002147" />
 								<Text className="text-muted-foreground mt-4">Loading facilities...</Text>
 							</View>
 						) : facilities.length === 0 ? (
 							<View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
-								<Feather name="home" size={48} color={colors.iconGray} />
+								<Feather name="home" size={48} color="#CBD5E0" />
 								<Text className="text-muted-foreground text-base mt-4 text-center font-medium">
 									{searchQuery ? 'No facilities found' : 'No facilities available'}
 								</Text>
@@ -369,14 +329,14 @@ export default function ServicesScreen() {
 								>
 									<View className="flex-row items-center">
 										<View className="w-16 h-16 rounded-xl items-center justify-center mr-4" style={{ backgroundColor: facility.color }}>
-										<Feather name={facility.icon as any} size={28} color={colors.white} />
+											<Feather name={facility.icon as any} size={28} color="#FFFFFF" />
 										</View>
 										<View className="flex-1">
 											<Text className="text-lg font-bold text-foreground mb-1">{facility.name}</Text>
 											<Text className="text-muted-foreground text-sm mb-2">{facility.description}</Text>
 											<View className="flex-row items-center">
 												<Text className="text-xs text-muted-foreground">{facility.location}</Text>
-												<Feather name="chevron-right" size={16} color={colors.accent} style={{ marginLeft: 'auto' }} />
+												<Feather name="chevron-right" size={16} color="#FF6600" style={{ marginLeft: 'auto' }} />
 											</View>
 										</View>
 									</View>
@@ -393,10 +353,10 @@ export default function ServicesScreen() {
 					<View className="px-6 pt-12 pb-6 bg-card shadow-sm">
 						<View className="flex-row items-center mb-4">
 							<Pressable onPress={handleBackToList} className="p-2 mr-3">
-								<Feather name="arrow-left" size={24} color={colors.primary} />
+								<Feather name="arrow-left" size={24} color="#002147" />
 							</Pressable>
 							<View className="w-12 h-12 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: facilityWithTour.color }}>
-								<Feather name={facilityWithTour.icon as any} size={24} color={colors.white} />
+								<Feather name={facilityWithTour.icon as any} size={24} color="#FFFFFF" />
 							</View>
 							<View className="flex-1">
 								<Text className="text-2xl font-bold text-foreground">{facilityWithTour.name}</Text>
@@ -409,7 +369,7 @@ export default function ServicesScreen() {
 					{/* Loading State */}
 					{loadingTour && (
 						<View className="flex-1 items-center justify-center py-20">
-							<ActivityIndicator size="large" color={colors.primary} />
+							<ActivityIndicator size="large" color="#002147" />
 						</View>
 					)}
 
@@ -440,7 +400,7 @@ export default function ServicesScreen() {
 											</View>
 											{service.has_vr ? (
 												<View className="ml-4">
-													<Feather name="eye" size={24} color={colors.accent} />
+													<Feather name="eye" size={24} color="#FF6600" />
 												</View>
 											) : null}
 										</View>
@@ -450,31 +410,28 @@ export default function ServicesScreen() {
 									<View className="flex-row gap-2 mt-2 pt-3 border-t border-border">
 										<Pressable
 											onPress={() => handleRequestAccess(service)}
-											className="flex-1 py-2.5 rounded-lg active:opacity-90"
-											style={{ backgroundColor: colors.primary }}
+											className="flex-1 bg-[#002147] py-2.5 rounded-lg active:opacity-90"
 										>
 											<View className="flex-row items-center justify-center">
-												<Feather name="user-plus" size={16} color={colors.white} />
-												<Text className="font-semibold text-sm ml-2" style={{ color: colors.white }}>Request Access</Text>
+												<Feather name="user-plus" size={16} color="white" />
+												<Text className="text-white font-semibold text-sm ml-2">Request Access</Text>
 											</View>
 										</Pressable>
 										<Pressable
 											onPress={handleContactFacility}
-											className="px-4 py-2.5 rounded-lg active:opacity-90"
-											style={{ borderColor: colors.primary, borderWidth: 1 }}
+											className="px-4 py-2.5 border border-[#002147] rounded-lg active:opacity-90"
 										>
 											<View className="flex-row items-center">
-												<Feather name="mail" size={16} color={colors.primary} />
+												<Feather name="mail" size={16} color="#002147" />
 											</View>
 										</Pressable>
 										{service.has_vr && (
 											<Pressable
 												onPress={() => handleServiceSelect(service)}
-												className="px-4 py-2.5 rounded-lg active:opacity-90"
-												style={{ borderColor: colors.accent, borderWidth: 1 }}
+												className="px-4 py-2.5 border border-[#FF6600] rounded-lg active:opacity-90"
 											>
 												<View className="flex-row items-center">
-													<Feather name="eye" size={16} color={colors.accent} />
+													<Feather name="eye" size={16} color="#FF6600" />
 												</View>
 											</Pressable>
 										)}
@@ -513,8 +470,8 @@ export default function ServicesScreen() {
 														}}
 														className="flex-row items-center"
 													>
-														<Feather name="mail" size={12} color={colors.primary} />
-														<Text className="text-[10px] ml-1" style={{ color: colors.primary }}>Email</Text>
+														<Feather name="mail" size={12} color="#002147" />
+														<Text className="text-primary text-[10px] ml-1">Email</Text>
 													</Pressable>
 												)}
 												{tenant.contact_phone && (
@@ -525,8 +482,8 @@ export default function ServicesScreen() {
 														}}
 														className="flex-row items-center"
 													>
-														<Feather name="phone" size={12} color={colors.primary} />
-														<Text className="text-[10px] ml-1" style={{ color: colors.primary }}>Call</Text>
+														<Feather name="phone" size={12} color="#002147" />
+														<Text className="text-primary text-[10px] ml-1">Call</Text>
 													</Pressable>
 												)}
 												{tenant.website && (
@@ -537,14 +494,14 @@ export default function ServicesScreen() {
 														}}
 														className="flex-row items-center"
 													>
-														<Feather name="globe" size={12} color={colors.primary} />
-														<Text className="text-[10px] ml-1" style={{ color: colors.primary }}>Website</Text>
+														<Feather name="globe" size={12} color="#002147" />
+														<Text className="text-primary text-[10px] ml-1">Website</Text>
 													</Pressable>
 												)}
 											</View>
 										)}
 									</View>
-									<Feather name="chevron-right" size={20} color={colors.accent} />
+									<Feather name="chevron-right" size={20} color="#FF6600" />
 								</Pressable>
 							))}
 						</View>
@@ -559,23 +516,21 @@ export default function ServicesScreen() {
 									Contact the facility directly for inquiries, bookings, or more information about services.
 								</Text>
 								<View className="flex-row gap-2">
-								<Pressable
-									onPress={handleContactFacility}
-									className="flex-1 py-3 rounded-lg active:opacity-90"
-									style={{ backgroundColor: colors.primary }}
-								>
-									<View className="flex-row items-center justify-center">
-										<Feather name="mail" size={16} color={colors.white} />
-										<Text className="font-semibold text-sm ml-2" style={{ color: colors.white }}>Contact Facility</Text>
-									</View>
-								</Pressable>
-								<Pressable
-									onPress={() => Linking.openURL('https://www.elidz.co.za')}
-									className="px-4 py-3 rounded-lg active:opacity-90"
-									style={{ borderColor: colors.primary, borderWidth: 1 }}
-								>
-									<Feather name="globe" size={18} color={colors.primary} />
-								</Pressable>
+									<Pressable
+										onPress={handleContactFacility}
+										className="flex-1 bg-[#002147] py-3 rounded-lg active:opacity-90"
+									>
+										<View className="flex-row items-center justify-center">
+											<Feather name="mail" size={16} color="white" />
+											<Text className="text-white font-semibold text-sm ml-2">Contact Facility</Text>
+										</View>
+									</Pressable>
+									<Pressable
+										onPress={() => Linking.openURL('https://www.elidz.co.za')}
+										className="px-4 py-3 border border-[#002147] rounded-lg active:opacity-90"
+									>
+										<Feather name="globe" size={18} color="#002147" />
+									</Pressable>
 								</View>
 							</View>
 						</View>

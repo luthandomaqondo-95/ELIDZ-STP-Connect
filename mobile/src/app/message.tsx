@@ -317,7 +317,7 @@ function MessageScreen() {
                       {userName || 'Chat'}
                   </Text>
                   <View className="flex-row items-center">
-                      <View className="w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: colors.online }} />
+                      <View className="w-2 h-2 rounded-full bg-green-400 mr-1.5" />
                       <Text className="text-xs" style={{ color: colors.whiteOpacity70 }}>Online</Text>
                   </View>
               </View>
