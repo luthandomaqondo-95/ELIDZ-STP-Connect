@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ActivityIndicator, Image } from 'react-native';
+import { View, ActivityIndicator, Image } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useTheme } from '@/hooks/useTheme';
 import { Text } from '@/components/ui/text';
-import { Typography, Spacing } from '@/constants/theme';
 
 export interface Region {
   id: string;
@@ -438,10 +437,10 @@ export function PanoramaViewer({ imageUrl, title, hotspots = [], regions = [], o
   };
 
   return (
-    <View style={styles.container}>
+    <View className="flex-1">
       {title && (
-        <View style={[styles.header, { backgroundColor: colors.backgroundDefault }]}>
-          <Text style={[Typography.h3]}>{title}</Text>
+        <View className="p-2.5 border-b border-border bg-background">
+          <Text className="text-lg font-bold">{title}</Text>
         </View>
       )}
       {resolvedImageUrl ? (
@@ -451,24 +450,24 @@ export function PanoramaViewer({ imageUrl, title, hotspots = [], regions = [], o
           allowFileAccess={true}
           allowUniversalAccessFromFileURLs={true}
           allowFileAccessFromFileURLs={true}
-          style={styles.webview}
+          className="flex-1 bg-black"
           javaScriptEnabled={true}
           domStorageEnabled={true}
           startInLoadingState={true}
           onMessage={handleMessage}
           renderLoading={() => (
-            <View style={styles.loadingContainer}>
+            <View className="flex-1 justify-center items-center bg-black">
               <ActivityIndicator size="large" color={colors.primary} />
-              <Text style={[Typography.body, { marginTop: Spacing.md, color: colors.textSecondary }]}>
+              <Text className="text-base mt-2.5 text-muted-foreground">
                 Loading 360° view...
               </Text>
             </View>
           )}
         />
       ) : (
-        <View style={styles.loadingContainer}>
+        <View className="flex-1 justify-center items-center bg-black">
           <ActivityIndicator size="large" color={colors.primary} />
-          <Text style={[Typography.body, { marginTop: Spacing.md, color: colors.textSecondary }]}>
+          <Text className="text-base mt-2.5 text-muted-foreground">
             Preparing panorama...
           </Text>
         </View>
@@ -476,24 +475,3 @@ export function PanoramaViewer({ imageUrl, title, hotspots = [], regions = [], o
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    padding: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  webview: {
-    flex: 1,
-    backgroundColor: '#000',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#000',
-  },
-});

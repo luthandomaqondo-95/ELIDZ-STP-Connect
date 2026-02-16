@@ -1,62 +1,82 @@
-import React from 'react';
-import { View, Pressable, ScrollView, TextInput , Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Pressable, ScrollView, TextInput, Dimensions, ActivityIndicator } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { HeaderAvatar } from '@/components/HeaderAvatar';
 import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
-import { useColorScheme } from '@/hooks/use-theme-color';
-import { COLORS } from '@/theme/colors';
-
+import { EventService, Event } from '@/services/event.service';
+import { useTheme } from '@/hooks/useTheme';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
-interface Event {
-  id: string;
-  title: string;
-  date: string;
-  time: string;
-  location: string;
-  rsvp?: string | null;
-  attendees?: number | null;
-  endDate?: string;
-  theme?: string;
+function formatEventDate(isoDate: string): { display: string; monthDay: string; month: string; day: string } {
+  const d = new Date(isoDate);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[d.getMonth()];
+  const day = String(d.getDate());
+  const year = d.getFullYear();
+  const display = `${month} ${day}, ${year}`;
+  return { display, monthDay: `${month} ${day}`, month, day };
+}
+
+function getMonthName(isoDate: string): string {
+  const d = new Date(isoDate);
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function groupEventsByMonth(events: Event[]): { monthLabel: string; events: Event[] }[] {
+  const byMonth = new Map<string, Event[]>();
+  for (const e of events) {
+    const label = getMonthName(e.date);
+    if (!byMonth.has(label)) byMonth.set(label, []);
+    byMonth.get(label)!.push(e);
+  }
+  const sorted = Array.from(byMonth.entries()).sort((a, b) => {
+    const dA = new Date(a[1][0].date).getTime();
+    const dB = new Date(b[1][0].date).getTime();
+    return dA - dB;
+  });
+  return sorted.map(([monthLabel, events]) => ({ monthLabel, events }));
 }
 
 export default function EventsScreen() {
-  const { colorScheme } = useColorScheme();
-  const colors = COLORS[colorScheme];
-  // Verified events from ELIDZ website
-  const events: Event[] = [
-    {
-      id: '1',
-      title: 'Eastern Cape Innovation & Entrepreneurship Week (IEW) 2025',
-      date: 'Nov 24, 2025',
-      time: 'Full Day',
-      location: 'East London IDZ Science & Technology Park (Hybrid)',
-      rsvp: null,
-      attendees: null,
-      endDate: 'Nov 28, 2025',
-      theme: 'Innovate. Commercialise. Thrive.'
-    },
-  ];
+  const { colors } = useTheme();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const parseDate = (dateStr: string): { month: string; day: string } => {
-    // Format: "Nov 24, 2025"
-    const parts = dateStr.split(' ');
-    return {
-      month: parts[0], // "Nov"
-      day: parts[1]?.replace(',', '') || '', // "24"
-    };
-  };
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const all = await EventService.getUpcomingEvents(100);
+        if (!cancelled) setEvents(all);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load events');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
-  function getMonthEvents(monthName: string, monthEvents: Event[]) {
+  const filtered = searchQuery.trim()
+    ? events.filter(e => e.title?.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    : events;
+  const grouped = groupEventsByMonth(filtered);
+
+  function renderMonthSection(monthLabel: string, monthEvents: Event[]) {
     return (
-      <View className="mb-6">
-        <Text className="text-xl font-semibold mb-4 text-foreground">{monthName}</Text>
+      <View key={monthLabel} className="mb-6">
+        <Text className="text-xl font-semibold mb-4 text-foreground">{monthLabel}</Text>
         {monthEvents.map((event) => {
-          const dateInfo = parseDate(event.date);
+          const { month, day, display } = formatEventDate(event.date);
           return (
             <Pressable
               key={event.id}
@@ -64,58 +84,21 @@ export default function EventsScreen() {
               onPress={() => router.push(`/event-detail?id=${event.id}`)}
             >
               <View className="flex-row items-start">
-                <View className="w-16 h-20 rounded-xl justify-center items-center mr-4" style={{ backgroundColor: colors.primary }}>
-                  <Text className="text-white text-xs font-semibold uppercase">
-                    {dateInfo.month}
-                  </Text>
-                  <Text className="text-white text-2xl font-bold">
-                    {dateInfo.day}
-                  </Text>
+                <View className="w-16 h-20 rounded-xl justify-center items-center mr-4 bg-primary">
+                  <Text className="text-white text-xs font-semibold uppercase">{month}</Text>
+                  <Text className="text-white text-2xl font-bold">{day}</Text>
                 </View>
                 <View className="flex-1">
                   <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
                     {event.title}
                   </Text>
-                  {event.endDate ? (
-                    <Text className="text-accent font-semibold text-sm mb-2">
-                      {event.date} - {event.endDate}
-                    </Text>
-                  ) : (
-                    <Text className="text-accent font-semibold text-sm mb-2">
-                      {event.date}
-                    </Text>
-                  )}
-                  <View className="flex-row items-center mt-2">
-                    <Feather name="clock" size={14} color={colors.iconGrayDark} />
-                    <Text className="text-muted-foreground text-sm ml-2">
-                      {event.time}
-                    </Text>
-                  </View>
-                  <View className="flex-row items-center mt-2">
-                    <Feather name="map-pin" size={14} color="#6C757D" />
-                    <Text className="text-muted-foreground text-sm ml-2 flex-1" numberOfLines={1}>
-                      {event.location}
-                    </Text>
-                  </View>
-                  {event.theme && (
+                  <Text className="text-accent font-semibold text-sm mb-2">{display}</Text>
+                  {event.location && (
                     <View className="flex-row items-center mt-2">
-                      <Feather name="tag" size={14} color={colors.accent} />
-                      <Text className="text-accent text-sm ml-2 italic">
-                        {event.theme}
+                      <Feather name="map-pin" size={14} color={colors.textSecondary ?? '#6B7280'} />
+                      <Text className="text-muted-foreground text-sm ml-2 flex-1" numberOfLines={1}>
+                        {event.location}
                       </Text>
-                    </View>
-                  )}
-                  {event.attendees && (
-                    <View className="flex-row items-center mt-2">
-                      <Feather name="users" size={14} color={colors.primary} />
-                      <Text className="text-muted-foreground text-xs ml-2">
-                        {event.attendees} attending
-                      </Text>
-                      {event.rsvp && (
-                        <View className="px-3 py-1 rounded-lg bg-green-500 ml-3">
-                          <Text className="text-white text-xs">{event.rsvp}</Text>
-                        </View>
-                      )}
                     </View>
                   )}
                 </View>
@@ -127,54 +110,49 @@ export default function EventsScreen() {
     );
   }
 
-  const novemberEvents = events.filter(e => e.date.includes('Nov'));
-
   return (
     <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Header */}
-        <View
-          className="pt-12 pb-6"
-          style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-        >
-          <View 
-            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-          >
-            <View className="flex-row items-center justify-end mb-2">
-              <HeaderNotificationIcon />
-              <HeaderAvatar />
-            </View>
-            <View className="items-start mb-2">
-              <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
-                Events
-              </Text>
-              <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
-                Discover upcoming events, workshops, and networking opportunities
-              </Text>
-            </View>
+        <View className={`pt-12 pb-6 px-6 ${isTablet ? 'max-w-[1200px] self-center w-full' : ''}`}>
+          <View className="flex-row items-center justify-end mb-2">
+            <HeaderNotificationIcon />
+            <HeaderAvatar />
+          </View>
+          <View className="items-start mb-2">
+            <Text className="text-foreground font-semibold text-xl">Events</Text>
+            <Text className="text-muted-foreground text-sm">
+              Discover upcoming events, workshops, and networking opportunities
+            </Text>
           </View>
 
-          {/* Search Bar */}
-          <View 
-            className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
-            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-          >
-            <Feather name="search" size={20} color={colors.placeholder} />
+          <View className="flex-row items-center bg-muted/50 border border-border h-12 rounded-xl px-4 mt-6">
+            <Feather name="search" size={20} color={colors.textSecondary ?? '#9CA3AF'} />
             <TextInput
               className="flex-1 ml-3 text-base text-foreground"
               placeholder="Search events..."
-              placeholderTextColor={colors.placeholderLight}
+              placeholderTextColor="#9CA3AF"
+              value={searchQuery}
+              onChangeText={setSearchQuery}
             />
           </View>
         </View>
 
-        {/* Events List */}
         <View className="px-6 mt-6">
-          {novemberEvents.length > 0 ? (
-            getMonthEvents('November 2025', novemberEvents)
+          {loading ? (
+            <View className="py-12 items-center">
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Text className="text-muted-foreground mt-4">Loading events...</Text>
+            </View>
+          ) : error ? (
+            <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
+              <Feather name="alert-circle" size={48} color={colors.error ?? '#EF4444'} />
+              <Text className="text-foreground text-base mt-4 text-center font-medium">{error}</Text>
+            </View>
+          ) : grouped.length > 0 ? (
+            grouped.map(({ monthLabel, events: monthEvents }) => renderMonthSection(monthLabel, monthEvents))
           ) : (
             <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
-              <Feather name="calendar" size={48} color={colors.iconGray} />
+              <Feather name="calendar" size={48} color={colors.textSecondary ?? '#9CA3AF'} />
               <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                 No upcoming events scheduled
               </Text>
@@ -188,4 +166,3 @@ export default function EventsScreen() {
     </View>
   );
 }
-

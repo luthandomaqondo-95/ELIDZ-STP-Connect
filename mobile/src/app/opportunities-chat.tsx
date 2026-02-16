@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Pressable, FlatList, TextInput, Alert } from 'react-native';
+import { View, Pressable, FlatList, TextInput, Alert } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
 import { useTheme } from '@/hooks/useTheme';
-import { Spacing, BorderRadius, Typography, Shadow } from '@/constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { storage } from '@/utils/storage';
 import { withAuthGuard } from '@/components/withAuthGuard';
@@ -13,239 +12,179 @@ import { connectionService } from '@/services/connection.service';
 import { OpportunityService } from '@/services/opportunity.service';
 
 function OpportunitiesChatScreen() {
-  const { colors } = useTheme();
-  const { profile } = useAuthContext();
-  const [opportunities, setOpportunities] = useState<any[]>([]);
-  const [contacts, setContacts] = useState<{ id: string; name: string }[]>([]);
-  const [selectedOpp, setSelectedOpp] = useState<any>(null);
-  const [shareMessage, setShareMessage] = useState('');
-  const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
+	const { colors } = useTheme();
+	const { profile } = useAuthContext();
+	const [opportunities, setOpportunities] = useState<any[]>([]);
+	const [contacts, setContacts] = useState<{ id: string; name: string }[]>([]);
+	const [selectedOpp, setSelectedOpp] = useState<any>(null);
+	const [shareMessage, setShareMessage] = useState('');
+	const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadOpportunities();
-  }, []);
+	useEffect(() => {
+		loadOpportunities();
+	}, []);
 
-  useEffect(() => {
-    if (!profile?.id) {
-      setContacts([]);
-      return;
-    }
-    loadContacts(profile.id);
-  }, [profile?.id]);
+	useEffect(() => {
+		if (!profile?.id) {
+			setContacts([]);
+			return;
+		}
+		loadContacts(profile.id);
+	}, [profile?.id]);
 
-  const loadOpportunities = async () => {
-    try {
-      const opps = await OpportunityService.getOpportunities();
-      setOpportunities((opps || []).slice(0, 5));
-    } catch (error) {
-      console.error('Error loading opportunities for sharing:', error);
-      setOpportunities([]);
-    }
-  };
+	const loadOpportunities = async () => {
+		try {
+			const opps = await OpportunityService.getOpportunities();
+			setOpportunities((opps || []).slice(0, 5));
+		} catch (error) {
+			console.error('Error loading opportunities for sharing:', error);
+			setOpportunities([]);
+		}
+	};
 
-  const loadContacts = async (userId: string) => {
-    try {
-      const allContacts = await connectionService.getAllContacts(userId);
-      const shareable = allContacts
-        .filter((contact) => contact.connectionStatus === 'connected')
-        .map((contact) => ({ id: contact.id, name: contact.name }));
-      setContacts(shareable);
-    } catch (error) {
-      console.error('Error loading contacts for sharing:', error);
-      setContacts([]);
-    }
-  };
+	const loadContacts = async (userId: string) => {
+		try {
+			const allContacts = await connectionService.getAllContacts(userId);
+			const shareable = allContacts
+				.filter((contact) => contact.connectionStatus === 'connected')
+				.map((contact) => ({ id: contact.id, name: contact.name }));
+			setContacts(shareable);
+		} catch (error) {
+			console.error('Error loading contacts for sharing:', error);
+			setContacts([]);
+		}
+	};
 
-  const handleShareOpportunity = async () => {
-    if (!selectedOpp) {
-      Alert.alert('Error', 'Please select an opportunity to share');
-      return;
-    }
+	const handleShareOpportunity = async () => {
+		if (!selectedOpp) {
+			Alert.alert('Error', 'Please select an opportunity to share');
+			return;
+		}
 
-    if (selectedContacts.length === 0) {
-      Alert.alert('Error', 'Please select at least one contact');
-      return;
-    }
+		if (selectedContacts.length === 0) {
+			Alert.alert('Error', 'Please select at least one contact');
+			return;
+		}
 
-    try {
-      const sharedItem = {
-        id: Date.now().toString(),
-        opportunityId: selectedOpp.id,
-        opportunityTitle: selectedOpp.title,
-        message: shareMessage,
-        sharedWith: selectedContacts,
-        timestamp: new Date().toISOString(),
-      };
+		try {
+			const sharedItem = {
+				id: Date.now().toString(),
+				opportunityId: selectedOpp.id,
+				opportunityTitle: selectedOpp.title,
+				message: shareMessage,
+				sharedWith: selectedContacts,
+				timestamp: new Date().toISOString(),
+			};
 
-      const saved = await storage.getSharedOpportunities();
-      await storage.setSharedOpportunities([...saved, sharedItem]);
+			const saved = await storage.getSharedOpportunities();
+			await storage.setSharedOpportunities([...saved, sharedItem]);
 
-      Alert.alert('Success', `Opportunity shared with ${selectedContacts.length} contact(s)!`, [
-        {
-          text: 'OK',
-          onPress: () => router.back(),
-        },
-      ]);
-    } catch (error) {
-      Alert.alert('Error', 'Failed to share opportunity');
-    }
-  };
+			Alert.alert('Success', `Opportunity shared with ${selectedContacts.length} contact(s)!`, [
+				{
+					text: 'OK',
+					onPress: () => router.back(),
+				},
+			]);
+		} catch (error) {
+			Alert.alert('Error', 'Failed to share opportunity');
+		}
+	};
 
-  return (
-    <ScreenKeyboardAwareScrollView>
-      <View style={[styles.section, { backgroundColor: colors.backgroundDefault, ...Shadow.card, borderRadius: BorderRadius.card, padding: Spacing.lg, marginBottom: Spacing.lg }]}>
-        <Text style={[Typography.h3, { marginBottom: Spacing.lg }]}>
-          Select Opportunity to Share
-        </Text>
-        <FlatList
-          data={opportunities}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <Pressable
-              style={({ pressed }) => [
-                styles.opportunityItem,
-                {
-                  backgroundColor: selectedOpp?.id === item.id ? colors.primary : colors.backgroundRoot,
-                  borderColor: selectedOpp?.id === item.id ? colors.primary : colors.border,
-                  opacity: pressed ? 0.7 : 1,
-                },
-              ]}
-              onPress={() => setSelectedOpp(item)}
-            >
-              <Feather
-                name={selectedOpp?.id === item.id ? 'check-circle' : 'circle'}
-                size={20}
-                color={selectedOpp?.id === item.id ? '#FFFFFF' : colors.textSecondary}
-              />
-              <View style={{ flex: 1, marginLeft: Spacing.md }}>
-                <Text style={[Typography.body, { color: selectedOpp?.id === item.id ? '#FFFFFF' : colors.text, fontWeight: '500' }]}>
-                  {item.title}
-                </Text>
-              </View>
-            </Pressable>
-          )}
-          keyExtractor={(item) => item.id}
-          ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
-        />
-      </View>
+	return (
+		<ScreenKeyboardAwareScrollView>
+			<View className="bg-card shadow-sm rounded-xl p-3 mb-3">
+				<Text className="text-lg font-bold mb-3">
+					Select Opportunity to Share
+				</Text>
+				<FlatList
+					data={opportunities}
+					scrollEnabled={false}
+					renderItem={({ item }) => (
+						<Pressable
+							className={`flex-row items-center py-2.5 px-2.5 rounded-lg border active:opacity-70 ${selectedOpp?.id === item.id ? 'bg-primary border-primary' : 'bg-background border-border'}`}
+							onPress={() => setSelectedOpp(item)}
+						>
+							<Feather
+								name={selectedOpp?.id === item.id ? 'check-circle' : 'circle'}
+								size={20}
+								color={selectedOpp?.id === item.id ? '#FFFFFF' : colors.textSecondary}
+							/>
+							<View className="flex-1 ml-2.5">
+								<Text className={`text-base font-medium ${selectedOpp?.id === item.id ? 'text-primary-foreground' : 'text-foreground'}`}>
+									{item.title}
+								</Text>
+							</View>
+						</Pressable>
+					)}
+					keyExtractor={(item) => item.id}
+					ItemSeparatorComponent={() => <View className="h-2" />}
+				/>
+			</View>
 
-      <View style={[styles.section, { backgroundColor: colors.backgroundDefault, ...Shadow.card, borderRadius: BorderRadius.card, padding: Spacing.lg, marginBottom: Spacing.lg }]}>
-        <Text style={[Typography.h3, { marginBottom: Spacing.lg }]}>
-          Select Contacts to Share With
-        </Text>
-        <FlatList
-          data={contacts}
-          scrollEnabled={false}
-          renderItem={({ item }) => (
-            <Pressable
-              style={({ pressed }) => [
-                styles.contactItem,
-                { opacity: pressed ? 0.7 : 1 },
-              ]}
-              onPress={() => {
-                if (selectedContacts.includes(item.id)) {
-                  setSelectedContacts(selectedContacts.filter(id => id !== item.id));
-                } else {
-                  setSelectedContacts([...selectedContacts, item.id]);
-                }
-              }}
-            >
-              <Feather
-                name={selectedContacts.includes(item.id) ? 'check-square' : 'square'}
-                size={20}
-                color={selectedContacts.includes(item.id) ? colors.primary : colors.textSecondary}
-              />
-              <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>
-                {item.name}
-              </Text>
-            </Pressable>
-          )}
-          keyExtractor={(item) => item.id}
-          ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
-        />
-        {contacts.length === 0 && (
-          <Text style={[Typography.body, { color: colors.textSecondary }]}>
-            No connected contacts available to share with yet.
-          </Text>
-        )}
-      </View>
+			<View className="bg-card shadow-sm rounded-xl p-3 mb-3">
+				<Text className="text-lg font-bold mb-3">
+					Select Contacts to Share With
+				</Text>
+				<FlatList
+					data={contacts}
+					scrollEnabled={false}
+					renderItem={({ item }) => (
+						<Pressable
+							className="flex-row items-center py-2.5 active:opacity-70"
+							onPress={() => {
+								if (selectedContacts.includes(item.id)) {
+									setSelectedContacts(selectedContacts.filter(id => id !== item.id));
+								} else {
+									setSelectedContacts([...selectedContacts, item.id]);
+								}
+							}}
+						>
+							<Feather
+								name={selectedContacts.includes(item.id) ? 'check-square' : 'square'}
+								size={20}
+								color={selectedContacts.includes(item.id) ? colors.primary : colors.textSecondary}
+							/>
+							<Text className="text-base ml-2.5 flex-1">
+								{item.name}
+							</Text>
+						</Pressable>
+					)}
+					keyExtractor={(item) => item.id}
+					ItemSeparatorComponent={() => <View className="h-2" />}
+				/>
+				{contacts.length === 0 && (
+					<Text className="text-base text-muted-foreground">
+						No connected contacts available to share with yet.
+					</Text>
+				)}
+			</View>
 
-      <View style={[styles.section, { backgroundColor: colors.backgroundDefault, ...Shadow.card, borderRadius: BorderRadius.card, padding: Spacing.lg, marginBottom: Spacing.lg }]}>
-        <Text style={[Typography.h3, { marginBottom: Spacing.lg }]}>
-          Add Personal Message
-        </Text>
-        <TextInput
-          style={[
-            styles.messageInput,
-            {
-              backgroundColor: colors.backgroundRoot,
-              color: colors.text,
-              borderColor: colors.border,
-            },
-          ]}
-          placeholder="Add a personal message..."
-          placeholderTextColor={colors.textSecondary}
-          multiline
-          numberOfLines={4}
-          value={shareMessage}
-          onChangeText={setShareMessage}
-        />
-      </View>
+			<View className="bg-card shadow-sm rounded-xl p-3 mb-3">
+				<Text className="text-lg font-bold mb-3">
+					Add Personal Message
+				</Text>
+				<TextInput
+					className="border border-border rounded-lg px-2.5 py-2.5 text-sm bg-background text-foreground min-h-[100px]"
+					placeholder="Add a personal message..."
+					placeholderTextColor={colors.textSecondary}
+					multiline
+					numberOfLines={4}
+					value={shareMessage}
+					onChangeText={setShareMessage}
+				/>
+			</View>
 
-      <Pressable
-        style={({ pressed }) => [
-          styles.shareButton,
-          {
-            backgroundColor: colors.primary,
-            opacity: pressed ? 0.7 : 1,
-          },
-        ]}
-        onPress={handleShareOpportunity}
-      >
-        <Feather name="send" size={20} color="#FFFFFF" style={{ marginRight: Spacing.sm }} />
-        <Text style={[Typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-          Share Opportunity
-        </Text>
-      </Pressable>
-    </ScreenKeyboardAwareScrollView>
-  );
+			<Pressable
+				className="flex-row items-center justify-center h-[52px] rounded-lg mb-5 bg-primary active:opacity-70"
+				onPress={handleShareOpportunity}
+			>
+				<View className="mr-2"><Feather name="send" size={20} color="#FFFFFF" /></View>
+				<Text className="text-base font-semibold text-primary-foreground">
+					Share Opportunity
+				</Text>
+			</Pressable>
+		</ScreenKeyboardAwareScrollView>
+	);
 }
-
-const styles = StyleSheet.create({
-  section: {
-    marginBottom: Spacing.lg,
-  },
-  opportunityItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    borderRadius: BorderRadius.button,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-  },
-  contactItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-  },
-  messageInput: {
-    borderWidth: 1,
-    borderRadius: BorderRadius.button,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    fontSize: 14,
-    fontFamily: 'System',
-    textAlignVertical: 'top',
-  },
-  shareButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.button,
-    marginBottom: Spacing.xl,
-  },
-});
 
 export default withAuthGuard(OpportunitiesChatScreen);

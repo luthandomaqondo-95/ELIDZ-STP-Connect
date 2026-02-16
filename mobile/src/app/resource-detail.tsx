@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Pressable, Modal, TextInput, Alert, ScrollView } from 'react-native';
+import { View, Pressable, Modal, TextInput, Alert, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { useTheme } from '@/hooks/useTheme';
-import { Spacing, BorderRadius, Typography, Shadow } from '../constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { ResourceService } from '@/services/resource.service';
@@ -129,38 +128,38 @@ function ResourceDetailScreen() {
 
   return (
     <ScreenScrollView>
-      <View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
-        <View style={styles.iconContainer}>
+      <View className="p-5 rounded-xl mb-3 bg-primary">
+        <View className="items-center mb-2.5">
           <Feather name={getCategoryIcon(displayResource.category) as any} size={48} color={colors.buttonText} />
         </View>
-        <View style={[styles.statusBadge, { backgroundColor: colors.buttonText }]}>
-          <View style={[styles.statusDot, { backgroundColor: getStatusColor(displayResource.status) }]} />
-          <Text style={[Typography.small, { color: getStatusColor(displayResource.status), marginLeft: Spacing.xs }]}>
+        <View className="flex-row items-center self-start bg-primary-foreground px-2.5 py-1 rounded-lg">
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: getStatusColor(displayResource.status) }} />
+          <Text className="text-xs ml-1" style={{ color: getStatusColor(displayResource.status) }}>
             {displayResource.status}
           </Text>
         </View>
-        <Text style={[Typography.h2, { color: colors.buttonText, marginTop: Spacing.lg }]}>
+        <Text className="text-xl font-bold text-primary-foreground mt-3">
           {displayResource.name}
         </Text>
-        <View style={[styles.categoryBadge, { backgroundColor: colors.whiteOpacity20, marginTop: Spacing.sm }]}>
-          <Text style={[Typography.small, { color: colors.buttonText }]}>{displayResource.category}</Text>
+        <View className="self-start px-2.5 py-1 rounded-lg mt-2 bg-white/20">
+          <Text className="text-xs text-primary-foreground">{displayResource.category}</Text>
         </View>
       </View>
 
-      <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-        <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Description</Text>
-        <Text style={[Typography.body, { color: colors.text, lineHeight: 24 }]}>
+      <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+        <Text className="text-lg font-bold mb-2.5">Description</Text>
+        <Text className="text-base text-foreground leading-6">
           {displayResource.fullDescription}
         </Text>
       </View>
 
       {displayResource.specifications && displayResource.specifications.length > 0 && (
-        <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Specifications</Text>
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-lg font-bold mb-2.5">Specifications</Text>
           {displayResource.specifications.map((spec: string, index: number) => (
-            <View key={`${index}-${spec}`} style={styles.specItem}>
+            <View key={`${index}-${spec}`} className="flex-row items-start mb-2.5">
               <Feather name="check-circle" size={18} color={colors.secondary} />
-              <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>
+              <Text className="text-base ml-2.5 flex-1">
                 {spec}
               </Text>
             </View>
@@ -168,17 +167,17 @@ function ResourceDetailScreen() {
         </View>
       )}
 
-      <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-        <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Location & Contact</Text>
-        <View style={styles.infoRow}>
+      <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+        <Text className="text-lg font-bold mb-2.5">Location & Contact</Text>
+        <View className="flex-row items-center">
           <Feather name="map-pin" size={18} color={colors.textSecondary} />
-          <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md }]}>
+          <Text className="text-base text-foreground ml-2.5">
             {displayResource.location}
           </Text>
         </View>
-        <View style={[styles.infoRow, { marginTop: Spacing.md }]}>
+        <View className="flex-row items-center mt-2.5">
           <Feather name="mail" size={18} color={colors.textSecondary} />
-          <Text style={[Typography.body, { color: colors.primary, marginLeft: Spacing.md }]}>
+          <Text className="text-base text-primary ml-2.5">
             {displayResource.contact}
           </Text>
         </View>
@@ -186,22 +185,16 @@ function ResourceDetailScreen() {
 
       {displayResource.bookingRequired && (
         <Pressable
-          style={({ pressed }) => [
-            styles.requestButton,
-            { 
-              backgroundColor: displayResource.status === 'Available' ? colors.accent : colors.textSecondary,
-              opacity: pressed ? 0.7 : 1,
-            },
-          ]}
+          className={`flex-row justify-center items-center h-[52px] rounded-lg mb-5 active:opacity-70 ${displayResource.status === 'Available' ? 'bg-accent' : 'bg-muted-foreground'}`}
           onPress={handleRequestAccess}
           disabled={displayResource.status !== 'Available'}
         >
-          <Feather 
-            name={displayResource.status === 'Available' ? 'calendar' : 'clock'} 
-            size={20} 
-            color={colors.buttonText} 
+          <Feather
+            name={displayResource.status === 'Available' ? 'calendar' : 'clock'}
+            size={20}
+            color={colors.buttonText}
           />
-          <Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
+          <Text className="text-base font-semibold text-primary-foreground ml-2.5">
             {displayResource.status === 'Available' ? 'Request Access' : displayResource.status === 'In Use' ? 'Currently In Use' : 'Coming Soon'}
           </Text>
         </Pressable>
@@ -213,42 +206,30 @@ function ResourceDetailScreen() {
         transparent={true}
         onRequestClose={() => setShowBookingModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, { backgroundColor: colors.backgroundRoot }]}>
-            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-              <Text style={[Typography.h3]}>Request Access</Text>
+        <View className="flex-1 bg-black/50 justify-end">
+          <View className="bg-background rounded-t-xl max-h-[90%]">
+            <View className="flex-row justify-between items-center px-3 pt-3 pb-2.5 border-b border-border">
+              <Text className="text-lg font-bold">Request Access</Text>
               <Pressable
                 onPress={() => setShowBookingModal(false)}
-                style={({ pressed }) => [
-                  styles.closeButton,
-                  { opacity: pressed ? 0.6 : 1 },
-                ]}
+                className="p-1 active:opacity-60"
               >
                 <Feather name="x" size={24} color={colors.text} />
               </Pressable>
             </View>
 
-            <ScrollView 
-              style={styles.modalContent}
+            <ScrollView
+              className="px-3 pt-3 pb-5"
               showsVerticalScrollIndicator={false}
             >
-              <Text style={[Typography.body, { color: colors.textSecondary, marginBottom: Spacing.lg }]}>
+              <Text className="text-base text-muted-foreground mb-3">
                 Please provide the following information to request access to {displayResource.name}
               </Text>
 
-              <View style={styles.formGroup}>
-                <Text style={[Typography.caption, { marginBottom: Spacing.sm, fontWeight: '600' }]}>
-                  Preferred Date *
-                </Text>
+              <View className="mb-3">
+                <Text className="text-sm font-semibold mb-2">Preferred Date *</Text>
                 <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: colors.backgroundDefault,
-                      color: colors.text,
-                      borderColor: colors.border,
-                    },
-                  ]}
+                  className="h-12 border border-border rounded-lg px-2.5 text-base bg-card text-foreground"
                   placeholder="e.g., 2025-01-15"
                   placeholderTextColor={colors.textSecondary}
                   value={bookingData.date}
@@ -256,19 +237,10 @@ function ResourceDetailScreen() {
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={[Typography.caption, { marginBottom: Spacing.sm, fontWeight: '600' }]}>
-                  Preferred Time *
-                </Text>
+              <View className="mb-3">
+                <Text className="text-sm font-semibold mb-2">Preferred Time *</Text>
                 <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: colors.backgroundDefault,
-                      color: colors.text,
-                      borderColor: colors.border,
-                    },
-                  ]}
+                  className="h-12 border border-border rounded-lg px-2.5 text-base bg-card text-foreground"
                   placeholder="e.g., 09:00 AM"
                   placeholderTextColor={colors.textSecondary}
                   value={bookingData.time}
@@ -276,19 +248,10 @@ function ResourceDetailScreen() {
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={[Typography.caption, { marginBottom: Spacing.sm, fontWeight: '600' }]}>
-                  Duration (Optional)
-                </Text>
+              <View className="mb-3">
+                <Text className="text-sm font-semibold mb-2">Duration (Optional)</Text>
                 <TextInput
-                  style={[
-                    styles.input,
-                    {
-                      backgroundColor: colors.backgroundDefault,
-                      color: colors.text,
-                      borderColor: colors.border,
-                    },
-                  ]}
+                  className="h-12 border border-border rounded-lg px-2.5 text-base bg-card text-foreground"
                   placeholder="e.g., 2 hours"
                   placeholderTextColor={colors.textSecondary}
                   value={bookingData.duration}
@@ -296,19 +259,10 @@ function ResourceDetailScreen() {
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={[Typography.caption, { marginBottom: Spacing.sm, fontWeight: '600' }]}>
-                  Purpose *
-                </Text>
+              <View className="mb-3">
+                <Text className="text-sm font-semibold mb-2">Purpose *</Text>
                 <TextInput
-                  style={[
-                    styles.textArea,
-                    {
-                      backgroundColor: colors.backgroundDefault,
-                      color: colors.text,
-                      borderColor: colors.border,
-                    },
-                  ]}
+                  className="min-h-[100px] border border-border rounded-lg px-2.5 py-2.5 text-base bg-card text-foreground"
                   placeholder="Describe the purpose of your request..."
                   placeholderTextColor={colors.textSecondary}
                   multiline
@@ -318,19 +272,10 @@ function ResourceDetailScreen() {
                 />
               </View>
 
-              <View style={styles.formGroup}>
-                <Text style={[Typography.caption, { marginBottom: Spacing.sm, fontWeight: '600' }]}>
-                  Additional Notes (Optional)
-                </Text>
+              <View className="mb-3">
+                <Text className="text-sm font-semibold mb-2">Additional Notes (Optional)</Text>
                 <TextInput
-                  style={[
-                    styles.textArea,
-                    {
-                      backgroundColor: colors.backgroundDefault,
-                      color: colors.text,
-                      borderColor: colors.border,
-                    },
-                  ]}
+                  className="min-h-[100px] border border-border rounded-lg px-2.5 py-2.5 text-base bg-card text-foreground"
                   placeholder="Any additional information..."
                   placeholderTextColor={colors.textSecondary}
                   multiline
@@ -341,18 +286,12 @@ function ResourceDetailScreen() {
               </View>
 
               <Pressable
-                style={({ pressed }) => [
-                  styles.submitButton,
-                  {
-                    backgroundColor: colors.accent,
-                    opacity: isSubmitting || pressed ? 0.7 : 1,
-                  },
-                ]}
+                className="flex-row justify-center items-center h-[52px] rounded-lg mt-2.5 mb-3 bg-accent active:opacity-70 disabled:opacity-70"
                 onPress={handleSubmitBooking}
                 disabled={isSubmitting}
               >
                 <Feather name="send" size={20} color={colors.buttonText} />
-                <Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
+                <Text className="text-base font-semibold text-primary-foreground ml-2.5">
                   {isSubmitting ? 'Submitting...' : 'Submit Request'}
                 </Text>
               </Pressable>
@@ -363,114 +302,6 @@ function ResourceDetailScreen() {
     </ScreenScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  headerCard: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.card,
-    marginBottom: Spacing.lg,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    marginBottom: Spacing.md,
-  },
-  statusBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.button,
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  categoryBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.button,
-  },
-  card: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.card,
-    marginBottom: Spacing.lg,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  specItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.md,
-  },
-  requestButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.button,
-    marginBottom: Spacing.xl,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'flex-end',
-  },
-  modalContainer: {
-    borderTopLeftRadius: BorderRadius.card,
-    borderTopRightRadius: BorderRadius.card,
-    maxHeight: '90%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-  },
-  closeButton: {
-    padding: Spacing.xs,
-  },
-  modalContent: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.lg,
-    paddingBottom: Spacing.xl,
-  },
-  formGroup: {
-    marginBottom: Spacing.lg,
-  },
-  input: {
-    height: Spacing.inputHeight,
-    borderWidth: 1,
-    borderRadius: BorderRadius.button,
-    paddingHorizontal: Spacing.md,
-    fontSize: 16,
-  },
-  textArea: {
-    minHeight: 100,
-    borderWidth: 1,
-    borderRadius: BorderRadius.button,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.md,
-    fontSize: 16,
-    textAlignVertical: 'top',
-  },
-  submitButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.button,
-    marginTop: Spacing.md,
-    marginBottom: Spacing.lg,
-  },
-});
 
 export default withAuthGuard(ResourceDetailScreen);
 

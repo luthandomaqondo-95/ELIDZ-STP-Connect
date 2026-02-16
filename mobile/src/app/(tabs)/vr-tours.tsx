@@ -91,8 +91,8 @@ export default function VRToursScreen() {
 			return { uri: facility.image_url };
 		}
 		if (facility.image_url) {
-			const localImage = facilitiesService.getImageUrl(facility.image_url, facility.id);
-			if (localImage) return localImage;
+			const cardImage = facilitiesService.getFacilityCardImage(facility.image_url);
+			if (cardImage) return cardImage;
 		}
 		return require('../../../assets/images/connect-solve.png');
 	};

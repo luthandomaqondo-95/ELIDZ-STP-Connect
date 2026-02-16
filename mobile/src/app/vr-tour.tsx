@@ -100,9 +100,12 @@ export default function VRTourScreen() {
 	const scenesById = useMemo(() => {
 		if (!facilityWithTour) return {};
 		return facilityWithTour.scenes.reduce<Record<string, any>>((acc, scene: VRScene) => {
-			const image = scene.image_url?.startsWith('http')
+			let image = scene.image_url?.startsWith('http')
 				? scene.image_url
 				: facilitiesService.getImageUrl(scene.image_url, facilityWithTour.id);
+			if (image == null || image === '') {
+				image = facilitiesService.getImageUrl('renewableenergy.jpeg', 'renewable-energy');
+			}
 			acc[scene.id] = {
 				id: scene.id,
 				title: scene.title,

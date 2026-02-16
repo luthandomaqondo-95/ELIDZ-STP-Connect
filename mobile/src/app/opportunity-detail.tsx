@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Pressable, Linking, ActivityIndicator } from 'react-native';
+import { View, Pressable, Linking, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '../components/ScreenScrollView';
 import { useTheme } from '../hooks/useTheme';
-import { Spacing, BorderRadius, Typography, Shadow } from '../constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { supabase } from '@/lib/supabase';
@@ -73,7 +72,7 @@ function OpportunityDetailScreen() {
 
   if (loading) {
      return (
-       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+       <View className="flex-1 justify-center items-center">
          <ActivityIndicator size="large" color={colors.primary} />
        </View>
      );
@@ -82,23 +81,14 @@ function OpportunityDetailScreen() {
   if (!opportunity) {
     return (
       <ScreenScrollView>
-        <Text style={[Typography.h3, { textAlign: 'center', marginTop: Spacing.xl }]}>
+        <Text className="text-lg font-bold text-center mt-5">
           Opportunity not found
         </Text>
         <Pressable
-          style={({ pressed }) => [
-            {
-              marginTop: Spacing.lg,
-              padding: Spacing.lg,
-              borderRadius: BorderRadius.button,
-              backgroundColor: colors.primary,
-              opacity: pressed ? 0.7 : 1,
-              alignItems: 'center',
-            },
-          ]}
+          className="mt-3 p-3 rounded-lg bg-primary active:opacity-70 items-center"
           onPress={() => router.back()}
         >
-          <Text style={[Typography.body, { color: colors.buttonText, fontWeight: '600' }]}>
+          <Text className="text-base font-semibold text-primary-foreground">
             Go Back
           </Text>
         </Pressable>
@@ -190,56 +180,56 @@ function OpportunityDetailScreen() {
 
   return (
     <ScreenScrollView>
-      <View style={[styles.headerCard, { backgroundColor: typeColors[opportunity.type] || colors.primary }]}>
-        <View style={[styles.typeBadge, { backgroundColor: colors.buttonText }]}>
+      <View className="p-5 rounded-xl mb-3" style={{ backgroundColor: typeColors[opportunity.type] || colors.primary }}>
+        <View className="flex-row items-center self-start px-2.5 py-2 rounded-lg bg-primary-foreground">
           <Feather name={getTypeIcon(opportunity.type) as any} size={16} color={typeColors[opportunity.type] || colors.primary} />
-          <Text style={[Typography.caption, { color: typeColors[opportunity.type] || colors.primary, marginLeft: Spacing.xs }]}>
+          <Text className="text-sm ml-1" style={{ color: typeColors[opportunity.type] || colors.primary }}>
             {opportunity.type}
           </Text>
         </View>
-        <Text style={[Typography.h2, { color: colors.buttonText, marginTop: Spacing.lg }]}>
+        <Text className="text-xl font-bold text-primary-foreground mt-3">
           {opportunity.title}
         </Text>
-        <Text style={[Typography.body, { color: colors.buttonText, opacity: 0.9, marginTop: Spacing.sm }]}>
+        <Text className="text-base text-primary-foreground/90 mt-2">
           {opportunity.org}
         </Text>
       </View>
 
-      <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
+      <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
         {opportunity.reference && (
-          <View style={styles.infoRow}>
+          <View className="flex-row items-center">
             <Feather name="hash" size={18} color={colors.textSecondary} />
-            <Text style={[Typography.caption, { color: colors.textSecondary, marginLeft: Spacing.md }]}>
+            <Text className="text-sm text-muted-foreground ml-2.5">
               Reference: {opportunity.reference}
             </Text>
           </View>
         )}
-        <View style={[styles.infoRow, { marginTop: opportunity.reference ? Spacing.md : 0 }]}>
+        <View className={`flex-row items-center ${opportunity.reference ? 'mt-2.5' : ''}`}>
           <Feather name="calendar" size={18} color={colors.textSecondary} />
-          <Text style={[Typography.caption, { color: colors.textSecondary, marginLeft: Spacing.md }]}>
+          <Text className="text-sm text-muted-foreground ml-2.5">
             Deadline: {opportunity.deadline}
           </Text>
         </View>
         {opportunity.postedDate && (
-          <View style={[styles.infoRow, { marginTop: Spacing.md }]}>
+          <View className="flex-row items-center mt-2.5">
             <Feather name="clock" size={18} color={colors.textSecondary} />
-            <Text style={[Typography.caption, { color: colors.textSecondary, marginLeft: Spacing.md }]}>
+            <Text className="text-sm text-muted-foreground ml-2.5">
               Posted: {opportunity.postedDate}
             </Text>
           </View>
         )}
         {opportunity.duration && (
-          <View style={[styles.infoRow, { marginTop: Spacing.md }]}>
+          <View className="flex-row items-center mt-2.5">
             <Feather name="clock" size={18} color={colors.textSecondary} />
-            <Text style={[Typography.caption, { color: colors.textSecondary, marginLeft: Spacing.md }]}>
+            <Text className="text-sm text-muted-foreground ml-2.5">
               Duration: {opportunity.duration}
             </Text>
           </View>
         )}
         {opportunity.prizeAmount && (
-          <View style={[styles.infoRow, { marginTop: Spacing.md }]}>
+          <View className="flex-row items-center mt-2.5">
             <Feather name="award" size={18} color={colors.textSecondary} />
-            <Text style={[Typography.caption, { color: colors.textSecondary, marginLeft: Spacing.md }]}>
+            <Text className="text-sm text-muted-foreground ml-2.5">
               Prize: {opportunity.prizeAmount}
             </Text>
           </View>
@@ -247,26 +237,26 @@ function OpportunityDetailScreen() {
       </View>
 
       {opportunity.briefingDate && (
-        <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Briefing Information</Text>
-          <View style={styles.infoRow}>
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-lg font-bold mb-2.5">Briefing Information</Text>
+          <View className="flex-row items-center">
             <Feather name="calendar" size={18} color={colors.textSecondary} />
-            <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md, flex: 1 }]}>
+            <Text className="text-base text-foreground ml-2.5 flex-1">
               {opportunity.briefingDate}
             </Text>
           </View>
           {opportunity.briefingLocation && (
-            <View style={[styles.infoRow, { marginTop: Spacing.md }]}>
+            <View className="flex-row items-center mt-2.5">
               <Feather name="map-pin" size={18} color={colors.textSecondary} />
-              <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md, flex: 1 }]}>
+              <Text className="text-base text-foreground ml-2.5 flex-1">
                 {opportunity.briefingLocation}
               </Text>
             </View>
           )}
           {opportunity.briefingType && (
-            <View style={[styles.infoRow, { marginTop: Spacing.md }]}>
+            <View className="flex-row items-center mt-2.5">
               <Feather name={opportunity.briefingType === 'Compulsory' ? 'alert-circle' : 'info'} size={18} color={colors.textSecondary} />
-              <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md, flex: 1 }]}>
+              <Text className="text-base text-foreground ml-2.5 flex-1">
                 {opportunity.briefingType} Briefing
               </Text>
             </View>
@@ -276,36 +266,36 @@ function OpportunityDetailScreen() {
 
 
       {opportunity.sectors && opportunity.sectors.length > 0 && (
-        <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Sectors / Themes</Text>
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-lg font-bold mb-2.5">Sectors / Themes</Text>
           {opportunity.sectors.map((sector: string, index: number) => (
-            <View key={`sector-${index}`} style={styles.listItem}>
+            <View key={`sector-${index}`} className="flex-row items-start mb-2.5">
               <Feather name="target" size={18} color={colors.secondary} />
-              <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{sector}</Text>
+              <Text className="text-base ml-2.5 flex-1">{sector}</Text>
             </View>
           ))}
         </View>
       )}
 
       {opportunity.eligibility && opportunity.eligibility.length > 0 && (
-        <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Eligibility Requirements</Text>
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-lg font-bold mb-2.5">Eligibility Requirements</Text>
           {opportunity.eligibility.map((req: string, index: number) => (
-            <View key={`eligibility-${index}`} style={styles.listItem}>
+            <View key={`eligibility-${index}`} className="flex-row items-start mb-2.5">
               <Feather name="check-circle" size={18} color={colors.secondary} />
-              <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{req}</Text>
+              <Text className="text-base ml-2.5 flex-1">{req}</Text>
             </View>
           ))}
         </View>
       )}
 
       {opportunity.benefits && opportunity.benefits.length > 0 && (
-        <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Benefits</Text>
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-lg font-bold mb-2.5">Benefits</Text>
           {opportunity.benefits.map((benefit: string, index: number) => (
-            <View key={`benefit-${index}`} style={styles.listItem}>
+            <View key={`benefit-${index}`} className="flex-row items-start mb-2.5">
               <Feather name="star" size={18} color={colors.accent} />
-              <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>{benefit}</Text>
+              <Text className="text-base ml-2.5 flex-1">{benefit}</Text>
             </View>
           ))}
         </View>
@@ -313,96 +303,96 @@ function OpportunityDetailScreen() {
 
       {opportunity.type === 'Tenders' && (
         <>
-          <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-            <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Tender Documents</Text>
+          <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+            <Text className="text-lg font-bold mb-2.5">Tender Documents</Text>
             {opportunity.tenderAdvertUrl && (
-              <Pressable onPress={handleDownloadTenderAdvert} style={({ pressed }) => [styles.downloadButton, { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1, marginBottom: Spacing.md }]}>
+              <Pressable onPress={handleDownloadTenderAdvert} className="flex-row items-center p-2.5 rounded-lg bg-muted active:opacity-70 mb-2.5">
                 <Feather name="download" size={18} color={colors.primary} />
-                <Text style={[Typography.body, { color: colors.primary, marginLeft: Spacing.md, flex: 1, fontWeight: '600' }]}>
+                <Text className="text-base text-primary ml-2.5 flex-1 font-semibold">
                   Download Full Detailed Advert (PDF)
                 </Text>
               </Pressable>
             )}
             {opportunity.tenderDocumentsUrl && (
-              <Pressable onPress={handleDownloadTenderDocuments} style={({ pressed }) => [styles.downloadButton, { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 }]}>
+              <Pressable onPress={handleDownloadTenderDocuments} className="flex-row items-center p-2.5 rounded-lg bg-muted active:opacity-70">
                 <Feather name="download" size={18} color={colors.primary} />
-                <Text style={[Typography.body, { color: colors.primary, marginLeft: Spacing.md, flex: 1, fontWeight: '600' }]}>
+                <Text className="text-base text-primary ml-2.5 flex-1 font-semibold">
                   Download Tender Documents (ZIP)
                 </Text>
               </Pressable>
             )}
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-            <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>How to Apply for This Tender</Text>
-            <Text style={[Typography.body, { color: colors.text, marginBottom: Spacing.md }]}>
+          <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+            <Text className="text-lg font-bold mb-2.5">How to Apply for This Tender</Text>
+            <Text className="text-base text-foreground mb-2.5">
               All tender submissions must be done through the ELIDZ Online Tender Portal. Follow these steps:
             </Text>
-            <View style={styles.stepItem}>
-              <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                <Text style={[Typography.caption, { color: colors.buttonText, fontWeight: '600' }]}>1</Text>
+            <View className="flex-row items-start">
+              <View className="w-7 h-7 rounded-full justify-center items-center bg-primary">
+                <Text className="text-sm font-semibold text-primary-foreground">1</Text>
               </View>
-              <View style={{ flex: 1, marginLeft: Spacing.md }}>
-                <Text style={[Typography.body, { color: colors.text, fontWeight: '600' }]}>Register on Tender Portal</Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: Spacing.xs }]}>
+              <View className="flex-1 ml-2.5">
+                <Text className="text-base font-semibold text-foreground">Register on Tender Portal</Text>
+                <Text className="text-sm text-muted-foreground mt-1">
                   Create an account with your email, company name, and contact details
                 </Text>
-                <Pressable onPress={handleTenderPortalRegister} style={{ marginTop: Spacing.xs }}>
-                  <Text style={[Typography.body, { color: colors.primary, textDecorationLine: 'underline' }]}>
+                <Pressable onPress={handleTenderPortalRegister} className="mt-1">
+                  <Text className="text-base text-primary underline">
                     Go to Registration Page →
                   </Text>
                 </Pressable>
               </View>
             </View>
-            <View style={[styles.stepItem, { marginTop: Spacing.md }]}>
-              <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                <Text style={[Typography.caption, { color: colors.buttonText, fontWeight: '600' }]}>2</Text>
+            <View className="flex-row items-start mt-2.5">
+              <View className="w-7 h-7 rounded-full justify-center items-center bg-primary">
+                <Text className="text-sm font-semibold text-primary-foreground">2</Text>
               </View>
-              <View style={{ flex: 1, marginLeft: Spacing.md }}>
-                <Text style={[Typography.body, { color: colors.text, fontWeight: '600' }]}>Login to Portal</Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: Spacing.xs }]}>
+              <View className="flex-1 ml-2.5">
+                <Text className="text-base font-semibold text-foreground">Login to Portal</Text>
+                <Text className="text-sm text-muted-foreground mt-1">
                   Use your registered email and password to access the portal
                 </Text>
-                <Pressable onPress={handleTenderPortalLogin} style={{ marginTop: Spacing.xs }}>
-                  <Text style={[Typography.body, { color: colors.primary, textDecorationLine: 'underline' }]}>
+                <Pressable onPress={handleTenderPortalLogin} className="mt-1">
+                  <Text className="text-base text-primary underline">
                     Go to Login Page →
                   </Text>
                 </Pressable>
               </View>
             </View>
-            <View style={[styles.stepItem, { marginTop: Spacing.md }]}>
-              <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                <Text style={[Typography.caption, { color: colors.buttonText, fontWeight: '600' }]}>3</Text>
+            <View className="flex-row items-start mt-2.5">
+              <View className="w-7 h-7 rounded-full justify-center items-center bg-primary">
+                <Text className="text-sm font-semibold text-primary-foreground">3</Text>
               </View>
-              <View style={{ flex: 1, marginLeft: Spacing.md }}>
-                <Text style={[Typography.body, { color: colors.text, fontWeight: '600' }]}>Download Tender Documents</Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: Spacing.xs }]}>
+              <View className="flex-1 ml-2.5">
+                <Text className="text-base font-semibold text-foreground">Download Tender Documents</Text>
+                <Text className="text-sm text-muted-foreground mt-1">
                   Download the full detailed advert and tender documents using the links above
                 </Text>
               </View>
             </View>
-            <View style={[styles.stepItem, { marginTop: Spacing.md }]}>
-              <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                <Text style={[Typography.caption, { color: colors.buttonText, fontWeight: '600' }]}>4</Text>
+            <View className="flex-row items-start mt-2.5">
+              <View className="w-7 h-7 rounded-full justify-center items-center bg-primary">
+                <Text className="text-sm font-semibold text-primary-foreground">4</Text>
               </View>
-              <View style={{ flex: 1, marginLeft: Spacing.md }}>
-                <Text style={[Typography.body, { color: colors.text, fontWeight: '600' }]}>Complete Required Documents</Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: Spacing.xs }]}>
+              <View className="flex-1 ml-2.5">
+                <Text className="text-base font-semibold text-foreground">Complete Required Documents</Text>
+                <Text className="text-sm text-muted-foreground mt-1">
                   Fill in all required forms and prepare your tender submission
-                  </Text>
+                </Text>
               </View>
             </View>
-            <View style={[styles.stepItem, { marginTop: Spacing.md }]}>
-              <View style={[styles.stepNumber, { backgroundColor: colors.primary }]}>
-                <Text style={[Typography.caption, { color: colors.buttonText, fontWeight: '600' }]}>5</Text>
+            <View className="flex-row items-start mt-2.5">
+              <View className="w-7 h-7 rounded-full justify-center items-center bg-primary">
+                <Text className="text-sm font-semibold text-primary-foreground">5</Text>
               </View>
-              <View style={{ flex: 1, marginLeft: Spacing.md }}>
-                <Text style={[Typography.body, { color: colors.text, fontWeight: '600' }]}>Submit Tender Online</Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: Spacing.xs }]}>
+              <View className="flex-1 ml-2.5">
+                <Text className="text-base font-semibold text-foreground">Submit Tender Online</Text>
+                <Text className="text-sm text-muted-foreground mt-1">
                   Upload and submit your completed tender documents through the portal before the closing date
                 </Text>
-                <Pressable onPress={handleTenderPortalSubmit} style={{ marginTop: Spacing.xs }}>
-                  <Text style={[Typography.body, { color: colors.primary, textDecorationLine: 'underline' }]}>
+                <Pressable onPress={handleTenderPortalSubmit} className="mt-1">
+                  <Text className="text-base text-primary underline">
                     Go to Submit Tender Page →
                   </Text>
                 </Pressable>
@@ -410,27 +400,27 @@ function OpportunityDetailScreen() {
             </View>
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-            <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Important Resources</Text>
-            <Pressable onPress={handleDownloadUserGuide} style={({ pressed }) => [styles.resourceButton, { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1, marginBottom: Spacing.md }]}>
+          <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+            <Text className="text-lg font-bold mb-2.5">Important Resources</Text>
+            <Pressable onPress={handleDownloadUserGuide} className="flex-row items-center p-2.5 rounded-lg bg-muted active:opacity-70 mb-2.5">
               <Feather name="book" size={18} color={colors.primary} />
-              <View style={{ flex: 1, marginLeft: Spacing.md }}>
-                <Text style={[Typography.body, { color: colors.primary, fontWeight: '600' }]}>
+              <View className="flex-1 ml-2.5">
+                <Text className="text-base font-semibold text-primary">
                   Online Tender Portal User Guide
                 </Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: Spacing.xs }]}>
+                <Text className="text-sm text-muted-foreground mt-1">
                   Step-by-step guide for registration and submission process
                 </Text>
               </View>
               <Feather name="external-link" size={18} color={colors.primary} />
             </Pressable>
-            <Pressable onPress={handleDownloadProcurementHandbook} style={({ pressed }) => [styles.resourceButton, { backgroundColor: colors.backgroundSecondary, opacity: pressed ? 0.7 : 1 }]}>
+            <Pressable onPress={handleDownloadProcurementHandbook} className="flex-row items-center p-2.5 rounded-lg bg-muted active:opacity-70">
               <Feather name="file-text" size={18} color={colors.primary} />
-              <View style={{ flex: 1, marginLeft: Spacing.md }}>
-                <Text style={[Typography.body, { color: colors.primary, fontWeight: '600' }]}>
+              <View className="flex-1 ml-2.5">
+                <Text className="text-base font-semibold text-primary">
                   ELIDZ Procurement Handbook
                 </Text>
-                <Text style={[Typography.caption, { color: colors.textSecondary, marginTop: Spacing.xs }]}>
+                <Text className="text-sm text-muted-foreground mt-1">
                   Complete procurement procedures and requirements
                 </Text>
               </View>
@@ -438,9 +428,9 @@ function OpportunityDetailScreen() {
             </Pressable>
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-            <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Description</Text>
-            <Text style={[Typography.body, { color: colors.text }]}>
+          <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+            <Text className="text-lg font-bold mb-2.5">Description</Text>
+            <Text className="text-base text-foreground">
               {opportunity.fullDescription || opportunity.description}
             </Text>
           </View>
@@ -449,15 +439,15 @@ function OpportunityDetailScreen() {
 
       {opportunity.type !== 'Tenders' && (
         <>
-          <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-            <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Description</Text>
-            <Text style={[Typography.body, { color: colors.text }]}>
+          <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+            <Text className="text-lg font-bold mb-2.5">Description</Text>
+            <Text className="text-base text-foreground">
               {opportunity.fullDescription || opportunity.description}
             </Text>
           </View>
-          <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-            <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>How to Apply</Text>
-            <Text style={[Typography.body, { color: colors.text }]}>
+          <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+            <Text className="text-lg font-bold mb-2.5">How to Apply</Text>
+            <Text className="text-base text-foreground">
               {opportunity.howToApply || 'Please contact the organization for application details.'}
             </Text>
           </View>
@@ -465,20 +455,20 @@ function OpportunityDetailScreen() {
       )}
 
       {(opportunity.contactEmail || opportunity.contactPhone) && (
-        <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-          <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Contact Information</Text>
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-lg font-bold mb-2.5">Contact Information</Text>
           {opportunity.contactEmail && (
-            <Pressable onPress={handleContactEmail} style={styles.infoRow}>
+            <Pressable onPress={handleContactEmail} className="flex-row items-center">
               <Feather name="mail" size={18} color={colors.primary} />
-              <Text style={[Typography.body, { color: colors.primary, marginLeft: Spacing.md, flex: 1, textDecorationLine: 'underline' }]}>
+              <Text className="text-base text-primary ml-2.5 flex-1 underline">
                 {opportunity.contactEmail}
               </Text>
             </Pressable>
           )}
           {opportunity.contactPhone && (
-            <Pressable onPress={handleContactPhone} style={[styles.infoRow, { marginTop: opportunity.contactEmail ? Spacing.md : 0 }]}>
+            <Pressable onPress={handleContactPhone} className={`flex-row items-center ${opportunity.contactEmail ? 'mt-2.5' : ''}`}>
               <Feather name="phone" size={18} color={colors.primary} />
-              <Text style={[Typography.body, { color: colors.primary, marginLeft: Spacing.md, flex: 1, textDecorationLine: 'underline' }]}>
+              <Text className="text-base text-primary ml-2.5 flex-1 underline">
                 {opportunity.contactPhone}
               </Text>
             </Pressable>
@@ -487,13 +477,10 @@ function OpportunityDetailScreen() {
       )}
 
       <Pressable
-        style={({ pressed }) => [
-          styles.applyButton,
-          { backgroundColor: colors.accent, opacity: pressed ? 0.7 : 1 },
-        ]}
+        className="h-[52px] rounded-lg justify-center items-center mb-5 bg-accent active:opacity-70"
         onPress={handleApplyNow}
       >
-        <Text style={[Typography.body, { color: colors.buttonText, fontWeight: '600' }]}>
+        <Text className="text-base font-semibold text-primary-foreground">
           {opportunity.type === 'Tenders'
             ? 'Go to Tender Portal'
             : opportunity.applicationUrl
@@ -506,63 +493,3 @@ function OpportunityDetailScreen() {
 }
 
 export default withAuthGuard(OpportunityDetailScreen);
-
-const styles = StyleSheet.create({
-  headerCard: {
-    padding: Spacing.xl,
-    borderRadius: BorderRadius.card,
-    marginBottom: Spacing.lg,
-  },
-  typeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.button,
-  },
-  card: {
-    padding: Spacing.lg,
-    borderRadius: BorderRadius.card,
-    marginBottom: Spacing.lg,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginBottom: Spacing.md,
-  },
-  applyButton: {
-    height: Spacing.buttonHeight,
-    borderRadius: BorderRadius.button,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.xl,
-  },
-  downloadButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.button,
-  },
-  resourceButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: Spacing.md,
-    borderRadius: BorderRadius.button,
-  },
-  stepItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  stepNumber: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});

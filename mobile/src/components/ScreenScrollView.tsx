@@ -1,8 +1,6 @@
 import { ScrollView, ScrollViewProps } from "react-native";
 
-import { useTheme } from "../hooks/useTheme";
 import { useScreenInsets } from "../hooks/useScreenInsets";
-import { Spacing } from "@/constants/theme";
 
 export function ScreenScrollView({
 	children,
@@ -10,22 +8,13 @@ export function ScreenScrollView({
 	style,
 	...scrollViewProps
 }: ScrollViewProps) {
-	const { colors } = useTheme();
 	const { paddingTop, paddingBottom, scrollInsetTop, scrollInsetBottom } = useScreenInsets();
 
 	return (
 		<ScrollView
-			style={[
-				{ flex: 1, backgroundColor: colors.backgroundRoot },
-				style,
-			]}
-			contentContainerStyle={[
-				{
-					// paddingHorizontal: Spacing.sm, 
-					paddingTop, paddingBottom
-				},
-				contentContainerStyle,
-			]}
+			className="flex-1 bg-background"
+			style={style}
+			contentContainerStyle={[{ paddingTop, paddingBottom }, contentContainerStyle]}
 			scrollIndicatorInsets={{ top: scrollInsetTop, bottom: scrollInsetBottom }}
 			{...scrollViewProps}
 		>

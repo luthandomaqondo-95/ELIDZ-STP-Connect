@@ -5,59 +5,10 @@ import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { analyticsService } from '@/services/analytics.service';
+import { getCenters } from '@/services/center.service';
 
 export default function ProductLinesScreen() {
-  const productLines = [
-    {
-      id: '1',
-      name: 'Analytical Laboratory',
-      icon: 'droplet' as const,
-      description: 'SANAS accredited CAS Laboratory for water, food, and soil analysis',
-      colorClass: 'bg-primary',
-    },
-    {
-      id: '2',
-      name: 'Design Centre',
-      icon: 'pen-tool' as const,
-      description: 'Rapid prototyping services: 3D printing, laser cutting, CNC machining, and training',
-      colorClass: 'bg-secondary',
-    },
-    {
-      id: '5',
-      name: 'Renewable Energy Centre of Excellence',
-      icon: 'zap' as const,
-      description: 'Training facility for skills development in the Green Economy sector',
-      colorClass: 'bg-primary',
-    },
-    {
-      id: '6',
-      name: 'Connect + Solve',
-      icon: 'globe' as const,
-      description: 'Open innovation platform connecting solution seekers with innovative providers',
-      colorClass: 'bg-secondary',
-    },
-    {
-      id: '7',
-      name: 'Innospace',
-      icon: 'home' as const,
-      description: 'Collaborative workspace with hot desks, meeting rooms, and modern facilities',
-      colorClass: 'bg-accent',
-    },
-    {
-      id: '8',
-      name: 'Incubators',
-      icon: 'trending-up' as const,
-      description: 'Startup incubation support: Chemin, ECITI, Cortex Hub, and ECNGOC',
-      colorClass: 'bg-primary',
-    },
-    {
-      id: '9',
-      name: 'Regional Innovation Networking Platform (RINP)',
-      icon: 'users' as const,
-      description: 'DSI initiative coordinating innovation community networking and collaboration',
-      colorClass: 'bg-secondary',
-    },
-  ];
+  const productLines = getCenters();
 
   return (
     <View className="flex-1 bg-gray-50">

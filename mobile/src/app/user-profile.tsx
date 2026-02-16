@@ -1,11 +1,10 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { View, StyleSheet, Pressable, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Pressable, Alert } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '../components/ScreenScrollView';
 import { useTheme } from '../hooks/useTheme';
 import { useAuthContext } from '../hooks/use-auth-context';
-import { Spacing, BorderRadius, Typography, Shadow } from '../constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { withAuthGuard } from '@/components/withAuthGuard';
@@ -19,7 +18,6 @@ import { Profile } from '@/types';
 
 function UserProfileScreen() {
 	const { colors } = useTheme();
-	const styles = useMemo(() => createStyles(colors), [colors]);
 	const { profile: currentUser } = useAuthContext();
 	const params = useLocalSearchParams<{ id?: string; userId?: string; name?: string }>();
 
@@ -229,11 +227,11 @@ function UserProfileScreen() {
 	if (loading) {
 		return (
 			<ScreenScrollView>
-				<View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
-					<View style={[styles.avatar, { backgroundColor: colors.whiteOpacity20 }]} />
-					<View style={{ width: 200, height: 24, backgroundColor: colors.whiteOpacity20, borderRadius: 4, marginTop: Spacing.lg }} />
-					<View style={{ width: 150, height: 16, backgroundColor: colors.whiteOpacity15, borderRadius: 4, marginTop: Spacing.xs }} />
-					<View style={{ width: 120, height: 14, backgroundColor: colors.whiteOpacity10, borderRadius: 4, marginTop: Spacing.xs }} />
+				<View className="p-5 rounded-xl mb-3 items-center bg-primary">
+					<View className="w-[100px] h-[100px] rounded-full border-4 border-primary-foreground bg-white/20" />
+					<View className="w-[200px] h-6 bg-white/20 rounded mt-3" />
+					<View className="w-[150px] h-4 bg-white/15 rounded mt-1" />
+					<View className="w-[120px] h-3.5 bg-white/10 rounded mt-1" />
 				</View>
 			</ScreenScrollView>
 		);
@@ -242,12 +240,12 @@ function UserProfileScreen() {
 	if (!profileUser) {
 		return (
 			<ScreenScrollView>
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: Spacing.xl }}>
+				<View className="flex-1 justify-center items-center p-5">
 					<Feather name="user-x" size={48} color={colors.textSecondary} />
-					<Text style={[Typography.h3, { color: colors.text, marginTop: Spacing.lg, marginBottom: Spacing.md }]}>
+					<Text className="text-lg font-bold text-foreground mt-3 mb-2.5">
 						User Not Found
 					</Text>
-					<Text style={[Typography.body, { color: colors.textSecondary, textAlign: 'center' }]}>
+					<Text className="text-base text-muted-foreground text-center">
 						The user you&apos;re looking for doesn&apos;t exist or has been removed.
 					</Text>
 				</View>
@@ -257,57 +255,48 @@ function UserProfileScreen() {
 
 	return (
 		<ScreenScrollView>
-			<View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
-				<Image source={getAvatarSource(profileUser.avatar)} style={styles.avatar} contentFit="cover" />
-				<Text style={[Typography.h2, { color: '#FFFFFF', marginTop: Spacing.lg }]}>
+			<View className="p-5 rounded-xl mb-3 items-center bg-primary">
+				<Image source={getAvatarSource(profileUser.avatar)} className="w-[100px] h-[100px] rounded-full border-4 border-primary-foreground" contentFit="cover" />
+				<Text className="text-xl font-bold text-white mt-3">
 					{profileUser.name}
 				</Text>
-				<Text style={[Typography.body, { color: '#FFFFFF', opacity: 0.9, marginTop: Spacing.xs }]}>
+				<Text className="text-base text-white/90 mt-1">
 					{profileUser.role}
 				</Text>
-				<Text style={[Typography.caption, { color: colors.buttonText, opacity: 0.8, marginTop: Spacing.xs }]}>
+				<Text className="text-sm text-primary-foreground/80 mt-1">
 					{profileUser.organization || 'No organization'}
 				</Text>
 			</View>
 
 			{!isOwnProfile && currentUser && (
-				<View style={styles.actionButtons}>
+				<View className="mb-3">
 					{connectionStatus === 'connected' ? (
 						<Pressable
-							style={({ pressed }) => [
-								styles.actionButton,
-								{ backgroundColor: colors.primary, opacity: pressed ? 0.7 : 1 },
-							]}
+							className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-primary active:opacity-70"
 							onPress={handleMessage}
 						>
 							<Feather name="message-circle" size={20} color={colors.buttonText} />
-							<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
+							<Text className="text-base font-semibold text-primary-foreground ml-2.5">
 								Message
 							</Text>
 						</Pressable>
 					) : connectionStatus === 'pending_received' ? (
 						<>
 							<Pressable
-								style={({ pressed }) => [
-									styles.actionButton,
-									{ backgroundColor: colors.success, opacity: pressed ? 0.7 : 1 },
-								]}
+								className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-green-600 active:opacity-70"
 								onPress={handleAcceptConnection}
 							>
 								<Feather name="check" size={20} color={colors.buttonText} />
-								<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
+								<Text className="text-base font-semibold text-primary-foreground ml-2.5">
 									Accept Request
 								</Text>
 							</Pressable>
 							<Pressable
-								style={({ pressed }) => [
-									styles.actionButton,
-									{ backgroundColor: '#dc3545', opacity: pressed ? 0.7 : 1 },
-								]}
+								className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-destructive active:opacity-70"
 								onPress={handleDeclineConnection}
 							>
 								<Feather name="x" size={20} color={colors.buttonText} />
-								<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
+								<Text className="text-base font-semibold text-primary-foreground ml-2.5">
 									Decline Request
 								</Text>
 							</Pressable>
@@ -315,41 +304,31 @@ function UserProfileScreen() {
 					) : connectionStatus === 'pending_sent' ? (
 						<>
 							<Pressable
-								style={({ pressed }) => [
-									styles.actionButton,
-									{ backgroundColor: '#6c757d', opacity: pressed ? 0.7 : 1 },
-								]}
+								className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-muted active:opacity-70"
 								disabled
 							>
 								<Feather name="clock" size={20} color={colors.buttonText} />
-								<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
+								<Text className="text-base font-semibold text-primary-foreground ml-2.5">
 									Request Sent
 								</Text>
 							</Pressable>
 							<Pressable
-								style={({ pressed }) => [
-									styles.actionButton,
-									{ backgroundColor: '#dc3545', opacity: pressed ? 0.7 : 1 },
-								]}
+								className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-destructive active:opacity-70"
 								onPress={handleCancelConnection}
 							>
 								<Feather name="x-circle" size={20} color={colors.buttonText} />
-								<Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
+								<Text className="text-base font-semibold text-primary-foreground ml-2.5">
 									Cancel Request
 								</Text>
 							</Pressable>
 						</>
 					) : (
 						<Pressable
-							style={({ pressed }) => [
-								styles.actionButton,
-								{ backgroundColor: colors.accent, opacity: pressed ? 0.8 : 1 },
-								styles.connectButton,
-							]}
+							className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-accent active:opacity-80 shadow-lg"
 							onPress={handleConnect}
 						>
 							<Feather name="user-plus" size={22} color={colors.buttonText} />
-							<Text style={[Typography.body, { color: '#FFFFFF', marginLeft: Spacing.md, fontWeight: '700', fontSize: 16 }]}>
+							<Text className="text-base font-bold text-white ml-2.5">
 								Connect
 							</Text>
 						</Pressable>
@@ -358,26 +337,26 @@ function UserProfileScreen() {
 			)}
 
 			{profileUser.bio && (
-				<View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-					<Text style={[Typography.h3, { marginBottom: Spacing.md }]}>About</Text>
-					<Text style={[Typography.body, { color: colors.text, lineHeight: 24 }]}>
+				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+					<Text className="text-lg font-bold mb-2.5">About</Text>
+					<Text className="text-base text-foreground leading-6">
 						{profileUser.bio}
 					</Text>
 				</View>
 			)}
 
-			<View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-				<Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Contact Information</Text>
-				<View style={styles.infoRow}>
+			<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+				<Text className="text-lg font-bold mb-2.5">Contact Information</Text>
+				<View className="flex-row items-center">
 					<Feather name="mail" size={18} color={colors.textSecondary} />
-					<Text style={[Typography.body, { color: colors.primary, marginLeft: Spacing.md }]}>
+					<Text className="text-base text-primary ml-2.5">
 						{profileUser.email}
 					</Text>
 				</View>
 				{profileUser.address && (
-					<View style={[styles.infoRow, { marginTop: Spacing.md }]}>
+					<View className="flex-row items-center mt-2.5">
 						<Feather name="map-pin" size={18} color={colors.textSecondary} />
-						<Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md }]}>
+						<Text className="text-base text-foreground ml-2.5">
 							{profileUser.address}
 						</Text>
 					</View>
@@ -385,11 +364,11 @@ function UserProfileScreen() {
 			</View>
 
 			{connectionStatus === 'connected' && (
-				<View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
-					<Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Connection Status</Text>
-					<View style={styles.connectionStatus}>
+				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+					<Text className="text-lg font-bold mb-2.5">Connection Status</Text>
+					<View className="flex-row items-center">
 						<Feather name="check-circle" size={20} color={colors.success} />
-						<Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md }]}>
+						<Text className="text-base text-foreground ml-2.5">
 							Connected
 						</Text>
 					</View>
@@ -398,66 +377,6 @@ function UserProfileScreen() {
 		</ScreenScrollView>
 	);
 }
-
-const createStyles = (colors: ReturnType<typeof useTheme>['colors']) =>
-	StyleSheet.create({
-		headerCard: {
-			padding: Spacing.xl,
-			borderRadius: BorderRadius.card,
-			marginBottom: Spacing.lg,
-			alignItems: 'center',
-		},
-		avatar: {
-			width: 100,
-			height: 100,
-			borderRadius: 50,
-			borderWidth: 4,
-			borderColor: colors.buttonText,
-		},
-		actionButtons: {
-			marginBottom: Spacing.lg,
-		},
-		actionButton: {
-			flexDirection: 'row',
-			justifyContent: 'center',
-			alignItems: 'center',
-			height: Spacing.buttonHeight,
-			borderRadius: BorderRadius.button,
-			marginBottom: Spacing.md,
-		},
-		connectButton: {
-			shadowColor: colors.black,
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.25,
-			shadowRadius: 3.84,
-			elevation: 5,
-		},
-		card: {
-			padding: Spacing.lg,
-			borderRadius: BorderRadius.card,
-			marginBottom: Spacing.lg,
-		},
-		infoRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-		},
-		expertiseContainer: {
-			flexDirection: 'row',
-			flexWrap: 'wrap',
-			marginTop: Spacing.sm,
-		},
-		expertiseTag: {
-			paddingHorizontal: Spacing.md,
-			paddingVertical: Spacing.xs,
-			borderRadius: BorderRadius.button,
-			marginRight: Spacing.sm,
-			marginBottom: Spacing.sm,
-		},
-		connectionStatus: {
-			flexDirection: 'row',
-			alignItems: 'center',
-		},
-	});
 
 export default withAuthGuard(UserProfileScreen);
 

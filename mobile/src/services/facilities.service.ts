@@ -67,6 +67,12 @@ export interface FacilityWithTour extends Facility {
 }
 
 class FacilitiesService {
+    private normalizeAssetKey(assetPath?: string | null): string {
+        if (!assetPath) return '';
+        const withoutQuery = assetPath.split('?')[0];
+        const fileName = withoutQuery.split('/').pop() || withoutQuery;
+        return fileName.trim().toLowerCase();
+    }
     /**
      * Get all facilities
      */
@@ -233,10 +239,11 @@ class FacilitiesService {
      * Static mapping required for React Native bundler
      */
     getImageUrl(imageFileName: string, facilityId: string): any {
+        const key = this.normalizeAssetKey(imageFileName);
         // Static mapping of all 360 images (required by Metro bundler)
         const imageMap: Record<string, any> = {
-            // Analytical Laboratory
-            'analyticlaboratory.jpeg': require('../../assets/videos/360-tours/analytical-laboratory/analyticlaboratory.jpeg'),
+            // Analytical Laboratory - asset may be missing; vr-tour uses fallback URL when null
+            'analyticlaboratory.jpeg': null,
             
             // Design Centre
             'cadand3dprinting.jpeg': require('../../assets/videos/360-tours/design-centre/cadand3dprinting.jpeg'),
@@ -258,14 +265,28 @@ class FacilitiesService {
             'renewableenergy.jpeg': require('../../assets/videos/360-tours/renewable-energy/renewableenergy.jpeg'),
         };
 
-        const image = imageMap[imageFileName];
-        
-        if (!image) {
+        if (!(key in imageMap)) {
             console.error(`Image not found in static map: ${imageFileName}`);
             return null;
         }
+        return imageMap[key];
+    }
 
-        return image;
+    /**
+     * Get local facility thumbnail image used by the VR tours list.
+     */
+    getFacilityCardImage(imageFileName?: string | null): any {
+        const key = this.normalizeAssetKey(imageFileName);
+        if (!key) return null;
+
+        const facilityImageMap: Record<string, any> = {
+            'connect-solve.png': require('../../assets/images/connect-solve.png'),
+            'design-centre.png': require('../../assets/images/design-centre.png'),
+            'innospace.png': require('../../assets/images/innospace.png'),
+            'renewable-energy.png': require('../../assets/images/renewable-energy.png'),
+        };
+
+        return facilityImageMap[key] ?? null;
     }
 }
 

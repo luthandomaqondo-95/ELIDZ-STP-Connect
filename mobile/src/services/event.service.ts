@@ -49,6 +49,20 @@ class EventServiceClass {
     return (data || []) as Event[];
   }
 
+  async getEventById(id: string): Promise<Event | null> {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('EventService.getEventById error:', error);
+      throw error;
+    }
+    return data as Event | null;
+  }
+
   async createEvent(eventData: Partial<Event>): Promise<Event> {
     console.log('EventService.createEvent called');
 

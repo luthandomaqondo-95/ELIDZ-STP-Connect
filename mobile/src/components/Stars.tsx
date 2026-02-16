@@ -1,5 +1,4 @@
-import { View, StyleSheet } from 'react-native';
-
+import { View } from 'react-native';
 
 // Star component for the night sky effect
 export const Stars = () => {
@@ -12,7 +11,7 @@ export const Stars = () => {
     }));
 
     return (
-        <View style={StyleSheet.absoluteFill} pointerEvents="none">
+        <View className="absolute inset-0" pointerEvents="none">
             {stars.map((star) => (
                 <View
                     key={star.id}

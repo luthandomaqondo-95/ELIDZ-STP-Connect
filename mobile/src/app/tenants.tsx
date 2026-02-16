@@ -67,32 +67,24 @@ export default function TenantsScreen() {
     return (
         <View className="flex-1">
             {/* Header */}
-            <View
-                className="pt-12 pb-6"
-                style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-            >
-                <View 
-                    style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                >
+            <View className="pt-12 pb-6 px-6">
+                <View className={`w-full self-center ${isTablet ? 'max-w-[1200px]' : 'max-w-full'}`}>
                     <View className="flex-row items-center justify-end mb-2">
                         <HeaderNotificationIcon />
                         <HeaderAvatar />
                     </View>
                     <View className="items-start mb-2">
-                        <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
+                        <Text className={`text-foreground font-semibold ${isTablet ? 'text-[22px]' : 'text-xl'}`}>
                             Tenants
                         </Text>
-                        <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
+                        <Text className="text-muted-foreground text-sm">
                             Discover our innovative partners and residents.
                         </Text>
                     </View>
                 </View>
 
                 {/* Search Bar */}
-                <View 
-                    className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
-                    style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                >
+                <View className={`flex-row items-center bg-muted/50 border border-border h-12 rounded-xl px-4 mt-6 w-full self-center ${isTablet ? 'max-w-[1200px]' : 'max-w-full'}`}>
                     <Feather name="search" size={20} color="#9CA3AF" />
                     <TextInput
                         className="flex-1 ml-3 text-base text-foreground"
