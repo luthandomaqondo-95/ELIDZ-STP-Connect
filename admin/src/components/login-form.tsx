@@ -37,25 +37,23 @@ export function LoginForm({
 		setIsLoading(true)
 
 		try {
-			/*
-            const { error } = await supabase.auth.signInWithPassword({
-					email: formData.email,
-                password: formData.password
+			const { error } = await supabase.auth.signInWithPassword({
+				email: formData.email.trim().toLowerCase(),
+				password: formData.password,
 			})
 
-            if (error) {
-                setError(error.message)
+			if (error) {
+				setError(error.message)
 				setIsLoading(false)
 				return
 			}
-			*/
 
-            router.push("/dashboard")
-            router.refresh()
-
+			router.push("/dashboard")
+			router.refresh()
 		} catch (err) {
 			console.error("Login error:", err)
 			setError("An error occurred. Please try again.")
+		} finally {
 			setIsLoading(false)
 		}
 	}

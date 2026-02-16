@@ -15,7 +15,7 @@ import { COLORS } from '@/theme/colors';
 const { height } = Dimensions.get('window');
 
 export default function LoginScreen() {
-    const { login, signInWithGoogle, profile } = useAuthContext();
+    const { login, signInWithGoogle, resendSignupConfirmation, profile } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme];
     const [email, setEmail] = useState('');
@@ -89,8 +89,29 @@ export default function LoginScreen() {
             // Redirect to main app after successful login
             router.replace('/(tabs)');
         } catch (error: any) {
-            // Show the error message which now includes helpful hints about email confirmation
-            Alert.alert('Login Failed', error?.message || 'Failed to login. Please check your credentials and try again.');
+            const message = error?.message || 'Failed to login. Please check your credentials and try again.';
+            if (/confirm your account|email not confirmed/i.test(message)) {
+                Alert.alert(
+                    'Email Not Confirmed',
+                    'Please confirm your email before logging in. You can resend the confirmation email below.',
+                    [
+                        {
+                            text: 'Resend Email',
+                            onPress: async () => {
+                                try {
+                                    await resendSignupConfirmation(email.trim().toLowerCase());
+                                    Alert.alert('Sent', 'Confirmation email sent. Please check your inbox and spam folder.');
+                                } catch (resendError: any) {
+                                    Alert.alert('Resend Failed', resendError?.message || 'Could not resend confirmation email.');
+                                }
+                            },
+                        },
+                        { text: 'OK', style: 'cancel' },
+                    ]
+                );
+                return;
+            }
+            Alert.alert('Login Failed', message);
         } finally {
             setIsLoading(false);
         }

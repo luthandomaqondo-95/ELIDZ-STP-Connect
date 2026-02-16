@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Pressable, Modal, TextInput, Alert, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -7,6 +7,9 @@ import { useTheme } from '@/hooks/useTheme';
 import { Spacing, BorderRadius, Typography, Shadow } from '../constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
+import { ResourceService } from '@/services/resource.service';
+import { enquiryService } from '@/services/enquiry.service';
+import type { Resource } from '@/types';
 
 function ResourceDetailScreen() {
   const { colors } = useTheme();
@@ -20,109 +23,30 @@ function ResourceDetailScreen() {
     purpose: '',
     notes: '',
   });
+  const [resource, setResource] = useState<Resource | null>(null);
 
-  // Mock data - in production, fetch from Supabase based on id
-  const resources: Record<string, any> = {
-    '1': {
-      id: '1',
-      name: 'Environmental Testing Chamber',
-      category: 'Equipment',
-      status: 'Available',
-      description: 'Temperature and humidity controlled testing',
-      fullDescription: 'Our state-of-the-art environmental testing chamber provides precise control over temperature and humidity conditions, making it ideal for testing products, materials, and components under various environmental conditions.',
-      specifications: [
-        'Temperature range: -40°C to +150°C',
-        'Humidity range: 10% to 98% RH',
-        'Chamber volume: 1000L',
-        'Programmable test cycles',
-        'Data logging capabilities',
-      ],
-      location: 'Testing Lab, Building A',
-      contact: 'facilities@elidz.co.za',
-      bookingRequired: true,
-    },
-    '2': {
-      id: '2',
-      name: 'Food Safety Consultant',
-      category: 'Expertise',
-      status: 'Available',
-      description: 'HACCP and food safety compliance',
-      fullDescription: 'Expert consultation services for food safety compliance, HACCP implementation, and regulatory guidance. Our certified consultants help businesses navigate food safety regulations and implement best practices.',
-      specifications: [
-        'HACCP certification support',
-        'Food safety audits',
-        'Regulatory compliance guidance',
-        'Training programs available',
-        'ISO 22000 implementation',
-      ],
-      location: 'Consulting Office, Main Building',
-      contact: 'consulting@elidz.co.za',
-      bookingRequired: true,
-    },
-    '3': {
-      id: '3',
-      name: '3D Printing Station',
-      category: 'Equipment',
-      status: 'In Use',
-      description: 'Industrial-grade 3D printers',
-      fullDescription: 'Access to professional-grade 3D printing equipment for rapid prototyping and small-batch production. Multiple materials and technologies available.',
-      specifications: [
-        'FDM and SLA printing',
-        'Multiple material options',
-        'High-resolution printing',
-        'Post-processing equipment',
-        'Design consultation available',
-      ],
-      location: 'Prototyping Lab, Building B',
-      contact: 'prototyping@elidz.co.za',
-      bookingRequired: true,
-    },
-    '4': {
-      id: '4',
-      name: 'Water Quality Analysis',
-      category: 'Labs',
-      status: 'Available',
-      description: 'Chemical and microbiological testing',
-      fullDescription: 'Comprehensive water quality testing services including chemical analysis, microbiological testing, and compliance verification for various standards.',
-      specifications: [
-        'Chemical composition analysis',
-        'Microbiological testing',
-        'Heavy metal detection',
-        'pH and conductivity testing',
-        'Compliance reporting',
-      ],
-      location: 'Testing Lab, Building A',
-      contact: 'testing@elidz.co.za',
-      bookingRequired: true,
-    },
-    '5': {
-      id: '5',
-      name: 'CAD Design Workshop',
-      category: 'Training',
-      status: 'Upcoming',
-      description: 'Learn professional CAD software',
-      fullDescription: 'Comprehensive training program covering professional CAD software for product design and engineering. Suitable for beginners and intermediate users.',
-      specifications: [
-        'Hands-on training sessions',
-        'Industry-standard software',
-        'Project-based learning',
-        'Certificate of completion',
-        'Ongoing support available',
-      ],
-      location: 'Training Center, Main Building',
-      contact: 'training@elidz.co.za',
-      bookingRequired: true,
-    },
-  };
+  useEffect(() => {
+    async function loadResource() {
+      if (!id) return;
+      try {
+        const allResources = await ResourceService.getResources();
+        const found = allResources.find((item) => item.id === id);
+        setResource(found || null);
+      } catch (error) {
+        console.error('Error loading resource detail:', error);
+        setResource(null);
+      }
+    }
+    loadResource();
+  }, [id]);
 
-  const resource = resources[id] || {
-    id,
-    name,
-    category: 'Equipment',
-    status: 'Available',
-    description: 'Resource details',
-    fullDescription: 'Detailed information about this resource.',
-    specifications: [],
+  const displayResource = {
+    id: resource?.id || id,
+    name: resource?.title || name || 'Resource',
+    category: resource?.category || 'General',
+    status: resource?.status || 'Available',
+    fullDescription: resource?.description || 'Detailed information about this resource.',
+    specifications: [] as string[],
     location: 'ELIDZ-STP',
     contact: 'info@elidz.co.za',
     bookingRequired: true,
@@ -166,12 +90,26 @@ function ResourceDetailScreen() {
 
     setIsSubmitting(true);
     try {
-      // Simulate API call - in production, this would save to Supabase
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const message = [
+        `Resource: ${displayResource.name}`,
+        `Preferred Date: ${bookingData.date.trim()}`,
+        `Preferred Time: ${bookingData.time.trim()}`,
+        `Duration: ${bookingData.duration.trim() || 'Not specified'}`,
+        '',
+        `Purpose: ${bookingData.purpose.trim()}`,
+        '',
+        `Additional Notes: ${bookingData.notes.trim() || 'None'}`,
+      ].join('\n');
+
+      await enquiryService.createEnquiry({
+        enquiry_type: 'Other',
+        subject: `Resource Booking Request: ${displayResource.name}`,
+        message,
+      });
       
       Alert.alert(
         'Booking Request Submitted',
-        `Your request for ${resource.name} has been submitted successfully. You will receive a confirmation email shortly.`,
+        `Your request for ${displayResource.name} has been submitted successfully. You will receive a confirmation email shortly.`,
         [
           {
             text: 'OK',
@@ -193,33 +131,33 @@ function ResourceDetailScreen() {
     <ScreenScrollView>
       <View style={[styles.headerCard, { backgroundColor: colors.primary }]}>
         <View style={styles.iconContainer}>
-          <Feather name={getCategoryIcon(resource.category) as any} size={48} color={colors.buttonText} />
+          <Feather name={getCategoryIcon(displayResource.category) as any} size={48} color={colors.buttonText} />
         </View>
         <View style={[styles.statusBadge, { backgroundColor: colors.buttonText }]}>
-          <View style={[styles.statusDot, { backgroundColor: getStatusColor(resource.status) }]} />
-          <Text style={[Typography.small, { color: getStatusColor(resource.status), marginLeft: Spacing.xs }]}>
-            {resource.status}
+          <View style={[styles.statusDot, { backgroundColor: getStatusColor(displayResource.status) }]} />
+          <Text style={[Typography.small, { color: getStatusColor(displayResource.status), marginLeft: Spacing.xs }]}>
+            {displayResource.status}
           </Text>
         </View>
         <Text style={[Typography.h2, { color: colors.buttonText, marginTop: Spacing.lg }]}>
-          {resource.name}
+          {displayResource.name}
         </Text>
         <View style={[styles.categoryBadge, { backgroundColor: colors.whiteOpacity20, marginTop: Spacing.sm }]}>
-          <Text style={[Typography.small, { color: colors.buttonText }]}>{resource.category}</Text>
+          <Text style={[Typography.small, { color: colors.buttonText }]}>{displayResource.category}</Text>
         </View>
       </View>
 
       <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
         <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Description</Text>
         <Text style={[Typography.body, { color: colors.text, lineHeight: 24 }]}>
-          {resource.fullDescription}
+          {displayResource.fullDescription}
         </Text>
       </View>
 
-      {resource.specifications && resource.specifications.length > 0 && (
+      {displayResource.specifications && displayResource.specifications.length > 0 && (
         <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
           <Text style={[Typography.h3, { marginBottom: Spacing.md }]}>Specifications</Text>
-          {resource.specifications.map((spec: string, index: number) => (
+          {displayResource.specifications.map((spec: string, index: number) => (
             <View key={`${index}-${spec}`} style={styles.specItem}>
               <Feather name="check-circle" size={18} color={colors.secondary} />
               <Text style={[Typography.body, { marginLeft: Spacing.md, flex: 1 }]}>
@@ -235,36 +173,36 @@ function ResourceDetailScreen() {
         <View style={styles.infoRow}>
           <Feather name="map-pin" size={18} color={colors.textSecondary} />
           <Text style={[Typography.body, { color: colors.text, marginLeft: Spacing.md }]}>
-            {resource.location}
+            {displayResource.location}
           </Text>
         </View>
         <View style={[styles.infoRow, { marginTop: Spacing.md }]}>
           <Feather name="mail" size={18} color={colors.textSecondary} />
           <Text style={[Typography.body, { color: colors.primary, marginLeft: Spacing.md }]}>
-            {resource.contact}
+            {displayResource.contact}
           </Text>
         </View>
       </View>
 
-      {resource.bookingRequired && (
+      {displayResource.bookingRequired && (
         <Pressable
           style={({ pressed }) => [
             styles.requestButton,
             { 
-              backgroundColor: resource.status === 'Available' ? colors.accent : colors.textSecondary,
+              backgroundColor: displayResource.status === 'Available' ? colors.accent : colors.textSecondary,
               opacity: pressed ? 0.7 : 1,
             },
           ]}
           onPress={handleRequestAccess}
-          disabled={resource.status !== 'Available'}
+          disabled={displayResource.status !== 'Available'}
         >
           <Feather 
-            name={resource.status === 'Available' ? 'calendar' : 'clock'} 
+            name={displayResource.status === 'Available' ? 'calendar' : 'clock'} 
             size={20} 
             color={colors.buttonText} 
           />
           <Text style={[Typography.body, { color: colors.buttonText, marginLeft: Spacing.md, fontWeight: '600' }]}>
-            {resource.status === 'Available' ? 'Request Access' : resource.status === 'In Use' ? 'Currently In Use' : 'Coming Soon'}
+            {displayResource.status === 'Available' ? 'Request Access' : displayResource.status === 'In Use' ? 'Currently In Use' : 'Coming Soon'}
           </Text>
         </Pressable>
       )}
@@ -295,7 +233,7 @@ function ResourceDetailScreen() {
               showsVerticalScrollIndicator={false}
             >
               <Text style={[Typography.body, { color: colors.textSecondary, marginBottom: Spacing.lg }]}>
-                Please provide the following information to request access to {resource.name}
+                Please provide the following information to request access to {displayResource.name}
               </Text>
 
               <View style={styles.formGroup}>

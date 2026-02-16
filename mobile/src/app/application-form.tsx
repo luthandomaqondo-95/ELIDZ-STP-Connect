@@ -5,6 +5,7 @@ import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '../components/ScreenKeyboardAwareScrollView';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
+import { OpportunityService } from '@/services/opportunity.service';
 
 function ApplicationFormScreen() {
   const params = useLocalSearchParams<{ opportunityTitle?: string; opportunityId?: string }>();
@@ -34,10 +35,24 @@ function ApplicationFormScreen() {
       return;
     }
 
+    if (!opportunityId) {
+      Alert.alert('Error', 'No opportunity selected. Please go back and try again.');
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      const coverLetter = [
+        `Name: ${formData.fullName.trim()}`,
+        `Email: ${formData.email.trim()}`,
+        `Phone: ${formData.phone.trim()}`,
+        `Organization: ${formData.organization.trim() || 'N/A'}`,
+        '',
+        'Additional Information:',
+        formData.description.trim() || 'N/A',
+      ].join('\n');
+
+      await OpportunityService.applyToOpportunity(opportunityId, coverLetter);
       
       Alert.alert('Success', 'Your application has been submitted successfully!', [
         {

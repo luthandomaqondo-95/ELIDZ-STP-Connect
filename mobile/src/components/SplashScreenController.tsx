@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Image, View } from "react-native";
 import { Text } from "@/components/ui/text";
 import * as ExpoSplashScreen from 'expo-splash-screen';
@@ -8,8 +8,11 @@ import { useAuthContext } from '@/hooks/use-auth-context'
 // SplashScreen.preventAutoHideAsync()
 
 
+const MIN_SPLASH_MS = 1500;
+
 export function SplashScreen({ onComplete }: { onComplete: () => void }) {
     const { isLoading } = useAuthContext()
+    const [minTimeReached, setMinTimeReached] = useState(false);
 
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const logoScale = useRef(new Animated.Value(0.8)).current;
@@ -33,13 +36,16 @@ export function SplashScreen({ onComplete }: { onComplete: () => void }) {
             }),
         ]).start();
 
-        // Hide splash screen after timer - ProtectedAppRoutes will handle navigation
-        const timer = setTimeout(() => {
-            onComplete();
-        }, 2000);
+        const minTimer = setTimeout(() => setMinTimeReached(true), MIN_SPLASH_MS);
+        return () => clearTimeout(minTimer);
+    }, [fadeAnim, logoScale]);
 
-        return () => clearTimeout(timer);
-    }, [fadeAnim, logoScale, onComplete]);
+    // Only call onComplete when auth state is known and minimum splash time has passed
+    useEffect(() => {
+        if (!isLoading && minTimeReached) {
+            onComplete();
+        }
+    }, [isLoading, minTimeReached, onComplete]);
 
     return (
         <View className="flex-1 justify-center items-center bg-background">

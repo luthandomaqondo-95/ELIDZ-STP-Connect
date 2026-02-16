@@ -62,7 +62,7 @@ class ResourceServiceClass {
 			name: item.title,
 			description: item.description,
 			icon: getResourceIcon(item.type),
-			available: Math.floor(Math.random() * 10) + 1, // Mock availability for now
+			available: 0,
 			category: item.category || 'General',
 			targetCategory: item.category || 'General',
 		}));

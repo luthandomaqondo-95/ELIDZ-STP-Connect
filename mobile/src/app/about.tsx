@@ -31,7 +31,6 @@ export default function AboutScreen() {
             
             <View className="items-center mt-4">
                 <View className="w-24 h-24 bg-white rounded-3xl justify-center items-center shadow-lg mb-4">
-                    {/* Replace with actual logo if available, using text as placeholder */}
                     <Text className="text-[#002147] font-bold text-center text-xs px-2">
                         ELIDZ
                         Science &

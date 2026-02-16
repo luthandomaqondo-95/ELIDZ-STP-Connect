@@ -5,7 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { PanoramaViewer } from '@/components/mixed-experiences/PanoramaViewer';
 import { facilitiesService, type Facility, type FacilityWithTour, type VRScene, type VRSection } from '@/services/facilities.service';
-import { getTenantsByLocation } from '@/data/vrToursData';
+import { tenantService } from '@/services/tenant.service';
 import type { Tenant } from '@/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { TabsLayoutHeader } from '@/components/Header';
@@ -30,18 +30,62 @@ export default function ServicesScreen() {
 	// Data states
 	const [facilities, setFacilities] = useState<Facility[]>([]);
 	const [facilityWithTour, setFacilityWithTour] = useState<FacilityWithTour | null>(null);
+	const [facilityTenants, setFacilityTenants] = useState<Tenant[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [loadingTour, setLoadingTour] = useState(false);
+	const [loadingTenants, setLoadingTenants] = useState(false);
 	const [searchQuery, setSearchQuery] = useState('');
 	const debouncedSearch = useDebounce(searchQuery, 300);
 
 	// Use facility ID from params or selected facility
 	const facilityId = params.id || selectedFacilityId;
 
-	const tenants = useMemo(
-		() => (facilityWithTour ? getTenantsByLocation(facilityWithTour.location) : []),
-		[facilityWithTour]
-	);
+	const normalize = (value?: string) =>
+		(value || '')
+			.toLowerCase()
+			.replace(/&/g, 'and')
+			.replace(/[^a-z0-9]/g, ' ')
+			.replace(/\s+/g, ' ')
+			.trim();
+
+	const getFacilityAliases = (facility: FacilityWithTour) => {
+		const aliases = [facility.id, facility.name, facility.location];
+		// Known naming variants between centres and tenant locations.
+		if (facility.id === 'automotive-incubator') aliases.push('incubators');
+		if (facility.id === 'food-water') aliases.push('analytical laboratory');
+		if (facility.id === 'design-centre') aliases.push('design centre');
+		if (facility.id === 'digital-hub') aliases.push('digital hub');
+		if (facility.id === 'renewable-energy') aliases.push('renewable energy centre');
+		return aliases.map(normalize).filter(Boolean);
+	};
+
+	const loadFacilityTenants = async (facility: FacilityWithTour) => {
+		setLoadingTenants(true);
+		try {
+			const aliases = getFacilityAliases(facility);
+
+			// Source of truth: DB tenants only
+			const dbTenants = await tenantService.getTenants(200);
+			const matchedDbTenants = (dbTenants || []).filter((tenant) => {
+				const tenantLoc = normalize(tenant.location);
+				return aliases.some((alias) => tenantLoc.includes(alias) || alias.includes(tenantLoc));
+			});
+
+			// De-duplicate by id, then name.
+			const unique = matchedDbTenants.filter((tenant, index, all) => {
+				const idMatch = all.findIndex((t) => t.id === tenant.id);
+				if (idMatch === index) return true;
+				return all.findIndex((t) => t.name.toLowerCase() === tenant.name.toLowerCase()) === index;
+			});
+
+			setFacilityTenants(unique);
+		} catch (error) {
+			console.error('Error loading facility tenants:', error);
+			setFacilityTenants([]);
+		} finally {
+			setLoadingTenants(false);
+		}
+	};
 
 	// Fetch all facilities on mount
 	useEffect(() => {
@@ -88,8 +132,14 @@ export default function ServicesScreen() {
 		try {
 			const data = await facilitiesService.getFacilityWithTour(id);
 			setFacilityWithTour(data);
+			if (data) {
+				await loadFacilityTenants(data);
+			} else {
+				setFacilityTenants([]);
+			}
 		} catch (error) {
 			console.error('Error loading facility tour:', error);
+			setFacilityTenants([]);
 		} finally {
 			setLoadingTour(false);
 		}
@@ -144,13 +194,6 @@ export default function ServicesScreen() {
 								subject: `Request Access: ${service.title}`,
 							},
 						});
-					},
-				},
-				{
-					text: 'View Tenants',
-					onPress: () => {
-						// Scroll to tenants section or show tenant list
-						Alert.alert('Tenants', 'Please scroll down to view tenants offering this service.');
 					},
 				},
 			]
@@ -442,13 +485,13 @@ export default function ServicesScreen() {
 					)}
 
 					{/* Tenants */}
-					{!loadingTour && tenants.length > 0 && (
+					{!loadingTour && !loadingTenants && facilityTenants.length > 0 && (
 						<View className="mx-5 py-4">
 							<Text className="text-xl font-bold text-foreground mb-4">Tenants in this Facility</Text>
 							<Text className="text-muted-foreground text-sm mb-4">
 								Connect with tenants offering services in this facility
 							</Text>
-							{tenants.map(tenant => (
+							{facilityTenants.map(tenant => (
 								<Pressable
 									key={tenant.id}
 									onPress={() => router.push(`/tenant-detail?id=${tenant.id}`)}

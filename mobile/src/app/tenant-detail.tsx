@@ -27,7 +27,8 @@ function TenantDetailScreen() {
       if (params.id) {
         try {
           setLoading(true);
-          const tenantData = await tenantService.getTenantById(params.id);
+          const tenantId = String(params.id);
+          const tenantData = await tenantService.getTenantById(tenantId);
           if (tenantData) {
             setTenant(tenantData);
           }
@@ -224,7 +225,7 @@ function TenantDetailScreen() {
         {tenant?.partners && (
           <View style={[styles.card, { backgroundColor: colors.backgroundDefault, ...Shadow.card }]}>
             <View style={styles.sectionHeader}>
-              <Feather name="handshake" size={20} color={colors.primary} />
+              <Feather name="users" size={20} color={colors.primary} />
               <Text style={[Typography.h3, { color: colors.text, marginLeft: Spacing.sm }]}>Partners</Text>
             </View>
             <Text style={[Typography.body, { color: colors.text, marginTop: Spacing.md, lineHeight: 22 }]}>

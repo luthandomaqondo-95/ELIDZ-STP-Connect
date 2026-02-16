@@ -76,7 +76,7 @@ function UserProfileScreen() {
 					const { data: directConnection, error: directError } = await supabase
 						.from('connections')
 						.select('*')
-						.or(`and(requester_id.eq.${currentUser.id},addressee_id.eq.${userId}),and(requester_id.eq.${userId},addressee_id.eq.${currentUser.id})`)
+						.or(`and(user_id.eq.${currentUser.id},connected_user_id.eq.${userId}),and(user_id.eq.${userId},connected_user_id.eq.${currentUser.id})`)
 						.maybeSingle();
 
 					if (directConnection) {
@@ -85,7 +85,7 @@ function UserProfileScreen() {
 							setConnectionStatus('connected');
 							setConnectionId(directConnection.id);
 						} else if (directConnection.status === 'pending') {
-							if (directConnection.requester_id === currentUser.id) {
+							if (directConnection.user_id === currentUser.id) {
 								setConnectionStatus('pending_sent');
 							} else {
 								setConnectionStatus('pending_received');

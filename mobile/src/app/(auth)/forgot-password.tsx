@@ -37,7 +37,8 @@ export default function ForgotPasswordScreen() {
 
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-                redirectTo: 'elidzstp://(auth)/reset-password',
+                // Route groups like "(auth)" are not part of deep-link URLs in expo-router.
+                redirectTo: 'elidzstp://reset-password',
             });
 
             if (error) {

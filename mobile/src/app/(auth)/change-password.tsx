@@ -4,21 +4,18 @@ import { VideoView, useVideoPlayer } from 'expo-video';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
-import { useAuthContext } from '@/hooks/use-auth-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 
 export default function ChangePasswordScreen() {
-	const { profile: user } = useAuthContext();
 	const { colorScheme } = useColorScheme();
 	const colors = COLORS[colorScheme];
-	const [currentPassword, setCurrentPassword] = useState('');
 	const [newPassword, setNewPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
-	const [showCurrentPassword, setShowCurrentPassword] = useState(false);
 	const [showNewPassword, setShowNewPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -35,11 +32,6 @@ export default function ChangePasswordScreen() {
 	};
 
 	const handleChangePassword = async () => {
-		if (!currentPassword.trim()) {
-			Alert.alert('Error', 'Please enter your current password');
-			return;
-		}
-
 		if (!newPassword.trim()) {
 			Alert.alert('Error', 'Please enter a new password');
 			return;
@@ -55,24 +47,16 @@ export default function ChangePasswordScreen() {
 			return;
 		}
 
-		if (currentPassword === newPassword) {
-			Alert.alert('Error', 'New password must be different from current password');
-			return;
-		}
-
 		setIsLoading(true);
 
 		try {
-			// TODO: Implement password change with Supabase
-			console.log('Changing password for user:', user?.email);
-
-			await new Promise((resolve) => setTimeout(resolve, 1500));
+			const { error } = await supabase.auth.updateUser({ password: newPassword });
+			if (error) throw error;
 			Alert.alert('Success', 'Password changed successfully!', [
 				{ text: 'OK', onPress: navigateBack },
 			]);
-		} catch (error) {
-			console.error('Password change error:', error);
-			Alert.alert('Error', 'Failed to change password. Please try again.');
+		} catch (err: any) {
+			Alert.alert('Error', err?.message ?? 'Failed to change password. Please try again.');
 		} finally {
 			setIsLoading(false);
 		}
@@ -132,30 +116,6 @@ export default function ChangePasswordScreen() {
 						<Text className="text-white/80 text-center mb-6">
 							Update your password regularly to keep your ELIDZ-STP account secure.
 						</Text>
-
-						<View className="flex-row items-center bg-white/10 rounded-full mb-4 px-4 h-14 border border-white/20">
-							<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
-							<TextInput
-								className="flex-1 text-base text-white"
-								value={currentPassword}
-								onChangeText={setCurrentPassword}
-								placeholder="Current Password"
-								placeholderTextColor={colors.placeholder}
-								secureTextEntry={!showCurrentPassword}
-								autoCapitalize="none"
-								autoComplete="password"
-							/>
-							<Pressable
-								className="p-1"
-								onPress={() => setShowCurrentPassword((prev) => !prev)}
-							>
-								<Ionicons
-									name={showCurrentPassword ? 'eye-outline' : 'eye-off-outline'}
-									size={20}
-									color={colors.accent}
-								/>
-							</Pressable>
-						</View>
 
 						<View className="flex-row items-center bg-white/10 rounded-full mb-4 px-4 h-14 border border-white/20">
 							<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />

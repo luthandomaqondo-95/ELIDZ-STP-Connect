@@ -130,11 +130,6 @@ class SMMEService {
 
 		if (verifiedProfiles.length === 0) {
 			console.log('SMMEService.getAllSMMEsWithServicesProducts: No verified SMMEs found');
-			
-            // RETURN DUMMY DATA AS FAILOVER
-            if (!search) {
-                return this.getDummySMMEs();
-            }
 			return [];
 		}
 
@@ -176,87 +171,6 @@ class SMMEService {
 		console.log('SMMEService.getAllSMMEsWithServicesProducts succeeded:', result.length, 'SMMEs');
 		return result;
 	}
-
-    getDummySMMEs(): SMMEWithServicesProducts[] {
-        return [
-            {
-                id: 'dummy-1',
-                name: 'TechSolutions Ltd',
-                email: 'contact@techsolutions.co.za',
-                role: 'SMME',
-                organization: 'Technology',
-                bio: 'Leading provider of software development and IT consulting services in the ELIDZ.',
-                avatar: 'https://images.unsplash.com/photo-1560179707-f14e90ef3623?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&q=80',
-                verification_status: 'verified',
-                created_at: new Date().toISOString(),
-                services: [
-                    {
-                        id: 's1',
-                        sme_id: 'dummy-1',
-                        type: 'Service',
-                        name: 'Custom Software Development',
-                        description: 'Tailored software solutions for businesses.',
-                        category: 'Technology',
-                        status: 'active',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }
-                ],
-                products: []
-            },
-            {
-                id: 'dummy-2',
-                name: 'GreenLeaf Agro',
-                email: 'info@greenleaf.co.za',
-                role: 'SMME',
-                organization: 'Agriculture',
-                bio: 'Sustainable agricultural products and consulting.',
-                avatar: 'https://images.unsplash.com/photo-1628359355624-855775b5c9c8?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&q=80',
-                verification_status: 'verified',
-                created_at: new Date().toISOString(),
-                services: [],
-                products: [
-                    {
-                        id: 'p1',
-                        sme_id: 'dummy-2',
-                        type: 'Product',
-                        name: 'Organic Fertilizer',
-                        description: 'High-yield organic fertilizer for commercial farming.',
-                        category: 'Agriculture',
-                        price: 'R500',
-                        status: 'active',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }
-                ]
-            },
-            {
-                id: 'dummy-3',
-                name: 'Precision Engineering',
-                email: 'sales@precisioneng.co.za',
-                role: 'SMME',
-                organization: 'Manufacturing',
-                bio: 'Specialized precision engineering components for automotive industry.',
-                avatar: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=300&q=80',
-                verification_status: 'verified',
-                created_at: new Date().toISOString(),
-                services: [
-                    {
-                        id: 's2',
-                        sme_id: 'dummy-3',
-                        type: 'Service',
-                        name: 'CNC Machining',
-                        description: 'High-precision CNC machining services.',
-                        category: 'Manufacturing',
-                        status: 'active',
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
-                    }
-                ],
-                products: []
-            }
-        ];
-    }
 
 }
 

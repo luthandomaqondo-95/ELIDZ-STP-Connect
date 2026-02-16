@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Pressable, ScrollView, TextInput, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/hooks/useTheme';
-import { useAuthContext } from '@/hooks/use-auth-context';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,7 +11,6 @@ import { Resource } from '@/types';
 
 function ResourcesScreen() {
   const { colors } = useTheme();
-  const { profile: user } = useAuthContext();
   const { category } = useLocalSearchParams<{ category: string }>();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(category || null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -33,17 +31,11 @@ function ResourcesScreen() {
     try {
       setLoading(true);
       const data = await ResourceService.getResources();
-      
-      // Filter by category if selected
-      let filteredData = data;
-      if (selectedCategory) {
-        filteredData = data.filter(r => r.category === selectedCategory);
-      }
 
-      const mappedData = filteredData.map(item => ({
+      const mappedData = data.map(item => ({
         ...item,
         name: item.title, // UI expects name
-        status: 'Available', // Default status
+        status: item.status || undefined,
       }));
       setResources(mappedData);
     } catch (e) {
@@ -55,29 +47,28 @@ function ResourcesScreen() {
   }
 
   const categories = [
-    { id: '1', name: 'Testing Labs', icon: 'activity' as const, count: 5, description: 'Access to specialized testing facilities' },
-    { id: '2', name: 'Equipment', icon: 'tool' as const, count: 5, description: 'Manufacturing and prototyping equipment' },
-    { id: '3', name: 'Expertise', icon: 'award' as const, count: 4, description: 'Consultants and technical advisors' },
-    { id: '4', name: 'Training', icon: 'book-open' as const, count: 5, description: 'Workshops and training programs' },
+    { id: '1', name: 'Testing Labs', icon: 'activity' as const, description: 'Access to specialized testing facilities' },
+    { id: '2', name: 'Equipment', icon: 'tool' as const, description: 'Manufacturing and prototyping equipment' },
+    { id: '3', name: 'Expertise', icon: 'award' as const, description: 'Consultants and technical advisors' },
+    { id: '4', name: 'Training', icon: 'book-open' as const, description: 'Workshops and training programs' },
   ];
 
-  // Filter resources based on search query (category is handled by DB fetch or client filter)
-  // Since we fetch by category, we only filter by search here. 
-  // But if selectedCategory is null, we fetched all, so we filter by search.
-  // Actually, let's keep client side filtering for search to be snappy.
+  const categoryCounts = useMemo(() => {
+    return resources.reduce<Record<string, number>>((acc, resource) => {
+      const key = resource.category || 'Uncategorized';
+      acc[key] = (acc[key] || 0) + 1;
+      return acc;
+    }, {});
+  }, [resources]);
+
   const filteredResources = resources.filter(resource => {
-    // If we changed category, we refetched, so resources should already be filtered by category (mostly)
-    // But let's double check if we want to be safe or if we want to support client-side filtering of all data
-    
-    // For now, let's assume resources contains what we want to show based on category
-    // and we only filter by search query
-    
-    const matchesSearch = searchQuery 
-      ? resource.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    const matchesCategory = selectedCategory ? resource.category === selectedCategory : true;
+    const matchesSearch = searchQuery
+      ? resource.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         resource.description?.toLowerCase().includes(searchQuery.toLowerCase())
       : true;
 
-    return matchesSearch;
+    return matchesCategory && matchesSearch;
   });
 
   const getStatusColor = (status: string) => {
@@ -135,9 +126,8 @@ function ResourcesScreen() {
                                 }`}>
                                      <Feather name={category.icon} size={24} color={isSelected ? '#FFFFFF' : '#002147'} />
                                 </View>
-                                {/* We don't have real counts yet, so maybe hide or static */}
                                 <Text className={`text-xl font-bold mb-1 ${isSelected ? 'text-white' : 'text-[#002147]'}`}>
-                                    {/* {category.count} */} -
+                                    {categoryCounts[category.name] || 0}
                                 </Text>
                                 <Text className={`text-xs font-medium text-center ${isSelected ? 'text-white/90' : 'text-gray-500'}`}>
               {category.name}
@@ -191,17 +181,21 @@ function ResourcesScreen() {
                         {resource.name}
                       </Text>
                                             <View className="flex-row items-center flex-wrap mb-2">
-                                                <View className="bg-gray-100 px-2 py-0.5 rounded-md mr-2 mb-1">
-                                                    <Text className="text-gray-600 text-[10px] font-medium uppercase">
-                                                        {resource.category}
-                                                    </Text>
-                    </View>
-                                                <View className="flex-row items-center mb-1">
-                                                    <View className={`w-2 h-2 rounded-full mr-1`} style={{ backgroundColor: getStatusColor(resource.status) }} />
-                                                    <Text className="text-[10px] font-medium" style={{ color: getStatusColor(resource.status) }}>
-                        {resource.status}
-                      </Text>
-                    </View>
+                                                {resource.category && (
+                                                  <View className="bg-gray-100 px-2 py-0.5 rounded-md mr-2 mb-1">
+                                                      <Text className="text-gray-600 text-[10px] font-medium uppercase">
+                                                          {resource.category}
+                                                      </Text>
+                                                  </View>
+                                                )}
+                                                {resource.status && (
+                                                  <View className="flex-row items-center mb-1">
+                                                      <View className="w-2 h-2 rounded-full mr-1" style={{ backgroundColor: getStatusColor(resource.status) }} />
+                                                      <Text className="text-[10px] font-medium" style={{ color: getStatusColor(resource.status) }}>
+                                                          {resource.status}
+                                                      </Text>
+                                                  </View>
+                                                )}
                                             </View>
                                             <Text className="text-gray-500 text-xs leading-relaxed" numberOfLines={2}>
                       {resource.description}

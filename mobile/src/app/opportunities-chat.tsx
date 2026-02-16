@@ -8,10 +8,15 @@ import { Spacing, BorderRadius, Typography, Shadow } from '@/constants/theme';
 import { Feather } from '@expo/vector-icons';
 import { storage } from '@/utils/storage';
 import { withAuthGuard } from '@/components/withAuthGuard';
+import { useAuthContext } from '@/hooks/use-auth-context';
+import { connectionService } from '@/services/connection.service';
+import { OpportunityService } from '@/services/opportunity.service';
 
 function OpportunitiesChatScreen() {
   const { colors } = useTheme();
+  const { profile } = useAuthContext();
   const [opportunities, setOpportunities] = useState<any[]>([]);
+  const [contacts, setContacts] = useState<{ id: string; name: string }[]>([]);
   const [selectedOpp, setSelectedOpp] = useState<any>(null);
   const [shareMessage, setShareMessage] = useState('');
   const [selectedContacts, setSelectedContacts] = useState<string[]>([]);
@@ -20,9 +25,35 @@ function OpportunitiesChatScreen() {
     loadOpportunities();
   }, []);
 
+  useEffect(() => {
+    if (!profile?.id) {
+      setContacts([]);
+      return;
+    }
+    loadContacts(profile.id);
+  }, [profile?.id]);
+
   const loadOpportunities = async () => {
-    const opps = await storage.getOpportunities();
-    setOpportunities(opps.slice(0, 5));
+    try {
+      const opps = await OpportunityService.getOpportunities();
+      setOpportunities((opps || []).slice(0, 5));
+    } catch (error) {
+      console.error('Error loading opportunities for sharing:', error);
+      setOpportunities([]);
+    }
+  };
+
+  const loadContacts = async (userId: string) => {
+    try {
+      const allContacts = await connectionService.getAllContacts(userId);
+      const shareable = allContacts
+        .filter((contact) => contact.connectionStatus === 'connected')
+        .map((contact) => ({ id: contact.id, name: contact.name }));
+      setContacts(shareable);
+    } catch (error) {
+      console.error('Error loading contacts for sharing:', error);
+      setContacts([]);
+    }
   };
 
   const handleShareOpportunity = async () => {
@@ -59,13 +90,6 @@ function OpportunitiesChatScreen() {
       Alert.alert('Error', 'Failed to share opportunity');
     }
   };
-
-  const mockContacts = [
-    { id: '1', name: 'John Smith' },
-    { id: '2', name: 'Sarah Johnson' },
-    { id: '3', name: 'Mike Davis' },
-    { id: '4', name: 'Emily Chen' },
-  ];
 
   return (
     <ScreenKeyboardAwareScrollView>
@@ -110,7 +134,7 @@ function OpportunitiesChatScreen() {
           Select Contacts to Share With
         </Text>
         <FlatList
-          data={mockContacts}
+          data={contacts}
           scrollEnabled={false}
           renderItem={({ item }) => (
             <Pressable
@@ -139,6 +163,11 @@ function OpportunitiesChatScreen() {
           keyExtractor={(item) => item.id}
           ItemSeparatorComponent={() => <View style={{ height: Spacing.sm }} />}
         />
+        {contacts.length === 0 && (
+          <Text style={[Typography.body, { color: colors.textSecondary }]}>
+            No connected contacts available to share with yet.
+          </Text>
+        )}
       </View>
 
       <View style={[styles.section, { backgroundColor: colors.backgroundDefault, ...Shadow.card, borderRadius: BorderRadius.card, padding: Spacing.lg, marginBottom: Spacing.lg }]}>

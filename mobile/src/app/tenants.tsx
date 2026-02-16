@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { View, Pressable, TextInput, FlatList , Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -25,27 +25,20 @@ export default function TenantsScreen() {
 
     const { data: tenants, isLoading, error } = useTenantsSearch(debouncedSearch);
 
-    const filters = ['All', 'Renewable Energy Centre of Excellence', 'Incubators', 'Analytical Laboratory', 'Design Centre', 'Digital Hub'];
-
-    // Client-side filtering for specific centers if needed, or update hook to support it.
-    // Since the hook searches generally, we can filter by center locally if the data is small,
-    // or assume the search param covers it. But the UI has a filter bar.
-    // Let's filter client side for the 'center' or 'industry' field if 'All' is not selected.
-    // Note: The DB data might not have 'center' field populated exactly as the hardcoded filters.
-    // We might need to map or just filter by description/industry.
-    // The previous code had `tenant.center`. The DB schema has `industry` and `location`.
-    // I'll filter by `industry` or `location` or checking if name/description contains the filter.
+    const filters = useMemo(() => {
+        const locations = Array.from(
+            new Set(
+                (tenants || [])
+                    .map((tenant) => tenant.location?.trim())
+                    .filter((location): location is string => Boolean(location))
+            )
+        ).sort((a, b) => a.localeCompare(b));
+        return ['All', ...locations];
+    }, [tenants]);
 
     const filteredTenants = (tenants || []).filter((tenant) => {
         if (selectedFilter === 'All') return true;
-        // Map filters to loose matches in DB fields
-        const filterLower = selectedFilter.toLowerCase();
-        return (
-            tenant.industry?.toLowerCase().includes(filterLower) ||
-            tenant.description?.toLowerCase().includes(filterLower) ||
-            tenant.location?.toLowerCase().includes(filterLower) ||
-            tenant.name.toLowerCase().includes(filterLower)
-        );
+        return tenant.location?.toLowerCase() === selectedFilter.toLowerCase();
     });
 
     function renderTenant({ item }: any) {

@@ -5,7 +5,7 @@ export interface Connection {
 	id: string;
 	requester_id: string;
 	addressee_id: string;
-	status: 'pending' | 'accepted' | 'declined' | 'blocked';
+	status: 'pending' | 'accepted' | 'blocked';
 	created_at: string;
 	updated_at: string;
 	requester?: Profile;
@@ -33,10 +33,12 @@ class ConnectionService {
 			.from('connections')
 			.select(`
 				*,
-				requester:profiles!connections_requester_id_fkey(*),
-				addressee:profiles!connections_addressee_id_fkey(*)
+				requester_id:user_id,
+				addressee_id:connected_user_id,
+				requester:profiles!connections_user_id_fkey(*),
+				addressee:profiles!connections_connected_user_id_fkey(*)
 			`)
-			.or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+			.or(`user_id.eq.${userId},connected_user_id.eq.${userId}`)
 			.eq('status', 'accepted')
 			.order('updated_at', { ascending: false });
 
@@ -58,17 +60,21 @@ class ConnectionService {
 				.from('connections')
 				.select(`
 					*,
-					requester:profiles!connections_requester_id_fkey(*)
+					requester_id:user_id,
+					addressee_id:connected_user_id,
+					requester:profiles!connections_user_id_fkey(*)
 				`)
-				.eq('addressee_id', userId)
+				.eq('connected_user_id', userId)
 				.eq('status', 'pending'),
 			supabase
 				.from('connections')
 				.select(`
 					*,
-					addressee:profiles!connections_addressee_id_fkey(*)
+					requester_id:user_id,
+					addressee_id:connected_user_id,
+					addressee:profiles!connections_connected_user_id_fkey(*)
 				`)
-				.eq('requester_id', userId)
+				.eq('user_id', userId)
 				.eq('status', 'pending'),
 		]);
 
@@ -112,13 +118,13 @@ class ConnectionService {
 		const [connectionsResult, pendingResult] = await Promise.all([
 			supabase
 				.from('connections')
-				.select('requester_id, addressee_id')
-				.or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+				.select('requester_id:user_id, addressee_id:connected_user_id')
+				.or(`user_id.eq.${userId},connected_user_id.eq.${userId}`)
 				.eq('status', 'accepted'),
 			supabase
 				.from('connections')
-				.select('requester_id, addressee_id')
-				.or(`requester_id.eq.${userId},addressee_id.eq.${userId}`)
+				.select('requester_id:user_id, addressee_id:connected_user_id')
+				.or(`user_id.eq.${userId},connected_user_id.eq.${userId}`)
 				.eq('status', 'pending'),
 		]);
 
@@ -192,34 +198,36 @@ class ConnectionService {
 		const { data: existing, error: checkError } = await supabase
 			.from('connections')
 			.select('*')
-			.or(`and(requester_id.eq.${requesterId},addressee_id.eq.${addresseeId}),and(requester_id.eq.${addresseeId},addressee_id.eq.${requesterId})`)
+			.or(`and(user_id.eq.${requesterId},connected_user_id.eq.${addresseeId}),and(user_id.eq.${addresseeId},connected_user_id.eq.${requesterId})`)
 			.maybeSingle();
 
 		if (existing) {
 			if (existing.status === 'accepted') {
 				throw new Error('You are already connected with this user');
 			} else if (existing.status === 'pending') {
-				if (existing.requester_id === requesterId) {
+				if (existing.user_id === requesterId) {
 					throw new Error('Connection request already sent');
 				} else {
 					throw new Error('You have a pending connection request from this user');
 				}
-			} else if (existing.status === 'declined') {
-				throw new Error('Connection request was previously declined');
+			} else if (existing.status === 'blocked') {
+				throw new Error('Connection request is not allowed for this user');
 			}
 		}
 
 		const { data, error } = await supabase
 			.from('connections')
 			.insert({
-				requester_id: requesterId,
-				addressee_id: addresseeId,
+				user_id: requesterId,
+				connected_user_id: addresseeId,
 				status: 'pending',
 			})
 			.select(`
 				*,
-				requester:profiles!connections_requester_id_fkey(*),
-				addressee:profiles!connections_addressee_id_fkey(*)
+				requester_id:user_id,
+				addressee_id:connected_user_id,
+				requester:profiles!connections_user_id_fkey(*),
+				addressee:profiles!connections_connected_user_id_fkey(*)
 			`)
 			.single();
 
@@ -241,8 +249,10 @@ class ConnectionService {
 			.eq('id', connectionId)
 			.select(`
 				*,
-				requester:profiles!connections_requester_id_fkey(*),
-				addressee:profiles!connections_addressee_id_fkey(*)
+				requester_id:user_id,
+				addressee_id:connected_user_id,
+				requester:profiles!connections_user_id_fkey(*),
+				addressee:profiles!connections_connected_user_id_fkey(*)
 			`)
 			.single();
 
@@ -260,12 +270,14 @@ class ConnectionService {
 
 		const { data, error } = await supabase
 			.from('connections')
-			.update({ status: 'declined', updated_at: new Date().toISOString() })
+			.update({ status: 'blocked', updated_at: new Date().toISOString() })
 			.eq('id', connectionId)
 			.select(`
 				*,
-				requester:profiles!connections_requester_id_fkey(*),
-				addressee:profiles!connections_addressee_id_fkey(*)
+				requester_id:user_id,
+				addressee_id:connected_user_id,
+				requester:profiles!connections_user_id_fkey(*),
+				addressee:profiles!connections_connected_user_id_fkey(*)
 			`)
 			.single();
 

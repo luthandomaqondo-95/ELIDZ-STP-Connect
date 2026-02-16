@@ -18,7 +18,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				.eq('id', userId)
 				.single();
 
-			console.log(' ---- data', data);
 			if (error) {
 				if (error.code === 'PGRST116') {
 					Sentry.captureMessage('Profile not found for user (yet).');
@@ -88,6 +87,17 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		});
 
 		if (authError) {
+			const message = authError.message ?? '';
+			if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message)) {
+				throw new Error(
+					'Too many signup attempts. Please wait about a minute, then try again. If you already signed up, check your email (including spam) for the confirmation link.'
+				);
+			}
+			if (/user already registered|already been registered/i.test(message)) {
+				throw new Error(
+					'This email is already registered. Please confirm your email first, or log in if you already confirmed.'
+				);
+			}
 			throw new Error(authError.message);
 		}
 
@@ -115,6 +125,16 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			);
 
 		if (profileError) {
+			const missingAddressColumn =
+				/could not find the ['"]?address['"]? column of ['"]?profiles['"]? in the schema cache/i.test(
+					profileError.message ?? ''
+				);
+			if (missingAddressColumn) {
+				throw new Error(
+					'Database schema is missing profiles.address (or schema cache is stale). Run the Supabase SQL migration: mobile/database/fix_profiles_address_column_schema_cache.sql'
+				);
+			}
+
 			if (profileError.code === '42501') {
 				const { error: rpcError } = await supabase.rpc('create_user_profile', {
 					p_user_id: userId,
@@ -128,6 +148,15 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				});
 
 				if (rpcError) {
+					const missingAddressColumnRpc =
+						/could not find the ['"]?address['"]? column of ['"]?profiles['"]? in the schema cache/i.test(
+							rpcError.message ?? ''
+						);
+					if (missingAddressColumnRpc) {
+						throw new Error(
+							'Database schema is missing profiles.address (or schema cache is stale). Run the Supabase SQL migration: mobile/database/fix_profiles_address_column_schema_cache.sql'
+						);
+					}
 					throw new Error(rpcError.message);
 				}
 			} else {
@@ -146,6 +175,29 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		}
 	}
 
+	async function resendSignupConfirmation(email: string) {
+		const normalizedEmail = email.trim().toLowerCase();
+		if (!normalizedEmail) {
+			throw new Error('Please enter your email first.');
+		}
+
+		const { error } = await supabase.auth.resend({
+			type: 'signup',
+			email: normalizedEmail,
+			options: {
+				emailRedirectTo: 'elidzstp://(auth)/email-confirmed',
+			},
+		});
+
+		if (error) {
+			const message = error.message ?? '';
+			if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message)) {
+				throw new Error('Too many email requests. Please wait about a minute, then try again.');
+			}
+			throw new Error(message);
+		}
+	}
+
 	async function signInWithGoogle() {
 		try {
 			const { data, error } = await supabase.auth.signInWithOAuth({
@@ -160,6 +212,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			});
 
 			if (error) {
+				const message = error.message ?? '';
+				if (/provider is not enabled|unsupported provider/i.test(message)) {
+					throw new Error(
+						'Google sign-in is not enabled in Supabase. Enable Google under Authentication > Providers > Google, then try again.'
+					);
+				}
 				throw new Error(error.message);
 			}
 
@@ -354,6 +412,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				isLoggedIn: session != null && session != undefined,
 				login,
 				signup,
+				resendSignupConfirmation,
 				signInWithGoogle,
 				logout,
 				updateProfile,

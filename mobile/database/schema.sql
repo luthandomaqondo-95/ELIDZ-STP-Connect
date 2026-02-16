@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant', 'Admin', 'Super Admin')),
+  -- Single-line address/location string (e.g. "City, Province, 1234")
+  address TEXT,
+  role TEXT NOT NULL CHECK (role IN ('Entrepreneur', 'Researcher', 'SME', 'SMME', 'Student', 'Investor', 'Tenant', 'Admin', 'Super Admin')),
   organization TEXT,
   bio TEXT,
   avatar TEXT DEFAULT 'blue',

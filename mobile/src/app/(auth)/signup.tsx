@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -11,6 +11,7 @@ import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { fetchZaPostalCodesForCity } from '@/services/za-postal-codes.service';
 
 const { height } = Dimensions.get('window');
 
@@ -27,11 +28,15 @@ export default function SignupScreen() {
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [role, setRole] = useState<'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant'>('Entrepreneur');
 	const [isLoading, setIsLoading] = useState(false);
+	const isSubmittingRef = useRef(false);
 	const [showPassword, setShowPassword] = useState(false);
 	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
 
-	const [showPostalSuggestions, setShowPostalSuggestions] = useState(false);
+	const [postalCodesForCity, setPostalCodesForCity] = useState<string[]>([]);
+	const [loadingPostalCodes, setLoadingPostalCodes] = useState(false);
+	// Kept for backwards compatibility with cached bundles (no longer used in UI)
+	const showPostalSuggestions = false;
 
 	const provinces = [
 		'Eastern Cape',
@@ -58,83 +63,62 @@ export default function SignupScreen() {
 		'Western Cape': ['Cape Town', 'Stellenbosch', 'George', 'Paarl', 'Worcester', 'Mossel Bay', 'Knysna', 'Other'],
 	};
 
-	// Map of postal codes for cities
-	const postalCodesByCity: Record<string, string[]> = {
-		// Eastern Cape
-		'East London': ['5201', '5241', '5247', '5200', '5257', '5209', '5213', '5219'],
-		'Gqeberha (Port Elizabeth)': ['6001', '6011', '6025', '6045', '6070', '6000', '6006', '6019'],
-		'Mthatha': ['5100', '5099', '5101', '5102', '5103', '5104'],
-		'Bhisho': ['5605', '5606', '5607', '5608', '5609', '5604'],
-		'Uitenhage': ['6229', '6230', '6231', '6232', '6233', '6234'],
-		'Grahamstown': ['6139', '6140', '6141', '6142', '6143', '6144'],
-		'Queenstown': ['5319', '5320', '5321', '5322', '5323', '5324'],
-		'King William\'s Town': ['5600', '5601', '5602', '5603', '5604', '5605'],
-
-		// Gauteng
-		'Johannesburg': ['2001', '2000', '2094', '2193', '2092', '2091', '2196', '2090'],
-		'Pretoria': ['0002', '0001', '0181', '0157', '0081', '0186', '0184', '0182'],
-		'Soweto': ['1804', '1809', '1863', '1818', '1852', '1860'],
-		'Centurion': ['0157', '0173', '0046', '0149', '0158', '0169'],
-		'Sandton': ['2196', '2146', '2031', '2057', '2191', '2128'],
-		'Midrand': ['1685', '1682', '1684', '1683', '1686', '1687'],
-		'Roodepoort': ['1724', '1709', '1725', '1710', '1730', '1735'],
-		'Kempton Park': ['1619', '1620', '1621', '1622', '1623', '1624'],
-
-		// Western Cape
-		'Cape Town': ['8000', '8001', '8005', '8060', '7441', '7100', '7700', '7780'],
-		'Stellenbosch': ['7600', '7599', '7601', '7602', '7603', '7604'],
-		'George': ['6529', '6530', '6531', '6532', '6533', '6534'],
-		'Paarl': ['7646', '7620', '7621', '7622', '7623', '7624'],
-		'Worcester': ['6850', '6849', '6851', '6852', '6853', '6854'],
-		'Mossel Bay': ['6500', '6506', '6501', '6502', '6503', '6504'],
-		'Knysna': ['6571', '6570', '6572', '6573', '6574', '6575'],
-
-		// KwaZulu-Natal
-		'Durban': ['4001', '4000', '4091', '4052', '4022', '4051', '4062', '4068'],
-		'Pietermaritzburg': ['3201', '3200', '3202', '3203', '3204', '3205'],
-		'Richards Bay': ['3900', '3901', '3902', '3903', '3904', '3905'],
-		'Newcastle': ['2940', '2942', '2943', '2944', '2945', '2946'],
-		'Port Shepstone': ['4240', '4241', '4242', '4243', '4244', '4245'],
-
-		// Free State
-		'Bloemfontein': ['9301', '9300', '9332', '9323', '9312', '9320', '9317', '9307'],
-		'Welkom': ['9459', '9460', '9461', '9462', '9463', '9464'],
-		'Sasolburg': ['1947', '1949', '1948', '1950', '1951', '1952'],
-		'Parys': ['9585', '9586', '9587', '9588', '9589', '9590'],
-		'Phuthaditjhaba': ['9866', '9867', '9868', '9869', '9870', '9871'],
-		'Kroonstad': ['9499', '9500', '9501', '9502', '9503', '9504'],
-
-		// Limpopo
-		'Polokwane': ['0699', '0700', '0750', '0787', '0704', '0716'],
-		'Thohoyandou': ['0950', '0948', '0951', '0952', '0953', '0954'],
-		'Tzaneen': ['0850', '0851', '0852', '0853', '0854', '0855'],
-		'Mokopane': ['0601', '0600', '0602', '0603', '0604', '0605'],
-		'Bela-Bela': ['0480', '0481', '0482', '0483', '0484', '0485'],
-
-		// Mpumalanga
-		'Mbombela (Nelspruit)': ['1201', '1200', '1211', '1209', '1210', '1212'],
-		'Witbank': ['1035', '1034', '1036', '1037', '1038', '1039'],
-		'Secunda': ['2302', '2303', '2304', '2305', '2306', '2307'],
-		'Middelburg': ['1055', '1050', '1051', '1052', '1053', '1054'],
-
-		// North West
-		'Mahikeng': ['2745', '2735', '2750', '2791', '2736', '2737'],
-		'Klerksdorp': ['2571', '2570', '2572', '2573', '2574', '2575'],
-		'Rustenburg': ['0299', '0300', '0301', '0302', '0303', '0304'],
-		'Potchefstroom': ['2531', '2520', '2532', '2533', '2534', '2535'],
-		'Brits': ['0250', '0251', '0252', '0253', '0254', '0255'],
-
-		// Northern Cape
-		'Kimberley': ['8301', '8300', '8345', '8309', '8302', '8303'],
-		'Upington': ['8801', '8800', '8802', '8803', '8804', '8805'],
-		'Springbok': ['8240', '8241', '8242', '8243', '8244', '8245'],
-		'De Aar': ['7000', '7001', '7002', '7003', '7004', '7005'],
-	};
+	// Fetch postal codes from Supabase (GeoNames dump) when city changes
+	useEffect(() => {
+		if (!city || city === 'Other') {
+			setPostalCodesForCity([]);
+			setPostalCode('');
+			return;
+		}
+		let cancelled = false;
+		setPostalCode('');
+		setLoadingPostalCodes(true);
+		fetchZaPostalCodesForCity(city, 1200)
+			.then((codes) => {
+				if (!cancelled) {
+					setPostalCodesForCity(codes);
+					// Auto-select first code if only one
+					if (codes.length === 1) setPostalCode(codes[0]);
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setLoadingPostalCodes(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [city]);
 
 	async function handleSignup() {
+		if (isSubmittingRef.current || isLoading) {
+			return;
+		}
+
 		if (!name || !email || !password || !province || !city || !postalCode) {
 			Alert.alert('Error', 'Please fill in all fields');
 			return;
+		}
+
+		// Postal code must be selected from list (no manual entry) unless city is "Other"
+		if (city !== 'Other') {
+			if (loadingPostalCodes) {
+				Alert.alert('Please wait', 'Postal codes are still loading for your city.');
+				return;
+			}
+			if (postalCodesForCity.length === 0) {
+				Alert.alert('Postal code required', `No postal codes found for ${city}. Please select another city.`);
+				return;
+			}
+			if (!postalCodesForCity.includes(postalCode)) {
+				Alert.alert('Invalid postal code', 'Please select your postal code from the list.');
+				return;
+			}
+		} else {
+			// "Other" city: allow manual 4-digit code only
+			if (!/^\d{4}$/.test(postalCode.trim())) {
+				Alert.alert('Invalid postal code', 'Please enter a valid 4-digit South African postal code.');
+				return;
+			}
 		}
 
 		const fullAddress = `${city}, ${province}, ${postalCode}`;
@@ -160,6 +144,7 @@ export default function SignupScreen() {
 			return;
 		}
 
+		isSubmittingRef.current = true;
 		setIsLoading(true);
 		try {
 			await signup(name, email, password, role, fullAddress);
@@ -210,6 +195,7 @@ export default function SignupScreen() {
 				Alert.alert('Error', errorMessage);
 			}
 		} finally {
+			isSubmittingRef.current = false;
 			setIsLoading(false);
 		}
 	}
@@ -322,56 +308,46 @@ export default function SignupScreen() {
 						</View>
 					</View>
 
-					{/* Postal Code Input */}
-					<View className="relative" style={{ zIndex: 100, elevation: 5 }}>
-						<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-							<Ionicons name="location-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
+					{/* Postal Code: Picker from API (no manual entry) or manual only for "Other" */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
+						<Ionicons name="location-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+						{!city ? (
+							<View className="flex-1 flex-row items-center">
+								<Text className="text-muted-foreground text-base">Select city first</Text>
+							</View>
+						) : city === 'Other' ? (
 							<TextInput
 								className="flex-1 text-base text-foreground"
 								value={postalCode}
-								onChangeText={(text) => {
-									setPostalCode(text);
-									if (!showPostalSuggestions) setShowPostalSuggestions(true);
-								}}
-								onFocus={() => setShowPostalSuggestions(true)}
-								onBlur={() => {
-									// Small delay to allow clicking suggestions
-									setTimeout(() => setShowPostalSuggestions(false), 200);
-								}}
-								placeholder={city ? `Postal Code for ${city}` : "Select City First"}
+								onChangeText={(t) => setPostalCode(t.replace(/\D/g, '').slice(0, 4))}
+								placeholder="4-digit postal code"
 								placeholderTextColor={colors.placeholder}
-								keyboardType="numeric"
+								keyboardType="number-pad"
 								maxLength={4}
-								editable={!!city}
 							/>
-						</View>
-
-						{/* Postal Code Suggestions */}
-						{showPostalSuggestions && city && postalCodesByCity[city] && (
-							<View
-								className="absolute top-14 left-0 right-0 bg-card border border-border rounded-lg shadow-lg max-h-40 overflow-hidden"
-								style={{ zIndex: 1000, elevation: 10 }}
-							>
-								{postalCodesByCity[city]
-									.filter(code => code.startsWith(postalCode))
-									.slice(0, 5) // Limit suggestions
-									.map((code) => (
-										<TouchableOpacity
-											key={code}
-											className="p-3 border-b border-border last:border-0 bg-card active:bg-muted"
-											onPress={() => {
-												setPostalCode(code);
-												setShowPostalSuggestions(false);
-											}}
-										>
-											<Text className="text-foreground text-base font-medium">{code}</Text>
-										</TouchableOpacity>
+						) : loadingPostalCodes ? (
+							<View className="flex-1 flex-row items-center">
+								<ActivityIndicator size="small" color={colors.accent} style={{ marginRight: 8 }} />
+								<Text className="text-muted-foreground text-base">Loading postal codes for {city}…</Text>
+							</View>
+						) : postalCodesForCity.length === 0 ? (
+							<View className="flex-1">
+								<Text className="text-muted-foreground text-base">No postal codes for {city}. Pick another city.</Text>
+							</View>
+						) : (
+							<View className="flex-1 ml-1">
+								<Picker
+									selectedValue={postalCode}
+									onValueChange={(value) => setPostalCode(value)}
+									style={{ flex: 1, color: '#FF6600' }}
+									dropdownIconColor="#FF6600"
+									prompt="Select postal code"
+								>
+									<Picker.Item label="Select postal code" value="" color="#9CA3AF" />
+									{postalCodesForCity.map((code) => (
+										<Picker.Item key={code} label={code} value={code} color="#FF6600" />
 									))}
-								{postalCodesByCity[city].filter(code => code.startsWith(postalCode)).length === 0 && (
-									<View className="p-3">
-										<Text className="text-muted-foreground text-sm">No matches found</Text>
-									</View>
-								)}
+								</Picker>
 							</View>
 						)}
 					</View>

@@ -1,36 +1,134 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { PanoramaViewer } from '@/components/mixed-experiences/PanoramaViewer';
-import { getFacilityById, getTenantsByLocation, getVRTourDataById } from '@/data/vrToursData';
+import { TenantLogo } from '@/components/TenantLogo';
+import {
+	facilitiesService,
+	type FacilityWithTour,
+	type VRHotspot,
+	type VRScene,
+} from '@/services/facilities.service';
+import { tenantService } from '@/services/tenant.service';
+import type { Tenant } from '@/types';
 
 type ViewMode = 'panorama' | 'sections';
+
+const normalize = (value?: string) =>
+	(value || '')
+		.toLowerCase()
+		.replace(/&/g, 'and')
+		.replace(/[^a-z0-9]/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+
+const getFacilityAliases = (facility: FacilityWithTour) => {
+	const aliases = [facility.id, facility.name, facility.location];
+	if (facility.id === 'automotive-incubator') aliases.push('incubators');
+	if (facility.id === 'food-water') aliases.push('analytical laboratory');
+	if (facility.id === 'design-centre') aliases.push('design centre');
+	if (facility.id === 'digital-hub') aliases.push('digital hub');
+	if (facility.id === 'renewable-energy') aliases.push('renewable energy centre');
+	return aliases.map(normalize).filter(Boolean);
+};
 
 export default function VRTourScreen() {
 	const params = useLocalSearchParams<{ id?: string }>();
 	const facilityId = params.id as string | undefined;
 
-	const tourData = useMemo(() => (facilityId ? getVRTourDataById(facilityId) : undefined), [facilityId]);
-	const facilityMeta = useMemo(() => (facilityId ? getFacilityById(facilityId) : undefined), [facilityId]);
-	const tenants = useMemo(
-		() => (facilityMeta ? getTenantsByLocation(facilityMeta.location) : []),
-		[facilityMeta]
-	);
-
+	const [facilityWithTour, setFacilityWithTour] = useState<FacilityWithTour | null>(null);
+	const [tenants, setTenants] = useState<Tenant[]>([]);
+	const [loading, setLoading] = useState(true);
 	const [viewMode, setViewMode] = useState<ViewMode>('panorama');
 	const [currentSection, setCurrentSection] = useState(0);
 	const [currentSceneId, setCurrentSceneId] = useState<string | null>(null);
 
 	useEffect(() => {
-		setCurrentSection(0);
-		setCurrentSceneId(null);
-		setViewMode('panorama');
+		let isMounted = true;
+		async function loadTour() {
+			if (!facilityId) {
+				setFacilityWithTour(null);
+				setTenants([]);
+				setLoading(false);
+				return;
+			}
+
+			setLoading(true);
+			setCurrentSection(0);
+			setCurrentSceneId(null);
+			setViewMode('panorama');
+
+			try {
+				const facility = await facilitiesService.getFacilityWithTour(facilityId);
+				if (!isMounted) return;
+				setFacilityWithTour(facility);
+
+				if (!facility) {
+					setTenants([]);
+					return;
+				}
+
+				const aliases = getFacilityAliases(facility);
+				const dbTenants = await tenantService.getTenants(200);
+				if (!isMounted) return;
+
+				const matched = (dbTenants || []).filter((tenant) => {
+					const tenantLoc = normalize(tenant.location);
+					return aliases.some((alias) => tenantLoc.includes(alias) || alias.includes(tenantLoc));
+				});
+				setTenants(matched);
+			} catch (error) {
+				console.error('Error loading VR tour:', error);
+				if (isMounted) {
+					setFacilityWithTour(null);
+					setTenants([]);
+				}
+			} finally {
+				if (isMounted) setLoading(false);
+			}
+		}
+
+		loadTour();
+		return () => {
+			isMounted = false;
+		};
 	}, [facilityId]);
 
-	if (!facilityId || !tourData || !facilityMeta) {
+	const scenesById = useMemo(() => {
+		if (!facilityWithTour) return {};
+		return facilityWithTour.scenes.reduce<Record<string, any>>((acc, scene: VRScene) => {
+			const image = scene.image_url?.startsWith('http')
+				? scene.image_url
+				: facilitiesService.getImageUrl(scene.image_url, facilityWithTour.id);
+			acc[scene.id] = {
+				id: scene.id,
+				title: scene.title,
+				image,
+				regions: scene.regions || [],
+				hotspots: (scene.hotspots || []).map((hotspot: VRHotspot) => ({
+					id: hotspot.id,
+					text: hotspot.text,
+					position: hotspot.position,
+					targetSceneId: hotspot.target_scene_id,
+				})),
+			};
+			return acc;
+		}, {});
+	}, [facilityWithTour]);
+
+	if (loading) {
+		return (
+			<View className="flex-1 items-center justify-center bg-background">
+				<ActivityIndicator size="large" color="#002147" />
+				<Text className="mt-4 text-muted-foreground">Loading tour...</Text>
+			</View>
+		);
+	}
+
+	if (!facilityId || !facilityWithTour) {
 		return (
 			<ScreenScrollView>
 				<View className="flex-1 items-center justify-center py-12 px-6">
@@ -49,14 +147,14 @@ export default function VRTourScreen() {
 		);
 	}
 
-	const activeSceneId = currentSceneId ?? tourData.initialSceneId;
-	const activeScene = tourData.scenes[activeSceneId];
-	const hasSections = tourData.sections.length > 0;
-	const section = hasSections ? tourData.sections[currentSection] : undefined;
+	const activeSceneId = currentSceneId ?? facilityWithTour.initialSceneId;
+	const activeScene = activeSceneId ? scenesById[activeSceneId] : undefined;
+	const hasSections = facilityWithTour.sections.length > 0;
+	const section = hasSections ? facilityWithTour.sections[currentSection] : undefined;
 
 	const handleHotspotClick = (hotspotId: string) => {
 		if (!activeScene) return;
-		const hotspot = activeScene.hotspots.find(h => h.id === hotspotId);
+		const hotspot = activeScene.hotspots.find((h: { id: string; targetSceneId?: string }) => h.id === hotspotId);
 		if (hotspot?.targetSceneId) {
 			setCurrentSceneId(hotspot.targetSceneId);
 		}
@@ -64,12 +162,12 @@ export default function VRTourScreen() {
 
 	return (
 		<View className="flex-1 bg-background">
-			<View className="px-6 pt-12 pb-6 flex-row items-center justify-between" style={{ backgroundColor: tourData.color }}>
+			<View className="px-6 pt-12 pb-6 flex-row items-center justify-between" style={{ backgroundColor: facilityWithTour.color }}>
 				<Pressable onPress={() => router.back()} className="p-2 bg-white/20 rounded-full">
 					<Feather name="arrow-left" size={24} color="#FFFFFF" />
 				</Pressable>
 				<View className="items-center">
-					<Text className="text-white text-lg font-bold">{tourData.name}</Text>
+					<Text className="text-white text-lg font-bold">{facilityWithTour.name}</Text>
 					<Text className="text-white/80 text-xs">
 						{viewMode === 'panorama' && activeScene ? activeScene.title : 'Virtual Tour Details'}
 					</Text>
@@ -79,14 +177,14 @@ export default function VRTourScreen() {
 						className={`p-2 rounded-full ${viewMode === 'panorama' ? 'bg-white text-primary' : 'bg-white/20'}`}
 						onPress={() => setViewMode('panorama')}
 					>
-						<Feather name="globe" size={20} color={viewMode === 'panorama' ? tourData.color : '#FFFFFF'} />
+						<Feather name="globe" size={20} color={viewMode === 'panorama' ? facilityWithTour.color : '#FFFFFF'} />
 					</Pressable>
 					<Pressable
 						className={`p-2 rounded-full ${viewMode === 'sections' ? 'bg-white text-primary' : 'bg-white/20'}`}
 						onPress={() => hasSections && setViewMode('sections')}
 						disabled={!hasSections}
 					>
-						<Feather name="list" size={20} color={viewMode === 'sections' ? tourData.color : '#FFFFFF'} />
+						<Feather name="list" size={20} color={viewMode === 'sections' ? facilityWithTour.color : '#FFFFFF'} />
 					</Pressable>
 				</View>
 			</View>
@@ -110,7 +208,7 @@ export default function VRTourScreen() {
 								</View>
 								<View className="bg-primary/10 px-3 py-1 rounded-full">
 									<Text className="text-primary font-bold">
-										{currentSection + 1}/{tourData.sections.length}
+										{currentSection + 1}/{facilityWithTour.sections.length}
 									</Text>
 								</View>
 							</View>
@@ -120,19 +218,19 @@ export default function VRTourScreen() {
 							</Text>
 
 							<Text className="text-lg font-semibold text-foreground mb-4">Key Features</Text>
-							{section.details.map((detail, index) => (
+							{(section.details || []).map((detail, index) => (
 								<View key={index} className="flex-row items-center mb-3">
-									<View className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: tourData.color }} />
+									<View className="w-2 h-2 rounded-full mr-3" style={{ backgroundColor: facilityWithTour.color }} />
 									<Text className="text-base text-foreground flex-1">{detail}</Text>
 								</View>
 							))}
 
-							{section.hasVR && section.vrSceneId && (
+							{section.has_vr && section.vr_scene_id && (
 								<Pressable
 									className="mt-6 flex-row items-center justify-center px-6 py-3 rounded-full"
-									style={{ backgroundColor: tourData.color }}
+									style={{ backgroundColor: facilityWithTour.color }}
 									onPress={() => {
-										setCurrentSceneId(section.vrSceneId!);
+										setCurrentSceneId(section.vr_scene_id!);
 										setViewMode('panorama');
 									}}
 								>
@@ -156,15 +254,29 @@ export default function VRTourScreen() {
 							<Text className="text-muted-foreground">No tenants listed for this facility.</Text>
 						)}
 						{tenants.map(tenant => (
-							<View key={tenant.id} className="bg-card p-4 rounded-xl mb-3 flex-row items-center border border-border">
+							<Pressable
+								key={tenant.id}
+								className="bg-card p-4 rounded-xl mb-3 flex-row items-center border border-border active:opacity-90"
+								onPress={() =>
+									router.push({
+										pathname: '/tenant-detail',
+										params: {
+											id: tenant.id,
+											name: tenant.name,
+											tenant: JSON.stringify(tenant),
+										},
+									})
+								}
+							>
 								<View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-									<Text className="text-primary font-bold">{tenant.name.charAt(0)}</Text>
+									<TenantLogo name={tenant.name} logoUrl={tenant.logo_url} />
 								</View>
 								<View className="flex-1">
 									<Text className="font-semibold text-foreground">{tenant.name}</Text>
 									<Text className="text-xs text-muted-foreground">{tenant.description}</Text>
 								</View>
-							</View>
+								<Feather name="chevron-right" size={18} color="rgb(var(--muted-foreground))" />
+							</Pressable>
 						))}
 					</View>
 				</ScrollView>
@@ -185,25 +297,22 @@ export default function VRTourScreen() {
 					</Pressable>
 
 					<View className="flex-row gap-2">
-						{tourData.sections.map((_, index) => (
+						{facilityWithTour.sections.map((_, index) => (
 							<View
 								key={index}
 								className={`w-2 h-2 rounded-full ${index === currentSection ? '' : 'bg-muted'}`}
-								style={index === currentSection ? { backgroundColor: tourData.color } : {}}
+								style={index === currentSection ? { backgroundColor: facilityWithTour.color } : {}}
 							/>
 						))}
 					</View>
 
 					<Pressable
-						className={`flex-row items-center ${currentSection === tourData.sections.length - 1 ? 'opacity-50' : 'active:opacity-70'}`}
+						className={`flex-row items-center ${currentSection === facilityWithTour.sections.length - 1 ? 'opacity-50' : 'active:opacity-70'}`}
 						onPress={() => {
-							const nextSection = Math.min(tourData.sections.length - 1, currentSection + 1);
+							const nextSection = Math.min(facilityWithTour.sections.length - 1, currentSection + 1);
 							setCurrentSection(nextSection);
-							// Optional: Auto-switch scene when navigating sections?
-							// const nextSectionData = tourData.sections[nextSection];
-							// if (nextSectionData.vrSceneId) setCurrentSceneId(nextSectionData.vrSceneId);
 						}}
-						disabled={currentSection === tourData.sections.length - 1}
+						disabled={currentSection === facilityWithTour.sections.length - 1}
 					>
 						<Text className="mr-2 font-semibold text-foreground">Next</Text>
 						<Feather name="chevron-right" size={24} color="rgb(var(--foreground))" />

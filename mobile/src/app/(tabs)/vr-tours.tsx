@@ -1,38 +1,101 @@
-import React, { useMemo, useState } from 'react';
-import { Image, Pressable, TextInput, View } from 'react-native';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Image, Pressable, TextInput, View } from 'react-native';
 import { router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { TabsLayoutHeader } from '@/components/Header';
-import { FACILITIES, TENANTS } from '@/data/vrToursData';
+import { facilitiesService, type Facility } from '@/services/facilities.service';
+import { tenantService } from '@/services/tenant.service';
+import type { Tenant } from '@/types';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 // import ARCarDemo from '@/components/mixed-experiences/ar-demos/ARCarDemo';
+
+const normalize = (value?: string) =>
+	(value || '')
+		.toLowerCase()
+		.replace(/&/g, 'and')
+		.replace(/[^a-z0-9]/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+
+const getFacilityAliases = (facility: Facility) => {
+	const aliases = [facility.id, facility.name, facility.location];
+	if (facility.id === 'automotive-incubator') aliases.push('incubators');
+	if (facility.id === 'food-water') aliases.push('analytical laboratory');
+	if (facility.id === 'design-centre') aliases.push('design centre');
+	if (facility.id === 'digital-hub') aliases.push('digital hub');
+	if (facility.id === 'renewable-energy') aliases.push('renewable energy centre');
+	return aliases.map(normalize).filter(Boolean);
+};
 
 export default function VRToursScreen() {
 	const { colorScheme } = useColorScheme();
 	const colors = COLORS[colorScheme];
 	const [searchQuery, setSearchQuery] = useState('');
+	const [facilities, setFacilities] = useState<Facility[]>([]);
+	const [tenants, setTenants] = useState<Tenant[]>([]);
+	const [loading, setLoading] = useState(true);
+
+	useEffect(() => {
+		let isMounted = true;
+		async function loadData() {
+			setLoading(true);
+			try {
+				const [dbFacilities, dbTenants] = await Promise.all([
+					facilitiesService.getAllFacilities(),
+					tenantService.getTenants(200),
+				]);
+				if (!isMounted) return;
+				setFacilities(dbFacilities || []);
+				setTenants(dbTenants || []);
+			} catch (error) {
+				console.error('Error loading VR tours:', error);
+				if (isMounted) {
+					setFacilities([]);
+					setTenants([]);
+				}
+			} finally {
+				if (isMounted) setLoading(false);
+			}
+		}
+		loadData();
+		return () => {
+			isMounted = false;
+		};
+	}, []);
 
 	const filteredItems = useMemo(() => {
 		const lowerQuery = searchQuery.toLowerCase().trim();
-		if (!lowerQuery) return FACILITIES;
+		if (!lowerQuery) return facilities;
 
-		return FACILITIES.filter(facility => {
+		return facilities.filter(facility => {
+			const aliases = getFacilityAliases(facility);
 			const matchesFacility =
 				facility.name.toLowerCase().includes(lowerQuery) ||
 				facility.description.toLowerCase().includes(lowerQuery);
 
-			const matchesTenant = TENANTS.some(
+			const matchesTenant = tenants.some(
 				tenant =>
-					tenant.location === facility.location &&
+					aliases.some((alias) => normalize(tenant.location).includes(alias) || alias.includes(normalize(tenant.location))) &&
 					tenant.name.toLowerCase().includes(lowerQuery)
 			);
 
 			return matchesFacility || matchesTenant;
 		});
-	}, [searchQuery]);
+	}, [searchQuery, facilities, tenants]);
+
+	const resolveFacilityImage = (facility: Facility) => {
+		if (facility.image_url?.startsWith('http')) {
+			return { uri: facility.image_url };
+		}
+		if (facility.image_url) {
+			const localImage = facilitiesService.getImageUrl(facility.image_url, facility.id);
+			if (localImage) return localImage;
+		}
+		return require('../../../assets/images/connect-solve.png');
+	};
 
 	return (
 		<ScreenScrollView>
@@ -60,8 +123,19 @@ export default function VRToursScreen() {
 			</View>
 
 			<View className="px-6 pb-6">
-				{filteredItems.map(facility => {
-					const tenantsInFacility = TENANTS.filter(tenant => tenant.location === facility.location);
+				{loading && (
+					<View className="items-center py-12">
+						<ActivityIndicator size="large" color="#002147" />
+						<Text className="text-muted-foreground mt-4">Loading facilities...</Text>
+					</View>
+				)}
+
+				{!loading && filteredItems.map(facility => {
+					const aliases = getFacilityAliases(facility);
+					const tenantsInFacility = tenants.filter((tenant) => {
+						const tenantLoc = normalize(tenant.location);
+						return aliases.some((alias) => tenantLoc.includes(alias) || alias.includes(tenantLoc));
+					});
 
 					return (
 						<Pressable
@@ -70,7 +144,7 @@ export default function VRToursScreen() {
 							onPress={() => router.push({ pathname: '/vr-tour', params: { id: facility.id } })}
 						>
 							<View className="h-40 bg-muted relative">
-								<Image source={facility.image} className="w-full h-full" resizeMode="cover" />
+								<Image source={resolveFacilityImage(facility)} className="w-full h-full" resizeMode="cover" />
 								<View className="absolute inset-0 bg-black/30 flex-row items-center justify-center">
 									<View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center backdrop-blur-md">
 										<Feather name="play-circle" size={24} color={colors.white} />
@@ -111,7 +185,7 @@ export default function VRToursScreen() {
 					);
 				})}
 
-				{filteredItems.length === 0 && (
+				{!loading && filteredItems.length === 0 && (
 					<View className="items-center py-12">
 						<Feather name="map" size={48} color={colors.textSecondary} />
 						<Text className="text-muted-foreground text-base mt-4 text-center">

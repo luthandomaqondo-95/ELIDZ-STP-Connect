@@ -86,6 +86,37 @@ class OpportunityServiceClass {
 		return data as Opportunity;
 	}
 
+	async applyToOpportunity(opportunityId: string, coverLetter?: string): Promise<{ id: string }> {
+		const { data: { user } } = await supabase.auth.getUser();
+		if (!user) {
+			throw new Error('You must be logged in to apply for an opportunity');
+		}
+
+		const { data, error } = await supabase
+			.from('applications')
+			.insert({
+				opportunity_id: opportunityId,
+				applicant_id: user.id,
+				cover_letter: coverLetter || null,
+				status: 'pending',
+			})
+			.select('id')
+			.single();
+
+		if (error) {
+			console.error('OpportunityService.applyToOpportunity error:', JSON.stringify(error, null, 2));
+			if (error.code === '23505') {
+				throw new Error('You have already applied for this opportunity.');
+			}
+			if (error.code === '22P02') {
+				throw new Error('Invalid opportunity selected. Please try again from the opportunities list.');
+			}
+			throw new Error(error.message || 'Failed to submit application');
+		}
+
+		return data as { id: string };
+	}
+
 	/**
 	 * Get recommended opportunities for a user
 	 */
