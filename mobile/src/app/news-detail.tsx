@@ -7,6 +7,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { NewsService, News } from '@/services/news.service';
+import { TabsLayoutHeader } from '@/components/Header';
 
 function NewsDetailScreen() {
   const { colors } = useTheme();
@@ -44,7 +45,14 @@ function NewsDetailScreen() {
 
   if (loading) {
     return (
-      <ScreenScrollView>
+      <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="bg-background">
+          <TabsLayoutHeader title="News" variant="navy">
+            <Text className="text-white/80 text-base">
+              Article details.
+            </Text>
+          </TabsLayoutHeader>
+        </View>
         <View className="p-5 items-center justify-center min-h-[400px]">
           <ActivityIndicator size="large" color={colors.primary} />
           <Text className="text-base text-muted-foreground mt-3">
@@ -57,7 +65,14 @@ function NewsDetailScreen() {
 
   if (error || !news) {
     return (
-      <ScreenScrollView>
+      <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="bg-background">
+          <TabsLayoutHeader title="News" variant="navy">
+            <Text className="text-white/80 text-base">
+              Article details.
+            </Text>
+          </TabsLayoutHeader>
+        </View>
         <View className="p-5 items-center justify-center min-h-[400px]">
           <Feather name="alert-circle" size={48} color={colors.error || '#EF4444'} />
           <Text className="text-lg font-bold mt-3 text-center text-destructive">
@@ -124,57 +139,67 @@ function NewsDetailScreen() {
   };
 
   return (
-    <ScreenScrollView>
-      <View
-        className="p-5 rounded-xl mb-3"
-        style={{ backgroundColor: categoryColors[category] || colors.primary }}
-      >
-        {category && (
-          <View className="self-start px-2.5 py-1 rounded-lg bg-primary-foreground">
-            <Text className="text-xs" style={{ color: categoryColors[category] || colors.primary }}>
-              {category}
-            </Text>
-          </View>
-        )}
-        <View className="mt-3 items-center">
-          {news.image_url ? (
-            <Image
-              source={{ uri: news.image_url }}
-              className="w-[120px] h-[120px] rounded-xl"
-              resizeMode="cover"
-            />
-          ) : (
-            <Feather name={getCategoryIcon(category)} size={48} color={colors.buttonText} />
-          )}
-        </View>
-        <Text className="text-xl font-bold text-primary-foreground mt-3">
-          {news.title}
-        </Text>
+    <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      <View className="bg-background">
+        <TabsLayoutHeader title="News" variant="navy">
+          <Text className="text-white/80 text-base">
+            Article details.
+          </Text>
+        </TabsLayoutHeader>
       </View>
 
-      <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-        <View className="flex-row justify-between flex-wrap">
-          <View className="flex-row items-center mb-2">
-            <Feather name="calendar" size={16} color={colors.textSecondary} />
-            <Text className="text-sm text-muted-foreground ml-1">
-              {news.formattedDate || new Date(news.published_at).toLocaleDateString()}
-            </Text>
-          </View>
-          {news.author && (
-            <View className="flex-row items-center mb-2">
-              <Feather name="user" size={16} color={colors.textSecondary} />
-              <Text className="text-sm text-muted-foreground ml-1">
-                {news.author.name || 'ELIDZ Communications'}
+      <View className="mt-6 px-5">
+        <View
+          className="p-5 rounded-xl mb-3"
+          style={{ backgroundColor: categoryColors[category] || colors.primary }}
+        >
+          {category && (
+            <View className="self-start px-2.5 py-1 rounded-lg bg-primary-foreground">
+              <Text className="text-xs" style={{ color: categoryColors[category] || colors.primary }}>
+                {category}
               </Text>
             </View>
           )}
+          <View className="mt-3 items-center">
+            {news.image_url ? (
+              <Image
+                source={{ uri: news.image_url }}
+                className="w-[120px] h-[120px] rounded-xl"
+                resizeMode="cover"
+              />
+            ) : (
+              <Feather name={getCategoryIcon(category)} size={48} color={colors.buttonText} />
+            )}
+          </View>
+          <Text className="text-xl font-bold text-primary-foreground mt-3">
+            {news.title}
+          </Text>
         </View>
-      </View>
 
-      <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-        <Text className="text-base text-foreground leading-6">
-          {news.content}
-        </Text>
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <View className="flex-row justify-between flex-wrap">
+            <View className="flex-row items-center mb-2">
+              <Feather name="calendar" size={16} color={colors.textSecondary} />
+              <Text className="text-sm text-muted-foreground ml-1">
+                {news.formattedDate || new Date(news.published_at).toLocaleDateString()}
+              </Text>
+            </View>
+            {news.author && (
+              <View className="flex-row items-center mb-2">
+                <Feather name="user" size={16} color={colors.textSecondary} />
+                <Text className="text-sm text-muted-foreground ml-1">
+                  {news.author.name || 'ELIDZ Communications'}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-base text-foreground leading-6">
+            {news.content}
+          </Text>
+        </View>
       </View>
     </ScreenScrollView>
   );

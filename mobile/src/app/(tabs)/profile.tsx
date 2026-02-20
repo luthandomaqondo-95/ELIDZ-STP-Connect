@@ -11,15 +11,15 @@ import type { SMMEVerification } from '@/services/verification.service';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { useAvatarUri } from '@/hooks/use-avatar-uri';
 
 function ProfileScreen() {
     const { profile, isLoggedIn, isLoading, logout } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme];
+    const { uri: avatarUri } = useAvatarUri(profile?.avatar);
     const [verificationStatus, setVerificationStatus] = useState<SMMEVerification | null>(null);
     const [loadingVerification, setLoadingVerification] = useState(false);
-
-    console.log(' ---- profile', profile);
 
     const [allVerifications, setAllVerifications] = useState<SMMEVerification[]>([]);
     const [servicesProducts, setServicesProducts] = useState<{ services: SMMEServiceProduct[]; products: SMMEServiceProduct[] }>({ services: [], products: [] });
@@ -140,8 +140,8 @@ function ProfileScreen() {
             onPress={disabled ? undefined : onPress}
             className={`flex-row items-center py-4 border-b border-border active:opacity-70 ${disabled ? 'opacity-50' : ''}`}
         >
-            <View className={`w-10 h-10 rounded-full justify-center items-center mr-4 ${isDestructive ? 'bg-red-50' : 'bg-[#002147]/5'}`}>
-                <Feather name={icon as any} size={20} color={isDestructive ? '#EF4444' : '#002147'} />
+            <View className={`w-10 h-10 rounded-full justify-center items-center mr-4 ${isDestructive ? 'bg-destructive/10' : 'bg-accent/10'}`}>
+                <Feather name={icon as any} size={20} color={isDestructive ? colors.destructive : colors.accent} />
             </View>
             <View className="flex-1">
                 <View className="flex-row items-center">
@@ -149,14 +149,14 @@ function ProfileScreen() {
                         {title}
                     </Text>
                     {premium && (
-                        <View className="ml-2 px-2 py-0.5 bg-[#FF6600]/10 rounded-md">
-                            <Text className="text-[#FF6600] text-[10px] font-bold uppercase">PRO</Text>
+                        <View className="ml-2 px-2 py-0.5 bg-accent/10 rounded-md">
+                            <Text className="text-accent text-[10px] font-bold uppercase">PRO</Text>
                         </View>
                     )}
                 </View>
                 {subtitle && <Text className="text-muted-foreground text-xs mt-0.5">{subtitle}</Text>}
             </View>
-            <Feather name="chevron-right" size={20} color={colors.iconGray} />
+            <Feather name="chevron-right" size={20} color={colors.text} />
         </Pressable>
     );
 
@@ -180,16 +180,16 @@ function ProfileScreen() {
                                 className="absolute top-4 right-4 p-2 bg-background rounded-full"
                                 onPress={() => router.push('/edit-profile')}
                             >
-                                <Feather name="edit-2" size={16} color={colors.primary} />
+                                <Feather name="edit-2" size={16} color={colors.accent} />
                             </Pressable>
                         )}
 
                         {/* Avatar */}
                         <View className="w-24 h-24 rounded-full bg-background p-1 mb-4 -mt-16 border-4 border-card shadow-sm">
-                            <View className="w-full h-full rounded-full justify-center items-center overflow-hidden bg-[#002147]/5">
-                                {profile?.avatar && (profile.avatar.startsWith('http://') || profile.avatar.startsWith('https://')) ? (
+                            <View className="w-full h-full rounded-full justify-center items-center overflow-hidden bg-muted">
+                                {avatarUri ? (
                                     <Image 
-                                        source={{ uri: profile.avatar }} 
+                                        source={{ uri: avatarUri }} 
                                         style={{ width: '100%', height: '100%' }}
                                         resizeMode="cover"
                                     />
@@ -212,7 +212,7 @@ function ProfileScreen() {
                             {profile?.name || 'Guest User'}
                         </Text>
                         <View className="flex-row items-center mb-2">
-                            <View className="px-3 py-1 bg-[#002147]/5 rounded-full">
+                            <View className="px-3 py-1 bg-accent/10 rounded-full">
                                 <Text className="text-foreground text-xs font-medium">
                                     {profile?.role || 'Visitor'}
                                 </Text>
@@ -227,7 +227,7 @@ function ProfileScreen() {
                         {/* Guest CTA inside card */}
                         {!isLoggedIn && (
                             <Pressable
-                                className="w-full bg-[#002147] py-3 rounded-xl items-center mt-2 active:opacity-90"
+                                className="w-full bg-accent py-3 rounded-xl items-center mt-2 active:opacity-90"
                                 onPress={() => router.push('/(auth)')}
                             >
                                 <Text className="text-white font-bold text-sm">Sign Up / Login</Text>
@@ -236,85 +236,29 @@ function ProfileScreen() {
                     </View>
                 </View>
 
-                {/* SMME Products & Services Section */}
-                {isLoggedIn && profile?.role === 'SMME' && (
-                    <View className="mx-6 mb-6">
-                        <View className="bg-card rounded-2xl p-4 shadow-sm border border-border">
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-row items-center flex-1">
-                                    <View className="w-10 h-10 rounded-full bg-[#002147]/5 items-center justify-center mr-3">
-                                        <Feather name="briefcase" size={18} color={colors.primary} />
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className="text-foreground font-bold text-sm">Products & Services</Text>
-                                        <Text className="text-muted-foreground text-xs mt-0.5">
-                                            {loadingServicesProducts ? 'Loading...' : `${servicesProducts.products.length + servicesProducts.services.length} items listed`}
-                                        </Text>
-                                    </View>
-                                </View>
-                                <Pressable
-                                    onPress={() => router.push('/smme-verification')}
-                                    className="px-3 py-2 bg-[#002147] rounded-lg active:opacity-90 ml-2"
-                                >
-                                    <View className="flex-row items-center">
-                                        <Feather name="edit" size={14} color="white" />
-                                        <Text className="text-white font-semibold text-xs ml-1">Manage</Text>
-                                    </View>
-                                </Pressable>
-                            </View>
-                        </View>
-                    </View>
-                )}
-
-                {/* SMME Progress Reports Section */}
-                {isLoggedIn && profile?.role === 'SMME' && (
-                    <View className="mx-6 mb-6">
-                        <Pressable
-                            onPress={() => router.push('/progress-reports')}
-                            className="bg-card rounded-2xl p-4 shadow-sm border border-border active:opacity-95"
-                        >
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-row items-center flex-1">
-                                    <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-3">
-                                        <Feather name="file-text" size={18} color={colors.accent} />
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className="text-foreground font-bold text-sm">Progress Reports</Text>
-                                        <Text className="text-muted-foreground text-xs mt-0.5">
-                                            Submit funding progress reports
-                                        </Text>
-                                    </View>
-                                </View>
-                                <Feather name="chevron-right" size={20} color={colors.iconGrayDark} />
-                            </View>
-                        </Pressable>
-                    </View>
-                )}
-
-                {/* SMME Verification Status Banner */}
+                {/* SMME Business: Verification + Products & Services (single entry point) */}
                 {isLoggedIn && profile?.role === 'SMME' && (
                     <View className="mx-6 mb-6">
                         <View className="bg-card rounded-2xl p-5 shadow-sm border border-border">
                             <View className="flex-row items-center justify-between mb-3">
-                                <View className="flex-row items-center">
-                                    <View className="w-10 h-10 rounded-full bg-primary/10 items-center justify-center mr-3">
-                                        <Feather name="shield" size={20} color={colors.primary} />
+                                <View className="flex-row items-center flex-1">
+                                    <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-3">
+                                        <Feather name="shield" size={18} color={colors.accent} />
                                     </View>
-                                    <View>
-                                        <Text className="text-foreground font-bold text-base">Business Verification</Text>
+                                    <View className="flex-1">
+                                        <Text className="text-foreground font-bold text-base">Business Profile</Text>
                                         <Text className="text-muted-foreground text-xs mt-0.5">
-                                            {verificationStatus 
-                                                ? getVerificationStatusText(verificationStatus.status)
-                                                : 'Not Submitted'}
+                                            Verification & listings
                                         </Text>
                                     </View>
                                 </View>
+
                                 {verificationStatus && (
-                                    <View 
+                                    <View
                                         className="px-3 py-1 rounded-full"
                                         style={{ backgroundColor: `${getVerificationStatusColor(verificationStatus.status)}20` }}
                                     >
-                                        <Text 
+                                        <Text
                                             className="text-xs font-semibold"
                                             style={{ color: getVerificationStatusColor(verificationStatus.status) }}
                                         >
@@ -323,7 +267,25 @@ function ProfileScreen() {
                                     </View>
                                 )}
                             </View>
-                            
+
+                            <View className="flex-row items-center justify-between mb-4">
+                                <Text className="text-muted-foreground text-sm">
+                                    Products & Services
+                                </Text>
+                                <Text className="text-foreground text-sm font-semibold">
+                                    {loadingServicesProducts ? 'Loading...' : `${servicesProducts.products.length + servicesProducts.services.length} item(s)`}
+                                </Text>
+                            </View>
+
+                            <View className="flex-row items-center justify-between mb-4">
+                                <Text className="text-muted-foreground text-sm">
+                                    Business Verification
+                                </Text>
+                                <Text className="text-foreground text-sm font-semibold">
+                                    {verificationStatus ? getVerificationStatusText(verificationStatus.status) : 'Not Submitted'}
+                                </Text>
+                            </View>
+
                             {verificationStatus?.status === 'rejected' && verificationStatus.rejection_reason && (
                                 <View className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3">
                                     <Text className="text-destructive text-xs font-medium mb-1">Rejection Reason:</Text>
@@ -349,39 +311,64 @@ function ProfileScreen() {
 
                             <Pressable
                                 onPress={() => router.push('/smme-verification')}
-                                className="bg-[#002147] py-3 rounded-xl items-center active:opacity-90"
+                                className="bg-accent py-3 rounded-xl items-center active:opacity-90"
                             >
                                 <Text className="text-white font-bold text-sm">
-                                    {verificationStatus ? 'Update Documents' : 'Upload Documents'}
+                                    {verificationStatus ? 'Manage Business Profile' : 'Upload Documents'}
                                 </Text>
                             </Pressable>
                         </View>
                     </View>
                 )}
 
-                {/* Premium Banner */}
-                {!profile?.isPremium && isLoggedIn && (
-                    <Pressable
-                        className="mx-6 mb-6 rounded-2xl overflow-hidden shadow-sm active:opacity-95"
-                        onPress={() => router.push('/(modals)/premium-upgrade')}
-                    >
-                        <LinearGradient
-                            colors={['#FF6600', '#FF8533']}
-                            start={{ x: 0, y: 0 }}
-                            end={{ x: 1, y: 0 }}
-                            className="p-5 flex-row items-center"
+                {/* SMME Progress Reports Section */}
+                {isLoggedIn && profile?.role === 'SMME' && (
+                    <View className="mx-6 mb-6">
+                        <Pressable
+                            onPress={() => router.push('/progress-reports')}
+                            className="bg-card rounded-2xl p-4 shadow-sm border border-border active:opacity-95"
                         >
-                            <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center mr-4">
-                                {/* <Feather name="crown" size={20} color="white" /> */}
+                            <View className="flex-row items-center justify-between">
+                                <View className="flex-row items-center flex-1">
+                                    <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-3">
+                                        <Feather name="file-text" size={18} color={colors.accent} />
+                                    </View>
+                                    <View className="flex-1">
+                                        <Text className="text-foreground font-bold text-sm">Progress Reports</Text>
+                                        <Text className="text-muted-foreground text-xs mt-0.5">
+                                            Submit funding progress reports
+                                        </Text>
+                                    </View>
+                                </View>
+                                <Feather name="chevron-right" size={20} color={colors.text} />
                             </View>
-                            <View className="flex-1">
-                                <Text className="text-white font-bold text-lg mb-0.5">Upgrade to Premium</Text>
-                                <Text className="text-white/90 text-xs">Unlock exclusive features & analytics</Text>
-                            </View>
-                            <Feather name="chevron-right" size={24} color="white" />
-                        </LinearGradient>
-                    </Pressable>
+                        </Pressable>
+                    </View>
                 )}
+
+                {/* (Verification + Products & Services merged above) */}
+
+                {/* Premium Banner (disabled) */}
+                {/* {!profile?.isPremium && isLoggedIn && (
+                  <Pressable
+                    className="mx-6 mb-6 rounded-2xl overflow-hidden shadow-sm active:opacity-95"
+                    onPress={() => router.push('/(modals)/premium-upgrade')}
+                  >
+                    <LinearGradient
+                      colors={['#FF6600', '#FF8533']}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 0 }}
+                      className="p-5 flex-row items-center"
+                    >
+                      <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center mr-4" />
+                      <View className="flex-1">
+                        <Text className="text-white font-bold text-lg mb-0.5">Upgrade to Premium</Text>
+                        <Text className="text-white/90 text-xs">Unlock exclusive features & analytics</Text>
+                      </View>
+                      <Feather name="chevron-right" size={24} color="white" />
+                    </LinearGradient>
+                  </Pressable>
+                )} */}
 
                 {/* Menu Groups */}
                 <View className="px-6">
@@ -394,7 +381,8 @@ function ProfileScreen() {
                             {renderMenuItem('user', 'Personal Information', 'Manage your profile details', () => router.push('/edit-profile'), false, !isLoggedIn)}
                             {renderMenuItem('bell', 'Notifications', 'View admin communications', () => router.push('/(tabs)/notifications'), false, !isLoggedIn)}
                             {renderMenuItem('settings', 'Settings', 'Notifications, privacy & more', () => router.push('/settings'), false, !isLoggedIn)}
-                            {renderMenuItem('star', 'Premium Features', 'Manage subscription', () => router.push('/(modals)/premium-upgrade'), false, !isLoggedIn, true)}
+                            {/* Premium Features (disabled) */}
+                            {/* {renderMenuItem('star', 'Premium Features', 'Manage subscription', () => router.push('/(modals)/premium-upgrade'), false, !isLoggedIn, true)} */}
                         </View>
                     </View>
 

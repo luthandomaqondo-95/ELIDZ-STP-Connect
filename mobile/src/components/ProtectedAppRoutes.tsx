@@ -33,22 +33,22 @@ export default function ProtectedAppRoutes() {
             {/* Standalone protected screens - each uses withAuthGuard HOC for auth protection */}
             <Stack.Screen name="opportunities" options={{ headerShown: false }} />
             <Stack.Screen name="opportunity-detail" options={{ title: 'Opportunity Details', headerShown: false }} />
-            <Stack.Screen name="resources" options={{ title: 'Resources', headerShown: true }} />
-            <Stack.Screen name="resource-detail" options={{ title: 'Resource Details', headerShown: true }} />
-            <Stack.Screen name="settings" options={{ title: 'Settings', headerShown: true }} />
+            <Stack.Screen name="resources" options={{ title: 'Resources', headerShown: false }} />
+            <Stack.Screen name="resource-detail" options={{ title: 'Resource Details', headerShown: false }} />
+            <Stack.Screen name="settings" options={{ title: 'Settings', headerShown: false }} />
             <Stack.Screen name="user-profile" options={{ title: 'Profile', headerShown: false }} />
             <Stack.Screen name="edit-profile" options={{ title: 'Edit Profile', headerShown: false }} />
             <Stack.Screen name="center-detail" options={{ title: 'Center Details', headerShown: false }} />
             <Stack.Screen name="tenant-detail" options={{ title: 'Tenant Details', headerShown: false }} />
-            <Stack.Screen name="news-detail" options={{ title: 'News Article', headerShown: true }} />
-            <Stack.Screen name="event-detail" options={{ title: 'Event Details', headerShown: true }} />
-            <Stack.Screen name="vr-tours" options={{ title: 'VR Tours', headerShown: true }} />
+            <Stack.Screen name="news-detail" options={{ title: 'News Article', headerShown: false }} />
+            <Stack.Screen name="event-detail" options={{ title: 'Event Details', headerShown: false }} />
+            <Stack.Screen name="vr-tours" options={{ title: 'VR Tours', headerShown: false }} />
             <Stack.Screen name="vr-tour" options={{ title: 'VR Tour', headerShown: false }} />
-            <Stack.Screen name="chat" options={{ title: 'Chat', headerShown: true }} />
-            <Stack.Screen name="message" options={{ title: 'Messages', headerShown: true }} />
-            <Stack.Screen name="opportunities-chat" options={{ title: 'Opportunities Chat', headerShown: true }} />
-            <Stack.Screen name="application-form" options={{ title: 'Apply Now', headerShown: true }} />
-            <Stack.Screen name="document-saver" options={{ title: 'Document Saver', headerShown: true }} />
+            <Stack.Screen name="chat" options={{ title: 'Chat', headerShown: false }} />
+            <Stack.Screen name="message" options={{ title: 'Messages', headerShown: false }} />
+            <Stack.Screen name="opportunities-chat" options={{ title: 'Opportunities Chat', headerShown: false }} />
+            <Stack.Screen name="application-form" options={{ title: 'Apply Now', headerShown: false }} />
+            <Stack.Screen name="document-saver" options={{ title: 'Document Saver', headerShown: false }} />
             {/* <Stack.Screen name="dashboard" options={{ title: 'Dashboard' }} /> */}
 
             {/* Not Found Screen */}

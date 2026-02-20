@@ -5,9 +5,9 @@ import { Text } from '@/components/ui/text';
 import { useTheme } from '@/hooks/useTheme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
-import { LinearGradient } from 'expo-linear-gradient';
 import { ResourceService } from '@/services/resource.service';
 import { Resource } from '@/types';
+import { TabsLayoutHeader } from '@/components/Header';
 
 function ResourcesScreen() {
   const { colors } = useTheme();
@@ -81,30 +81,28 @@ function ResourcesScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-background">
         <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-             {/* Header */}
-             <LinearGradient
-                colors={['#002147', '#003366']}
-                className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
-            >
-                <Text className="text-white text-3xl font-bold mb-2">Resources</Text>
-                <Text className="text-white/80 text-base">
-                    Book labs, equipment, and expertise for your projects.
-                </Text>
+            {/* Header */}
+            <View className="bg-background">
+                <TabsLayoutHeader title="Resources" variant="navy">
+                    <Text className="text-white/80 text-base mb-6">
+                        Book labs, equipment, and expertise for your projects.
+                    </Text>
 
-                {/* Search Bar */}
-                <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
-                    <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
-                    <TextInput
-                        className="flex-1 ml-3 text-base text-white"
-                        placeholder="Search resources..."
-                        placeholderTextColor="rgba(255,255,255,0.5)"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
-            </LinearGradient>
+                    {/* Search Bar */}
+                    <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4">
+                        <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                        <TextInput
+                            className="flex-1 ml-3 text-base text-white"
+                            placeholder="Search resources..."
+                            placeholderTextColor="rgba(255,255,255,0.5)"
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
+                        />
+                    </View>
+                </TabsLayoutHeader>
+            </View>
 
             {/* Categories */}
             <View className="mt-6 px-6 mb-4">

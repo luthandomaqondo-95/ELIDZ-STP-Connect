@@ -3,38 +3,37 @@ import { View, Pressable, ScrollView } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { analyticsService } from '@/services/analytics.service';
 import { getCenters } from '@/services/center.service';
+import { TabsLayoutHeader } from '@/components/Header';
 
 export default function ProductLinesScreen() {
   const productLines = getCenters();
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Header */}
-      <LinearGradient
-        colors={['#002147', '#003366']}
-        className="pt-12 pb-6 px-4 rounded-b-[30px] shadow-lg z-10"
-      >
-        <View className="flex-row items-center">
-          <Pressable 
-            onPress={() => router.back()}
-            className="p-2 bg-white/10 rounded-full mr-4"
+    <View className="flex-1 bg-background">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }} showsVerticalScrollIndicator={false}>
+        <View className="bg-background">
+          <TabsLayoutHeader
+            title="Centers of Excellence"
+            variant="navy"
+            showActions={false}
+            left={
+              <Pressable
+                onPress={() => router.back()}
+                className="p-2 bg-white/10 rounded-full"
+              >
+                <Feather name="arrow-left" size={20} color="white" />
+              </Pressable>
+            }
           >
-            <Feather name="arrow-left" size={24} color="white" />
-          </Pressable>
-          <Text className="text-white text-xl font-bold flex-1">
-            Centers of Excellence
-          </Text>
+            <Text className="text-white/80 text-base">
+              Explore our specialized centers designed to support innovation and growth
+            </Text>
+          </TabsLayoutHeader>
         </View>
-      </LinearGradient>
 
-      <ScrollView className="flex-1 px-4 py-6" showsVerticalScrollIndicator={false}>
-        <Text className="text-muted-foreground text-base mb-6">
-          Explore our specialized centers designed to support innovation and growth
-        </Text>
-
+        <View className="mt-6 px-4">
         {productLines.map((line, index) => (
             <View className="mb-4" key={index}>
               <Pressable
@@ -66,8 +65,7 @@ export default function ProductLinesScreen() {
               </Pressable>
             </View>
         ))}
-        {/* Bottom spacer for safe area */}
-        <View className="h-10" />
+        </View>
       </ScrollView>
     </View>
   );

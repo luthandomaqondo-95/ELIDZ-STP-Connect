@@ -17,7 +17,7 @@ import { COLORS } from '@/theme/colors';
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
 
-type ScreenMode = 'list' | 'detail';
+type ScreenMode = 'list' | 'detail' | 'service';
 
 export default function ServicesScreen() {
 	const { colorScheme } = useColorScheme();
@@ -156,14 +156,23 @@ export default function ServicesScreen() {
 		setScreenMode('detail');
 	};
 
-	// Handle service selection for VR tour
+	// Handle service selection: show single-service view (no header, only this service)
 	const handleServiceSelect = (service: VRSection) => {
-		if (service.has_vr) {
-			router.push({
-				pathname: '/vr-tour',
-				params: { id: facilityWithTour?.id }
-			});
+		setSelectedService(service);
+		setScreenMode('service');
+	};
+
+	// Open VR tour for the current facility (from single-service view)
+	const handleOpenVR = () => {
+		if (facilityWithTour?.id) {
+			router.push({ pathname: '/vr-tour', params: { id: facilityWithTour.id } });
 		}
+	};
+
+	// Back from single-service view to facility's service list
+	const handleBackToServiceList = () => {
+		setSelectedService(null);
+		setScreenMode('detail');
 	};
 
 	// Handle back to list
@@ -295,7 +304,8 @@ export default function ServicesScreen() {
 
 	return (
 		<View className="flex-1">
-			{/* Header */}
+			{/* Header – only on list view */}
+			{screenMode === 'list' && (
 			<View className="bg-background">
 				<TabsLayoutHeader title="Services" variant="navy">
 					<View
@@ -334,6 +344,7 @@ export default function ServicesScreen() {
 					</View>
 				</TabsLayoutHeader>
 			</View>
+			)}
 			{screenMode === 'list' && (
 				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
 
@@ -396,7 +407,7 @@ export default function ServicesScreen() {
 					<View className="px-6 pt-12 pb-6 bg-card shadow-sm">
 						<View className="flex-row items-center mb-4">
 							<Pressable onPress={handleBackToList} className="p-2 mr-3">
-								<Feather name="arrow-left" size={24} color="#002147" />
+								<Feather name="arrow-left" size={24} color={colors.text} />
 							</Pressable>
 							<View className="w-12 h-12 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: facilityWithTour.color }}>
 								<Feather name={facilityWithTour.icon as any} size={24} color="#FFFFFF" />
@@ -412,7 +423,7 @@ export default function ServicesScreen() {
 					{/* Loading State */}
 					{loadingTour && (
 						<View className="flex-1 items-center justify-center py-20">
-							<ActivityIndicator size="large" color="#002147" />
+							<ActivityIndicator size="large" color={colors.accent} />
 						</View>
 					)}
 
@@ -441,11 +452,6 @@ export default function ServicesScreen() {
 													))}
 												</View>
 											</View>
-											{service.has_vr ? (
-												<View className="ml-4">
-													<Feather name="eye" size={24} color="#FF6600" />
-												</View>
-											) : null}
 										</View>
 									</Pressable>
 
@@ -453,7 +459,7 @@ export default function ServicesScreen() {
 									<View className="flex-row gap-2 mt-2 pt-3 border-t border-border">
 										<Pressable
 											onPress={() => handleRequestAccess(service)}
-											className="flex-1 bg-[#002147] py-2.5 rounded-lg active:opacity-90"
+											className="flex-1 bg-accent py-2.5 rounded-lg active:opacity-90"
 										>
 											<View className="flex-row items-center justify-center">
 												<Feather name="user-plus" size={16} color="white" />
@@ -462,19 +468,20 @@ export default function ServicesScreen() {
 										</Pressable>
 										<Pressable
 											onPress={handleContactFacility}
-											className="px-4 py-2.5 border border-[#002147] rounded-lg active:opacity-90"
+											className="px-4 py-2.5 border border-accent rounded-lg active:opacity-90"
 										>
 											<View className="flex-row items-center">
-												<Feather name="mail" size={16} color="#002147" />
+												<Feather name="mail" size={16} color={colors.accent} />
 											</View>
 										</Pressable>
 										{service.has_vr && (
 											<Pressable
 												onPress={() => handleServiceSelect(service)}
-												className="px-4 py-2.5 border border-[#FF6600] rounded-lg active:opacity-90"
+												className="px-4 py-2.5 border border-accent rounded-lg active:opacity-90"
 											>
 												<View className="flex-row items-center">
-													<Feather name="eye" size={16} color="#FF6600" />
+													<Feather name="eye" size={16} color={colors.accent} />
+													<Text className="text-accent text-sm font-semibold ml-2">VR Tour</Text>
 												</View>
 											</Pressable>
 										)}
@@ -497,8 +504,8 @@ export default function ServicesScreen() {
 									onPress={() => router.push(`/tenant-detail?id=${tenant.id}`)}
 									className="bg-card p-4 rounded-xl mb-3 flex-row items-center border border-border active:opacity-95"
 								>
-									<View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-										<Text className="text-primary font-bold">{tenant.name.charAt(0)}</Text>
+									<View className="w-10 h-10 bg-accent/10 rounded-full items-center justify-center mr-3">
+										<Text className="text-accent font-bold">{tenant.name.charAt(0)}</Text>
 									</View>
 									<View className="flex-1">
 										<Text className="font-semibold text-foreground">{tenant.name}</Text>
@@ -513,8 +520,8 @@ export default function ServicesScreen() {
 														}}
 														className="flex-row items-center"
 													>
-														<Feather name="mail" size={12} color="#002147" />
-														<Text className="text-primary text-[10px] ml-1">Email</Text>
+														<Feather name="mail" size={12} color={colors.accent} />
+														<Text className="text-accent text-[10px] ml-1">Email</Text>
 													</Pressable>
 												)}
 												{tenant.contact_phone && (
@@ -525,8 +532,8 @@ export default function ServicesScreen() {
 														}}
 														className="flex-row items-center"
 													>
-														<Feather name="phone" size={12} color="#002147" />
-														<Text className="text-primary text-[10px] ml-1">Call</Text>
+														<Feather name="phone" size={12} color={colors.accent} />
+														<Text className="text-accent text-[10px] ml-1">Call</Text>
 													</Pressable>
 												)}
 												{tenant.website && (
@@ -537,14 +544,14 @@ export default function ServicesScreen() {
 														}}
 														className="flex-row items-center"
 													>
-														<Feather name="globe" size={12} color="#002147" />
-														<Text className="text-primary text-[10px] ml-1">Website</Text>
+														<Feather name="globe" size={12} color={colors.accent} />
+														<Text className="text-accent text-[10px] ml-1">Website</Text>
 													</Pressable>
 												)}
 											</View>
 										)}
 									</View>
-									<Feather name="chevron-right" size={20} color="#FF6600" />
+									<Feather name="chevron-right" size={20} color={colors.accent} />
 								</Pressable>
 							))}
 						</View>
@@ -561,7 +568,7 @@ export default function ServicesScreen() {
 								<View className="flex-row gap-2">
 									<Pressable
 										onPress={handleContactFacility}
-										className="flex-1 bg-[#002147] py-3 rounded-lg active:opacity-90"
+										className="flex-1 bg-accent py-3 rounded-lg active:opacity-90"
 									>
 										<View className="flex-row items-center justify-center">
 											<Feather name="mail" size={16} color="white" />
@@ -570,14 +577,68 @@ export default function ServicesScreen() {
 									</Pressable>
 									<Pressable
 										onPress={() => Linking.openURL('https://www.elidz.co.za')}
-										className="px-4 py-3 border border-[#002147] rounded-lg active:opacity-90"
+										className="px-4 py-3 border border-accent rounded-lg active:opacity-90"
 									>
-										<Feather name="globe" size={18} color="#002147" />
+										<Feather name="globe" size={18} color={colors.accent} />
 									</Pressable>
 								</View>
 							</View>
 						</View>
 					)}
+				</ScrollView>
+			)}
+
+			{/* Single service view – no main header, only this service */}
+			{screenMode === 'service' && selectedService && facilityWithTour && (
+				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
+					<View className="px-4 pt-12 pb-4 flex-row items-center border-b border-border bg-card">
+						<Pressable onPress={handleBackToServiceList} className="p-2 mr-3">
+							<Feather name="arrow-left" size={24} color={colors.text} />
+						</Pressable>
+						<Text className="text-lg font-bold text-foreground flex-1" numberOfLines={1}>
+							{selectedService.title}
+						</Text>
+					</View>
+					<View className="mx-5 mt-6">
+						<View className="bg-card rounded-2xl p-5 shadow-sm border border-border">
+							<Text className="text-muted-foreground text-sm mb-3">{selectedService.description}</Text>
+							<View className="flex-row flex-wrap mb-4">
+								{selectedService.details.slice(0, 5).map((detail: string, i: number) => (
+									<View key={i} className="bg-primary/10 px-2 py-1 rounded-md mr-2 mb-1">
+										<Text className="text-primary text-[10px] font-medium">{detail}</Text>
+									</View>
+								))}
+							</View>
+							<View className="flex-row gap-2">
+								<Pressable
+									onPress={() => handleRequestAccess(selectedService)}
+									className="flex-1 bg-accent py-2.5 rounded-lg active:opacity-90"
+								>
+									<View className="flex-row items-center justify-center">
+										<Feather name="user-plus" size={16} color="white" />
+										<Text className="text-white font-semibold text-sm ml-2">Request Access</Text>
+									</View>
+								</Pressable>
+								<Pressable
+									onPress={handleContactFacility}
+									className="px-4 py-2.5 border border-accent rounded-lg active:opacity-90"
+								>
+									<View className="flex-row items-center">
+										<Feather name="mail" size={16} color={colors.accent} />
+									</View>
+								</Pressable>
+								{selectedService.has_vr && (
+									<Pressable
+										onPress={handleOpenVR}
+										className="px-4 py-2.5 border border-accent rounded-lg active:opacity-90 flex-row items-center"
+									>
+										<Feather name="eye" size={16} color={colors.accent} />
+										<Text className="text-accent text-sm font-semibold ml-2">VR Tour</Text>
+									</Pressable>
+								)}
+							</View>
+						</View>
+					</View>
 				</ScrollView>
 			)}
 		</View>

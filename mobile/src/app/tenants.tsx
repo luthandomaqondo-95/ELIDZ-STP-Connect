@@ -3,13 +3,12 @@ import { View, Pressable, TextInput, FlatList , Dimensions } from 'react-native'
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
-import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { useTenantsSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { TenantLogo } from '@/components/TenantLogo';
+import { TabsLayoutHeader } from '@/components/Header';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -67,33 +66,26 @@ export default function TenantsScreen() {
     return (
         <View className="flex-1">
             {/* Header */}
-            <View className="pt-12 pb-6 px-6">
-                <View className={`w-full self-center ${isTablet ? 'max-w-[1200px]' : 'max-w-full'}`}>
-                    <View className="flex-row items-center justify-end mb-2">
-                        <HeaderNotificationIcon />
-                        <HeaderAvatar />
-                    </View>
-                    <View className="items-start mb-2">
-                        <Text className={`text-foreground font-semibold ${isTablet ? 'text-[22px]' : 'text-xl'}`}>
-                            Tenants
-                        </Text>
-                        <Text className="text-muted-foreground text-sm">
+            <View className="bg-background">
+                <TabsLayoutHeader title="Tenants" variant="navy">
+                    <View className={`w-full self-center ${isTablet ? 'max-w-[1200px]' : 'max-w-full'}`}>
+                        <Text className="text-white/80 text-base mb-6">
                             Discover our innovative partners and residents.
                         </Text>
-                    </View>
-                </View>
 
-                {/* Search Bar */}
-                <View className={`flex-row items-center bg-muted/50 border border-border h-12 rounded-xl px-4 mt-6 w-full self-center ${isTablet ? 'max-w-[1200px]' : 'max-w-full'}`}>
-                    <Feather name="search" size={20} color="#9CA3AF" />
-                    <TextInput
-                        className="flex-1 ml-3 text-base text-foreground"
-                        placeholder="Search tenants..."
-                        placeholderTextColor="#D1D5DB"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
-                </View>
+                        {/* Search Bar */}
+                        <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4">
+                            <Feather name="search" size={20} color={colors.whiteOpacity70} />
+                            <TextInput
+                                className="flex-1 ml-3 text-base text-white"
+                                placeholder="Search tenants..."
+                                placeholderTextColor={colors.whiteOpacity50}
+                                value={searchQuery}
+                                onChangeText={setSearchQuery}
+                            />
+                        </View>
+                    </View>
+                </TabsLayoutHeader>
             </View>
 
             <View className="px-6 mt-4 flex-1">

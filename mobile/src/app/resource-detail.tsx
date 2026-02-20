@@ -9,6 +9,7 @@ import { withAuthGuard } from '@/components/withAuthGuard';
 import { ResourceService } from '@/services/resource.service';
 import { enquiryService } from '@/services/enquiry.service';
 import type { Resource } from '@/types';
+import { TabsLayoutHeader } from '@/components/Header';
 
 function ResourceDetailScreen() {
   const { colors } = useTheme();
@@ -127,78 +128,79 @@ function ResourceDetailScreen() {
   };
 
   return (
-    <ScreenScrollView>
-      <View className="p-5 rounded-xl mb-3 bg-primary">
-        <View className="items-center mb-2.5">
-          <Feather name={getCategoryIcon(displayResource.category) as any} size={48} color={colors.buttonText} />
-        </View>
-        <View className="flex-row items-center self-start bg-primary-foreground px-2.5 py-1 rounded-lg">
-          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: getStatusColor(displayResource.status) }} />
-          <Text className="text-xs ml-1" style={{ color: getStatusColor(displayResource.status) }}>
-            {displayResource.status}
-          </Text>
-        </View>
-        <Text className="text-xl font-bold text-primary-foreground mt-3">
-          {displayResource.name}
-        </Text>
-        <View className="self-start px-2.5 py-1 rounded-lg mt-2 bg-white/20">
-          <Text className="text-xs text-primary-foreground">{displayResource.category}</Text>
-        </View>
-      </View>
-
-      <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-        <Text className="text-lg font-bold mb-2.5">Description</Text>
-        <Text className="text-base text-foreground leading-6">
-          {displayResource.fullDescription}
-        </Text>
-      </View>
-
-      {displayResource.specifications && displayResource.specifications.length > 0 && (
-        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-          <Text className="text-lg font-bold mb-2.5">Specifications</Text>
-          {displayResource.specifications.map((spec: string, index: number) => (
-            <View key={`${index}-${spec}`} className="flex-row items-start mb-2.5">
-              <Feather name="check-circle" size={18} color={colors.secondary} />
-              <Text className="text-base ml-2.5 flex-1">
-                {spec}
-              </Text>
+    <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      <View className="bg-background">
+        <TabsLayoutHeader title={displayResource.name} variant="navy">
+          <View className="flex-row items-center">
+            <View className="w-12 h-12 rounded-xl items-center justify-center bg-white/10 mr-3 border border-white/10">
+              <Feather name={getCategoryIcon(displayResource.category) as any} size={24} color="white" />
             </View>
-          ))}
-        </View>
-      )}
-
-      <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-        <Text className="text-lg font-bold mb-2.5">Location & Contact</Text>
-        <View className="flex-row items-center">
-          <Feather name="map-pin" size={18} color={colors.textSecondary} />
-          <Text className="text-base text-foreground ml-2.5">
-            {displayResource.location}
-          </Text>
-        </View>
-        <View className="flex-row items-center mt-2.5">
-          <Feather name="mail" size={18} color={colors.textSecondary} />
-          <Text className="text-base text-primary ml-2.5">
-            {displayResource.contact}
-          </Text>
-        </View>
+            <View className="flex-1">
+              <Text className="text-white/80 text-base">{displayResource.category}</Text>
+              <View className="flex-row items-center mt-1">
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: getStatusColor(displayResource.status) }} />
+                <Text className="text-white/80 text-sm ml-2">{displayResource.status}</Text>
+              </View>
+            </View>
+          </View>
+        </TabsLayoutHeader>
       </View>
 
-      {displayResource.bookingRequired && (
-        <Pressable
-          className={`flex-row justify-center items-center h-[52px] rounded-lg mb-5 active:opacity-70 ${displayResource.status === 'Available' ? 'bg-accent' : 'bg-muted-foreground'}`}
-          onPress={handleRequestAccess}
-          disabled={displayResource.status !== 'Available'}
-        >
-          <Feather
-            name={displayResource.status === 'Available' ? 'calendar' : 'clock'}
-            size={20}
-            color={colors.buttonText}
-          />
-          <Text className="text-base font-semibold text-primary-foreground ml-2.5">
-            {displayResource.status === 'Available' ? 'Request Access' : displayResource.status === 'In Use' ? 'Currently In Use' : 'Coming Soon'}
+      <View className="mt-6 px-5">
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-lg font-bold mb-2.5">Description</Text>
+          <Text className="text-base text-foreground leading-6">
+            {displayResource.fullDescription}
           </Text>
-        </Pressable>
-      )}
+        </View>
+
+        {displayResource.specifications && displayResource.specifications.length > 0 && (
+          <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+            <Text className="text-lg font-bold mb-2.5">Specifications</Text>
+            {displayResource.specifications.map((spec: string, index: number) => (
+              <View key={`${index}-${spec}`} className="flex-row items-start mb-2.5">
+                <Feather name="check-circle" size={18} color={colors.secondary} />
+                <Text className="text-base ml-2.5 flex-1">
+                  {spec}
+                </Text>
+              </View>
+            ))}
+          </View>
+        )}
+
+        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+          <Text className="text-lg font-bold mb-2.5">Location & Contact</Text>
+          <View className="flex-row items-center">
+            <Feather name="map-pin" size={18} color={colors.textSecondary} />
+            <Text className="text-base text-foreground ml-2.5">
+              {displayResource.location}
+            </Text>
+          </View>
+          <View className="flex-row items-center mt-2.5">
+            <Feather name="mail" size={18} color={colors.textSecondary} />
+            <Text className="text-base text-primary ml-2.5">
+              {displayResource.contact}
+            </Text>
+          </View>
+        </View>
+
+        {displayResource.bookingRequired && (
+          <Pressable
+            className={`flex-row justify-center items-center h-[52px] rounded-lg mb-5 active:opacity-70 ${displayResource.status === 'Available' ? 'bg-accent' : 'bg-muted-foreground'}`}
+            onPress={handleRequestAccess}
+            disabled={displayResource.status !== 'Available'}
+          >
+            <Feather
+              name={displayResource.status === 'Available' ? 'calendar' : 'clock'}
+              size={20}
+              color={colors.buttonText}
+            />
+            <Text className="text-base font-semibold text-primary-foreground ml-2.5">
+              {displayResource.status === 'Available' ? 'Request Access' : displayResource.status === 'In Use' ? 'Currently In Use' : 'Coming Soon'}
+            </Text>
+          </Pressable>
+        )}
+      </View>
 
       <Modal
         visible={showBookingModal}

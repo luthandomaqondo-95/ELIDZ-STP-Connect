@@ -24,7 +24,7 @@ export default function TabLayout() {
                     backgroundColor: theme.colors.background,
                     borderTopColor: theme.colors.border,
                 },
-                tabBarActiveTintColor: theme.colors.primary,
+                tabBarActiveTintColor: theme.colors.tabBarActive,
                 tabBarInactiveTintColor: theme.colors.textSecondary,
                 headerRight: () => <HeaderAvatar />,
             }}>

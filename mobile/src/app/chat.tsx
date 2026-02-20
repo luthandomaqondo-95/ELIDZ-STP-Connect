@@ -6,6 +6,7 @@ import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { Feather } from '@expo/vector-icons';
 import { storage } from '@/utils/storage';
 import { withAuthGuard } from '@/components/withAuthGuard';
+import { TabsLayoutHeader } from '@/components/Header';
 
 function ChatsScreen() {
   const [chats, setChats] = useState<any[]>([]);
@@ -93,28 +94,38 @@ function ChatsScreen() {
   );
 
   return (
-    <ScreenScrollView>
-      <Pressable
-        className="flex-row items-center justify-center py-3 rounded-lg mb-4 bg-primary active:opacity-70"
-        onPress={handleStartChat}
-      >
-        <Feather name="plus" size={20} color="#FFFFFF" />
-        <Text className="text-base text-primary-foreground ml-3 font-semibold">
-          Share Opportunity
+    <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      <View className="bg-background">
+        <TabsLayoutHeader title="Messages" variant="navy">
+          <Text className="text-white/80 text-base">
+            Your conversations and shared opportunities.
+          </Text>
+        </TabsLayoutHeader>
+      </View>
+
+      <View className="mt-6 px-5">
+        <Pressable
+          className="flex-row items-center justify-center py-3 rounded-lg mb-4 bg-primary active:opacity-70"
+          onPress={handleStartChat}
+        >
+          <Feather name="plus" size={20} color="#FFFFFF" />
+          <Text className="text-base text-primary-foreground ml-3 font-semibold">
+            Share Opportunity
+          </Text>
+        </Pressable>
+
+        <Text className="text-lg font-bold text-foreground mt-6 mb-4">
+          Active Conversations
         </Text>
-      </Pressable>
 
-      <Text className="text-lg font-bold text-foreground mt-6 mb-4">
-        Active Conversations
-      </Text>
-
-      <FlatList
-        data={chats}
-        renderItem={renderChatItem}
-        keyExtractor={(item) => item.id}
-        scrollEnabled={false}
-        ItemSeparatorComponent={() => <View className="h-3" />}
-      />
+        <FlatList
+          data={chats}
+          renderItem={renderChatItem}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+          ItemSeparatorComponent={() => <View className="h-3" />}
+        />
+      </View>
     </ScreenScrollView>
   );
 }

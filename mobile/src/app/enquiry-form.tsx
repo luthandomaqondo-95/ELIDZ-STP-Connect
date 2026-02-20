@@ -7,10 +7,9 @@ import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { enquiryService, CreateEnquiryData } from '@/services/enquiry.service';
 import { Picker } from '@react-native-picker/picker';
-import { LinearGradient } from 'expo-linear-gradient';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { TabsLayoutHeader } from '@/components/Header';
 
 function EnquiryFormScreen() {
   const { colorScheme } = useColorScheme();
@@ -80,22 +79,24 @@ function EnquiryFormScreen() {
 
   return (
     <View className="flex-1 bg-background">
-      {/* Header */}
-      <LinearGradient
-        colors={['#002147', '#003366']}
-        className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
-      >
-        <View className="flex-row justify-between items-center mb-4">
-          <Pressable onPress={() => router.back()} className="p-2">
-            <Feather name="arrow-left" size={24} color={colors.white} />
-          </Pressable>
-          <Text className="text-white text-xl font-bold">Submit Enquiry</Text>
-          <HeaderAvatar />
+      <ScreenKeyboardAwareScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="bg-background">
+          <TabsLayoutHeader
+            title="Submit Enquiry"
+            variant="navy"
+            left={
+              <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full">
+                <Feather name="arrow-left" size={20} color="white" />
+              </Pressable>
+            }
+          >
+            <Text className="text-white/80 text-base">
+              Send us your questions or requests.
+            </Text>
+          </TabsLayoutHeader>
         </View>
-      </LinearGradient>
 
-      <ScreenKeyboardAwareScrollView>
-        <View className="px-6 py-6">
+        <View className="mt-6 px-6">
           {/* Enquiry Type */}
           <View className="mb-6">
             <Text className="text-foreground text-base font-semibold mb-2">Enquiry Type</Text>

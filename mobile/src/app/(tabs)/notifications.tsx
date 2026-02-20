@@ -231,6 +231,7 @@ export default function NotificationsScreen() {
     return (
         <View className="flex-1 bg-background">
             <ScreenScrollView
+                insetTop={false}
                 contentContainerStyle={{ paddingBottom: 40 }}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />

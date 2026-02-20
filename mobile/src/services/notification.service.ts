@@ -35,6 +35,8 @@ export interface CreateNotificationData {
 }
 
 class NotificationService {
+    private hasWarnedUnreadCountRpcFailure = false;
+    private hasWarnedUnreadCountFallbackFailure = false;
     /**
      * Get all notifications for a user
      */
@@ -77,23 +79,43 @@ class NotificationService {
      * Get unread notification count for a user
      */
     async getUnreadCount(userId: string): Promise<number> {
-        const { data, error } = await supabase.rpc('get_unread_notification_count', {
-            p_user_id: userId
-        });
+        try {
+            const { data, error } = await supabase.rpc('get_unread_notification_count', {
+                p_user_id: userId
+            });
 
-        if (error) {
-            console.error('NotificationService.getUnreadCount error:', error);
-            // Fallback to direct query if RPC fails
-            const { count } = await supabase
+            if (!error) {
+                return (data as number) || 0;
+            }
+
+            // RPC might not exist on some environments; fall back quietly.
+            if (!this.hasWarnedUnreadCountRpcFailure) {
+                this.hasWarnedUnreadCountRpcFailure = true;
+                console.warn('NotificationService.getUnreadCount RPC failed, falling back to query.', error);
+            }
+
+            const { count, error: fallbackError } = await supabase
                 .from('notifications')
                 .select('*', { count: 'exact', head: true })
                 .eq('user_id', userId)
                 .is('read_at', null);
-            
-            return count || 0;
-        }
 
-        return (data as number) || 0;
+            if (fallbackError) {
+                if (!this.hasWarnedUnreadCountFallbackFailure) {
+                    this.hasWarnedUnreadCountFallbackFailure = true;
+                    console.warn('NotificationService.getUnreadCount fallback query failed.', fallbackError);
+                }
+                return 0;
+            }
+
+            return count || 0;
+        } catch (e) {
+            if (!this.hasWarnedUnreadCountFallbackFailure) {
+                this.hasWarnedUnreadCountFallbackFailure = true;
+                console.warn('NotificationService.getUnreadCount unexpected error.', e);
+            }
+            return 0;
+        }
     }
 
     /**

@@ -5,13 +5,13 @@ import { Text } from '@/components/ui/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { chatService, Message } from '@/services/chat.service';
 import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { TabsLayoutHeader } from '@/components/Header';
 
 function MessageScreen() {
   const insets = useSafeAreaInsets();
@@ -297,85 +297,83 @@ function MessageScreen() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
     >
       {/* Header */}
-      <LinearGradient
-          colors={[colors.primary, colors.gradientMessageEnd]}
-          className="pt-12 pb-4 px-4 rounded-b-[24px] shadow-md z-10"
-      >
+      <TabsLayoutHeader
+        title={userName || 'Chat'}
+        variant="navy"
+        className="z-10 px-4"
+        showActions={false}
+        left={
           <View className="flex-row items-center">
-              <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full mr-3">
-                  <Feather name="arrow-left" size={20} color={colors.white} />
-              </Pressable>
-              
-              <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center mr-3 border border-white/10">
-                  <Text className="font-bold text-lg" style={{ color: colors.white }}>
-                      {userName ? userName.charAt(0).toUpperCase() : '?'}
-                  </Text>
-              </View>
-
-              <View className="flex-1">
-                  <Text className="text-lg font-bold" style={{ color: colors.white }} numberOfLines={1}>
-                      {userName || 'Chat'}
-                  </Text>
-                  <View className="flex-row items-center">
-                      <View className="w-2 h-2 rounded-full bg-green-400 mr-1.5" />
-                      <Text className="text-xs" style={{ color: colors.whiteOpacity70 }}>Online</Text>
-                  </View>
-              </View>
-
-              <View className="relative">
-                  <Pressable 
-                      className="p-2 bg-white/10 rounded-full ml-2"
-                      onPress={() => setShowMenu(!showMenu)}
-                  >
-                      <Feather name="more-vertical" size={20} color={colors.white} />
-                  </Pressable>
-                  
-                  {showMenu && (
-                      <View className="absolute right-0 top-12 bg-card rounded-xl shadow-lg border border-border min-w-[180px] z-50">
-                          <Pressable
-                              className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
-                              onPress={handleViewProfile}
-                          >
-                              <Feather name="user" size={18} color={colors.primary} />
-                              <Text className="ml-3 text-base text-foreground">View Profile</Text>
-                          </Pressable>
-                          
-                          <Pressable
-                              className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
-                              onPress={handleMuteNotifications}
-                          >
-                              <Feather name="bell-off" size={18} color={colors.primary} />
-                              <Text className="ml-3 text-base text-foreground">Mute Notifications</Text>
-                          </Pressable>
-                          
-                          <Pressable
-                              className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
-                              onPress={handleClearChat}
-                          >
-                              <Feather name="trash-2" size={18} color={colors.primary} />
-                              <Text className="ml-3 text-base text-foreground">Clear Chat</Text>
-                          </Pressable>
-                          
-                          <Pressable
-                              className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
-                              onPress={handleDeleteChat}
-                          >
-                              <Feather name="x-circle" size={18} color={colors.redLight} />
-                              <Text className="ml-3 text-base text-destructive">Delete Chat</Text>
-                          </Pressable>
-                          
-                          <Pressable
-                              className="flex-row items-center px-4 py-3 active:bg-muted"
-                              onPress={handleBlockUser}
-                          >
-                              <Feather name="slash" size={18} color={colors.redLight} />
-                              <Text className="ml-3 text-base text-destructive">Block User</Text>
-                          </Pressable>
-                      </View>
-                  )}
-              </View>
+            <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full mr-3">
+              <Feather name="arrow-left" size={20} color="white" />
+            </Pressable>
+            <View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center border border-white/10">
+              <Text className="font-bold text-lg text-white">
+                {userName ? userName.charAt(0).toUpperCase() : '?'}
+              </Text>
+            </View>
           </View>
-      </LinearGradient>
+        }
+        right={
+          <View className="relative">
+            <Pressable
+              className="p-2 bg-white/10 rounded-full ml-2"
+              onPress={() => setShowMenu(!showMenu)}
+            >
+              <Feather name="more-vertical" size={20} color="white" />
+            </Pressable>
+
+            {showMenu && (
+              <View className="absolute right-0 top-12 bg-card rounded-xl shadow-lg border border-border min-w-[180px] z-50">
+                <Pressable
+                  className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
+                  onPress={handleViewProfile}
+                >
+                  <Feather name="user" size={18} color={colors.primary} />
+                  <Text className="ml-3 text-base text-foreground">View Profile</Text>
+                </Pressable>
+
+                <Pressable
+                  className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
+                  onPress={handleMuteNotifications}
+                >
+                  <Feather name="bell-off" size={18} color={colors.primary} />
+                  <Text className="ml-3 text-base text-foreground">Mute Notifications</Text>
+                </Pressable>
+
+                <Pressable
+                  className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
+                  onPress={handleClearChat}
+                >
+                  <Feather name="trash-2" size={18} color={colors.primary} />
+                  <Text className="ml-3 text-base text-foreground">Clear Chat</Text>
+                </Pressable>
+
+                <Pressable
+                  className="flex-row items-center px-4 py-3 border-b border-border active:bg-muted"
+                  onPress={handleDeleteChat}
+                >
+                  <Feather name="x-circle" size={18} color={colors.redLight} />
+                  <Text className="ml-3 text-base text-destructive">Delete Chat</Text>
+                </Pressable>
+
+                <Pressable
+                  className="flex-row items-center px-4 py-3 active:bg-muted"
+                  onPress={handleBlockUser}
+                >
+                  <Feather name="slash" size={18} color={colors.redLight} />
+                  <Text className="ml-3 text-base text-destructive">Block User</Text>
+                </Pressable>
+              </View>
+            )}
+          </View>
+        }
+      >
+        <View className="flex-row items-center">
+          <View className="w-2 h-2 rounded-full bg-green-400 mr-1.5" />
+          <Text className="text-xs text-white/70">Online</Text>
+        </View>
+      </TabsLayoutHeader>
       
       {showMenu && (
           <Pressable 

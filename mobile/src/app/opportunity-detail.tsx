@@ -8,6 +8,7 @@ import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { supabase } from '@/lib/supabase';
 import { Opportunity } from '@/types';
+import { TabsLayoutHeader } from '@/components/Header';
 
 function OpportunityDetailScreen() {
   const { colors } = useTheme();
@@ -72,26 +73,44 @@ function OpportunityDetailScreen() {
 
   if (loading) {
      return (
-       <View className="flex-1 justify-center items-center">
-         <ActivityIndicator size="large" color={colors.primary} />
-       </View>
+       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+         <View className="bg-background">
+           <TabsLayoutHeader title="Opportunity" variant="navy">
+             <Text className="text-white/80 text-base">
+               Details and application info.
+             </Text>
+           </TabsLayoutHeader>
+         </View>
+         <View className="p-5 items-center justify-center min-h-[300px]">
+           <ActivityIndicator size="large" color={colors.primary} />
+         </View>
+       </ScreenScrollView>
      );
   }
 
   if (!opportunity) {
     return (
-      <ScreenScrollView>
-        <Text className="text-lg font-bold text-center mt-5">
-          Opportunity not found
-        </Text>
-        <Pressable
-          className="mt-3 p-3 rounded-lg bg-primary active:opacity-70 items-center"
-          onPress={() => router.back()}
-        >
-          <Text className="text-base font-semibold text-primary-foreground">
-            Go Back
+      <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="bg-background">
+          <TabsLayoutHeader title="Opportunity" variant="navy">
+            <Text className="text-white/80 text-base">
+              Details and application info.
+            </Text>
+          </TabsLayoutHeader>
+        </View>
+        <View className="mt-6 px-5">
+          <Text className="text-lg font-bold text-center mt-5">
+            Opportunity not found
           </Text>
-        </Pressable>
+          <Pressable
+            className="mt-3 p-3 rounded-lg bg-primary active:opacity-70 items-center"
+            onPress={() => router.back()}
+          >
+            <Text className="text-base font-semibold text-primary-foreground">
+              Go Back
+            </Text>
+          </Pressable>
+        </View>
       </ScreenScrollView>
     );
   }
@@ -179,8 +198,17 @@ function OpportunityDetailScreen() {
   };
 
   return (
-    <ScreenScrollView>
-      <View className="p-5 rounded-xl mb-3" style={{ backgroundColor: typeColors[opportunity.type] || colors.primary }}>
+    <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      <View className="bg-background">
+        <TabsLayoutHeader title="Opportunity" variant="navy">
+          <Text className="text-white/80 text-base" numberOfLines={1}>
+            {opportunity.type} • {opportunity.org || 'ELIDZ'}
+          </Text>
+        </TabsLayoutHeader>
+      </View>
+
+      <View className="mt-6 px-5">
+        <View className="p-5 rounded-xl mb-3" style={{ backgroundColor: typeColors[opportunity.type] || colors.primary }}>
         <View className="flex-row items-center self-start px-2.5 py-2 rounded-lg bg-primary-foreground">
           <Feather name={getTypeIcon(opportunity.type) as any} size={16} color={typeColors[opportunity.type] || colors.primary} />
           <Text className="text-sm ml-1" style={{ color: typeColors[opportunity.type] || colors.primary }}>
@@ -488,6 +516,7 @@ function OpportunityDetailScreen() {
               : 'Apply Now'}
         </Text>
       </Pressable>
+      </View>
     </ScreenScrollView>
   );
 }

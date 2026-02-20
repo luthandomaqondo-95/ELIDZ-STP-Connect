@@ -197,20 +197,23 @@ const SYSTEM_COLORS = {
         offline: ELIDZ_BRAND_COLORS.offline,
         pending: ELIDZ_BRAND_COLORS.pending,
         unread: ELIDZ_BRAND_COLORS.unread,
+
+        // Tab bar – active tab uses primary (blue) in light mode
+        tabBarActive: ELIDZ_BRAND_COLORS.primary,
     },
 
     dark: {
-        // Base colors
-        background: '#121212',
-        backgroundRoot: '#000000',
-        backgroundDefault: '#1E1E1E',
-        backgroundSecondary: '#2A2A2A',
+        // Base colors - dark navy to match global.css and ELIDZ brand
+        background: '#0a0913',
+        backgroundRoot: '#0a1628',
+        backgroundDefault: '#122436',
+        backgroundSecondary: '#162a42',
 
-        // Text colors
+        // Text colors – kept light for clear readability on dark backgrounds
         text: '#FFFFFF',
         textPrimary: '#FFFFFF',
-        textSecondary: '#B0B0B0',
-        textTertiary: '#808080',
+        textSecondary: '#D4D4D4',
+        textTertiary: '#A3A3A3',
         buttonText: '#FFFFFF',
 
         // Brand colors
@@ -274,9 +277,9 @@ const SYSTEM_COLORS = {
         blackOpacity50: ELIDZ_BRAND_COLORS.blackOpacity50,
         blackOpacity30: ELIDZ_BRAND_COLORS.blackOpacity30,
 
-        // Placeholder colors
-        placeholder: '#9CA3AF',
-        placeholderLight: '#6B7280',
+        // Placeholder colors – readable on dark inputs
+        placeholder: '#A3A3A3',
+        placeholderLight: '#9CA3AF',
 
         // Extended palette
         blue: ELIDZ_BRAND_COLORS.blue,
@@ -301,6 +304,9 @@ const SYSTEM_COLORS = {
         offline: ELIDZ_BRAND_COLORS.offline,
         pending: ELIDZ_BRAND_COLORS.pending,
         unread: ELIDZ_BRAND_COLORS.unread,
+
+        // Tab bar – active tab uses orange in dark mode
+        tabBarActive: ELIDZ_BRAND_COLORS.secondaryDark,
     },
 } as const;
 

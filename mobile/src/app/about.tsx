@@ -2,8 +2,8 @@ import React from 'react';
 import { View, ScrollView, Image, Pressable, Linking } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
+import { TabsLayoutHeader } from '@/components/Header';
 
 export default function AboutScreen() {
   const handleContact = () => {
@@ -15,34 +15,38 @@ export default function AboutScreen() {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
-        <LinearGradient
-            colors={['#002147', '#003366']}
-            className="pt-12 pb-10 px-6 rounded-b-[30px] shadow-lg"
-        >
-            <Pressable 
+        <View className="bg-background">
+          <TabsLayoutHeader
+            title="About"
+            variant="navy"
+            showActions={false}
+            left={
+              <Pressable
                 onPress={() => router.back()}
-                className="absolute top-12 left-6 p-2 bg-white/10 rounded-full z-10"
-            >
+                className="p-2 bg-white/10 rounded-full"
+              >
                 <Feather name="arrow-left" size={20} color="white" />
-            </Pressable>
-            
+              </Pressable>
+            }
+          >
             <View className="items-center mt-4">
-                <View className="w-24 h-24 bg-white rounded-3xl justify-center items-center shadow-lg mb-4">
-                    <Text className="text-[#002147] font-bold text-center text-xs px-2">
-                        ELIDZ
-                        Science &
-                        Tech Park
-                    </Text>
-                </View>
-                <Text className="text-white text-2xl font-bold text-center">ELIDZ-STP Connect</Text>
-                <Text className="text-white/70 text-sm font-medium mt-1">Version 1.0.0</Text>
+              <View className="w-24 h-24 bg-white rounded-3xl justify-center items-center shadow-lg mb-4">
+                <Text className="text-[#002147] font-bold text-center text-xs px-2">
+                  ELIDZ
+                  Science &
+                  Tech Park
+                </Text>
+              </View>
+              <Text className="text-white text-2xl font-bold text-center">ELIDZ-STP Connect</Text>
+              <Text className="text-white/70 text-sm font-medium mt-1">Version 1.0.0</Text>
             </View>
-        </LinearGradient>
+          </TabsLayoutHeader>
+        </View>
 
-        <View className="px-6 -mt-6">
+        <View className="px-6 mt-6">
             {/* Mission Card */}
             <View className="bg-white p-6 rounded-2xl shadow-sm mb-6">
                 <View className="flex-row items-center mb-3">

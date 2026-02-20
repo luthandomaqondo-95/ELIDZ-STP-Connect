@@ -6,6 +6,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { Feather } from '@expo/vector-icons';
 import { storage } from '@/utils/storage';
 import { withAuthGuard } from '@/components/withAuthGuard';
+import { TabsLayoutHeader } from '@/components/Header';
 
 function DocumentSaverScreen() {
 	const { colors } = useTheme();
@@ -98,101 +99,111 @@ function DocumentSaverScreen() {
 	);
 
 	return (
-		<ScreenScrollView>
-			{!showAddForm ? (
-				<>
-					<Pressable
-						className="flex-row items-center justify-center py-2.5 rounded-lg mb-3 bg-primary active:opacity-70"
-						onPress={() => setShowAddForm(true)}
-					>
-						<Feather name="plus" size={20} color={colors.buttonText} />
-						<Text className="text-base font-semibold text-primary-foreground ml-2.5">
-							New Document
-						</Text>
-					</Pressable>
-
-					<Text className="text-lg font-bold mt-5 mb-3">
-						Saved Documents ({documents.length})
+		<ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+			<View className="bg-background">
+				<TabsLayoutHeader title="Documents" variant="navy">
+					<Text className="text-white/80 text-base">
+						Save important documents for offline access.
 					</Text>
+				</TabsLayoutHeader>
+			</View>
 
-					{documents.length === 0 ? (
-						<View className="p-5 rounded-xl bg-card shadow-sm items-center justify-center min-h-[200px]">
-							<Feather name="inbox" size={48} color={colors.textSecondary} />
-							<Text className="text-base text-muted-foreground mt-3">
-								No documents saved yet
+			<View className="mt-6 px-5">
+				{!showAddForm ? (
+					<>
+						<Pressable
+							className="flex-row items-center justify-center py-2.5 rounded-lg mb-3 bg-primary active:opacity-70"
+							onPress={() => setShowAddForm(true)}
+						>
+							<Feather name="plus" size={20} color={colors.buttonText} />
+							<Text className="text-base font-semibold text-primary-foreground ml-2.5">
+								New Document
 							</Text>
-							<Text className="text-sm text-muted-foreground mt-2">
-								Save documents for offline access
+						</Pressable>
+
+						<Text className="text-lg font-bold mt-5 mb-3">
+							Saved Documents ({documents.length})
+						</Text>
+
+						{documents.length === 0 ? (
+							<View className="p-5 rounded-xl bg-card shadow-sm items-center justify-center min-h-[200px]">
+								<Feather name="inbox" size={48} color={colors.textSecondary} />
+								<Text className="text-base text-muted-foreground mt-3">
+									No documents saved yet
+								</Text>
+								<Text className="text-sm text-muted-foreground mt-2">
+									Save documents for offline access
+								</Text>
+							</View>
+						) : (
+							<FlatList
+								data={documents}
+								renderItem={renderDocument}
+								keyExtractor={(item) => item.id}
+								scrollEnabled={false}
+								ItemSeparatorComponent={() => <View className="h-2.5" />}
+							/>
+						)}
+					</>
+				) : (
+					<View className="mb-3 bg-card shadow-sm rounded-xl p-3">
+						<Text className="text-lg font-bold mb-3">
+							Save Document Offline
+						</Text>
+
+						<View className="mb-3">
+							<Text className="text-sm font-semibold mb-2">
+								Document Name
 							</Text>
+							<TextInput
+								className="border border-border rounded-lg px-2.5 py-2.5 text-sm bg-background text-foreground"
+								placeholder="Enter document name"
+								placeholderTextColor={colors.textSecondary}
+								value={docName}
+								onChangeText={setDocName}
+							/>
 						</View>
-					) : (
-						<FlatList
-							data={documents}
-							renderItem={renderDocument}
-							keyExtractor={(item) => item.id}
-							scrollEnabled={false}
-							ItemSeparatorComponent={() => <View className="h-2.5" />}
-						/>
-					)}
-				</>
-			) : (
-				<View className="mb-3 bg-card shadow-sm rounded-xl p-3">
-					<Text className="text-lg font-bold mb-3">
-						Save Document Offline
-					</Text>
 
-					<View className="mb-3">
-						<Text className="text-sm font-semibold mb-2">
-							Document Name
-						</Text>
-						<TextInput
-							className="border border-border rounded-lg px-2.5 py-2.5 text-sm bg-background text-foreground"
-							placeholder="Enter document name"
-							placeholderTextColor={colors.textSecondary}
-							value={docName}
-							onChangeText={setDocName}
-						/>
+						<View className="mb-3">
+							<Text className="text-sm font-semibold mb-2">
+								Document Content
+							</Text>
+							<TextInput
+								className="border border-border rounded-lg px-2.5 py-2.5 text-sm bg-background text-foreground min-h-[120px]"
+								placeholder="Enter or paste your document content here"
+								placeholderTextColor={colors.textSecondary}
+								multiline
+								numberOfLines={8}
+								value={docContent}
+								onChangeText={setDocContent}
+							/>
+						</View>
+
+						<Pressable
+							className="flex-row items-center justify-center h-[52px] rounded-lg mb-2.5 bg-primary active:opacity-70"
+							onPress={handleSaveDocument}
+						>
+							<View className="mr-2"><Feather name="save" size={20} color={colors.buttonText} /></View>
+							<Text className="text-base font-semibold text-primary-foreground">
+								Save Document
+							</Text>
+						</Pressable>
+
+						<Pressable
+							className="h-[52px] rounded-lg justify-center items-center border border-border active:opacity-60"
+							onPress={() => {
+								setShowAddForm(false);
+								setDocName('');
+								setDocContent('');
+							}}
+						>
+							<Text className="text-base text-foreground">
+								Cancel
+							</Text>
+						</Pressable>
 					</View>
-
-					<View className="mb-3">
-						<Text className="text-sm font-semibold mb-2">
-							Document Content
-						</Text>
-						<TextInput
-							className="border border-border rounded-lg px-2.5 py-2.5 text-sm bg-background text-foreground min-h-[120px]"
-							placeholder="Enter or paste your document content here"
-							placeholderTextColor={colors.textSecondary}
-							multiline
-							numberOfLines={8}
-							value={docContent}
-							onChangeText={setDocContent}
-						/>
-					</View>
-
-					<Pressable
-						className="flex-row items-center justify-center h-[52px] rounded-lg mb-2.5 bg-primary active:opacity-70"
-						onPress={handleSaveDocument}
-					>
-						<View className="mr-2"><Feather name="save" size={20} color={colors.buttonText} /></View>
-						<Text className="text-base font-semibold text-primary-foreground">
-							Save Document
-						</Text>
-					</Pressable>
-
-					<Pressable
-						className="h-[52px] rounded-lg justify-center items-center border border-border active:opacity-60"
-						onPress={() => {
-							setShowAddForm(false);
-							setDocName('');
-							setDocContent('');
-						}}
-					>
-						<Text className="text-base text-foreground">
-							Cancel
-						</Text>
-					</Pressable>
-				</View>
-			)}
+				)}
+			</View>
 		</ScreenScrollView>
 	);
 }

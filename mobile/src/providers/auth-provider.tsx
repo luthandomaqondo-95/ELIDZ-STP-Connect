@@ -324,12 +324,25 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			console.log('Auth state changed:', { event: _event, session })
 			setSession(session)
 			if (session?.user) {
-				// Check if profile exists, if not create it (for OAuth users)
-				const { data: existingProfile } = await supabase
+				// Check if profile exists, if not create it (for OAuth users).
+				// IMPORTANT: Never treat a SELECT error (e.g. RLS) as "missing", otherwise we
+				// can accidentally overwrite a real profile (including avatar) on app start.
+				const { data: existingProfile, error: existingProfileError } = await supabase
 					.from('profiles')
 					.select('id')
 					.eq('id', session.user.id)
-					.single();
+					.maybeSingle();
+
+				if (existingProfileError) {
+					// If we cannot verify existence (RLS/network/etc.), skip auto-create.
+					console.warn('AuthProvider: could not check profile existence.', {
+						code: existingProfileError.code,
+						message: existingProfileError.message,
+					});
+					Sentry.captureException(existingProfileError);
+					await loadProfile(session.user.id);
+					return;
+				}
 				
 				if (!existingProfile) {
 					// Create profile for OAuth user
@@ -346,7 +359,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					try {
 						await supabase
 							.from('profiles')
-							.upsert({
+							.insert({
 								id: session.user.id,
 								name: name,
 								email: email.toLowerCase(),
@@ -355,7 +368,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 								organization: userMetadata.organization || null,
 								bio: null,
 								avatar: 'blue',
-							}, { onConflict: 'id' });
+							}, { ignoreDuplicates: true });
 					} catch (error) {
 						console.error('Error creating OAuth profile:', error);
 						// Try using RPC function if direct insert fails

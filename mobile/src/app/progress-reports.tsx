@@ -7,12 +7,11 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { progressReportService, ProgressReport } from '@/services/progress-report.service';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
-import { LinearGradient } from 'expo-linear-gradient';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
 import * as DocumentPicker from 'expo-document-picker';
 import { Picker } from '@react-native-picker/picker';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { TabsLayoutHeader } from '@/components/Header';
 
 interface AcceptedApplication {
   id: string;
@@ -170,31 +169,49 @@ function ProgressReportsScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 bg-background justify-center items-center">
-        <ActivityIndicator size="large" color={colors.primary} />
-        <Text className="text-muted-foreground mt-4">Loading...</Text>
-      </View>
+      <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="bg-background">
+          <TabsLayoutHeader
+            title="Progress Reports"
+            variant="navy"
+            left={
+              <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full">
+                <Feather name="arrow-left" size={20} color="white" />
+              </Pressable>
+            }
+          >
+            <Text className="text-white/80 text-base">
+              Upload and track your progress reports.
+            </Text>
+          </TabsLayoutHeader>
+        </View>
+        <View className="p-5 items-center justify-center min-h-[300px]">
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text className="text-muted-foreground mt-4">Loading...</Text>
+        </View>
+      </ScreenScrollView>
     );
   }
 
   return (
-    <View className="flex-1 bg-background">
-      {/* Header */}
-      <LinearGradient
-        colors={['#002147', '#003366']}
-        className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
-      >
-        <View className="flex-row justify-between items-center mb-4">
-          <Pressable onPress={() => router.back()} className="p-2">
-            <Feather name="arrow-left" size={24} color={colors.white} />
-          </Pressable>
-          <Text className="text-white text-xl font-bold">Progress Reports</Text>
-          <HeaderAvatar />
-        </View>
-      </LinearGradient>
+    <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+      <View className="bg-background">
+        <TabsLayoutHeader
+          title="Progress Reports"
+          variant="navy"
+          left={
+            <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full">
+              <Feather name="arrow-left" size={20} color="white" />
+            </Pressable>
+          }
+        >
+          <Text className="text-white/80 text-base">
+            Upload and track your progress reports.
+          </Text>
+        </TabsLayoutHeader>
+      </View>
 
-      <ScreenScrollView>
-        <View className="px-6 py-6">
+      <View className="mt-6 px-6">
           {/* Info Banner */}
           {acceptedApplications.length === 0 ? (
             <View className="bg-card rounded-2xl p-5 mb-6 border border-border">
@@ -458,9 +475,8 @@ function ProgressReportsScreen() {
               </View>
             </>
           )}
-        </View>
-      </ScreenScrollView>
-    </View>
+      </View>
+    </ScreenScrollView>
   );
 }
 

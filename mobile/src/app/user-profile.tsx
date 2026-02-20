@@ -11,6 +11,7 @@ import { withAuthGuard } from '@/components/withAuthGuard';
 import { supabase } from '@/lib/supabase';
 import { connectionService } from '@/services/connection.service';
 import { Profile } from '@/types';
+import { useAvatarUri } from '@/hooks/use-avatar-uri';
 
 
 
@@ -22,6 +23,7 @@ function UserProfileScreen() {
 	const params = useLocalSearchParams<{ id?: string; userId?: string; name?: string }>();
 
 	const [profileUser, setProfileUser] = useState<Profile | null>(null);
+	const { uri: profileUserAvatarUri } = useAvatarUri(profileUser?.avatar);
 	const [connectionStatus, setConnectionStatus] = useState<'connected' | 'pending_sent' | 'pending_received' | 'available' | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [connectionId, setConnectionId] = useState<string | null>(null);
@@ -256,7 +258,11 @@ function UserProfileScreen() {
 	return (
 		<ScreenScrollView>
 			<View className="p-5 rounded-xl mb-3 items-center bg-primary">
-				<Image source={getAvatarSource(profileUser.avatar)} className="w-[100px] h-[100px] rounded-full border-4 border-primary-foreground" contentFit="cover" />
+				<Image
+					source={profileUserAvatarUri ? { uri: profileUserAvatarUri } : getAvatarSource(profileUser.avatar)}
+					className="w-[100px] h-[100px] rounded-full border-4 border-primary-foreground"
+					contentFit="cover"
+				/>
 				<Text className="text-xl font-bold text-white mt-3">
 					{profileUser.name}
 				</Text>

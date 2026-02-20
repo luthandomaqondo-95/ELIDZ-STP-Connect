@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Pressable, Linking, Image, ScrollView } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '@/hooks/useTheme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
-import { LinearGradient } from 'expo-linear-gradient';
 import { getCenterById } from '@/services/center.service';
+import { TabsLayoutHeader } from '@/components/Header';
 
 // Import center images
 const analyticalLabImage = require('../../assets/images/tenants/analytical-lab.png');
@@ -68,26 +68,29 @@ function CenterDetailScreen() {
   return (
     <View className="flex-1 bg-background">
       {/* Header */}
-      <LinearGradient
-        colors={['#002147', '#003366']}
-        className="pt-12 pb-6 px-4 rounded-b-[30px] shadow-lg z-10"
-      >
-        <View className="flex-row items-center">
-          <Pressable 
-            onPress={() => router.back()}
-            className="p-2 bg-white/10 rounded-full mr-4"
-          >
-            <Feather name="arrow-left" size={24} color="white" />
-          </Pressable>
-          <Text className="text-white text-xl font-bold flex-1" numberOfLines={1}>
-            {name || 'Center Details'}
+      <View className="bg-background">
+        <TabsLayoutHeader
+          title={name || 'Center Details'}
+          variant="navy"
+          showActions={false}
+          left={
+            <Pressable
+              onPress={() => router.back()}
+              className="p-2 bg-white/10 rounded-full"
+            >
+              <Feather name="arrow-left" size={20} color="white" />
+            </Pressable>
+          }
+        >
+          <Text className="text-white/80 text-base">
+            Services, equipment, and contact information.
           </Text>
-        </View>
-      </LinearGradient>
+        </TabsLayoutHeader>
+      </View>
 
       <ScrollView
         className="flex-1"
-        contentContainerStyle={{ padding: 12, paddingBottom: 40 }}
+        contentContainerStyle={{ padding: 12, paddingTop: 24, paddingBottom: 40 }}
         showsVerticalScrollIndicator={false}
       >
         <View className="p-3 rounded-xl mb-5 bg-card shadow-sm">

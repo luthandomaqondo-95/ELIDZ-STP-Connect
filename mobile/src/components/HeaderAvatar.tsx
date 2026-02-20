@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, View, Image } from 'react-native';
+import { Pressable, View, Image, ActivityIndicator } from 'react-native';
 import { router } from 'expo-router';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { Text } from '@/components/ui/text';
 import { cn } from '@/lib/utils';
+import { useAvatarUri } from '@/hooks/use-avatar-uri';
 
 export const HeaderAvatar = ({
     className = ""
@@ -11,13 +12,14 @@ export const HeaderAvatar = ({
     className?: string;
 }) => {
     const { profile } = useAuthContext();
+    const { uri: avatarUri, isLoading } = useAvatarUri(profile?.avatar);
+    const hasUploadedAvatar =
+        Boolean(profile?.avatar) &&
+        (profile!.avatar!.startsWith('http://') ||
+            profile!.avatar!.startsWith('https://') ||
+            profile!.avatar!.startsWith('storage:'));
 
     const getAvatarSource = (avatar?: string) => {
-        // If avatar is a URL (starts with http), return it as a URI source
-        if (avatar && (avatar.startsWith('http://') || avatar.startsWith('https://'))) {
-            return { uri: avatar };
-        }
-        
         // Otherwise, use default color avatars
         switch (avatar) {
             case 'blue': return require('../../assets/avatars/avatar-blue.png');
@@ -27,20 +29,30 @@ export const HeaderAvatar = ({
         }
     };
 
-    const avatarSource = getAvatarSource(profile?.avatar || 'blue');
-    const isUri = typeof avatarSource === 'object' && 'uri' in avatarSource;
+    const avatarSource = avatarUri ? { uri: avatarUri } : getAvatarSource(profile?.avatar || 'blue');
+    const isUri = typeof avatarSource === 'object' && avatarSource !== null && 'uri' in avatarSource;
 
     return (
         <Pressable 
             onPress={() => router.push('/(tabs)/profile')}
             className={cn(" active:opacity-70 w-9 h-9 rounded-full bg-gray-200 overflow-hidden border border-gray-100 shadow-sm", className)}
         >
-            {isUri ? (
+            {isLoading && hasUploadedAvatar && !avatarUri ? (
+                <View className="w-full h-full items-center justify-center bg-gray-200">
+                    <ActivityIndicator size="small" />
+                </View>
+            ) : isUri ? (
                 <Image 
                     source={avatarSource as { uri: string }} 
                     style={{ width: '100%', height: '100%' }} 
                     resizeMode="cover"
                 />
+            ) : hasUploadedAvatar ? (
+                <View className="w-full h-full items-center justify-center bg-[#002147]/10">
+                    <Text className="text-[#002147] text-sm font-bold">
+                        {(profile?.name?.charAt(0) || 'U').toUpperCase()}
+                    </Text>
+                </View>
             ) : (
                 <Image 
                     source={avatarSource as any} 

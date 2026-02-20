@@ -1,4 +1,4 @@
-import { StatusBar } from "react-native";
+import { StatusBar, View } from "react-native";
 import "@/theme/global.css";
 import { NAV_THEME } from '@/theme/colors';
 import { ThemeProvider } from '@react-navigation/native';
@@ -15,6 +15,7 @@ import AuthProvider from '@/providers/auth-provider'
 import { useState } from "react";
 import { SplashScreen } from "@/components/SplashScreenController";
 import * as ExpoSplashScreen from 'expo-splash-screen';
+import { cn } from '@/lib/utils';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 ExpoSplashScreen.preventAutoHideAsync();
@@ -64,22 +65,24 @@ function RootLayout() {
 			/>
 			<SafeAreaProvider>
 				<GestureHandlerRootView style={{ flex: 1 }}>
-					<QueryClientProvider client={queryClient}>
-						<Provider store={store}>
-							<ThemeProvider value={NAV_THEME[colorScheme]}>
-								<BottomSheetModalProvider>
-									<AuthProvider>
-										{
-											showSplash ?
-												<SplashScreen onComplete={() => setShowSplash(false)} />
-												:
-												<ProtectedAppRoutes />
-										}
-									</AuthProvider>
-								</BottomSheetModalProvider>
-							</ThemeProvider>
-						</Provider>
-					</QueryClientProvider>
+					<View className={cn('flex-1', isDarkColorScheme && 'dark')} style={{ flex: 1 }}>
+						<QueryClientProvider client={queryClient}>
+							<Provider store={store}>
+								<ThemeProvider value={NAV_THEME[colorScheme]}>
+									<BottomSheetModalProvider>
+										<AuthProvider>
+											{
+												showSplash ?
+													<SplashScreen onComplete={() => setShowSplash(false)} />
+													:
+													<ProtectedAppRoutes />
+											}
+										</AuthProvider>
+									</BottomSheetModalProvider>
+								</ThemeProvider>
+							</Provider>
+						</QueryClientProvider>
+					</View>
 				</GestureHandlerRootView>
 			</SafeAreaProvider >
 		</>

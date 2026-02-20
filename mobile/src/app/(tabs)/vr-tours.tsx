@@ -98,9 +98,9 @@ export default function VRToursScreen() {
 	};
 
 	return (
-		<ScreenScrollView>
+		<ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
 			<View className="bg-background">
-				<TabsLayoutHeader title="Virtual Tour" variant="navy">
+				<TabsLayoutHeader title="Virtual Tours" variant="navy">
 					<View className="px-0">
 						<Text className="text-white/80 text-base">
 							Explore the ELIDZ Science & Technology Park campus virtually.

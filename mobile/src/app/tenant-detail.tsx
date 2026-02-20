@@ -5,12 +5,11 @@ import { Text } from '@/components/ui/text';
 import { useTheme } from '../hooks/useTheme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
-import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
 
 import { TenantLogo } from '@/components/TenantLogo';
 import { tenantService } from '@/services/tenant.service';
 import { Tenant } from '@/types';
+import { TabsLayoutHeader } from '@/components/Header';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -94,37 +93,35 @@ function TenantDetailScreen() {
   return (
     <View className="flex-1 bg-background">
       {/* Header */}
-      <View className={`pt-12 pb-6 z-10 ${isTablet ? 'px-6' : 'px-4'}`}>
-        <View className={`w-full self-center ${isTablet ? 'max-w-[1200px]' : 'max-w-full'}`}>
-          <View className="flex-row items-center justify-between mb-2">
-            <Pressable 
+      <View className="bg-background">
+        <TabsLayoutHeader
+          title={name}
+          variant="navy"
+          left={
+            <Pressable
               onPress={() => router.back()}
-              className="p-2 bg-muted rounded-full"
+              className="p-2 bg-white/10 rounded-full"
               hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Feather name="arrow-left" size={20} color={colors.text} />
+              <Feather name="arrow-left" size={20} color="white" />
             </Pressable>
-            <View className="flex-row items-center">
-              <HeaderNotificationIcon />
-              <HeaderAvatar />
-            </View>
-          </View>
-          <View className="items-start">
-            <Text className={`text-foreground font-semibold ${isTablet ? 'text-[22px]' : 'text-xl'}`} numberOfLines={1}>
-              {name}
-            </Text>
-          </View>
-        </View>
+          }
+        >
+          <Text className="text-white/80 text-base" numberOfLines={1}>
+            {industry} • {location}
+          </Text>
+        </TabsLayoutHeader>
       </View>
 
       <ScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
       >
-        <View className="p-3 pb-10">
-        <View className="w-[100px] h-[100px] rounded-xl justify-center items-center self-center mb-5 overflow-hidden bg-transparent">
-          <TenantLogo name={name} logoUrl={logoUrl} size={40} className="w-full h-full" />
-        </View>
+        <View className="mt-6 px-5">
+          <View className="w-[100px] h-[100px] rounded-xl justify-center items-center self-center mb-5 overflow-hidden bg-transparent">
+            <TenantLogo name={name} logoUrl={logoUrl} size={40} className="w-full h-full" />
+          </View>
 
         <View className="flex-row justify-center mb-5">
           <View className="px-2.5 py-2 rounded-lg mx-1 bg-primary">
@@ -334,14 +331,14 @@ function TenantDetailScreen() {
         )}
 
         {/* Contact Button (if no email/phone) */}
-        {!tenant?.contact_email && !tenant?.contact_phone && (
-          <Pressable className="flex-row justify-center items-center h-[52px] rounded-lg mb-5 bg-primary active:opacity-70">
-            <Feather name="mail" size={20} color={colors.buttonText} />
-            <Text className="text-base font-semibold text-primary-foreground ml-2.5">
-              Contact {name}
-            </Text>
-          </Pressable>
-        )}
+          {!tenant?.contact_email && !tenant?.contact_phone && (
+            <Pressable className="flex-row justify-center items-center h-[52px] rounded-lg mb-5 bg-primary active:opacity-70">
+              <Feather name="mail" size={20} color={colors.buttonText} />
+              <Text className="text-base font-semibold text-primary-foreground ml-2.5">
+                Contact {name}
+              </Text>
+            </Pressable>
+          )}
         </View>
       </ScrollView>
     </View>

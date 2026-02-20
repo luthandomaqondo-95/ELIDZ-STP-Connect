@@ -7,17 +7,18 @@ import { useAuthContext } from '@/hooks/use-auth-context';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import * as ImagePicker from 'expo-image-picker';
-import { LinearGradient } from 'expo-linear-gradient';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
 import type { Profile } from '@/types';
 import { profileService } from '@/services/profile.service';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { TabsLayoutHeader } from '@/components/Header';
+import { useAvatarUri } from '@/hooks/use-avatar-uri';
 
 function EditProfileScreen() {
     const { profile: user, updateProfile } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme];
+    const { uri: savedAvatarUri } = useAvatarUri(user?.avatar);
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [address, setAddress] = useState<string>('');
@@ -115,28 +116,29 @@ function EditProfileScreen() {
     }
 
     return (
-        <View className="flex-1 bg-gray-50">
-            <ScreenKeyboardAwareScrollView>
-                {/* Header */}
-                <LinearGradient
-                    colors={['#002147', '#003366']}
-                    className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg mb-6"
-                >
-                    <View className="flex-row items-center mb-4">
-                        <Pressable
-                            onPress={() => router.back()}
-                            className="p-2 bg-white/10 rounded-full mr-4"
-                        >
-                            <Feather name="arrow-left" size={20} color="white" />
-                        </Pressable>
-                        <Text className="text-white text-2xl font-bold">Edit Profile</Text>
-                    </View>
-                    <Text className="text-white/80 text-sm">
-                        Update your personal information and profile picture.
-                    </Text>
-                </LinearGradient>
+        <View className="flex-1 bg-background">
+            <ScreenKeyboardAwareScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+                <View className="bg-background">
+                    <TabsLayoutHeader
+                        title="Edit Profile"
+                        variant="navy"
+                        showActions={false}
+                        left={
+                            <Pressable
+                                onPress={() => router.back()}
+                                className="p-2 bg-white/10 rounded-full"
+                            >
+                                <Feather name="arrow-left" size={20} color="white" />
+                            </Pressable>
+                        }
+                    >
+                        <Text className="text-white/80 text-base">
+                            Update your personal information and profile picture.
+                        </Text>
+                    </TabsLayoutHeader>
+                </View>
 
-                <View className="px-6 pb-10">
+                <View className="mt-6 px-6 pb-10">
                     {/* Profile Picture Section */}
                     <View className="items-center mb-8">
                         <Pressable 
@@ -155,9 +157,9 @@ function EditProfileScreen() {
                                             style={{ width: '100%', height: '100%' }}
                                             resizeMode="cover"
                                         />
-                                    ) : user?.avatar && (user.avatar.startsWith('http://') || user.avatar.startsWith('https://')) ? (
+                                    ) : savedAvatarUri ? (
                                         <Image 
-                                            source={{ uri: user.avatar }} 
+                                            source={{ uri: savedAvatarUri }} 
                                             className="w-full h-full"
                                             style={{ width: '100%', height: '100%' }}
                                             resizeMode="cover"
@@ -183,27 +185,27 @@ function EditProfileScreen() {
                     </View>
 
                     {/* Form Fields */}
-                    <View className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm mb-6">
+                    <View className="bg-card p-5 rounded-2xl border border-border shadow-sm mb-6">
                         {/* Name Input */}
                         <View className="mb-5">
-                            <Text className="text-[#002147] text-xs font-bold uppercase mb-2 ml-1">Full Name</Text>
+                            <Text className="text-foreground text-xs font-bold uppercase mb-2 ml-1">Full Name</Text>
                             <TextInput
                                 value={name}
                                 onChangeText={setName}
                                 placeholder="Enter your full name"
-                                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147]"
+                                className="bg-input border border-border rounded-xl px-4 py-3 text-base text-foreground"
                                 placeholderTextColor={colors.placeholder}
                             />
                         </View>
 
                         {/* Email Input */}
                         <View className="mb-5">
-                            <Text className="text-[#002147] text-xs font-bold uppercase mb-2 ml-1">Email Address</Text>
+                            <Text className="text-foreground text-xs font-bold uppercase mb-2 ml-1">Email Address</Text>
                             <TextInput
                                 value={email}
                                 onChangeText={setEmail}
                                 placeholder="Enter your email"
-                                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147]"
+                                className="bg-input border border-border rounded-xl px-4 py-3 text-base text-foreground"
                                 placeholderTextColor={colors.placeholder}
                                 keyboardType="email-address"
                                 autoCapitalize="none"
@@ -212,12 +214,12 @@ function EditProfileScreen() {
 
                         {/* Address Input */}
                         <View className="mb-5">
-                            <Text className="text-[#002147] text-xs font-bold uppercase mb-2 ml-1">Address</Text>
+                            <Text className="text-foreground text-xs font-bold uppercase mb-2 ml-1">Address</Text>
                             <TextInput
                                 value={address}
                                 onChangeText={setAddress}
                                 placeholder="Enter your address"
-                                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147]"
+                                className="bg-input border border-border rounded-xl px-4 py-3 text-base text-foreground"
                                 placeholderTextColor={colors.placeholder}
                                 autoCapitalize="words"
                             />
@@ -225,24 +227,24 @@ function EditProfileScreen() {
 
                         {/* Organization Input */}
                         <View className="mb-5">
-                            <Text className="text-[#002147] text-xs font-bold uppercase mb-2 ml-1">Organization</Text>
+                            <Text className="text-foreground text-xs font-bold uppercase mb-2 ml-1">Organization</Text>
                             <TextInput
                                 value={organization}
                                 onChangeText={setOrganization}
                                 placeholder="Enter your organization"
-                                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147]"
+                                className="bg-input border border-border rounded-xl px-4 py-3 text-base text-foreground"
                                 placeholderTextColor={colors.placeholder}
                             />
                         </View>
 
                         {/* Bio Input */}
                         <View className="mb-2">
-                            <Text className="text-[#002147] text-xs font-bold uppercase mb-2 ml-1">Bio</Text>
+                            <Text className="text-foreground text-xs font-bold uppercase mb-2 ml-1">Bio</Text>
                             <TextInput
                                 value={bio}
                                 onChangeText={setBio}
                                 placeholder="Tell us about yourself"
-                                className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base text-[#002147] min-h-[100px]"
+                                className="bg-input border border-border rounded-xl px-4 py-3 text-base text-foreground min-h-[100px]"
                                 placeholderTextColor={colors.placeholder}
                                 multiline
                                 numberOfLines={4}
@@ -252,10 +254,10 @@ function EditProfileScreen() {
                     </View>
 
                     {/* Role Display (Read-only) */}
-                    <View className="bg-[#002147]/5 p-4 rounded-xl mb-8 border border-[#002147]/10 flex-row items-center justify-between">
+                    <View className="bg-primary/10 p-4 rounded-xl mb-8 border border-primary/20 flex-row items-center justify-between">
                         <View>
-                            <Text className="text-[#002147] text-xs font-bold uppercase mb-1">Current Role</Text>
-                            <Text className="text-[#002147] text-base font-medium">{user?.role}</Text>
+                            <Text className="text-foreground text-xs font-bold uppercase mb-1">Current Role</Text>
+                            <Text className="text-foreground text-base font-medium">{user?.role}</Text>
                         </View>
                         <Feather name="shield" size={20} color={colors.primary} />
                     </View>
@@ -264,13 +266,12 @@ function EditProfileScreen() {
                     <Pressable
                         onPress={handleSave}
                         disabled={isSaving}
-                        className={`py-4 rounded-xl items-center justify-center shadow-md active:opacity-90 ${isSaving ? 'bg-gray-300' : 'bg-[#002147]'
-                            }`}
+                        className={`py-4 rounded-xl items-center justify-center shadow-md active:opacity-90 ${isSaving ? 'bg-muted' : 'bg-primary'}`}
                     >
                         {isSaving ? (
-                            <Text className="text-gray-500 font-bold text-base">Saving...</Text>
+                            <Text className="text-muted-foreground font-bold text-base">Saving...</Text>
                         ) : (
-                            <Text className="text-white font-bold text-base">Save Changes</Text>
+                            <Text className="text-primary-foreground font-bold text-base">Save Changes</Text>
                         )}
                     </Pressable>
                 </View>

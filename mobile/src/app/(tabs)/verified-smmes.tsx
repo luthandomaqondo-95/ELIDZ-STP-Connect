@@ -445,9 +445,9 @@ export default function VerifiedSMMEsScreen() {
 
                         {/* Empty State */}
                         {filteredSMMEs.length === 0 && (
-                            <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
+                            <View className="items-center py-12 mx-6 bg-card rounded-2xl border border-border border-dashed">
                                 <Feather name="search" size={48} color={colors.iconGray} />
-                                <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                                <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                     {searchQuery || selectedCategory !== 'All'
                                         ? 'No verified SMMEs found matching your search'
                                         : 'No verified SMMEs found. Be the first to post!'}

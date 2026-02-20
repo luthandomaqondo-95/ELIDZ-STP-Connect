@@ -7,11 +7,10 @@ import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { OpportunityService } from '@/services/opportunity.service';
 import { Opportunity } from '@/types';
-import { HeaderAvatar } from '@/components/HeaderAvatar';
-import { HeaderNotificationIcon } from '@/components/HeaderNotificationIcon';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { useDebounce } from '@/hooks/useDebounce';
+import { TabsLayoutHeader } from '@/components/Header';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -166,50 +165,39 @@ function OpportunitiesScreen() {
     <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
-        <View
-          className="pt-12 pb-6"
-          style={{ paddingHorizontal: isTablet ? 24 : 24 }}
-        >
-          <View 
-            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-          >
-            <View className="flex-row items-center justify-end mb-2">
-              <HeaderNotificationIcon />
-              <HeaderAvatar />
-            </View>
-            <View className="items-start mb-2">
-              <Text className="text-foreground font-semibold" style={{ fontSize: isTablet ? 22 : 20 }}>
-                Opportunities
-              </Text>
-              <Text className="text-muted-foreground" style={{ fontSize: isTablet ? 14 : 14 }}>
+        <View className="bg-background">
+          <TabsLayoutHeader title="Opportunities" variant="navy">
+            <View
+              style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
+            >
+              <Text className="text-white/80 text-base mb-6">
                 Discover funding, jobs, and growth opportunities
               </Text>
-            </View>
-          </View>
 
-          {/* Search Bar */}
-          <View 
-            className="flex-row items-center bg-gray-50 border border-gray-200 h-12 rounded-xl px-4 mt-6"
-            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-          >
-            <Feather name="search" size={20} color="#9CA3AF" />
-            <TextInput
-              className="flex-1 ml-3 text-base text-foreground"
-              placeholder="Search opportunities..."
-              placeholderTextColor="#D1D5DB"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            {searchQuery.length > 0 && (
-              <Pressable 
-                onPress={() => setSearchQuery('')} 
-                className="ml-2"
-                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              {/* Search Bar */}
+              <View
+                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
               >
-                <Feather name="x" size={18} color={colors.placeholder} />
-              </Pressable>
-            )}
-          </View>
+                <Feather name="search" size={20} color={colors.whiteOpacity70} />
+                <TextInput
+                  className="flex-1 ml-3 text-base text-white"
+                  placeholder="Search opportunities..."
+                  placeholderTextColor={colors.whiteOpacity50}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <Pressable
+                    onPress={() => setSearchQuery('')}
+                    className="ml-2"
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                  >
+                    <Feather name="x" size={18} color={colors.whiteOpacity70} />
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          </TabsLayoutHeader>
         </View>
 
         {/* Filter Chips */}

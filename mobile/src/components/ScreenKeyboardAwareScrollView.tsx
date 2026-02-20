@@ -7,13 +7,20 @@ import {
 import { useScreenInsets } from "../hooks/useScreenInsets";
 import { ScreenScrollView } from "./ScreenScrollView";
 
+type ScreenKeyboardAwareScrollViewExtraProps = {
+	insetTop?: boolean;
+	insetBottom?: boolean;
+};
+
 export function ScreenKeyboardAwareScrollView({
   children,
   contentContainerStyle,
   style,
   keyboardShouldPersistTaps = "handled",
+  insetTop = true,
+  insetBottom = true,
   ...scrollViewProps
-}: KeyboardAwareScrollViewProps) {
+}: KeyboardAwareScrollViewProps & ScreenKeyboardAwareScrollViewExtraProps) {
   const { paddingTop, paddingBottom, scrollInsetBottom } = useScreenInsets();
 
   if (Platform.OS === "web") {
@@ -21,6 +28,8 @@ export function ScreenKeyboardAwareScrollView({
       <ScreenScrollView
         style={style}
         contentContainerStyle={contentContainerStyle}
+        insetTop={insetTop}
+        insetBottom={insetBottom}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
         {...scrollViewProps}
       >
@@ -34,10 +43,13 @@ export function ScreenKeyboardAwareScrollView({
       className="flex-1"
       style={style}
       contentContainerStyle={[
-        { paddingTop, paddingBottom },
+        {
+          paddingTop: insetTop ? paddingTop : 0,
+          paddingBottom: insetBottom ? paddingBottom : 0,
+        },
         contentContainerStyle,
       ]}
-      scrollIndicatorInsets={{ bottom: scrollInsetBottom }}
+      scrollIndicatorInsets={{ bottom: insetBottom ? scrollInsetBottom : 0 }}
       keyboardShouldPersistTaps={keyboardShouldPersistTaps}
       {...scrollViewProps}
     >

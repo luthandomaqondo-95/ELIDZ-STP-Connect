@@ -24,12 +24,8 @@ export const HeaderNotificationIcon = ({
 
         // Load unread count
         const loadUnreadCount = async () => {
-            try {
-                const count = await notificationService.getUnreadCount(profile.id);
-                setUnreadCount(count);
-            } catch (error) {
-                console.error('Error loading unread count:', error);
-            }
+            const count = await notificationService.getUnreadCount(profile.id);
+            setUnreadCount(count);
         };
 
         loadUnreadCount();

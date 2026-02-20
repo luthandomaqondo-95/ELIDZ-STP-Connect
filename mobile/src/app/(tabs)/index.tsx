@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Pressable, ScrollView, Image, Dimensions } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -16,6 +16,7 @@ import { TenantLogo } from '@/components/TenantLogo';
 import { TabsLayoutHeader } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { verificationService } from '@/services/verification.service';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width } = Dimensions.get('window');
 
@@ -33,84 +34,138 @@ export default function DashboardScreen() {
     const [featuredTenants, setFeaturedTenants] = useState<Tenant[]>([]);
     const [centersOfExcellence, setCentersOfExcellence] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
-    const [isSMMEVerified, setIsSMMEVerified] = useState<boolean | null>(null);
-    const [hasSubmittedDocuments, setHasSubmittedDocuments] = useState<boolean>(false);
     const [loadingVerification, setLoadingVerification] = useState(false);
+    const [verificationDocCount, setVerificationDocCount] = useState(0);
+    const [verificationStatus, setVerificationStatus] = useState<'verified' | 'rejected' | 'pending' | 'incomplete' | 'not_submitted'>('not_submitted');
+    const [featuredOpportunity, setFeaturedOpportunity] = useState<Opportunity | null>(null);
 
-    // Load verification status for SMME users
+    const checkVerificationStatus = useCallback(async () => {
+        if (profile?.role !== 'SMME' || !profile?.id) return;
+
+        setLoadingVerification(true);
+        try {
+            const [statusDoc, allDocs] = await Promise.all([
+                verificationService.getVerificationStatus(profile.id),
+                verificationService.getAllVerifications(profile.id),
+            ]);
+
+            const requiredTypes = ['Business Registration', 'ID Document', 'Business Profile'];
+            // Only count documents that have actually been uploaded (have a non-empty document_url)
+            const requiredDocs = allDocs.filter(
+                doc => requiredTypes.includes(doc.document_type) && doc.document_url?.trim?.() !== ''
+            );
+            const docCount = requiredDocs.length;
+            setVerificationDocCount(docCount);
+
+            // If profile is verified (or all docs verified), hide banner by setting verified.
+            if (statusDoc?.status === 'verified') {
+                setVerificationStatus('verified');
+                return;
+            }
+
+            if (docCount === 0) {
+                setVerificationStatus('not_submitted');
+                return;
+            }
+
+            const anyRejected = requiredDocs.some(doc => doc.status === 'rejected');
+            if (anyRejected) {
+                setVerificationStatus('rejected');
+                return;
+            }
+
+            if (docCount < 3) {
+                setVerificationStatus('incomplete');
+                return;
+            }
+
+            setVerificationStatus('pending');
+        } catch (error) {
+            console.error('Error checking verification status:', error);
+            // Fall back to prompting verification if we can't confirm.
+            setVerificationDocCount(0);
+            setVerificationStatus('not_submitted');
+        } finally {
+            setLoadingVerification(false);
+        }
+    }, [profile?.id, profile?.role]);
+
+    // Refresh verification banner whenever Home regains focus
+    useFocusEffect(
+        useCallback(() => {
+            checkVerificationStatus();
+        }, [checkVerificationStatus])
+    );
+
+    // Initial load (and when user changes)
     useEffect(() => {
-        async function checkVerificationStatus() {
-            if (profile?.role === 'SMME' && profile?.id) {
-                setLoadingVerification(true);
+        checkVerificationStatus();
+    }, [checkVerificationStatus]);
+
+    const pickFeaturedOpportunity = useCallback((opps: Opportunity[]) => {
+        if (!opps || opps.length === 0) return null;
+
+        // Prefer explicit featured flag if it exists in DB (even if not typed)
+        const explicitFeatured = opps.find((o: any) => Boolean(o?.is_featured) || Boolean(o?.featured) || Boolean(o?.isFeatured));
+        if (explicitFeatured) return explicitFeatured;
+
+        // Prefer newest Funding opportunity, otherwise newest overall (list already sorted desc)
+        return opps.find((o) => o.type === 'Funding') || opps[0];
+    }, []);
+
+    const loadDashboardData = useCallback(async () => {
+        try {
+            setLoading(true);
+
+            // Load opportunities
+            const opportunities = await OpportunityService.getOpportunities();
+            const latest = opportunities.slice(0, 5);
+            setLatestOpportunities(latest);
+            setFeaturedOpportunity(pickFeaturedOpportunity(latest));
+
+            // Load recommended opportunities if user is logged in
+            if (profile?.id) {
                 try {
-                    const allDocs = await verificationService.getAllVerifications(profile.id);
-                    const requiredTypes = ['Business Registration', 'ID Document', 'Business Profile'];
-                    const requiredDocs = allDocs.filter(doc => requiredTypes.includes(doc.document_type));
-                    
-                    // Check if any documents have been submitted (regardless of status)
-                    const hasSubmitted = requiredDocs.length > 0;
-                    setHasSubmittedDocuments(hasSubmitted);
-                    
-                    // Check if fully verified
-                    const verified = requiredDocs.length === 3 && requiredDocs.every(doc => doc.status === 'verified');
-                    setIsSMMEVerified(verified);
+                    const recommended = await OpportunityService.getRecommendedOpportunities(profile.id, 5);
+                    setRecommendedOpportunities(recommended);
                 } catch (error) {
-                    console.error('Error checking verification status:', error);
-                    setIsSMMEVerified(false);
-                    setHasSubmittedDocuments(false);
-                } finally {
-                    setLoadingVerification(false);
+                    console.error('Error loading recommended opportunities:', error);
                 }
             } else {
-                setIsSMMEVerified(null);
-                setHasSubmittedDocuments(false);
+                setRecommendedOpportunities([]);
             }
+
+            // Load events
+            const events = await EventService.getUpcomingEvents(5);
+            setUpcomingEvents(events);
+
+            // Load tenants (centers of excellence)
+            const centers = await tenantService.getCentersOfExcellence();
+            setCentersOfExcellence(centers);
+
+            // Load featured tenants
+            const tenants = await tenantService.getTenants(6);
+            setFeaturedTenants(tenants);
+        } catch (error) {
+            console.error('Error loading dashboard data:', error);
+            setLatestOpportunities([]);
+            setFeaturedOpportunity(null);
+        } finally {
+            setLoading(false);
         }
+    }, [pickFeaturedOpportunity, profile?.id]);
 
-        checkVerificationStatus();
-    }, [profile]);
-
-    // Load dashboard data
+    // Initial load
     useEffect(() => {
-        async function loadDashboardData() {
-            try {
-                setLoading(true);
-                
-                // Load opportunities
-                const opportunities = await OpportunityService.getOpportunities();
-                setLatestOpportunities(opportunities.slice(0, 5));
-
-                // Load recommended opportunities if user is logged in
-                if (profile?.id) {
-                    try {
-                        const recommended = await OpportunityService.getRecommendedOpportunities(profile.id, 5);
-                        setRecommendedOpportunities(recommended);
-                    } catch (error) {
-                        console.error('Error loading recommended opportunities:', error);
-                    }
-                }
-
-                // Load events
-                const events = await EventService.getUpcomingEvents(5);
-                setUpcomingEvents(events);
-
-                // Load tenants (centers of excellence)
-                const centers = await tenantService.getCentersOfExcellence();
-                setCentersOfExcellence(centers);
-
-                // Load featured tenants
-                const tenants = await tenantService.getTenants(6);
-                setFeaturedTenants(tenants);
-
-            } catch (error) {
-                console.error('Error loading dashboard data:', error);
-            } finally {
-                setLoading(false);
-            }
-        }
-
         loadDashboardData();
-    }, []);
+    }, [loadDashboardData]);
+
+    // Refresh dashboard whenever Home regains focus (keeps hero banner dynamic)
+    useFocusEffect(
+        useCallback(() => {
+            loadDashboardData();
+        }, [loadDashboardData])
+    );
 
     // Map centers to product lines format
     const productLines = centersOfExcellence.map((center) => {
@@ -135,23 +190,39 @@ export default function DashboardScreen() {
         <ScreenScrollView contentContainerStyle={{ paddingBottom: 40 }}>
             <TabsLayoutHeader title="Home" className="sticky top-0 z-10" profile={profile} />
             
-            {/* SMME Verification Banner - Only show if no documents have been submitted */}
-            {profile?.role === 'SMME' && isSMMEVerified === false && !hasSubmittedDocuments && (
+            {/* SMME Verification Banner - Dynamic status */}
+            {profile?.role === 'SMME' && profile?.id && verificationStatus !== 'verified' && (
                 <View className="mx-5 mb-3 rounded-lg bg-[#FF6600]/5 border border-[#FF6600]/20 p-3">
                     <View className="flex-row items-center">
                         <Feather name="info" size={14} color="#FF6600" />
                         <Text className="text-[#FF6600] text-xs font-medium ml-2 flex-1">
-                            Verification required to access all features
+                            {loadingVerification
+                                ? 'Checking verification status...'
+                                : verificationStatus === 'not_submitted'
+                                    ? 'Verification required to access all features'
+                                    : verificationStatus === 'incomplete'
+                                        ? `Upload remaining documents (${verificationDocCount}/3)`
+                                        : verificationStatus === 'rejected'
+                                            ? 'Verification rejected — update your documents'
+                                            : 'Verification submitted — pending review (24–48h)'}
                         </Text>
-                        <Pressable
-                            onPress={() => router.push('/(tabs)/profile')}
-                            className="ml-2"
-                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-                        >
-                            <Text className="text-[#FF6600] text-xs font-semibold underline">
-                                Verify
-                            </Text>
-                        </Pressable>
+                        {!loadingVerification && (
+                            <Pressable
+                                onPress={() => router.push('/smme-verification')}
+                                className="ml-2"
+                                hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                            >
+                                <Text className="text-[#FF6600] text-xs font-semibold underline">
+                                    {verificationStatus === 'not_submitted'
+                                        ? 'Verify'
+                                        : verificationStatus === 'incomplete'
+                                            ? 'Continue'
+                                            : verificationStatus === 'rejected'
+                                                ? 'Fix'
+                                                : 'View'}
+                                </Text>
+                            </Pressable>
+                        )}
                     </View>
                 </View>
             )}
@@ -165,7 +236,7 @@ export default function DashboardScreen() {
                     className="p-6"
                 >
                     {(() => {
-                        const featuredOpp = latestOpportunities.find(opp => opp.type === 'Funding') || latestOpportunities[0];
+                        const featuredOpp = featuredOpportunity;
 
                         return (
                             <>
@@ -179,22 +250,32 @@ export default function DashboardScreen() {
                                         {featuredOpp?.org || 'ELIDZ-STP'}
                                     </Text>
                                 </View>
-                                <Text className="text-white text-2xl font-bold mb-3 leading-tight">
-                                    {featuredOpp?.title || 'Innovation Opportunities Await'}
-                                </Text>
-                                <Text className="text-white/90 text-sm mb-6 leading-relaxed" numberOfLines={2}>
-                                    {featuredOpp?.description || 'Discover funding, incubation, and partnership opportunities at ELIDZ-STP.'}
-                                </Text>
-                                {featuredOpp && (
-                                    <Pressable
-                                        className="bg-white py-2.5 px-5 rounded-full self-start active:opacity-90 shadow-sm flex-row items-center"
-                                        onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: featuredOpp.id } })}
-                                    >
-                                        <Text className="text-[#002147] font-bold text-sm mr-2">
-                                            Explore Opportunity
+                                {loading ? (
+                                    <>
+                                        <View className="h-8 bg-white/10 rounded-lg mb-3 w-4/5" />
+                                        <View className="h-4 bg-white/10 rounded-lg mb-2 w-full" />
+                                        <View className="h-4 bg-white/10 rounded-lg mb-6 w-3/4" />
+                                    </>
+                                ) : (
+                                    <>
+                                        <Text className="text-white text-2xl font-bold mb-3 leading-tight">
+                                            {featuredOpp?.title || 'Innovation Opportunities Await'}
                                         </Text>
-                                        <Feather name="arrow-right" size={16} color={colors.primary} />
-                                    </Pressable>
+                                        <Text className="text-white/90 text-sm mb-6 leading-relaxed" numberOfLines={2}>
+                                            {featuredOpp?.description || 'Discover funding, incubation, and partnership opportunities at ELIDZ-STP.'}
+                                        </Text>
+                                        {featuredOpp && (
+                                            <Pressable
+                                                className="bg-white py-2.5 px-5 rounded-full self-start active:opacity-90 shadow-sm flex-row items-center"
+                                                onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: featuredOpp.id } })}
+                                            >
+                                                <Text className="text-[#002147] font-bold text-sm mr-2">
+                                                    Explore Opportunity
+                                                </Text>
+                                                <Feather name="arrow-right" size={16} color={colors.primary} />
+                                            </Pressable>
+                                        )}
+                                    </>
                                 )}
                             </>
                         );
@@ -278,7 +359,7 @@ export default function DashboardScreen() {
                         {recommendedOpportunities.slice(0, 3).map((opp, index) => (
                             <Pressable
                                 key={opp.id}
-                                className={`flex-row items-center p-4 mb-3 rounded-2xl bg-card active:opacity-95 border-2 border-accent/30 shadow-sm ${index === 2 ? 'mb-0' : ''}`}
+                                className={`flex-row items-center p-4 mb-3 rounded-2xl bg-card active:opacity-95 shadow-sm ${index === 2 ? 'mb-0' : ''}`}
                                 onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: opp.id } })}
                             >
                                 <View className="w-10 h-10 rounded-full justify-center items-center mr-3 bg-accent/10">
@@ -419,41 +500,41 @@ export default function DashboardScreen() {
                 </ScrollView>
             </View>
 
-            {/* Premium Upgrade Banner */}
-            {profile && !isGuest && (
-                <View className="mx-5 mb-8 rounded-2xl overflow-hidden shadow-sm">
-                    <LinearGradient
-                         colors={['#FF6600', '#FF8533']}
-                         start={{ x: 0, y: 0 }}
-                         end={{ x: 1, y: 0 }}
-                         className="p-5"
-                    >
-                        <View className="flex-row items-center mb-2">
-                            <View className="bg-white/20 p-1.5 rounded-full mr-2">
-                                <Feather name="star" size={16} color="white" />
-                            </View>
-                            <Text className="text-lg font-bold text-white">
-                                Upgrade to Premium
-                            </Text>
-                        </View>
-                        <Text className="text-white/90 text-sm mb-4 leading-relaxed">
-                            Get priority access to opportunities and advanced analytics.
-                        </Text>
-                        <Pressable
-                            className="bg-white py-2.5 px-4 rounded-xl self-start active:opacity-90"
-                            onPress={() => router.push('/(modals)/premium-upgrade')}
-                        >
-                            <Text className="text-[#FF6600] text-xs font-bold uppercase tracking-wide">
-                                Upgrade Now
-                            </Text>
-                        </Pressable>
-                    </LinearGradient>
-                </View>
-            )}
+            {/* Premium Upgrade Banner (disabled) */}
+            {/* {profile && !isGuest && (
+              <View className="mx-5 mb-8 rounded-2xl overflow-hidden shadow-sm">
+                <LinearGradient
+                  colors={['#FF6600', '#FF8533']}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  className="p-5"
+                >
+                  <View className="flex-row items-center mb-2">
+                    <View className="bg-white/20 p-1.5 rounded-full mr-2">
+                      <Feather name="star" size={16} color="white" />
+                    </View>
+                    <Text className="text-lg font-bold text-white">
+                      Upgrade to Premium
+                    </Text>
+                  </View>
+                  <Text className="text-white/90 text-sm mb-4 leading-relaxed">
+                    Get priority access to opportunities and advanced analytics.
+                  </Text>
+                  <Pressable
+                    className="bg-white py-2.5 px-4 rounded-xl self-start active:opacity-90"
+                    onPress={() => router.push('/(modals)/premium-upgrade')}
+                  >
+                    <Text className="text-[#FF6600] text-xs font-bold uppercase tracking-wide">
+                      Upgrade Now
+                    </Text>
+                  </Pressable>
+                </LinearGradient>
+              </View>
+            )} */}
 
             {/* Welcome message for guest users - only show when not logged in and not loading */}
             {!isLoggedIn && !isLoading ? (
-                <View className="mx-5 mb-8 p-5 rounded-3xl bg-muted/30 border border-border/50">
+                <View className="mx-5 mb-8 p-5 rounded-3xl">
                     <Text className="text-lg font-bold mb-2 text-[#002147]">
                         Welcome to ELIDZ-STP! 👋
                     </Text>

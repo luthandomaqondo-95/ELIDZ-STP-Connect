@@ -13,6 +13,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Picker } from '@react-native-picker/picker';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { TabsLayoutHeader } from '@/components/Header';
 
 interface DocumentSlot {
     type: 'Business Registration' | 'ID Document' | 'Business Profile';
@@ -68,6 +69,8 @@ export default function SMMEVerificationScreen() {
     const [formContactPhone, setFormContactPhone] = useState('');
     const [formWebsiteUrl, setFormWebsiteUrl] = useState('');
     const [submittingForm, setSubmittingForm] = useState(false);
+
+    const uploadedCount = documents.filter((d) => Boolean(d.uri)).length;
 
     const categories = [
         'Technology',
@@ -280,23 +283,30 @@ export default function SMMEVerificationScreen() {
     };
 
     return (
-        <ScreenScrollView>
-            <View className="p-6">
-                <Pressable onPress={() => router.back()} className="mb-6">
-                    <Feather name="arrow-left" size={24} color={colors.primary} />
-                </Pressable>
-
-                <View className="items-center mb-8">
-                    <View className="w-20 h-20 bg-blue-50 rounded-full items-center justify-center mb-4">
-                        <Feather name="shield" size={40} color="#002147" />
+        <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
+            <View className="bg-background">
+                <TabsLayoutHeader
+                    title="Business Documents"
+                    variant="navy"
+                    showActions={false}
+                    left={
+                        <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full">
+                            <Feather name="arrow-left" size={20} color="white" />
+                        </Pressable>
+                    }
+                >
+                    <View className="px-0">
+                        <Text className="text-white/80 text-base mb-1">
+                            Upload 3 documents for verification.
+                        </Text>
+                        <Text className="text-white/60 text-sm">
+                            {uploadedCount}/3 uploaded
+                        </Text>
                     </View>
-                    <Text className="text-2xl font-bold text-foreground text-center">
-                        Verify Your Business
-                    </Text>
-                    <Text className="text-muted-foreground text-center mt-2">
-                        Upload the 3 required documents to prove your business legitimacy and gain access to exclusive SMME benefits.
-                    </Text>
-                </View>
+                </TabsLayoutHeader>
+            </View>
+
+            <View className="mt-6 px-6">
 
                 {/* Required Documents Section */}
                 <View className="mb-6">

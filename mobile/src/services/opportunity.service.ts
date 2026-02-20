@@ -8,7 +8,8 @@ class OpportunityServiceClass {
 		let query = supabase
 			.from('opportunities')
 			.select('*, posted_by(organization, name)')
-			.eq('status', 'active');
+			.eq('status', 'active')
+			.order('created_at', { ascending: false });
 
 		if (filter && filter !== 'All') {
 			query = query.eq('type', filter);
@@ -27,7 +28,8 @@ class OpportunityServiceClass {
 				const { data: fallbackData, error: fallbackError } = await supabase
 					.from('opportunities')
 					.select('*')
-					.eq('status', 'active');
+					.eq('status', 'active')
+					.order('created_at', { ascending: false });
 				if (fallbackError) throw fallbackError;
 				return (fallbackData || []).map((item: any) => ({
 					...item,

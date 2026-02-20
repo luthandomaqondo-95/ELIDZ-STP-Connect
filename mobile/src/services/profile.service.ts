@@ -103,7 +103,7 @@ class ProfileService {
    * Upload a profile picture to Supabase Storage
    * @param fileUri - Local file URI from the device
    * @param userId - User ID for organizing files
-   * @returns Public URL of the uploaded image
+   * @returns Storage reference string: "storage:<bucket>/<path>"
    */
   async uploadProfilePicture(fileUri: string, userId: string): Promise<string> {
     try {
@@ -126,31 +126,40 @@ class ProfileService {
       // Determine content type
       const contentType = this.getContentType(fileExtension);
 
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('profile-avatars')
-        .upload(filePath, arrayBuffer, {
-          contentType: contentType,
-          cacheControl: '3600',
-          upsert: true // Allow overwriting existing avatar
-        });
+      // Prefer a dedicated avatar bucket, but fall back to an existing bucket
+      // so uploads still work on projects that haven't created `profile-avatars` yet.
+      const candidateBuckets = ['profile-avatars', 'chat-attachments'];
 
-      if (error) {
-        console.error('ProfileService.uploadProfilePicture storage error:', error);
-        throw new Error(`Failed to upload profile picture: ${error.message}`);
+      let lastError: any = null;
+      for (const bucket of candidateBuckets) {
+        const { error } = await supabase.storage
+          .from(bucket)
+          .upload(filePath, arrayBuffer, {
+            contentType: contentType,
+            cacheControl: '3600',
+            upsert: true,
+          });
+
+        if (error) {
+          lastError = error;
+          const message = (error.message ?? '').toLowerCase();
+          const isBucketMissing = message.includes('bucket not found');
+          if (isBucketMissing) {
+            console.warn(`ProfileService.uploadProfilePicture: bucket "${bucket}" missing, falling back...`);
+            continue;
+          }
+          console.error('ProfileService.uploadProfilePicture storage error:', error);
+          throw new Error(`Failed to upload profile picture: ${error.message}`);
+        }
+
+        const storageRef = `storage:${bucket}/${filePath}`;
+        console.log('ProfileService.uploadProfilePicture succeeded:', storageRef);
+        return storageRef;
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('profile-avatars')
-        .getPublicUrl(filePath);
-
-      if (!publicUrl) {
-        throw new Error('Failed to get public URL for uploaded profile picture');
-      }
-
-      console.log('ProfileService.uploadProfilePicture succeeded:', publicUrl);
-      return publicUrl;
+      // If we get here, all buckets failed (most likely missing).
+      const message = lastError?.message ? String(lastError.message) : 'Unknown storage error';
+      throw new Error(`Failed to upload profile picture: ${message}`);
     } catch (error: any) {
       console.error('ProfileService.uploadProfilePicture error:', error);
       throw new Error(error.message || 'Failed to upload profile picture. Please try again.');
