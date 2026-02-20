@@ -12,9 +12,9 @@ This document defines the exact brand colors extracted from the official East Lo
 - **CSS Variable**: `--primary`, `--blue`
 
 ### Orange (Secondary/Accent)
-- **HEX**: `#FF6600`
-- **RGB**: `255, 102, 0`
-- **Usage**: Used for "idz" text and "SCIENCE & TECHNOLOGY PARK" text in the logo
+- **HEX**: `#F38C1E`
+- **RGB**: `243, 140, 30`
+- **Usage**: Brand orange for CTAs, accents, and highlights
 - **Theme Variable**: `secondary`, `accent`, `orange`
 - **CSS Variable**: `--secondary`, `--accent`, `--orange`
 
@@ -33,8 +33,8 @@ For LinearGradient headers, a slightly lighter blue is used:
 - **Usage**: Darker variant for dark mode
 
 ### Orange (Dark Mode)
-- **HEX**: `#CC5200`
-- **RGB**: `204, 82, 0`
+- **HEX**: `#C27018`
+- **RGB**: `194, 112, 24`
 - **Usage**: Darker variant for dark mode
 
 ## Implementation

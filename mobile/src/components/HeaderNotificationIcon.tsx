@@ -48,7 +48,7 @@ export const HeaderNotificationIcon = ({
         >
             <Feather name="bell" size={20} color={color} />
             {unreadCount > 0 && (
-                <View className="absolute -top-1 -right-1 bg-[#FF6600] rounded-full justify-center items-center min-w-[18px] px-1 h-[18px]">
+                <View className="absolute -top-1 -right-1 bg-[#F38C1E] rounded-full justify-center items-center min-w-[18px] px-1 h-[18px]">
                     <Text className="text-white text-[10px] font-bold">
                         {unreadCount > 99 ? '99+' : unreadCount}
                     </Text>

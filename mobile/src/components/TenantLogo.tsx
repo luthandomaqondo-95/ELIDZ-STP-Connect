@@ -203,11 +203,11 @@ export function TenantLogo({ logoUrl, name, size = 20, className = "w-full h-ful
 
     return (
         <View 
-            className={`${className} bg-[#002147]/10 border border-[#002147]/20 rounded-full justify-center items-center`}
+            className={`${className} bg-[#3B6E8F]/10 border border-[#3B6E8F]/20 rounded-full justify-center items-center`}
             style={{ minWidth: placeholderSize, minHeight: placeholderSize }}
         >
             <Text 
-                className="text-[#002147] font-bold"
+                className="text-[#3B6E8F] font-bold"
                 style={{ fontSize: size * 0.6 }}
             >
                 {initials}

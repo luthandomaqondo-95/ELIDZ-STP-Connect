@@ -125,7 +125,7 @@ export default function VRTourScreen() {
 	if (loading) {
 		return (
 			<View className="flex-1 items-center justify-center bg-background">
-				<ActivityIndicator size="large" color="#002147" />
+				<ActivityIndicator size="large" color="#3B6E8F" />
 				<Text className="mt-4 text-muted-foreground">Loading tour...</Text>
 			</View>
 		);

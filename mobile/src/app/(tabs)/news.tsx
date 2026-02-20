@@ -35,7 +35,7 @@ export default function NewsScreen() {
       case 'Events':
         return '#E83E8C';
       default:
-        return '#002147';
+        return '#3B6E8F';
     }
   };
 

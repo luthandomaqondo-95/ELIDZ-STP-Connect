@@ -148,7 +148,7 @@ export default function NotificationsScreen() {
             <Pressable
                 key={notification.id}
                 onPress={() => handleMarkAsRead(notification)}
-                className={`bg-card mb-3 rounded-2xl border ${isUnread ? 'border-[#FF6600]/50 border-l-4' : 'border-border'} shadow-sm overflow-hidden active:opacity-95`}
+                className={`bg-card mb-3 rounded-2xl border ${isUnread ? 'border-[#F38C1E]/50 border-l-4' : 'border-border'} shadow-sm overflow-hidden active:opacity-95`}
             >
                 <View className="p-4">
                     <View className="flex-row items-start">
@@ -164,7 +164,7 @@ export default function NotificationsScreen() {
                                     {notification.title}
                                 </Text>
                                 {isUnread && (
-                                    <View className="w-2.5 h-2.5 rounded-full bg-[#FF6600] ml-2 mt-1" />
+                                    <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2 mt-1" />
                                 )}
                             </View>
                             <Text className={`text-sm mb-2 ${isUnread ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -205,7 +205,7 @@ export default function NotificationsScreen() {
                 </View>
                 <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
-                        <View className="bg-[#FF6600]/10 p-2 rounded-full mr-3">
+                        <View className="bg-[#F38C1E]/10 p-2 rounded-full mr-3">
                             <Feather name="lock" size={18} color={colors.accent} />
                         </View>
                         <Text className="text-foreground text-lg font-bold">
@@ -217,7 +217,7 @@ export default function NotificationsScreen() {
                     </Text>
                     <Pressable
                         className="bg-[#002147] py-3 px-4 rounded-xl items-center active:opacity-90"
-                        onPress={() => router.push('/(auth)')}
+                        onPress={() => router.push('/(auth)/login')}
                     >
                         <Text className="text-white font-bold text-sm">
                             Sign In

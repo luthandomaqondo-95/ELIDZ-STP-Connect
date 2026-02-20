@@ -1,130 +1,114 @@
-import React, { useState, useRef } from 'react';
-import { View, ScrollView, Dimensions, Pressable } from 'react-native';
-import { Text } from '@/components/ui/text';
+import React, { useRef, useState } from 'react';
+import { View, ScrollView, Dimensions, NativeSyntheticEvent, NativeScrollEvent, Pressable } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { Text } from '@/components/ui/text';
 import { Button } from '@/components/ui/button';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Stars } from '@/components/Stars';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-const slides = [
-	{
-		id: 1,
-		title: 'Discover labs, incubators & opportunities in one place',
-		description: 'Access world-class facilities including food & water testing labs, design centres, digital hubs, automotive incubators, and renewable energy resources.',
-		icon: 'grid',
-	},
-	{
-		id: 2,
-		title: 'Connect with tenants, funders & SMMEs',
-		description: 'Build meaningful partnerships with fellow innovators, secure funding opportunities, and collaborate with small and medium enterprises across various sectors.',
-		icon: 'users',
-	},
-	{
-		id: 3,
-		title: 'Free to join – upgrade for premium benefits',
-		description: 'Start exploring immediately with our free tier, or unlock premium features like priority listings, direct messaging, and advanced analytics.',
-		icon: 'star',
-	},
+const SLIDES = [
+  {
+    key: '1',
+    title: 'Welcome to ELIDZ-STP',
+    subtitle: 'Science & Technology Park',
+    description: 'Your gateway to innovation, funding, and growth in the Eastern Cape.',
+    icon: 'zap' as const,
+  },
+  {
+    key: '2',
+    title: 'Connect & Grow',
+    subtitle: 'Opportunities for everyone',
+    description: 'Discover funding, incubation, events, and connect with tenants and partners.',
+    icon: 'users' as const,
+  },
+  {
+    key: '3',
+    title: 'Get Started',
+    subtitle: 'Join the community',
+    description: 'Continue as a guest, sign up, or log in to unlock the full experience.',
+    icon: 'star' as const,
+  },
 ];
 
 export default function WelcomeScreen() {
-	const [currentSlide, setCurrentSlide] = useState(0);
-	const scrollViewRef = useRef<ScrollView>(null);
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme ?? 'light'];
+  const scrollRef = useRef<ScrollView>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-	const handleScroll = (event: any) => {
-		const slideIndex = Math.round(event.nativeEvent.contentOffset.x / width);
-		setCurrentSlide(slideIndex);
-	};
+  const onScroll = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const offset = e.nativeEvent.contentOffset.x;
+    const index = Math.round(offset / width);
+    setCurrentIndex(index);
+  };
 
-	const handleNext = () => {
-		if (currentSlide < slides.length - 1) {
-			const nextSlide = currentSlide + 1;
-			setCurrentSlide(nextSlide);
-			scrollViewRef.current?.scrollTo({
-				x: nextSlide * width,
-				animated: true,
-			});
-		} else {
-			router.replace('/(auth)/auth-choice');
-		}
-	};
+  const goToAuthChoice = () => router.replace('/(auth)/auth-choice');
 
-	const handleSkip = () => {
-		router.replace('/(auth)/auth-choice');
-	};
+  return (
+    <View className="flex-1 bg-background">
+      <LinearGradient
+        colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+        className="absolute inset-0"
+        style={{ height }}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+      />
+      <Stars />
+      <SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+        <View className="flex-1 pt-4">
+          <ScrollView
+            ref={scrollRef}
+            horizontal
+            pagingEnabled
+            onMomentumScrollEnd={onScroll}
+            showsHorizontalScrollIndicator={false}
+            decelerationRate="fast"
+          >
+            {SLIDES.map((slide) => (
+              <View key={slide.key} style={{ width }} className="flex-1 px-8 justify-center items-center">
+                <View className="w-20 h-20 rounded-full bg-white/10 justify-center items-center mb-6">
+                  <Feather name={slide.icon} size={36} color="#FFFFFF" />
+                </View>
+                <Text className="text-white text-2xl font-bold text-center mb-2">{slide.title}</Text>
+                <Text className="text-white/80 text-base text-center mb-2">{slide.subtitle}</Text>
+                <Text className="text-white/70 text-sm text-center max-w-[280px]">{slide.description}</Text>
+              </View>
+            ))}
+          </ScrollView>
 
-	return (
-		<View className="flex-1 bg-background">
-			{/* Skip button */}
-			<View className="flex-row justify-end px-6 pt-12">
-				<Pressable
-					onPress={handleSkip}
-					className="px-4 py-2 active:opacity-70"
-				>
-					<Text className="text-muted-foreground text-sm">
-						Skip
-					</Text>
-				</Pressable>
-			</View>
+          <View className="flex-row justify-center gap-2 mb-8">
+            {SLIDES.map((_, i) => (
+              <View
+                key={i}
+                className="w-2.5 h-2.5 rounded-full"
+                style={{ backgroundColor: i === currentIndex ? '#FFFFFF' : 'rgba(255,255,255,0.4)' }}
+              />
+            ))}
+          </View>
 
-			{/* Carousel */}
-			<ScrollView
-				ref={scrollViewRef}
-				horizontal
-				pagingEnabled
-				showsHorizontalScrollIndicator={false}
-				onScroll={handleScroll}
-				scrollEventThrottle={16}
-				className="flex-1"
-			>
-				{slides.map((slide) => (
-					<View
-						key={slide.id}
-						className="flex-1 justify-center items-center px-6"
-						style={{ width }}
-					>
-						{/* Icon */}
-						<View className="w-30 h-30 rounded-full bg-primary justify-center items-center mb-8">
-							<Feather name={slide.icon as any} size={48} color="#FFFFFF" />
-						</View>
-
-						{/* Title */}
-						<Text className="text-foreground text-center mb-4 text-2xl font-semibold leading-8">
-							{slide.title}
-						</Text>
-
-						{/* Description */}
-						<Text className="text-muted-foreground text-center leading-6 px-4 text-base">
-							{slide.description}
-						</Text>
-					</View>
-				))}
-			</ScrollView>
-
-			{/* Bottom section */}
-			<View className="px-6 pb-12">
-				{/* Pagination dots */}
-				<View className="flex-row justify-center mb-6">
-					{slides.map((_, index) => (
-						<View
-							key={index}
-							className={`w-2 h-2 rounded-full mx-1 ${index === currentSlide ? 'bg-primary opacity-100' : 'bg-muted-foreground opacity-30'
-								}`}
-						/>
-					))}
-				</View>
-
-				{/* Continue button */}
-				<Button
-					onPress={handleNext}
-					className="bg-primary py-4 mb-4 rounded-xl items-center active:opacity-90"
-				>
-					<Text className="text-primary-foreground font-semibold text-base">
-						{currentSlide === slides.length - 1 ? 'Get Started' : 'Next'}
-					</Text>
-				</Button>
-			</View>
-		</View>
-	);
+          <View className="px-8 pb-8">
+            <Button
+              className="rounded-xl bg-white py-3.5 px-6"
+              style={{ minHeight: 48 }}
+              onPress={goToAuthChoice}
+            >
+              <Text className="text-[#002147] font-bold text-base">Get Started</Text>
+            </Button>
+            <View className="flex-row justify-center mt-4 items-center">
+              <Text className="text-white/70 text-sm">Already have an account? </Text>
+              <Pressable onPress={() => router.replace('/(auth)/login')} hitSlop={8}>
+                <Text className="text-white font-semibold text-sm underline">Log In</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
 }

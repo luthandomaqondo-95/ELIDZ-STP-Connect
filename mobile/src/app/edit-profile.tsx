@@ -171,7 +171,7 @@ function EditProfileScreen() {
                                     )}
                                 </View>
                             </View>
-                            <View className={`absolute bottom-0 right-0 w-8 h-8 rounded-full items-center justify-center border-2 border-white shadow-sm ${isUploadingImage ? 'bg-gray-400' : 'bg-[#FF6600]'}`}>
+                            <View className={`absolute bottom-0 right-0 w-8 h-8 rounded-full items-center justify-center border-2 border-white shadow-sm ${isUploadingImage ? 'bg-gray-400' : 'bg-[#F38C1E]'}`}>
                                 {isUploadingImage ? (
                                     <ActivityIndicator size="small" color="white" />
                                 ) : (

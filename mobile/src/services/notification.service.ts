@@ -238,7 +238,7 @@ class NotificationService {
             case 'verification_rejected':
                 return '#EF4444'; // Red
             case 'verification_pending':
-                return '#FF6600'; // Orange
+                return '#F38C1E'; // Orange
             case 'admin_message':
                 return '#002147'; // Navy
             case 'announcement':
@@ -246,7 +246,7 @@ class NotificationService {
             case 'opportunity_update':
                 return '#17A2B8'; // Teal
             case 'system_alert':
-                return '#FF6600'; // Orange
+                return '#F38C1E'; // Orange
             default:
                 return '#6C757D'; // Gray
         }

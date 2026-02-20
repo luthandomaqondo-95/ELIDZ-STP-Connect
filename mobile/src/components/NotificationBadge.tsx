@@ -37,7 +37,7 @@ export const NotificationBadge: React.FC<NotificationBadgeProps> = ({ size = 8 }
 
     return (
         <View
-            className="absolute -top-1 -right-1 bg-[#FF6600] rounded-full justify-center items-center min-w-[18px] px-1"
+            className="absolute -top-1 -right-1 bg-[#F38C1E] rounded-full justify-center items-center min-w-[18px] px-1"
             style={{ height: size * 2.25 }}
         >
             <Text className="text-white text-[10px] font-bold">

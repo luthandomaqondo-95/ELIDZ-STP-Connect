@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { StatusBar, View } from "react-native";
 import "@/theme/global.css";
 import { NAV_THEME } from '@/theme/colors';
@@ -11,13 +12,10 @@ import { useColorScheme } from "@/hooks/use-theme-color";
 import { store } from "@/state";
 import * as Sentry from '@sentry/react-native';
 import ProtectedAppRoutes from "@/components/ProtectedAppRoutes";
-import AuthProvider from '@/providers/auth-provider'
-import { useState } from "react";
-import { SplashScreen } from "@/components/SplashScreenController";
+import AuthProvider from '@/providers/auth-provider';
 import * as ExpoSplashScreen from 'expo-splash-screen';
 import { cn } from '@/lib/utils';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 ExpoSplashScreen.preventAutoHideAsync();
 
 export {
@@ -53,7 +51,10 @@ Sentry.init({
 function RootLayout() {
 	const { colorScheme, isDarkColorScheme } = useColorScheme();
 	const queryClient = new QueryClient();
-	const [showSplash, setShowSplash] = useState(true);
+
+	useEffect(() => {
+		ExpoSplashScreen.hideAsync();
+	}, []);
 
 	return (
 		<>
@@ -71,12 +72,7 @@ function RootLayout() {
 								<ThemeProvider value={NAV_THEME[colorScheme]}>
 									<BottomSheetModalProvider>
 										<AuthProvider>
-											{
-												showSplash ?
-													<SplashScreen onComplete={() => setShowSplash(false)} />
-													:
-													<ProtectedAppRoutes />
-											}
+											<ProtectedAppRoutes />
 										</AuthProvider>
 									</BottomSheetModalProvider>
 								</ThemeProvider>
@@ -84,7 +80,7 @@ function RootLayout() {
 						</QueryClientProvider>
 					</View>
 				</GestureHandlerRootView>
-			</SafeAreaProvider >
+			</SafeAreaProvider>
 		</>
 	);
 }

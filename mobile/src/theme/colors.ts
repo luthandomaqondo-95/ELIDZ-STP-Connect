@@ -4,20 +4,20 @@ import { Platform } from 'react-native';
 // ELIDZ-STP Brand Colors - EXACT Logo Colors
 // These colors are extracted directly from the official East London IDZ logo
 // Blue: Used for "east london" text in logo - RGB(0, 33, 71)
-// Orange: Used for "idz" text and "SCIENCE & TECHNOLOGY PARK" text - RGB(255, 102, 0)
+// Orange: Brand orange (HEX: #F38C1E)
 const ELIDZ_BRAND_COLORS = {
     // Primary Brand Colors - EXACT Blue from logo
     primary: '#002147',          // ELIDZ Navy Blue - EXACT logo blue (RGB: 0, 33, 71)
     primaryDark: '#001A36',      // Darker navy for dark mode
-    secondary: '#FF6600',        // ELIDZ Orange - EXACT logo orange (RGB: 255, 102, 0)
-    secondaryDark: '#CC5200',    // Darker orange for dark mode
-    accent: '#FF6600',           // ELIDZ Orange - EXACT logo orange (RGB: 255, 102, 0)
-    accentDark: '#CC5200',       // Darker orange for dark mode
+    secondary: '#F38C1E',        // ELIDZ Orange (RGB: 243, 140, 30)
+    secondaryDark: '#C27018',    // Darker orange for dark mode
+    accent: '#F38C1E',           // ELIDZ Orange (RGB: 243, 140, 30)
+    accentDark: '#C27018',       // Darker orange for dark mode
 
     // Extended Brand Palette
     blue: '#002147',             // ELIDZ Navy Blue - EXACT logo blue (RGB: 0, 33, 71)
     green: '#28A745',
-    orange: '#FF6600',           // ELIDZ Orange - EXACT logo orange (RGB: 255, 102, 0)
+    orange: '#F38C1E',           // ELIDZ Orange (RGB: 243, 140, 30)
     purple: '#6F42C1',
     pink: '#E83E8C',
     teal: '#17A2B8',
@@ -37,7 +37,7 @@ const ELIDZ_BRAND_COLORS = {
     role: {
         entrepreneur: '#28A745',    // Green
         researcher: '#002147',      // ELIDZ Navy Blue
-        sme: '#FF6600',             // ELIDZ Orange
+        sme: '#F38C1E',             // ELIDZ Orange
         student: '#6F42C1',         // Purple
         investor: '#E83E8C',        // Pink
         tenant: '#17A2B8',          // Teal
@@ -49,10 +49,10 @@ const ELIDZ_BRAND_COLORS = {
     pending: '#FFC107',
     unread: '#DC3545',
 
-    // Gradient Colors (for auth screens)
-    gradientStart: '#0a1628',      // Dark navy gradient start
-    gradientMid: '#122a4d',         // Medium navy gradient middle
-    gradientEnd: '#1a3a5c',         // Lighter navy gradient end
+    // Gradient Colors (for auth screens) – darker blue
+    gradientStart: '#050d18',      // Deep navy gradient start
+    gradientMid: '#1a3a5c',        // Dark navy gradient middle
+    gradientEnd: '#0a1628',        // Navy gradient end
     gradientMessageEnd: '#003366',  // Message header gradient end (lighter blue)
 
     // Gray Scale Colors
@@ -237,9 +237,9 @@ const SYSTEM_COLORS = {
         input: '#333333',
         shadow: 'rgba(0, 0, 0, 0.3)',
 
-        // Gradient colors (darker variants for dark mode)
-        gradientStart: '#0a1628',
-        gradientMid: '#122a4d',
+        // Gradient colors (darker blue for auth)
+        gradientStart: '#050d18',
+        gradientMid: '#0a1628',
         gradientEnd: '#1a3a5c',
         gradientMessageEnd: '#003366',
 

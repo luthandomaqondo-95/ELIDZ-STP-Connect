@@ -1,17 +1,24 @@
-import React, { useEffect } from 'react';
-import { View, Image, Animated } from 'react-native';
-import { Text } from '@/components/ui/text';
+import React, { useEffect, useRef } from 'react';
+import { View, Image, Animated, Dimensions } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useAuthContext } from '@/hooks/use-auth-context';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 import { router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Stars } from '@/components/Stars';
 
-export default function SplashScreen() {
+const { height } = Dimensions.get('window');
+
+export default function AuthSplashScreen() {
 	const auth = useAuthContext();
-	const { isLoggedIn, isLoading } = auth || {};
-	const fadeAnim = new Animated.Value(0);
-	const logoScale = new Animated.Value(0.8);
+	const { isLoggedIn } = auth || {};
+	const { colorScheme } = useColorScheme();
+	const colors = COLORS[colorScheme ?? 'light'];
+	const fadeAnim = useRef(new Animated.Value(0)).current;
+	const logoScale = useRef(new Animated.Value(0.8)).current;
 
 	useEffect(() => {
-		// Start animations
 		Animated.parallel([
 			Animated.timing(fadeAnim, {
 				toValue: 1,
@@ -26,69 +33,68 @@ export default function SplashScreen() {
 			}),
 		]).start();
 
-		// Navigate based on authentication state
 		const timer = setTimeout(() => {
 			if (auth && isLoggedIn) {
 				router.replace('/(tabs)');
 			} else {
 				router.replace('/(auth)/welcome');
 			}
-		}, 3000);
+		}, 2500);
 
 		return () => clearTimeout(timer);
-	}, [auth, isLoggedIn]);
+	}, [auth, isLoggedIn, fadeAnim, logoScale]);
 
 	return (
-		<View className="flex-1 justify-center items-center bg-background">
-			<Animated.View
-				style={{
-					opacity: fadeAnim,
-					transform: [{ scale: logoScale }],
-					alignItems: 'center',
-				}}
-			>
-				{/* ELIDZ Logo */}
-				<Image
-					source={require('../../../assets/logos/blue text-idz logo.png')}
+		<View className="flex-1 bg-background">
+			<LinearGradient
+				colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+				className="absolute inset-0"
+				style={{ height }}
+				start={{ x: 0.5, y: 0 }}
+				end={{ x: 0.5, y: 1 }}
+			/>
+			<Stars />
+			<SafeAreaView className="flex-1" edges={['top', 'bottom']}>
+			<View className="flex-1 justify-center items-center">
+				<Animated.View
 					style={{
-						width: 350,
-						height: 150,
-						marginBottom: 40,
+						opacity: fadeAnim,
+						transform: [{ scale: logoScale }],
+						alignItems: 'center',
 					}}
-					resizeMode="contain"
-				/>
-
-				{/* Subtitle */}
-				<Text className="text-primary text-center mb-5 text-xl font-semibold">
-					Science & Technology Park
-				</Text>
-
-				{/* Loading indicator */}
-				<View className="flex-row mt-10">
-					{[0, 1, 2].map((index) => (
-						<Animated.View
-							key={index}
-							style={{
-								width: 8,
-								height: 8,
-								borderRadius: 4,
-								backgroundColor: 'rgb(var(--primary))',
-								marginHorizontal: 4,
-								opacity: fadeAnim.interpolate({
-									inputRange: [0, 0.3, 0.6, 1],
-									outputRange: [0.3, 1, 0.3, 0.3],
-								}),
-								transform: [{
-									scale: fadeAnim.interpolate({
+				>
+					<Image
+						source={require('../../../assets/logos/blue text-idz logo.png')}
+						style={{ width: 280, height: 120, marginBottom: 40 }}
+						resizeMode="contain"
+					/>
+					<View className="flex-row items-center justify-center mt-10 gap-1">
+						{[0, 1, 2].map((index) => (
+							<Animated.View
+								key={index}
+								style={{
+									width: 8,
+									height: 8,
+									borderRadius: 4,
+									backgroundColor: colors.primary,
+									marginHorizontal: 4,
+									opacity: fadeAnim.interpolate({
 										inputRange: [0, 0.3, 0.6, 1],
-										outputRange: [0.8, 1.2, 0.8, 0.8],
+										outputRange: [0.3, 1, 0.3, 0.3],
 									}),
-								}],
-							}}
-						/>
-					))}
-				</View>
-			</Animated.View>
+									transform: [{
+										scale: fadeAnim.interpolate({
+											inputRange: [0, 0.3, 0.6, 1],
+											outputRange: [0.8, 1.2, 0.8, 0.8],
+										}),
+									}],
+								}}
+							/>
+						))}
+					</View>
+				</Animated.View>
+			</View>
+			</SafeAreaView>
 		</View>
 	);
 }

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, View, ActivityIndicator, Linking, Alert, TextInput, Dimensions } from 'react-native';
+import { Pressable, ScrollView, View, ActivityIndicator, Linking, Alert, TextInput, Dimensions, Modal } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -36,6 +36,7 @@ export default function ServicesScreen() {
 	const [loadingTenants, setLoadingTenants] = useState(false);
 	const [searchQuery, setSearchQuery] = useState('');
 	const debouncedSearch = useDebounce(searchQuery, 300);
+	const [requestAccessService, setRequestAccessService] = useState<VRSection | null>(null);
 
 	// Use facility ID from params or selected facility
 	const facilityId = params.id || selectedFacilityId;
@@ -186,27 +187,20 @@ export default function ServicesScreen() {
 	// Handle service access actions
 	const handleRequestAccess = (service: VRSection) => {
 		if (!facilityWithTour) return;
+		setRequestAccessService(service);
+	};
 
-		Alert.alert(
-			'Request Access',
-			`Would you like to request access to ${service.title}?`,
-			[
-				{ text: 'Cancel', style: 'cancel' },
-				{
-					text: 'Submit Enquiry',
-					onPress: () => {
-						router.push({
-							pathname: '/enquiry-form',
-							params: {
-								type: 'Facility',
-								facilityId: facilityWithTour.id,
-								subject: `Request Access: ${service.title}`,
-							},
-						});
-					},
-				},
-			]
-		);
+	const handleRequestAccessSubmit = () => {
+		if (!facilityWithTour || !requestAccessService) return;
+		setRequestAccessService(null);
+		router.push({
+			pathname: '/enquiry-form',
+			params: {
+				type: 'Facility',
+				facilityId: facilityWithTour.id,
+				subject: `Request Access: ${requestAccessService.title}`,
+			},
+		});
 	};
 
 	const handleContactFacility = () => {
@@ -304,6 +298,58 @@ export default function ServicesScreen() {
 
 	return (
 		<View className="flex-1">
+			{/* Request Access – styled modal */}
+			<Modal
+				visible={!!requestAccessService}
+				transparent
+				animationType="fade"
+				onRequestClose={() => setRequestAccessService(null)}
+			>
+				<Pressable
+					className="flex-1 bg-black/50 justify-center items-center px-6"
+					onPress={() => setRequestAccessService(null)}
+				>
+					<Pressable
+						className="w-full max-w-sm rounded-2xl overflow-hidden border border-border"
+						style={{ backgroundColor: colors.card }}
+						onPress={(e) => e.stopPropagation()}
+					>
+						<LinearGradient
+							colors={['#002147', '#003366']}
+							className="px-5 py-4"
+						>
+							<View className="flex-row items-center">
+								<View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center mr-3">
+									<Feather name="user-plus" size={20} color="white" />
+								</View>
+								<Text className="text-white text-lg font-bold">Request Access</Text>
+							</View>
+						</LinearGradient>
+						<View className="px-5 py-4">
+							<Text className="text-foreground text-base mb-5" style={{ color: colors.text }}>
+								Would you like to request access to {requestAccessService?.title}?
+							</Text>
+							<View className="flex-row gap-3">
+								<Pressable
+									onPress={() => setRequestAccessService(null)}
+									className="flex-1 py-3 rounded-xl border items-center justify-center"
+									style={{ borderColor: colors.accent }}
+								>
+									<Text className="font-semibold text-base" style={{ color: colors.accent }}>Cancel</Text>
+								</Pressable>
+								<Pressable
+									onPress={handleRequestAccessSubmit}
+									className="flex-1 py-3 rounded-xl items-center justify-center"
+									style={{ backgroundColor: colors.accent }}
+								>
+									<Text className="font-semibold text-base text-white">Submit Enquiry</Text>
+								</Pressable>
+							</View>
+						</View>
+					</Pressable>
+				</Pressable>
+			</Modal>
+
 			{/* Header – only on list view */}
 			{screenMode === 'list' && (
 			<View className="bg-background">
@@ -390,7 +436,7 @@ export default function ServicesScreen() {
 											<Text className="text-muted-foreground text-sm mb-2">{facility.description}</Text>
 											<View className="flex-row items-center">
 												<Text className="text-xs text-muted-foreground">{facility.location}</Text>
-												<Feather name="chevron-right" size={16} color="#FF6600" style={{ marginLeft: 'auto' }} />
+												<Feather name="chevron-right" size={16} color="#F38C1E" style={{ marginLeft: 'auto' }} />
 											</View>
 										</View>
 									</View>
@@ -446,8 +492,19 @@ export default function ServicesScreen() {
 												<Text className="text-muted-foreground text-sm mb-3">{service.description}</Text>
 												<View className="flex-row flex-wrap">
 													{service.details.slice(0, 3).map((detail: string, i: number) => (
-														<View key={i} className="bg-primary/10 px-2 py-1 rounded-md mr-2 mb-1">
-															<Text className="text-primary text-[10px] font-medium">{detail}</Text>
+														<View
+															key={i}
+															className="px-2.5 py-1 rounded-md mr-2 mb-1"
+															style={{
+																backgroundColor: colorScheme === 'light' ? 'rgba(0, 33, 71, 0.08)' : colors.input,
+															}}
+														>
+															<Text
+																className="text-[10px] font-medium"
+																style={{ color: colorScheme === 'light' ? colors.primary : colors.textSecondary }}
+															>
+																{detail}
+															</Text>
 														</View>
 													))}
 												</View>
@@ -604,8 +661,19 @@ export default function ServicesScreen() {
 							<Text className="text-muted-foreground text-sm mb-3">{selectedService.description}</Text>
 							<View className="flex-row flex-wrap mb-4">
 								{selectedService.details.slice(0, 5).map((detail: string, i: number) => (
-									<View key={i} className="bg-primary/10 px-2 py-1 rounded-md mr-2 mb-1">
-										<Text className="text-primary text-[10px] font-medium">{detail}</Text>
+									<View
+										key={i}
+										className="px-2.5 py-1 rounded-md mr-2 mb-1"
+										style={{
+											backgroundColor: colorScheme === 'light' ? 'rgba(0, 33, 71, 0.08)' : colors.input,
+										}}
+									>
+										<Text
+											className="text-[10px] font-medium"
+											style={{ color: colorScheme === 'light' ? colors.primary : colors.textSecondary }}
+										>
+											{detail}
+										</Text>
 									</View>
 								))}
 							</View>

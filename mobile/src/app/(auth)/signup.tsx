@@ -1,16 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image, ActivityIndicator, Modal, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
 import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
+import { PasswordField } from '@/components/PasswordField';
+import { Picker } from '@react-native-picker/picker';
 import { fetchZaPostalCodesForCity } from '@/services/za-postal-codes.service';
 
 const { height } = Dimensions.get('window');
@@ -29,14 +32,13 @@ export default function SignupScreen() {
 	const [role, setRole] = useState<'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant'>('Entrepreneur');
 	const [isLoading, setIsLoading] = useState(false);
 	const isSubmittingRef = useRef(false);
-	const [showPassword, setShowPassword] = useState(false);
-	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
+	const [cooldownSeconds, setCooldownSeconds] = useState(0);
 
 	const [postalCodesForCity, setPostalCodesForCity] = useState<string[]>([]);
 	const [loadingPostalCodes, setLoadingPostalCodes] = useState(false);
-	// Kept for backwards compatibility with cached bundles (no longer used in UI)
-	const showPostalSuggestions = false;
+	const [postalCodeSearch, setPostalCodeSearch] = useState('');
+	const [postalCodeModalVisible, setPostalCodeModalVisible] = useState(false);
 
 	const provinces = [
 		'Eastern Cape',
@@ -68,12 +70,14 @@ export default function SignupScreen() {
 		if (!city || city === 'Other') {
 			setPostalCodesForCity([]);
 			setPostalCode('');
+			setPostalCodeSearch('');
 			return;
 		}
 		let cancelled = false;
 		setPostalCode('');
+		setPostalCodeSearch('');
 		setLoadingPostalCodes(true);
-		fetchZaPostalCodesForCity(city, 1200)
+		fetchZaPostalCodesForCity(city, 50)
 			.then((codes) => {
 				if (!cancelled) {
 					setPostalCodesForCity(codes);
@@ -89,8 +93,27 @@ export default function SignupScreen() {
 		};
 	}, [city]);
 
+	const filteredPostalCodes = useMemo(() => {
+		const q = postalCodeSearch.trim();
+		const list = q ? postalCodesForCity.filter((c) => c.includes(q)) : postalCodesForCity;
+		return list.slice(0, 50);
+	}, [postalCodesForCity, postalCodeSearch]);
+
+	// Simple client-side cooldown to avoid hammering Supabase rate limits.
+	useEffect(() => {
+		if (cooldownSeconds <= 0) return;
+		const id = setInterval(() => {
+			setCooldownSeconds((s) => (s > 0 ? s - 1 : 0));
+		}, 1000);
+		return () => clearInterval(id);
+	}, [cooldownSeconds]);
+
 	async function handleSignup() {
 		if (isSubmittingRef.current || isLoading) {
+			return;
+		}
+		if (cooldownSeconds > 0) {
+			Alert.alert('Please wait', `Too many attempts. Try again in ${cooldownSeconds}s.`);
 			return;
 		}
 
@@ -123,19 +146,19 @@ export default function SignupScreen() {
 
 		const fullAddress = `${city}, ${province}, ${postalCode}`;
 
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+(\.[^\s@]+)*$/;
-		if (!emailRegex.test(email.trim())) {
-			Alert.alert('Invalid Email', 'Please enter a valid email address');
+		const emailCheck = validateEmail(email);
+		if (!emailCheck.valid) {
+			Alert.alert('Invalid Email', emailCheck.message ?? 'Please enter a valid email address');
 			return;
 		}
-
-		if (password.length < 8) {
-			Alert.alert('Error', 'Password must be at least 8 characters');
+		const pwdCheck = validatePassword(password);
+		if (!pwdCheck.valid) {
+			Alert.alert('Error', pwdCheck.message ?? 'Password must be at least 8 characters');
 			return;
 		}
-
-		if (password !== confirmPassword) {
-			Alert.alert('Error', 'Passwords do not match');
+		const confirmCheck = validateConfirmPassword(password, confirmPassword);
+		if (!confirmCheck.valid) {
+			Alert.alert('Error', confirmCheck.message ?? 'Passwords do not match');
 			return;
 		}
 
@@ -178,6 +201,9 @@ export default function SignupScreen() {
 			}
 		} catch (error: any) {
 			const errorMessage = error?.message || 'Failed to sign up. Please try again.';
+			if (/too many|rate limit|over_email_send_rate_limit/i.test(errorMessage)) {
+				setCooldownSeconds(60);
+			}
 
 			// Check if this is an email confirmation error
 			if (errorMessage.includes('EMAIL_CONFIRMATION_REQUIRED')) {
@@ -210,40 +236,34 @@ export default function SignupScreen() {
 				end={{ x: 0.5, y: 1 }}
 			/>
 			<Stars />
-			{/* Header Section */}
-			<View className="px-4 pt-1" style={{ height: height * 0.25 }}>
-				{/* Back Button */}
-				<TouchableOpacity
-					className="w-10 h-10 rounded-full flex-row justify-center items-center"
-					style={{ marginTop: 40 }}
-					onPress={() => router.back()}
-				>
-					<Ionicons name="chevron-back" size={24} color={colors.white} />
-					<Text className="text-white text-sm">Back</Text>
-				</TouchableOpacity>
-
-				{/* Title */}
-				<View className="items-center">
-					<Text className="text-3xl font-bold text-white mb-2">Register</Text>
-					<Text className="text-white/80 mb-4">Create a new account</Text>
-					<Image
-						source={require('../../../assets/logos/blue text-idz logo.png')}
-						style={{ width: 300, height: 130 }}
-						resizeMode="contain"
-					/>
+			<SafeAreaView className="flex-1" edges={['top']}>
+				<View className="px-6 pt-2 rounded-3xl" style={{ height: height * 0.24 }}>
+					<TouchableOpacity
+						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
+						onPress={() => router.back()}
+					>
+						<Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+						<Text className="text-white text-sm ml-1">Back</Text>
+					</TouchableOpacity>
+					<View className="items-center mt-2">
+						<Image
+							source={require('../../../assets/logos/blue text-idz logo.png')}
+							style={{ width: 240, height: 100 }}
+							resizeMode="contain"
+						/>
+						<Text className="text-white text-3xl font-bold mt-4 mb-2">Register</Text>
+						<Text className="text-white/80 text-base mb-2">Create a new account</Text>
+					</View>
 				</View>
-			</View>
 
-			<ScreenKeyboardAwareScrollView
-				contentContainerClassName="flex-grow mt-4 rounded-3xl"
-				style={{ zIndex: 2 }}
-			>
-				{/* Form Fields */}
-				<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: 10 }}>
+				<ScreenKeyboardAwareScrollView
+					contentContainerClassName="flex-grow rounded-3xl"
+					style={{ zIndex: 2 }}
+				>
+					<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background mt-4">
 					{/* Full Name Input */}
-					<View className="hidden" />
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="person-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+						<Ionicons name="person-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 						<TextInput
 							className="flex-1 text-base text-foreground"
 							value={name}
@@ -257,12 +277,12 @@ export default function SignupScreen() {
 
 					{/* Email Input */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="mail-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+						<Ionicons name="mail-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
 						<TextInput
 							className="flex-1 text-base text-foreground"
 							value={email}
 							onChangeText={setEmail}
-							placeholder="Your mail"
+							placeholder="Email address"
 							placeholderTextColor={colors.placeholder}
 							keyboardType="email-address"
 							autoCapitalize="none"
@@ -276,15 +296,16 @@ export default function SignupScreen() {
 						<View className="flex-1 ml-1">
 							<Picker
 								selectedValue={province}
-								onValueChange={(value) => {
-									setProvince(value);
-									setCity(''); // Reset city when province changes
+								onValueChange={(v) => {
+									setProvince(v as string);
+									setCity('');
 								}}
-								style={{ flex: 1, color: '#FF6600' }}
-								dropdownIconColor="#FF6600"
+								style={{ color: colors.text }}
+								itemStyle={colorScheme === 'dark' ? { color: colors.text } : undefined}
+								prompt="Select province"
 							>
 								{provinces.map((p) => (
-									<Picker.Item key={p} label={p} value={p} color="#FF6600" />
+									<Picker.Item key={p} label={p} value={p} color={colors.text} />
 								))}
 							</Picker>
 						</View>
@@ -296,13 +317,15 @@ export default function SignupScreen() {
 						<View className="flex-1 ml-1">
 							<Picker
 								selectedValue={city}
-								onValueChange={(value) => setCity(value)}
-								style={{ flex: 1, color: '#FF6600' }}
-								dropdownIconColor="#FF6600"
+								onValueChange={(v) => setCity((v as string) || '')}
+								enabled={!!province}
+								style={{ color: colors.text }}
+								itemStyle={colorScheme === 'dark' ? { color: colors.text } : undefined}
+								prompt={province ? 'Select city' : 'Select province first'}
 							>
-								<Picker.Item label="Select City" value="" color="#9CA3AF" />
-								{citiesByProvince[province]?.map((c) => (
-									<Picker.Item key={c} label={c} value={c} color="#FF6600" />
+								<Picker.Item label={province ? 'Select city' : 'Select province first'} value="" color={colors.placeholder} />
+								{(citiesByProvince[province] ?? []).map((c) => (
+									<Picker.Item key={c} label={c} value={c} color={colors.text} />
 								))}
 							</Picker>
 						</View>
@@ -310,7 +333,7 @@ export default function SignupScreen() {
 
 					{/* Postal Code: Picker from API (no manual entry) or manual only for "Other" */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="location-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
+						<Ionicons name="location-outline" size={20} color="#F38C1E" style={{ marginRight: 12 }} />
 						{!city ? (
 							<View className="flex-1 flex-row items-center">
 								<Text className="text-muted-foreground text-base">Select city first</Text>
@@ -336,71 +359,98 @@ export default function SignupScreen() {
 							</View>
 						) : (
 							<View className="flex-1 ml-1">
-								<Picker
-									selectedValue={postalCode}
-									onValueChange={(value) => setPostalCode(value)}
-									style={{ flex: 1, color: '#FF6600' }}
-									dropdownIconColor="#FF6600"
-									prompt="Select postal code"
+								<Pressable
+									onPress={() => setPostalCodeModalVisible(true)}
+									className="flex-row items-center justify-between py-2"
 								>
-									<Picker.Item label="Select postal code" value="" color="#9CA3AF" />
-									{postalCodesForCity.map((code) => (
-										<Picker.Item key={code} label={code} value={code} color="#FF6600" />
-									))}
-								</Picker>
+									<Text className="text-base" style={{ color: postalCode ? colors.text : colors.placeholder }}>
+										{postalCode || 'Select postal code'}
+									</Text>
+									<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+								</Pressable>
+								<Modal
+									visible={postalCodeModalVisible}
+									animationType="slide"
+									transparent
+									onRequestClose={() => {
+										setPostalCodeModalVisible(false);
+										setPostalCodeSearch('');
+									}}
+								>
+									<Pressable
+										className="flex-1 bg-black/50 justify-end"
+										onPress={() => {
+											setPostalCodeModalVisible(false);
+											setPostalCodeSearch('');
+										}}
+									>
+										<Pressable
+											className="bg-card border-t border-border rounded-t-2xl max-h-[70%]"
+											onPress={(e) => e.stopPropagation()}
+										>
+											<View className="p-4 border-b border-border">
+												<Text className="text-lg font-semibold text-foreground mb-3">Select postal code</Text>
+												<View className="flex-row items-center bg-input border border-border rounded-lg px-3 h-11">
+													<Ionicons name="search-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+													<TextInput
+														className="flex-1 text-base text-foreground py-0"
+														value={postalCodeSearch}
+														onChangeText={setPostalCodeSearch}
+														placeholder="Search postal code"
+														placeholderTextColor={colors.placeholder}
+														keyboardType="number-pad"
+														autoFocus
+													/>
+												</View>
+											</View>
+											<FlatList
+												keyboardShouldPersistTaps="handled"
+												data={filteredPostalCodes}
+												keyExtractor={(item) => item}
+												style={{ maxHeight: 280 }}
+												ListEmptyComponent={
+													<View className="py-6 px-4">
+														<Text className="text-center text-muted-foreground">No matches</Text>
+													</View>
+												}
+												renderItem={({ item }) => (
+													<Pressable
+														className="px-4 py-3 active:bg-muted"
+														onPress={() => {
+															setPostalCode(item);
+															setPostalCodeModalVisible(false);
+															setPostalCodeSearch('');
+														}}
+													>
+														<Text className="text-foreground text-base">{item}</Text>
+													</Pressable>
+												)}
+											/>
+										</Pressable>
+									</Pressable>
+								</Modal>
 							</View>
 						)}
 					</View>
 
-					{/* Password Input */}
-					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="lock-closed-outline" size={20} color="#FF6600" style={{ marginRight: 12 }} />
-						<TextInput
-							className="flex-1 text-base text-foreground"
-							value={password}
-							onChangeText={setPassword}
-							placeholder="Password"
-							placeholderTextColor={colors.placeholder}
-							secureTextEntry={!showPassword}
-							autoCapitalize="none"
-							autoComplete="password-new"
-						/>
-						<Pressable
-							className="p-1"
-							onPress={() => setShowPassword(!showPassword)}
-						>
-							<Ionicons
-								name={showPassword ? "eye-outline" : "eye-off-outline"}
-								size={20}
-								color={colors.accent}
-							/>
-						</Pressable>
-					</View>
-
-					{/* Confirm Password Input */}
-					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
-						<TextInput
-							className="flex-1 text-base text-foreground"
-							value={confirmPassword}
-							onChangeText={setConfirmPassword}
-							placeholder="Confirm Password"
-							placeholderTextColor={colors.placeholder}
-							secureTextEntry={!showConfirmPassword}
-							autoCapitalize="none"
-							autoComplete="password-new"
-						/>
-						<Pressable
-							className="p-1"
-							onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-						>
-							<Ionicons
-								name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
-								size={20}
-								color="#FF6600"
-							/>
-						</Pressable>
-					</View>
+					<PasswordField
+						value={password}
+						onChangeText={setPassword}
+						placeholder="Password"
+						accentColor={colors.accent}
+						placeholderColor={colors.placeholder}
+						autoComplete="password-new"
+						containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border"
+					/>
+					<PasswordField
+						value={confirmPassword}
+						onChangeText={setConfirmPassword}
+						placeholder="Confirm Password"
+						accentColor={colors.accent}
+						placeholderColor={colors.placeholder}
+						autoComplete="password-new"
+						containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border"
+					/>
 
 					{/* Role Picker */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border">
@@ -408,16 +458,14 @@ export default function SignupScreen() {
 						<View className="flex-1 ml-1">
 							<Picker
 								selectedValue={role}
-								onValueChange={(value) => setRole(value)}
-								style={{ flex: 1, color: '#FF6600' }}
-								dropdownIconColor="#FF6600"
+								onValueChange={(v) => setRole(v as typeof role)}
+								style={{ color: colors.text }}
+								itemStyle={colorScheme === 'dark' ? { color: colors.text } : undefined}
+								prompt="Select role"
 							>
-								<Picker.Item label="Entrepreneur" value="Entrepreneur" color="#FF6600" />
-								<Picker.Item label="Researcher" value="Researcher" color="#FF6600" />
-								<Picker.Item label="SMME" value="SMME" color="#FF6600" />
-								<Picker.Item label="Student" value="Student" color="#FF6600" />
-								<Picker.Item label="Investor" value="Investor" color="#FF6600" />
-								<Picker.Item label="Tenant" value="Tenant" color="#FF6600" />
+								{(['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'] as const).map((r) => (
+									<Picker.Item key={r} label={r} value={r} color={colors.text} />
+								))}
 							</Picker>
 						</View>
 					</View>
@@ -433,8 +481,8 @@ export default function SignupScreen() {
 								height: 20,
 								borderRadius: 4,
 								borderWidth: 2,
-								borderColor: acceptedTerms ? '#FF6600' : '#FF6600',
-								backgroundColor: acceptedTerms ? '#FF6600' : 'transparent',
+								borderColor: acceptedTerms ? '#F38C1E' : '#F38C1E',
+								backgroundColor: acceptedTerms ? '#F38C1E' : 'transparent',
 								alignItems: 'center',
 								justifyContent: 'center',
 								marginRight: 10
@@ -454,10 +502,10 @@ export default function SignupScreen() {
 					<Button
 						className="h-14 rounded-full bg-accent justify-center items-center mb-6 active:opacity-80 active:scale-95"
 						onPress={handleSignup}
-						disabled={isLoading}
+						disabled={isLoading || cooldownSeconds > 0}
 					>
 						<Text className="text-lg font-semibold text-white">
-							{isLoading ? 'Creating Account...' : 'Sign Up'}
+							{isLoading ? 'Creating Account...' : cooldownSeconds > 0 ? `Try again in ${cooldownSeconds}s` : 'Sign Up'}
 						</Text>
 					</Button>
 
@@ -481,7 +529,11 @@ export default function SignupScreen() {
 							}
 						}}
 					>
-						<Ionicons name="logo-google" size={20} color="#4285F4" style={{ marginRight: 12 }} />
+						<Image
+							source={require('../../../assets/logos/search.png')}
+							style={{ width: 22, height: 22, marginRight: 12 }}
+							resizeMode="contain"
+						/>
 						<Text className="text-base font-semibold text-foreground">
 							Continue with Google
 						</Text>
@@ -490,12 +542,13 @@ export default function SignupScreen() {
 					{/* Login Link */}
 					<View className="flex-row justify-center items-center">
 						<Text className="text-sm text-muted-foreground">Already have an account? </Text>
-						<Pressable onPress={() => router.push('/(auth)')}>
+						<Pressable onPress={() => router.push('/(auth)/login')}>
 							<Text className="text-sm font-semibold text-accent underline">Log In</Text>
 						</Pressable>
 					</View>
-				</View>
-			</ScreenKeyboardAwareScrollView>
+					</View>
+				</ScreenKeyboardAwareScrollView>
+			</SafeAreaView>
 		</View>
 	);
 }

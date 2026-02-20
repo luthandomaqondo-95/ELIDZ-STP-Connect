@@ -13,11 +13,11 @@
         --popover-foreground: 33 37 41;
         --primary: 0 33 71; /* ELIDZ Navy Blue (HEX: #002147) */
         --primary-foreground: 255 255 255;
-        --secondary: 255 102 0; /* ELIDZ Orange (HEX: #FF6600) */
+        --secondary: 243 140 30; /* ELIDZ Orange (HEX: #F38C1E) */
         --secondary-foreground: 255 255 255;
         --muted: 108 117 125;
         --muted-foreground: 73 80 87;
-        --accent: 255 102 0; /* ELIDZ Orange */
+        --accent: 243 140 30; /* ELIDZ Orange (#F38C1E) */
         --accent-foreground: 255 255 255;
         --destructive: 220 53 69;
         --destructive-foreground: 255 255 255;
@@ -28,7 +28,7 @@
         /* Extended ELIDZ Palette */
         --blue: 0 33 71;
         --green: 40 167 69;
-        --orange: 255 102 0;
+        --orange: 243 140 30;
         --purple: 111 66 193;
         --pink: 232 62 140;
         --teal: 23 162 184;
@@ -38,7 +38,7 @@
         /* User Role Colors */
         --role-entrepreneur: 40 167 69;
         --role-researcher: 0 33 71;
-        --role-sme: 255 102 0;
+        --role-sme: 243 140 30;
         --role-student: 111 66 193;
         --role-investor: 232 62 140;
         --role-tenant: 23 162 184;
@@ -58,11 +58,11 @@
         --android-popover-foreground: 33 37 41;
         --android-primary: 0 33 71;
         --android-primary-foreground: 255 255 255;
-        --android-secondary: 255 102 0;
+        --android-secondary: 243 140 30;
         --android-secondary-foreground: 255 255 255;
         --android-muted: 108 117 125;
         --android-muted-foreground: 73 80 87;
-        --android-accent: 255 102 0;
+        --android-accent: 243 140 30;
         --android-accent-foreground: 33 37 41;
         --android-destructive: 220 53 69;
         --android-destructive-foreground: 255 255 255;
@@ -81,11 +81,11 @@
         --popover-foreground: 255 255 255;
         --primary: 30 58 95; /* Slightly lighter navy for dark bg */
         --primary-foreground: 255 255 255;
-        --secondary: 204 82 0; /* Darker ELIDZ Orange */
+        --secondary: 194 112 24; /* Darker ELIDZ Orange (#C27018) */
         --secondary-foreground: 255 255 255;
         --muted: 82 82 82;
         --muted-foreground: 210 210 210; /* Lighter gray so muted text stays readable */
-        --accent: 230 92 0;
+        --accent: 194 112 24;
         --accent-foreground: 255 255 255;
         --destructive: 239 68 68;
         --destructive-foreground: 255 255 255;
@@ -101,11 +101,11 @@
         --android-popover-foreground: 255 255 255;
         --android-primary: 30 58 95;
         --android-primary-foreground: 255 255 255;
-        --android-secondary: 204 82 0;
+        --android-secondary: 194 112 24;
         --android-secondary-foreground: 255 255 255;
         --android-muted: 82 82 82;
         --android-muted-foreground: 210 210 210;
-        --android-accent: 230 92 0;
+        --android-accent: 194 112 24;
         --android-accent-foreground: 255 255 255;
         --android-destructive: 239 68 68;
         --android-destructive-foreground: 255 255 255;
@@ -125,11 +125,11 @@
             --popover-foreground: 255 255 255;
             --primary: 30 58 95;
             --primary-foreground: 255 255 255;
-            --secondary: 204 82 0;
+            --secondary: 194 112 24;
             --secondary-foreground: 255 255 255;
             --muted: 82 82 82;
             --muted-foreground: 210 210 210;
-            --accent: 230 92 0;
+            --accent: 194 112 24;
             --accent-foreground: 255 255 255;
             --destructive: 239 68 68;
             --destructive-foreground: 255 255 255;
@@ -145,11 +145,11 @@
             --android-popover-foreground: 255 255 255;
             --android-primary: 30 58 95;
             --android-primary-foreground: 255 255 255;
-            --android-secondary: 204 82 0;
+            --android-secondary: 194 112 24;
             --android-secondary-foreground: 255 255 255;
             --android-muted: 82 82 82;
             --android-muted-foreground: 210 210 210;
-            --android-accent: 230 92 0;
+            --android-accent: 194 112 24;
             --android-accent-foreground: 255 255 255;
             --android-destructive: 239 68 68;
             --android-destructive-foreground: 255 255 255;

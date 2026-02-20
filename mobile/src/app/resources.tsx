@@ -146,7 +146,7 @@ function ResourcesScreen() {
                          setSelectedCategory(null);
                          setSearchQuery('');
                      }}>
-                        <Text className="text-[#FF6600] text-sm font-semibold">Clear Filters</Text>
+                        <Text className="text-[#F38C1E] text-sm font-semibold">Clear Filters</Text>
           </Pressable>
         )}
       </View>

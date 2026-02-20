@@ -9,12 +9,7 @@ export default function AuthLayout() {
 				animation: "slide_from_right",
 			}}
 		>
-			<Stack.Screen name="welcome"
-				options={{
-					animation: 'fade',
-					animationDuration: 300,
-				}}
-			/>
+			<Stack.Screen name="welcome" options={{ title: "Welcome", animation: 'fade' }} />
 			<Stack.Screen name="auth-choice"
 				options={{
 					animation: 'slide_from_right',
@@ -22,6 +17,13 @@ export default function AuthLayout() {
 				}}
 			/>
 			<Stack.Screen name="index"
+				options={{
+					title: "Auth",
+					animation: 'fade',
+					animationDuration: 200,
+				}}
+			/>
+			<Stack.Screen name="login"
 				options={{
 					title: "Login",
 					animation: 'slide_from_right',

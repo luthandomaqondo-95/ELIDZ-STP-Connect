@@ -266,7 +266,7 @@ function ProgressReportsScreen() {
                           setSelectedApplication(app || null);
                         }}
                         style={{ color: '#002147' }}
-                        dropdownIconColor="#FF6600"
+                        dropdownIconColor="#F38C1E"
                       >
                         <Picker.Item label="Select funding opportunity..." value="" color="#9CA3AF" />
                         {acceptedApplications.map((app) => (
@@ -274,7 +274,7 @@ function ProgressReportsScreen() {
                             key={app.id} 
                             label={app.opportunity.title} 
                             value={app.id} 
-                            color="#FF6600" 
+                            color="#F38C1E" 
                           />
                         ))}
                       </Picker>

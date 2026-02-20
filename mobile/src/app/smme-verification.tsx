@@ -384,7 +384,7 @@ export default function SMMEVerificationScreen() {
                 {/* Info Box */}
                 <View className="bg-primary/10 p-5 rounded-xl border border-primary/20 mb-6">
                     <View className="flex-row items-start">
-                        <Feather name="info" size={20} color="#002147" style={{ marginTop: 2, marginRight: 12 }} />
+                        <Feather name="info" size={20} color="#3B6E8F" style={{ marginTop: 2, marginRight: 12 }} />
                         <View className="flex-1">
                             <Text className="text-foreground font-semibold mb-2">Verification Process</Text>
                             <Text className="text-foreground text-sm leading-5">
@@ -414,7 +414,7 @@ export default function SMMEVerificationScreen() {
                         {!showAddForm && (
                             <Pressable
                                 onPress={() => setShowAddForm(true)}
-                                className="px-4 py-2 bg-[#002147] rounded-lg active:opacity-90"
+                                className="px-4 py-2 bg-[#3B6E8F] rounded-lg active:opacity-90"
                             >
                                 <View className="flex-row items-center">
                                     <Feather name="plus" size={16} color="white" />

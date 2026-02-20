@@ -85,12 +85,12 @@ function ProfileScreen() {
     const getVerificationStatusColor = (status?: string) => {
         switch (status) {
             case 'verified':
-                return '#28A745';
+                return colors.constructive;
             case 'rejected':
-                return '#EF4444';
+                return colors.destructive;
             case 'pending':
             default:
-                return '#FFA500';
+                return colors.accent;
         }
     };
 
@@ -228,7 +228,7 @@ function ProfileScreen() {
                         {!isLoggedIn && (
                             <Pressable
                                 className="w-full bg-accent py-3 rounded-xl items-center mt-2 active:opacity-90"
-                                onPress={() => router.push('/(auth)')}
+                                onPress={() => router.push('/(auth)/login')}
                             >
                                 <Text className="text-white font-bold text-sm">Sign Up / Login</Text>
                             </Pressable>
@@ -355,7 +355,7 @@ function ProfileScreen() {
                     onPress={() => router.push('/(modals)/premium-upgrade')}
                   >
                     <LinearGradient
-                      colors={['#FF6600', '#FF8533']}
+                      colors={['#F38C1E', '#FF8533']}
                       start={{ x: 0, y: 0 }}
                       end={{ x: 1, y: 0 }}
                       className="p-5 flex-row items-center"

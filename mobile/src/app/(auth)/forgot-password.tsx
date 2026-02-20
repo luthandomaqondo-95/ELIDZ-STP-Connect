@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as ExpoLinking from 'expo-linking';
+import Constants from 'expo-constants';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
@@ -10,6 +12,9 @@ import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { validateEmail } from '@/utils/validation';
+import { authBack } from '@/utils/navigation';
 
 const { height } = Dimensions.get('window');
 
@@ -22,23 +27,25 @@ export default function ForgotPasswordScreen() {
 
     const handleResetPassword = async () => {
         const trimmedEmail = email.trim();
-        if (!trimmedEmail) {
-            Alert.alert('Error', 'Please enter your email address');
-            return;
-        }
-
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+(\.[^\s@]+)*$/;
-        if (!emailRegex.test(trimmedEmail)) {
-            Alert.alert('Invalid Email', 'Please enter a valid email address');
+        const emailCheck = validateEmail(trimmedEmail);
+        if (!emailCheck.valid) {
+            Alert.alert('Error', emailCheck.message ?? 'Please enter your email address');
             return;
         }
 
         setIsLoading(true);
 
         try {
-            const { error } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
-                // Route groups like "(auth)" are not part of deep-link URLs in expo-router.
-                redirectTo: 'elidzstp://reset-password',
+            // In Expo Go, prefer the generated exp://... deep link.
+            // In dev-client / standalone builds, use the stable custom scheme.
+            const redirectTo =
+                Constants.appOwnership === 'expo'
+                    ? ExpoLinking.createURL('reset-password')
+                    : 'elidzstp://reset-password';
+
+            const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+                // Route groups like "(auth)" are not part of deep-link paths in expo-router.
+                redirectTo,
             });
 
             if (error) {
@@ -54,57 +61,45 @@ export default function ForgotPasswordScreen() {
         }
     };
 
-    const handleBackToLogin = () => {
-        if (router.canDismiss()) {
-            router.dismiss();
-        } else {
-            router.replace('/(auth)');
-        }
-    };
+    const handleBackToLogin = authBack;
 
     return (
 		<View className="flex-1 bg-background">
-        <LinearGradient
-            colors={['#0a1628', '#122a4d', '#1a3a5c']}
-            className="absolute inset-0"
-            style={{ height: height * 0.4 }}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-        />
-            <Stars />
-            {/* Header Section */}
-            <View className="px-4 pt-1" style={{ height: height * 0.25 }}>
-                {/* Back Button */}
-                <TouchableOpacity
-                    className="w-10 h-10 rounded-full flex-row justify-center items-center"
-                    style={{ marginTop: 40 }}
-                    onPress={handleBackToLogin}
-                >
-                    <Ionicons name="chevron-back" size={24} color={colors.white} />
-                    <Text className="text-white text-sm">Back</Text>
-                </TouchableOpacity>
+			<LinearGradient
+				colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+				className="absolute inset-0"
+				style={{ height: height * 0.4 }}
+				start={{ x: 0.5, y: 0 }}
+				end={{ x: 0.5, y: 1 }}
+			/>
+			<Stars />
+			<SafeAreaView className="flex-1" edges={['top']}>
+				<View className="px-6 pt-2 rounded-3xl" style={{ height: height * 0.24 }}>
+					<TouchableOpacity
+						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
+						onPress={handleBackToLogin}
+					>
+						<Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+						<Text className="text-white text-sm ml-1">Back</Text>
+					</TouchableOpacity>
+					<View className="items-center mt-2">
+						<Image
+							source={require('../../../assets/logos/blue text-idz logo.png')}
+							style={{ width: 240, height: 100 }}
+							resizeMode="contain"
+						/>
+						<Text className="text-white text-3xl font-bold mt-4 mb-2">Forgot Password</Text>
+						<Text className="text-white/80 text-base text-center px-4">
+							Enter your email and we&apos;ll send you a link to reset your password.
+						</Text>
+					</View>
+				</View>
 
-                {/* Title */}
-                <View className="items-center mt-4">
-                    <Text className="text-3xl font-bold text-white mb-2">Forgot Password</Text>
-                    <Text className="text-center text-white/80 px-4 mb-4">
-                        Enter your email address and we&apos;ll send you a link to reset your password
-                    </Text>
-                    <Image
-                        source={require('../../../assets/logos/blue text-idz logo.png')}
-                        style={{ width: 300, height: 130 }}
-                        resizeMode="contain"
-                    />
-                </View>
-            </View>
-
-
-            <ScreenKeyboardAwareScrollView
-                contentContainerClassName="flex-grow mt-4 rounded-3xl"
-                style={{ zIndex: 2 }}
-            >
-                {/* Form Fields */}
-                <View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background" style={{ marginTop: 30, paddingTop: 50 }}>
+				<ScreenKeyboardAwareScrollView
+					contentContainerClassName="flex-grow rounded-3xl"
+					style={{ zIndex: 2 }}
+				>
+					<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background mt-4">
                     {!isEmailSent ? (
                         <>
                             {/* Email Input */}
@@ -172,8 +167,9 @@ export default function ForgotPasswordScreen() {
                             </Pressable>
                         </View>
                     )}
-                </View>
-            </ScreenKeyboardAwareScrollView>
-        </View>
+					</View>
+				</ScreenKeyboardAwareScrollView>
+			</SafeAreaView>
+		</View>
     );
 }

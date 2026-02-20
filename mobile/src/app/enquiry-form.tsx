@@ -105,7 +105,7 @@ function EnquiryFormScreen() {
                 selectedValue={enquiryType}
                 onValueChange={(value) => setEnquiryType(value)}
                 style={{ color: '#002147' }}
-                dropdownIconColor="#FF6600"
+                dropdownIconColor="#F38C1E"
               >
                 <Picker.Item label="General" value="General" color={colors.accent} />
                 <Picker.Item label="Product Line" value="Product Line" color={colors.accent} />

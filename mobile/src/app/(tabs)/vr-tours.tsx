@@ -125,7 +125,7 @@ export default function VRToursScreen() {
 			<View className="px-6 pb-6">
 				{loading && (
 					<View className="items-center py-12">
-						<ActivityIndicator size="large" color="#002147" />
+						<ActivityIndicator size="large" color="#3B6E8F" />
 						<Text className="text-muted-foreground mt-4">Loading facilities...</Text>
 					</View>
 				)}

@@ -70,7 +70,7 @@ export default function AboutScreen() {
                     { icon: 'globe', title: 'Growth', desc: 'Global market access' },
                 ].map((item, index) => (
                     <View key={index} className="w-[48%] bg-white p-4 rounded-2xl shadow-sm mb-4 border border-gray-100">
-                        <Feather name={item.icon as any} size={24} color="#FF6600" className="mb-2" />
+                        <Feather name={item.icon as any} size={24} color="#F38C1E" className="mb-2" />
                         <Text className="font-bold text-[#002147] mb-1">{item.title}</Text>
                         <Text className="text-xs text-gray-500">{item.desc}</Text>
                     </View>

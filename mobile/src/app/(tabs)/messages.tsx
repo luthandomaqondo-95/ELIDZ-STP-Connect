@@ -106,7 +106,7 @@ function MessagesScreen() {
         const roleColors: Record<UserRole, string> = {
             Entrepreneur: '#28A745', // Green
             Researcher: '#002147',   // Navy Blue
-            SMME: '#FF6600',          // Orange
+            SMME: '#F38C1E',          // Orange
             Student: '#6F42C1',      // Purple
             Investor: '#E83E8C',     // Pink
             Tenant: '#17A2B8',       // Teal
@@ -228,7 +228,7 @@ function MessagesScreen() {
                             </Text>
                         </View>
                         {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
-                            <View className="absolute -top-1 -right-1 w-5 h-5 bg-[#FF6600] rounded-full justify-center items-center">
+                            <View className="absolute -top-1 -right-1 w-5 h-5 bg-[#F38C1E] rounded-full justify-center items-center">
                                 <Text className="text-white text-xs font-bold">{chat.unreadCount}</Text>
                             </View>
                         )}
@@ -275,7 +275,7 @@ function MessagesScreen() {
                     </View>
 
                     {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
-                        <View className="w-2.5 h-2.5 rounded-full bg-[#FF6600] ml-2" />
+                        <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2" />
                     )}
                 </View>
             </Pressable>
@@ -358,7 +358,7 @@ function MessagesScreen() {
                     </View>
 
                     {contact.hasUnreadMessages && (
-                        <View className="w-2.5 h-2.5 rounded-full bg-[#FF6600] ml-2" />
+                        <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2" />
                     )}
 
                     {contact.connectionStatus === 'pending_received' && (
@@ -423,7 +423,7 @@ function MessagesScreen() {
                  </View>
                  <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
-                        <View className="bg-[#FF6600]/10 p-2 rounded-full mr-3">
+                        <View className="bg-[#F38C1E]/10 p-2 rounded-full mr-3">
                             <Feather name="lock" size={18} color={colors.accent} />
                         </View>
                         <Text className="text-foreground text-lg font-bold">
@@ -496,7 +496,7 @@ function MessagesScreen() {
                                 Messages
                             </Text>
                             {chats && chats.some(c => (c.unreadCount || 0) > 0) && (
-                                <View className="absolute -top-1 -right-1 bg-[#FF6600] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                <View className="absolute -top-1 -right-1 bg-[#F38C1E] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
                                     <Text className="text-white text-[10px] font-bold">
                                         {chats.filter(c => (c.unreadCount || 0) > 0).length}
                                     </Text>
@@ -512,7 +512,7 @@ function MessagesScreen() {
                                 Requests
                             </Text>
                             {(pendingReceivedContacts.length + pendingSentContacts.length) > 0 && (
-                                <View className="absolute -top-1 -right-1 bg-[#FF6600] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                <View className="absolute -top-1 -right-1 bg-[#F38C1E] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
                                     <Text className="text-white text-[10px] font-bold">{pendingReceivedContacts.length + pendingSentContacts.length}</Text>
                                 </View>
                             )}

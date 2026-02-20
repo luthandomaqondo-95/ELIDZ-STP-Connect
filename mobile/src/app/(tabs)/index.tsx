@@ -192,10 +192,10 @@ export default function DashboardScreen() {
             
             {/* SMME Verification Banner - Dynamic status */}
             {profile?.role === 'SMME' && profile?.id && verificationStatus !== 'verified' && (
-                <View className="mx-5 mb-3 rounded-lg bg-[#FF6600]/5 border border-[#FF6600]/20 p-3">
+                <View className="mx-5 mb-3 rounded-lg bg-accent/10 border border-accent/20 p-3">
                     <View className="flex-row items-center">
-                        <Feather name="info" size={14} color="#FF6600" />
-                        <Text className="text-[#FF6600] text-xs font-medium ml-2 flex-1">
+                        <Feather name="info" size={14} color={colors.accent} />
+                        <Text className="text-accent text-xs font-medium ml-2 flex-1">
                             {loadingVerification
                                 ? 'Checking verification status...'
                                 : verificationStatus === 'not_submitted'
@@ -212,7 +212,7 @@ export default function DashboardScreen() {
                                 className="ml-2"
                                 hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                             >
-                                <Text className="text-[#FF6600] text-xs font-semibold underline">
+                                <Text className="text-accent text-xs font-semibold underline">
                                     {verificationStatus === 'not_submitted'
                                         ? 'Verify'
                                         : verificationStatus === 'incomplete'
@@ -230,56 +230,44 @@ export default function DashboardScreen() {
             {/* Hero Banner */}
             <View className="mx-5 mb-6 shadow-md rounded-3xl overflow-hidden">
                 <LinearGradient
-                    colors={['#002147', '#003366']}
+                    colors={[colors.primary, '#003366']}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     className="p-6"
                 >
-                    {(() => {
-                        const featuredOpp = featuredOpportunity;
-
-                        return (
-                            <>
-                                <View className="flex-row items-center mb-3">
-                                    <View className="px-2.5 py-1 rounded-md bg-[#FF6600] mr-3">
-                                        <Text className="text-white text-xs font-bold uppercase tracking-wider">
-                                            Featured
-                                        </Text>
-                                    </View>
-                                    <Text className="text-white/80 text-xs font-medium uppercase tracking-widest">
-                                        {featuredOpp?.org || 'ELIDZ-STP'}
-                                    </Text>
-                                </View>
-                                {loading ? (
-                                    <>
-                                        <View className="h-8 bg-white/10 rounded-lg mb-3 w-4/5" />
-                                        <View className="h-4 bg-white/10 rounded-lg mb-2 w-full" />
-                                        <View className="h-4 bg-white/10 rounded-lg mb-6 w-3/4" />
-                                    </>
-                                ) : (
-                                    <>
-                                        <Text className="text-white text-2xl font-bold mb-3 leading-tight">
-                                            {featuredOpp?.title || 'Innovation Opportunities Await'}
-                                        </Text>
-                                        <Text className="text-white/90 text-sm mb-6 leading-relaxed" numberOfLines={2}>
-                                            {featuredOpp?.description || 'Discover funding, incubation, and partnership opportunities at ELIDZ-STP.'}
-                                        </Text>
-                                        {featuredOpp && (
-                                            <Pressable
-                                                className="bg-white py-2.5 px-5 rounded-full self-start active:opacity-90 shadow-sm flex-row items-center"
-                                                onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: featuredOpp.id } })}
-                                            >
-                                                <Text className="text-[#002147] font-bold text-sm mr-2">
-                                                    Explore Opportunity
-                                                </Text>
-                                                <Feather name="arrow-right" size={16} color={colors.primary} />
-                                            </Pressable>
-                                        )}
-                                    </>
-                                )}
-                            </>
-                        );
-                    })()}
+                    <View className="flex-row items-center mb-3">
+                        <View className="px-2.5 py-1 rounded-md bg-accent mr-3">
+                            <Text className="text-white text-xs font-bold uppercase tracking-wider">Featured</Text>
+                        </View>
+                        <Text className="text-white/80 text-xs font-medium uppercase tracking-widest">
+                            {featuredOpportunity?.org || 'ELIDZ-STP'}
+                        </Text>
+                    </View>
+                    {loading ? (
+                        <>
+                            <View className="h-8 bg-white/10 rounded-lg mb-3 w-4/5" />
+                            <View className="h-4 bg-white/10 rounded-lg mb-2 w-full" />
+                            <View className="h-4 bg-white/10 rounded-lg mb-6 w-3/4" />
+                        </>
+                    ) : (
+                        <>
+                            <Text className="text-white text-2xl font-bold mb-3 leading-tight">
+                                {featuredOpportunity?.title || 'Innovation Opportunities Await'}
+                            </Text>
+                            <Text className="text-white/90 text-sm mb-6 leading-relaxed" numberOfLines={2}>
+                                {featuredOpportunity?.description || 'Discover funding, incubation, and partnership opportunities at ELIDZ-STP.'}
+                            </Text>
+                            {featuredOpportunity && (
+                                <Pressable
+                                    className="bg-white py-2.5 px-5 rounded-full self-start active:opacity-90 shadow-sm flex-row items-center"
+                                    onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: featuredOpportunity.id } })}
+                                >
+                                    <Text className="text-primary font-bold text-sm mr-2">Explore Opportunity</Text>
+                                    <Feather name="arrow-right" size={16} color={colors.primary} />
+                                </Pressable>
+                            )}
+                        </>
+                    )}
                 </LinearGradient>
             </View>
 
@@ -335,8 +323,8 @@ export default function DashboardScreen() {
                         className="flex-1 ml-2 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
                         onPress={() => router.push('/(tabs)/vr-tours')}
                     >
-                        <View className="w-10 h-10 rounded-full bg-purple-100 justify-center items-center mb-2">
-                            <Feather name="globe" size={20} color="#002147" />
+                        <View className="w-10 h-10 rounded-full bg-primary/10 justify-center items-center mb-2">
+                            <Feather name="globe" size={20} color={colors.primary} />
                         </View>
                         <Text className="text-sm font-bold text-foreground">Virtual Tours</Text>
                     </Pressable>
@@ -352,7 +340,7 @@ export default function DashboardScreen() {
                             <Text className="text-xl font-bold text-foreground tracking-tight">Recommended for You</Text>
                         </View>
                         <Pressable onPress={() => router.push('/opportunities')}>
-                            <Text className="text-[#FF6600] text-sm font-semibold">View All</Text>
+                            <Text className="text-accent text-sm font-semibold">View All</Text>
                         </Pressable>
                     </View>
                     <View className="mx-5">
@@ -387,7 +375,7 @@ export default function DashboardScreen() {
                 <View className="flex-row justify-between items-center mx-5 mb-4">
                     <Text className="text-xl font-bold text-foreground tracking-tight">Latest Opportunities</Text>
                     <Pressable onPress={() => router.push('/opportunities')}>
-                        <Text className="text-[#FF6600] text-sm font-semibold">View All</Text>
+                        <Text className="text-accent text-sm font-semibold">View All</Text>
                     </Pressable>
                 </View>
                 <View className="mx-5">
@@ -397,11 +385,11 @@ export default function DashboardScreen() {
                             className={`flex-row items-center p-4 mb-3 rounded-2xl bg-card active:opacity-95 border border-border/40 shadow-sm ${index === 2 ? 'mb-0' : ''}`}
                             onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: opp.id } })}
                         >
-                            <View className={`w-10 h-10 rounded-full justify-center items-center mr-3 ${opp.type === 'Funding' ? 'bg-green-100' : 'bg-blue-100'}`}>
-                                <Feather 
-                                    name={opp.type === 'Funding' ? 'dollar-sign' : 'briefcase'} 
-                                    size={18} 
-                                    color={opp.type === 'Funding' ? '#28A745' : '#002147'} 
+                            <View className={`w-10 h-10 rounded-full justify-center items-center mr-3 ${opp.type === 'Funding' ? 'bg-green-100' : 'bg-primary/10'}`}>
+                                <Feather
+                                    name={opp.type === 'Funding' ? 'dollar-sign' : 'briefcase'}
+                                    size={18}
+                                    color={opp.type === 'Funding' ? colors.constructive : colors.primary}
                                 />
                             </View>
                             <View className="flex-1">
@@ -410,7 +398,7 @@ export default function DashboardScreen() {
                                     {opp.org} • {opp.deadline ? new Date(opp.deadline).toLocaleDateString() : 'No deadline'}
                                 </Text>
                             </View>
-                            <Feather name="chevron-right" size={20} color="#CBD5E0" />
+                            <Feather name="chevron-right" size={20} color={colors.iconGray} />
                         </Pressable>
                     ))}
                 </View>
@@ -421,7 +409,7 @@ export default function DashboardScreen() {
                 <View className="flex-row justify-between items-center mx-5 mb-4">
                     <Text className="text-xl font-bold text-foreground tracking-tight">Upcoming Events</Text>
                     <Pressable onPress={() => router.push('/events')}>
-                        <Text className="text-[#FF6600] text-sm font-semibold">Calendar</Text>
+                        <Text className="text-accent text-sm font-semibold">Calendar</Text>
                     </Pressable>
                 </View>
                 <ScrollView
@@ -442,7 +430,7 @@ export default function DashboardScreen() {
                             >
                                 <View className="flex-row justify-between items-start mb-3">
                                     <View className="bg-primary/10 px-2.5 py-1 rounded-md">
-                                        <Text className="text-[#002147] text-xs font-bold">Free</Text>
+                                        <Text className="text-primary text-xs font-bold">Free</Text>
                                     </View>
                                     <View className="flex-row items-center">
                                         <Feather name="calendar" size={12} color={colors.iconGrayDark} className="mr-1" />
@@ -471,7 +459,7 @@ export default function DashboardScreen() {
                 <View className="flex-row justify-between items-center mx-5 mb-4">
                     <Text className="text-xl font-bold text-foreground tracking-tight">Network</Text>
                     <Pressable onPress={() => router.push('/tenants')}>
-                        <Text className="text-[#FF6600] text-sm font-semibold">View All</Text>
+                        <Text className="text-accent text-sm font-semibold">View All</Text>
                     </Pressable>
                 </View>
                 <ScrollView
@@ -504,7 +492,7 @@ export default function DashboardScreen() {
             {/* {profile && !isGuest && (
               <View className="mx-5 mb-8 rounded-2xl overflow-hidden shadow-sm">
                 <LinearGradient
-                  colors={['#FF6600', '#FF8533']}
+                  colors={['#F38C1E', '#FF8533']}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                   className="p-5"
@@ -524,7 +512,7 @@ export default function DashboardScreen() {
                     className="bg-white py-2.5 px-4 rounded-xl self-start active:opacity-90"
                     onPress={() => router.push('/(modals)/premium-upgrade')}
                   >
-                    <Text className="text-[#FF6600] text-xs font-bold uppercase tracking-wide">
+                    <Text className="text-[#F38C1E] text-xs font-bold uppercase tracking-wide">
                       Upgrade Now
                     </Text>
                   </Pressable>
@@ -535,19 +523,17 @@ export default function DashboardScreen() {
             {/* Welcome message for guest users - only show when not logged in and not loading */}
             {!isLoggedIn && !isLoading ? (
                 <View className="mx-5 mb-8 p-5 rounded-3xl">
-                    <Text className="text-lg font-bold mb-2 text-[#002147]">
+                    <Text className="text-lg font-bold mb-2 text-foreground">
                         Welcome to ELIDZ-STP! 👋
                     </Text>
                     <Text className="text-muted-foreground text-sm mb-4 leading-relaxed">
                         Create an account to unlock premium features like direct messaging and priority listings.
                     </Text>
                     <Button
-                        className="bg-[#002147] py-3 px-5 rounded-full self-start active:opacity-90 shadow-sm"
+                        className="bg-primary py-3 px-5 rounded-full self-start active:opacity-90 shadow-sm"
                         onPress={() => router.push('/(auth)/signup')}
                     >
-                        <Text className="text-white text-sm font-bold">
-                            Sign Up Free
-                        </Text>
+                        <Text className="text-white text-sm font-bold">Sign Up Free</Text>
                     </Button>
                 </View>
             ) : null}

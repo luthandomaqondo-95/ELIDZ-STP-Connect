@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, Alert, Image } from 'react-native';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import { View, Pressable, Alert, Image, Dimensions, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
 import { Ionicons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
+import { Stars } from '@/components/Stars';
 import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { validatePassword, validateConfirmPassword } from '@/utils/validation';
+import { PasswordField } from '@/components/PasswordField';
+
+const { height } = Dimensions.get('window');
 
 export default function ChangePasswordScreen() {
 	const { colorScheme } = useColorScheme();
@@ -16,14 +22,6 @@ export default function ChangePasswordScreen() {
 	const [newPassword, setNewPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [isLoading, setIsLoading] = useState(false);
-	const [showNewPassword, setShowNewPassword] = useState(false);
-	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-	const player = useVideoPlayer(require('../../../assets/videos/ELIDZ from above.mp4'), (player) => {
-		player.loop = true;
-		player.muted = true;
-		player.play();
-	});
 
 	const navigateBack = () => {
 		if (router.canGoBack()) {
@@ -32,18 +30,14 @@ export default function ChangePasswordScreen() {
 	};
 
 	const handleChangePassword = async () => {
-		if (!newPassword.trim()) {
-			Alert.alert('Error', 'Please enter a new password');
+		const pwdCheck = validatePassword(newPassword, { minLength: 6 });
+		if (!pwdCheck.valid) {
+			Alert.alert('Error', pwdCheck.message ?? 'Please enter a new password');
 			return;
 		}
-
-		if (newPassword.length < 6) {
-			Alert.alert('Error', 'New password must be at least 6 characters long');
-			return;
-		}
-
-		if (newPassword !== confirmPassword) {
-			Alert.alert('Error', 'New passwords do not match');
+		const confirmCheck = validateConfirmPassword(newPassword, confirmPassword);
+		if (!confirmCheck.valid) {
+			Alert.alert('Error', confirmCheck.message ?? 'New passwords do not match');
 			return;
 		}
 
@@ -63,107 +57,62 @@ export default function ChangePasswordScreen() {
 	};
 
 	return (
-		<View className="flex-1 bg-transparent">
-			<VideoView
-				player={player}
-				style={{
-					position: 'absolute',
-					top: 0,
-					left: 0,
-					bottom: 0,
-					right: 0,
-					width: '100%',
-					height: '100%',
-					zIndex: 0,
-					opacity: 0.4,
-				}}
-				contentFit="cover"
-				nativeControls={false}
-				pointerEvents="none"
+		<View className="flex-1 bg-background">
+			<LinearGradient
+				colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+				className="absolute inset-0"
+				style={{ height: height * 0.4 }}
+				start={{ x: 0.5, y: 0 }}
+				end={{ x: 0.5, y: 1 }}
 			/>
-
-			<View
-				className="absolute inset-0 bg-black/70"
-				style={{ zIndex: 1 }}
-				pointerEvents="none"
-			/>
-
-			<ScreenKeyboardAwareScrollView
-				contentContainerClassName="flex-grow"
-				style={{ zIndex: 2 }}
-			>
-				<View className="flex-1 justify-center px-6 py-12">
-					<Pressable
-						className="flex-row items-center gap-2 mb-6 w-24"
+			<Stars />
+			<SafeAreaView className="flex-1" edges={['top']}>
+				<View className="px-6 pt-2 rounded-3xl" style={{ height: height * 0.24 }}>
+					<TouchableOpacity
+						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
 						onPress={navigateBack}
 					>
-						<Ionicons name="chevron-back" size={20} color={colors.white} />
-						<Text className="text-white font-semibold">Back</Text>
-					</Pressable>
-
-					<View className="items-center mb-8">
+						<Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+						<Text className="text-white text-sm ml-1">Back</Text>
+					</TouchableOpacity>
+					<View className="items-center mt-2">
 						<Image
 							source={require('../../../assets/logos/blue text-idz logo.png')}
-							style={{ width: 280, height: 120, opacity: 1 }}
+							style={{ width: 240, height: 100 }}
 							resizeMode="contain"
 						/>
-					</View>
-
-					<View className="bg-black/30 border border-white/10 rounded-3xl p-6">
-						<Text className="text-white text-2xl font-bold text-center mb-2">
-							Change Password
-						</Text>
-						<Text className="text-white/80 text-center mb-6">
+						<Text className="text-white text-3xl font-bold mt-4 mb-2">Change Password</Text>
+						<Text className="text-white/80 text-base text-center px-4 mb-2">
 							Update your password regularly to keep your ELIDZ-STP account secure.
 						</Text>
+					</View>
+				</View>
 
-						<View className="flex-row items-center bg-white/10 rounded-full mb-4 px-4 h-14 border border-white/20">
-							<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
-							<TextInput
-								className="flex-1 text-base text-white"
-								value={newPassword}
-								onChangeText={setNewPassword}
-								placeholder="New Password"
-								placeholderTextColor={colors.placeholder}
-								secureTextEntry={!showNewPassword}
-								autoCapitalize="none"
-								autoComplete="password-new"
-							/>
-							<Pressable
-								className="p-1"
-								onPress={() => setShowNewPassword((prev) => !prev)}
-							>
-								<Ionicons
-									name={showNewPassword ? 'eye-outline' : 'eye-off-outline'}
-									size={20}
-									color={colors.accent}
-								/>
-							</Pressable>
-						</View>
-
-						<View className="flex-row items-center bg-white/10 rounded-full mb-6 px-4 h-14 border border-white/20">
-							<Ionicons name="lock-closed-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
-							<TextInput
-								className="flex-1 text-base text-white"
-								value={confirmPassword}
-								onChangeText={setConfirmPassword}
-								placeholder="Confirm New Password"
-								placeholderTextColor={colors.placeholder}
-								secureTextEntry={!showConfirmPassword}
-								autoCapitalize="none"
-								autoComplete="password-new"
-							/>
-							<Pressable
-								className="p-1"
-								onPress={() => setShowConfirmPassword((prev) => !prev)}
-							>
-								<Ionicons
-									name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
-									size={20}
-									color={colors.accent}
-								/>
-							</Pressable>
-						</View>
+				<ScreenKeyboardAwareScrollView
+					contentContainerClassName="flex-grow rounded-3xl"
+					style={{ zIndex: 2 }}
+				>
+					<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background mt-4">
+						<PasswordField
+							value={newPassword}
+							onChangeText={setNewPassword}
+							placeholder="New Password"
+							accentColor={colors.accent}
+							placeholderColor={colors.placeholder}
+							editable={!isLoading}
+							autoComplete="password-new"
+							containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border"
+						/>
+						<PasswordField
+							value={confirmPassword}
+							onChangeText={setConfirmPassword}
+							placeholder="Confirm New Password"
+							accentColor={colors.accent}
+							placeholderColor={colors.placeholder}
+							editable={!isLoading}
+							autoComplete="password-new"
+							containerClassName="flex-row items-center bg-input rounded-full mb-6 px-4 h-14 border border-border"
+						/>
 
 						<Button
 							className="h-14 rounded-full bg-accent justify-center items-center mb-4 active:opacity-80 active:scale-95"
@@ -177,15 +126,15 @@ export default function ChangePasswordScreen() {
 
 						<Button
 							variant="outline"
-							className="h-14 rounded-full border-white/40 bg-transparent justify-center items-center"
+							className="h-14 rounded-full border-border justify-center items-center"
 							onPress={navigateBack}
 							disabled={isLoading}
 						>
-							<Text className="text-lg font-semibold text-white">Cancel</Text>
+							<Text className="text-lg font-semibold text-foreground">Cancel</Text>
 						</Button>
 					</View>
-				</View>
-			</ScreenKeyboardAwareScrollView>
+				</ScreenKeyboardAwareScrollView>
+			</SafeAreaView>
 		</View>
 	);
 }

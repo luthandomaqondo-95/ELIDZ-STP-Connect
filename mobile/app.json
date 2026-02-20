@@ -47,12 +47,6 @@
         }
       ],
       [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.265041215914-dnhqe8pqbt9n32evuaubqlmls16c6fiu"
-        }
-      ],
-      [
         "@sentry/react-native/expo",
         {
           "url": "https://sentry.io/",

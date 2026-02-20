@@ -301,8 +301,8 @@ export default function VerifiedSMMEsScreen() {
                                                         <Text className="text-green-700 text-[10px] font-bold uppercase">Verified</Text>
                                                     </View>
                                                     {smme.bbbee && (
-                                                        <View className="bg-[#FF6600]/10 px-2 py-0.5 rounded-md mb-1 border border-[#FF6600]/20">
-                                                            <Text className="text-[#FF6600] text-[10px] font-bold">B-BBEE {smme.bbbee}</Text>
+                                                        <View className="bg-[#F38C1E]/10 px-2 py-0.5 rounded-md mb-1 border border-[#F38C1E]/20">
+                                                            <Text className="text-[#F38C1E] text-[10px] font-bold">B-BBEE {smme.bbbee}</Text>
                                                         </View>
                                                     )}
                                                 </View>
@@ -371,7 +371,7 @@ export default function VerifiedSMMEsScreen() {
                                                                 {product.name}
                                                             </Text>
                                                             {product.price && (
-                                                                <Text className="text-[#FF6600] text-xs font-bold ml-2">
+                                                                <Text className="text-[#F38C1E] text-xs font-bold ml-2">
                                                                     {product.price}
                                                                 </Text>
                                                             )}
@@ -460,7 +460,7 @@ export default function VerifiedSMMEsScreen() {
                                             setSelectedCategory('All');
                                         }}
                                     >
-                                        <Text className="text-[#FF6600] text-sm font-bold">
+                                        <Text className="text-[#F38C1E] text-sm font-bold">
                                             Clear filters
                                         </Text>
                                     </Pressable>

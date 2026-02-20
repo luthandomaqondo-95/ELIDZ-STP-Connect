@@ -26,7 +26,6 @@ export default function ProtectedAppRoutes() {
 
             <Stack.Protected guard={!isLoggedIn} >
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-                <Stack.Screen name="(auth)/welcome" options={{ headerShown: false }} />
                 <Stack.Screen name="(auth)/auth-choice" options={{ headerShown: false }} />
             </Stack.Protected>
 
