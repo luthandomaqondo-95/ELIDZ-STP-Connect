@@ -367,7 +367,7 @@ export default function ServicesScreen() {
 
 						{/* Search Bar */}
 						<View
-							className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+							className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4"
 						>
 							<Feather name="search" size={20} color={colors.whiteOpacity70} />
 							<TextInput
@@ -449,21 +449,22 @@ export default function ServicesScreen() {
 
 			{screenMode === 'detail' && facilityWithTour && (
 				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
-					{/* Header */}
-					<View className="px-6 pt-12 pb-6 bg-card shadow-sm">
-						<View className="flex-row items-center mb-4">
-							<Pressable onPress={handleBackToList} className="p-2 mr-3">
-								<Feather name="arrow-left" size={24} color={colors.text} />
-							</Pressable>
-							<View className="w-12 h-12 rounded-xl items-center justify-center mr-3" style={{ backgroundColor: facilityWithTour.color }}>
-								<Feather name={facilityWithTour.icon as any} size={24} color="#FFFFFF" />
-							</View>
-							<View className="flex-1">
-								<Text className="text-2xl font-bold text-foreground">{facilityWithTour.name}</Text>
-								<Text className="text-muted-foreground text-sm">{facilityWithTour.location}</Text>
-							</View>
-						</View>
-						<Text className="text-muted-foreground text-base">{facilityWithTour.description}</Text>
+					<View className="bg-background">
+						<TabsLayoutHeader
+							title={facilityWithTour.name}
+							variant="navy"
+							showActions={false}
+							left={
+								<Pressable onPress={handleBackToList} className="active:opacity-80">
+									<View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: facilityWithTour.color }}>
+										<Feather name={facilityWithTour.icon as any} size={22} color="#FFFFFF" />
+									</View>
+								</Pressable>
+							}
+						>
+							<Text className="text-white/80 text-sm">{facilityWithTour.location}</Text>
+							<Text className="text-white/80 text-base mt-2">{facilityWithTour.description}</Text>
+						</TabsLayoutHeader>
 					</View>
 
 					{/* Loading State */}
@@ -482,37 +483,32 @@ export default function ServicesScreen() {
 									key={index}
 									className="bg-card rounded-2xl mb-4 p-4 shadow-sm border border-border"
 								>
-									<Pressable
-										onPress={() => handleServiceSelect(service)}
-										className="active:opacity-95"
-									>
-										<View className="flex-row items-center justify-between mb-3">
-											<View className="flex-1">
-												<Text className="text-lg font-bold text-foreground mb-2">{service.title}</Text>
-												<Text className="text-muted-foreground text-sm mb-3">{service.description}</Text>
-												<View className="flex-row flex-wrap">
-													{service.details.slice(0, 3).map((detail: string, i: number) => (
-														<View
-															key={i}
-															className="px-2.5 py-1 rounded-md mr-2 mb-1"
-															style={{
-																backgroundColor: colorScheme === 'light' ? 'rgba(0, 33, 71, 0.08)' : colors.input,
-															}}
+									<View className="flex-row items-center justify-between mb-3">
+										<View className="flex-1">
+											<Text className="text-lg font-bold text-foreground mb-2">{service.title}</Text>
+											<Text className="text-muted-foreground text-sm mb-3">{service.description}</Text>
+											<View className="flex-row flex-wrap">
+												{service.details.slice(0, 3).map((detail: string, i: number) => (
+													<View
+														key={i}
+														className="px-2.5 py-1 rounded-md mr-2 mb-1"
+														style={{
+															backgroundColor: colorScheme === 'light' ? 'rgba(0, 33, 71, 0.08)' : colors.input,
+														}}
+													>
+														<Text
+															className="text-[10px] font-medium"
+															style={{ color: colorScheme === 'light' ? colors.primary : colors.textSecondary }}
 														>
-															<Text
-																className="text-[10px] font-medium"
-																style={{ color: colorScheme === 'light' ? colors.primary : colors.textSecondary }}
-															>
-																{detail}
-															</Text>
-														</View>
-													))}
-												</View>
+															{detail}
+														</Text>
+													</View>
+												))}
 											</View>
 										</View>
-									</Pressable>
+									</View>
 
-									{/* Access Actions */}
+									{/* Access Actions - only these are clickable; card content is not */}
 									<View className="flex-row gap-2 mt-2 pt-3 border-t border-border">
 										<Pressable
 											onPress={() => handleRequestAccess(service)}
@@ -645,12 +641,14 @@ export default function ServicesScreen() {
 				</ScrollView>
 			)}
 
-			{/* Single service view – no main header, only this service */}
+			{/* Single service view – facility icon as back, no back arrow */}
 			{screenMode === 'service' && selectedService && facilityWithTour && (
 				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
 					<View className="px-4 pt-12 pb-4 flex-row items-center border-b border-border bg-card">
-						<Pressable onPress={handleBackToServiceList} className="p-2 mr-3">
-							<Feather name="arrow-left" size={24} color={colors.text} />
+						<Pressable onPress={handleBackToServiceList} className="p-1 mr-3 active:opacity-80">
+							<View className="w-10 h-10 rounded-xl items-center justify-center" style={{ backgroundColor: facilityWithTour.color }}>
+								<Feather name={facilityWithTour.icon as any} size={22} color="#FFFFFF" />
+							</View>
 						</Pressable>
 						<Text className="text-lg font-bold text-foreground flex-1" numberOfLines={1}>
 							{selectedService.title}

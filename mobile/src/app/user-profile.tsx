@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Pressable, Alert } from 'react-native';
+import { View, Pressable, Alert, Linking } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '../components/ScreenScrollView';
@@ -10,6 +10,7 @@ import { Image } from 'expo-image';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { supabase } from '@/lib/supabase';
 import { connectionService } from '@/services/connection.service';
+import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { Profile } from '@/types';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
 
@@ -27,6 +28,8 @@ function UserProfileScreen() {
 	const [connectionStatus, setConnectionStatus] = useState<'connected' | 'pending_sent' | 'pending_received' | 'available' | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [connectionId, setConnectionId] = useState<string | null>(null);
+	const [smmeServices, setSmmeServices] = useState<SMMEServiceProduct[]>([]);
+	const [smmeProducts, setSmmeProducts] = useState<SMMEServiceProduct[]>([]);
 
 	// Handle both 'id' and 'userId' params
 	const userId = params?.id || params?.userId;
@@ -127,6 +130,29 @@ function UserProfileScreen() {
 		fetchUserData();
 	}, [userId, currentUser?.id, isOwnProfile]);
 
+	// Fetch SMME services and products when viewing a verified SMME profile
+	useEffect(() => {
+		if (!profileUser || profileUser.role !== 'SMME') {
+			setSmmeServices([]);
+			setSmmeProducts([]);
+			return;
+		}
+		let cancelled = false;
+		smmmeService.getServicesProductsBySMME(profileUser.id).then(({ services, products }) => {
+			if (!cancelled) {
+				setSmmeServices(services);
+				setSmmeProducts(products);
+			}
+		}).catch((err) => {
+			if (!cancelled) {
+				setSmmeServices([]);
+				setSmmeProducts([]);
+			}
+			console.warn('UserProfile: failed to load SMME services/products', err);
+		});
+		return () => { cancelled = true; };
+	}, [profileUser?.id, profileUser?.role]);
+
 	const getAvatarSource = (avatar?: string) => {
 		switch (avatar) {
 			case 'blue': return require('../../assets/avatars/avatar-blue.png');
@@ -160,37 +186,43 @@ function UserProfileScreen() {
 		}
 	};
 
-	const handleAcceptConnection = async () => {
+	const handleAcceptConnection = () => {
 		if (!connectionId) {
 			console.error('Cannot accept connection: connection ID is missing');
 			return;
 		}
-
-		try {
-			await connectionService.acceptConnectionRequest(connectionId);
-			Alert.alert('Success', `You are now connected with ${profileUser?.name}!`);
-			setConnectionStatus('connected');
-		} catch (error: any) {
-			console.error('Error accepting connection:', error);
-			Alert.alert('Error', error.message || 'Failed to accept connection request.');
-		}
+		const name = profileUser?.name;
+		connectionService.acceptConnectionRequest(connectionId)
+			.then(() => {
+				setTimeout(() => {
+					setConnectionStatus('connected');
+					Alert.alert('Success', `You are now connected with ${name}!`);
+				}, 0);
+			})
+			.catch((error: any) => {
+				console.error('Error accepting connection:', error);
+				setTimeout(() => Alert.alert('Error', error.message || 'Failed to accept connection request.'), 0);
+			});
 	};
 
-	const handleDeclineConnection = async () => {
+	const handleDeclineConnection = () => {
 		if (!connectionId) {
 			console.error('Cannot decline connection: connection ID is missing');
 			return;
 		}
-
-		try {
-			await connectionService.declineConnectionRequest(connectionId);
-			Alert.alert('Request Declined', `Connection request from ${profileUser?.name} has been declined.`);
-			setConnectionStatus('available');
-			setConnectionId(null);
-		} catch (error: any) {
-			console.error('Error declining connection:', error);
-			Alert.alert('Error', error.message || 'Failed to decline connection request.');
-		}
+		const name = profileUser?.name;
+		connectionService.declineConnectionRequest(connectionId)
+			.then(() => {
+				setTimeout(() => {
+					setConnectionStatus('available');
+					setConnectionId(null);
+					Alert.alert('Request Declined', `Connection request from ${name} has been declined.`);
+				}, 0);
+			})
+			.catch((error: any) => {
+				console.error('Error declining connection:', error);
+				setTimeout(() => Alert.alert('Error', error.message || 'Failed to decline connection request.'), 0);
+			});
 	};
 
 	const handleCancelConnection = async () => {
@@ -210,16 +242,20 @@ function UserProfileScreen() {
 				{
 					text: 'Yes, Cancel',
 					style: 'destructive',
-					onPress: async () => {
-						try {
-							await connectionService.cancelConnectionRequest(connectionId);
-							Alert.alert('Request Cancelled', `Connection request to ${profileUser?.name} has been cancelled.`);
-							setConnectionStatus('available');
-							setConnectionId(null);
-						} catch (error: any) {
-							console.error('Error cancelling connection:', error);
-							Alert.alert('Error', error.message || 'Failed to cancel connection request.');
-						}
+					onPress: () => {
+						const name = profileUser?.name;
+						connectionService.cancelConnectionRequest(connectionId)
+							.then(() => {
+								setTimeout(() => {
+									setConnectionStatus('available');
+									setConnectionId(null);
+									Alert.alert('Request Cancelled', `Connection request to ${name} has been cancelled.`);
+								}, 0);
+							})
+							.catch((error: any) => {
+								console.error('Error cancelling connection:', error);
+								setTimeout(() => Alert.alert('Error', error.message || 'Failed to cancel connection request.'), 0);
+							});
 					},
 				},
 			]
@@ -353,12 +389,12 @@ function UserProfileScreen() {
 
 			<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
 				<Text className="text-lg font-bold mb-2.5">Contact Information</Text>
-				<View className="flex-row items-center">
+				<Pressable onPress={() => Linking.openURL(`mailto:${profileUser.email}`)} className="flex-row items-center">
 					<Feather name="mail" size={18} color={colors.textSecondary} />
 					<Text className="text-base text-primary ml-2.5">
 						{profileUser.email}
 					</Text>
-				</View>
+				</Pressable>
 				{profileUser.address && (
 					<View className="flex-row items-center mt-2.5">
 						<Feather name="map-pin" size={18} color={colors.textSecondary} />
@@ -367,7 +403,103 @@ function UserProfileScreen() {
 						</Text>
 					</View>
 				)}
+				{(() => {
+					const firstWithContact = [...smmeServices, ...smmeProducts].find(
+						(i) => i.contact_phone || i.website_url
+					);
+					const phone = firstWithContact?.contact_phone;
+					const website = firstWithContact?.website_url;
+					return (
+						<>
+							{phone && (
+								<Pressable onPress={() => Linking.openURL(`tel:${phone}`)} className="flex-row items-center mt-2.5">
+									<Feather name="phone" size={18} color={colors.textSecondary} />
+									<Text className="text-base text-primary ml-2.5">{phone}</Text>
+								</Pressable>
+							)}
+							{website && (
+								<Pressable onPress={() => Linking.openURL(website)} className="flex-row items-center mt-2.5">
+									<Feather name="globe" size={18} color={colors.textSecondary} />
+									<Text className="text-base text-primary ml-2.5" numberOfLines={1}>{website}</Text>
+									<Feather name="external-link" size={14} color={colors.primary} style={{ marginLeft: 4 }} />
+								</Pressable>
+							)}
+						</>
+					);
+				})()}
 			</View>
+
+			{smmeProducts.length > 0 && (
+				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+					<Text className="text-lg font-bold mb-2.5">Products</Text>
+					{smmeProducts.map((product) => (
+						<View key={product.id} className="mb-4 last:mb-0 p-3 rounded-lg bg-muted/40 border border-border">
+							<Text className="text-base font-semibold text-foreground">{product.name}</Text>
+							{product.description ? (
+								<Text className="text-sm text-muted-foreground mt-1" numberOfLines={3}>{product.description}</Text>
+							) : null}
+							<View className="flex-row flex-wrap gap-2 mt-2">
+								<View className="bg-primary/10 px-2 py-0.5 rounded">
+									<Text className="text-xs text-primary font-medium">{product.category}</Text>
+								</View>
+								{product.price && (
+									<Text className="text-xs text-foreground font-medium">{product.price}</Text>
+								)}
+							</View>
+							{(product.contact_email || product.contact_phone) && (
+								<View className="flex-row flex-wrap gap-3 mt-2">
+									{product.contact_email && (
+										<Pressable onPress={() => Linking.openURL(`mailto:${product.contact_email}`)}>
+											<Text className="text-xs text-primary">{product.contact_email}</Text>
+										</Pressable>
+									)}
+									{product.contact_phone && (
+										<Pressable onPress={() => Linking.openURL(`tel:${product.contact_phone}`)}>
+											<Text className="text-xs text-primary">{product.contact_phone}</Text>
+										</Pressable>
+									)}
+								</View>
+							)}
+						</View>
+					))}
+				</View>
+			)}
+
+			{smmeServices.length > 0 && (
+				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+					<Text className="text-lg font-bold mb-2.5">Services</Text>
+					{smmeServices.map((service) => (
+						<View key={service.id} className="mb-4 last:mb-0 p-3 rounded-lg bg-muted/40 border border-border">
+							<Text className="text-base font-semibold text-foreground">{service.name}</Text>
+							{service.description ? (
+								<Text className="text-sm text-muted-foreground mt-1" numberOfLines={3}>{service.description}</Text>
+							) : null}
+							<View className="flex-row flex-wrap gap-2 mt-2">
+								<View className="bg-primary/10 px-2 py-0.5 rounded">
+									<Text className="text-xs text-primary font-medium">{service.category}</Text>
+								</View>
+								{service.price && (
+									<Text className="text-xs text-foreground font-medium">{service.price}</Text>
+								)}
+							</View>
+							{(service.contact_email || service.contact_phone) && (
+								<View className="flex-row flex-wrap gap-3 mt-2">
+									{service.contact_email && (
+										<Pressable onPress={() => Linking.openURL(`mailto:${service.contact_email}`)}>
+											<Text className="text-xs text-primary">{service.contact_email}</Text>
+										</Pressable>
+									)}
+									{service.contact_phone && (
+										<Pressable onPress={() => Linking.openURL(`tel:${service.contact_phone}`)}>
+											<Text className="text-xs text-primary">{service.contact_phone}</Text>
+										</Pressable>
+									)}
+								</View>
+							)}
+						</View>
+					))}
+				</View>
+			)}
 
 			{connectionStatus === 'connected' && (
 				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">

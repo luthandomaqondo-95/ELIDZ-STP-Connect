@@ -7,7 +7,7 @@ class OpportunityServiceClass {
 
 		let query = supabase
 			.from('opportunities')
-			.select('*, posted_by(organization, name)')
+			.select('*, posted_by(organization, name), tenant:tenants(name, logo_url)')
 			.eq('status', 'active')
 			.order('created_at', { ascending: false });
 
@@ -27,7 +27,7 @@ class OpportunityServiceClass {
 				console.warn('OpportunityService.getOpportunities: Join with posted_by failed for some rows, returning partial data.');
 				const { data: fallbackData, error: fallbackError } = await supabase
 					.from('opportunities')
-					.select('*')
+					.select('*, tenant:tenants(name, logo_url)')
 					.eq('status', 'active')
 					.order('created_at', { ascending: false });
 				if (fallbackError) throw fallbackError;
@@ -43,7 +43,8 @@ class OpportunityServiceClass {
 		return (data || []).map((item: any) => ({
 			...item,
 			org: item.posted_by?.organization || 'ELIDZ',
-			postedByDetails: item.posted_by
+			postedByDetails: item.posted_by,
+			tenant: item.tenant ?? item.tenants ?? null
 		})) as Opportunity[];
 	}
 
@@ -52,7 +53,7 @@ class OpportunityServiceClass {
 
 		const { data, error } = await supabase
 			.from('opportunities')
-			.select('*, posted_by(organization, name)')
+			.select('*, posted_by(organization, name), tenant:tenants(name, logo_url)')
 			.eq('id', id)
 			.single();
 
@@ -67,7 +68,8 @@ class OpportunityServiceClass {
 		return {
 			...data,
 			org: data.posted_by?.organization || 'ELIDZ',
-			postedByDetails: data.posted_by
+			postedByDetails: data.posted_by,
+			tenant: data.tenant ?? data.tenants ?? null
 		} as Opportunity;
 	}
 
@@ -119,28 +121,7 @@ class OpportunityServiceClass {
 		return data as { id: string };
 	}
 
-	/**
-	 * Get recommended opportunities for a user
-	 */
-	async getRecommendedOpportunities(userId: string, limit = 5): Promise<Opportunity[]> {
-		// Import here to avoid circular dependency
-		const { recommendationService } = await import('./recommendation.service');
-		const { profileService } = await import('./profile.service');
-
-		// Get user profile
-		const user = await profileService.getProfile(userId);
-		if (!user) {
-			return [];
-		}
-
-		// Get all active opportunities
-		const allOpportunities = await this.getOpportunities();
-
-		// Get recommendations
-		const recommendations = recommendationService.getRecommendedOpportunities(user, allOpportunities, limit);
-
-		return recommendations.map(r => r.opportunity);
-	}
+	
 }
 
 export const OpportunityService = new OpportunityServiceClass();

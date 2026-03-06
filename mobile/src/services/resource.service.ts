@@ -68,6 +68,21 @@ class ResourceServiceClass {
 		}));
 	}
 
+	async getDistinctCategories(): Promise<string[]> {
+		const { data, error } = await supabase
+			.from('resources')
+			.select('category')
+			.not('category', 'is', null);
+
+		if (error) {
+			console.error('ResourceService.getDistinctCategories error:', error);
+			return [];
+		}
+
+		const categories = [...new Set((data || []).map((r: any) => r.category?.trim()).filter(Boolean))].sort();
+		return categories;
+	}
+
 	async createResource(resourceData: Partial<Resource>): Promise<Resource> {
 		console.log('ResourceService.createResource called');
 

@@ -23,7 +23,7 @@ Through its SMME Development Programme, ELIDZ upgraded 11 emerging businesses by
 
 As ELIDZ execute the Vision 2030 strategy, the Zone will deepen its commitment to environmental, social, and governance (ESG) excellence, embedding sustainability across all operations.',
   NULL,
-  NULL,
+  'https://www.elidzstp.co.za/wp-content/uploads/2019/05/home-banner5.jpg',
   '2025-11-13 00:00:00+00',
   TIMEZONE('utc', NOW()),
   TIMEZONE('utc', NOW())
@@ -49,7 +49,7 @@ As a catalyst for industrial development and investment attraction in the Easter
 
 This milestone comes as ELIDZ expands its strategic focus across targeted high growth areas: Automotive, Agri-Industry, Digital Economy, Sustainable Energy, Advanced Manufacturing, Logistics, and Aquaculture. It also aligns with the organisation''s Vision 2030, which aims to drive inclusive growth, sustainability and innovation across the region.',
   NULL,
-  NULL,
+  'https://www.elidzstp.co.za/wp-content/uploads/2019/05/home-banner7.jpg',
   '2025-08-15 00:00:00+00',
   TIMEZONE('utc', NOW()),
   TIMEZONE('utc', NOW())
@@ -82,7 +82,7 @@ The initiative aligns with the South African Automotive Masterplan (SAAM) 2035, 
 
 With more than 120 automotive manufacturers operating in the Eastern Cape, the sector plays a pivotal role in the region''s economy. The province is home to four major automotive manufacturers, with three based in Nelson Mandela Metropolitan Municipality and one in Buffalo City Metropolitan Municipality. As the industry shifts toward electric mobility, the ELIDZ-STP aims to ensure that local professionals and entrepreneurs remain competitive and well-equipped for emerging opportunities.',
   NULL,
-  NULL,
+  'https://www.elidzstp.co.za/wp-content/uploads/2019/05/design-centre.jpg',
   '2025-03-27 00:00:00+00',
   TIMEZONE('utc', NOW()),
   TIMEZONE('utc', NOW())
@@ -106,7 +106,7 @@ Macingwane is the ideal candidate to lead the Africa Division of the IASP as she
 
 Join us in congratulating Macingwane on this remarkable achievement. Her appointment reflects her visionary leadership, dedication, and pivotal role in advancing innovation across Africa and beyond.',
   NULL,
-  NULL,
+  'https://www.elidzstp.co.za/wp-content/uploads/2019/05/home-banner5.jpg',
   '2024-12-03 00:00:00+00',
   TIMEZONE('utc', NOW()),
   TIMEZONE('utc', NOW())
@@ -132,7 +132,7 @@ The programme will provide digital literacy training to 90 Grade 11 students in 
 
 This project also supports long-term community development goals. A Memorandum of Understanding (MOU) signed by all parties ensures sustainability and operational continuity, marking a milestone in the Eastern Cape''s socio-economic growth strategy. In addition to empowering learners, the project includes accredited training opportunities for Umtiza High School''s educators to improve teaching quality through technology integration.',
   NULL,
-  NULL,
+  'https://www.elidzstp.co.za/wp-content/uploads/2019/05/innospace.jpg',
   '2024-10-31 00:00:00+00',
   TIMEZONE('utc', NOW()),
   TIMEZONE('utc', NOW())
@@ -156,7 +156,7 @@ The challenge aligns with the ELIDZ-STP''s broader mission to position the Easte
 
 Participants in the Eastern Cape Innovation Challenge 2025 will have the opportunity to showcase their innovations during the Eastern Cape Innovation & Entrepreneurship Week (IEW) 2025, where winners will be announced and provided with comprehensive support packages to accelerate their growth.',
   NULL,
-  NULL,
+  'https://www.elidzstp.co.za/wp-content/uploads/2025/08/web-home-banner-2.jpg',
   '2025-01-15 00:00:00+00',
   TIMEZONE('utc', NOW()),
   TIMEZONE('utc', NOW())

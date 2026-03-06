@@ -163,6 +163,31 @@ function MessagesScreen() {
         }
     }
 
+    async function handleCancelRequest(connectionId: string, userName: string) {
+        const userId = profile?.id;
+        try {
+            await connectionService.cancelConnectionRequest(connectionId);
+            if (userId) {
+                queryClient.setQueriesData(
+                    { queryKey: ['contacts', userId], exact: false },
+                    (old: ContactWithConnection[] | undefined) => {
+                        if (!old) return old;
+                        return old.map((c) =>
+                            c.connectionId === connectionId
+                                ? { ...c, connectionStatus: 'available' as const, connectionId: undefined }
+                                : c
+                        );
+                    }
+                );
+            }
+            await queryClient.refetchQueries({ queryKey: ['contacts'] });
+            setTimeout(() => Alert.alert('Request Cancelled', `Connection request to ${userName} has been cancelled.`), 0);
+        } catch (error: any) {
+            console.error('Error cancelling connection request:', error);
+            Alert.alert('Error', error.message || 'Failed to cancel connection request.');
+        }
+    }
+
     async function handleMessage(contact: ContactWithConnection) {
         if (contact.connectionStatus !== 'connected') {
             Alert.alert('Connection Required', 'You need to be connected first before messaging.');
@@ -381,9 +406,21 @@ function MessagesScreen() {
                     )}
 
                     {contact.connectionStatus === 'pending_sent' && (
-                        <View className="flex-row items-center ml-2 bg-muted px-3 py-1.5 rounded-full">
-                            <Feather name="clock" size={14} color={colors.iconGrayDark} style={{ marginRight: 6 }} />
-                            <Text className="text-xs font-medium text-muted-foreground">Requested</Text>
+                        <View className="flex-row items-center ml-2">
+                            <View className="flex-row items-center bg-muted px-3 py-1.5 rounded-full mr-2">
+                                <Feather name="clock" size={14} color={colors.iconGrayDark} style={{ marginRight: 6 }} />
+                                <Text className="text-xs font-medium text-muted-foreground">Requested</Text>
+                            </View>
+                            <Pressable
+                                className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
+                                onPress={(e) => {
+                                    e.stopPropagation();
+                                    if (contact.connectionId) handleCancelRequest(contact.connectionId, contact.name);
+                                }}
+                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                            >
+                                <Feather name="x" size={18} color="white" />
+                            </Pressable>
                         </View>
                     )}
 
@@ -461,7 +498,7 @@ function MessagesScreen() {
 
                             {/* Search Bar */}
                             <View 
-                                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+                                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4"
                             >
                                 <Feather name="search" size={20} color={colors.whiteOpacity70} />
                                 <TextInput

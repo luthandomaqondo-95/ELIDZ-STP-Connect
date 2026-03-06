@@ -73,7 +73,7 @@
 
     /* Class-based dark mode (tailwind darkMode: 'class') - dark navy theme */
     .dark {
-        --background: 10 22 40; /* Dark navy (ELIDZ gradient start #0a1628) */
+        --background: 5 12 22; /* #050C16 - whole background */
         --foreground: 255 255 255; /* Pure white for clear text */
         --card: 18 35 58; /* Slightly lighter navy */
         --card-foreground: 255 255 255;
@@ -93,7 +93,7 @@
         --input: 22 42 70;
         --ring: 30 58 95;
 
-        --android-background: 10 22 40;
+        --android-background: 5 12 22;
         --android-foreground: 255 255 255;
         --android-card: 18 35 58;
         --android-card-foreground: 255 255 255;
@@ -117,7 +117,7 @@
     /* System preference fallback (e.g. web) */
     @media (prefers-color-scheme: dark) {
         :root:not(.light) {
-            --background: 10 22 40;
+            --background: 5 12 22;
             --foreground: 255 255 255;
             --card: 18 35 58;
             --card-foreground: 255 255 255;
@@ -137,7 +137,7 @@
             --input: 22 42 70;
             --ring: 30 58 95;
 
-            --android-background: 10 22 40;
+            --android-background: 5 12 22;
             --android-foreground: 255 255 255;
             --android-card: 18 35 58;
             --android-card-foreground: 255 255 255;

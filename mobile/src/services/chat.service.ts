@@ -335,6 +335,255 @@ class ChatService {
 
 		console.log('ChatService.markMessagesAsRead succeeded');
 	}
+
+	// ===== GROUP CHAT MANAGEMENT =====
+
+	async createGroupChat(groupName: string, createdBy: string, participantIds: string[]): Promise<Chat> {
+		console.log('ChatService.createGroupChat called:', { groupName, createdBy });
+
+		const { data: newChat, error: chatError } = await supabase
+			.from('chats')
+			.insert({
+				name: groupName,
+				type: 'group',
+				created_by: createdBy,
+			})
+			.select()
+			.single();
+
+		if (chatError) {
+			console.error('ChatService.createGroupChat chat error:', JSON.stringify(chatError, null, 2));
+			throw chatError;
+		}
+
+		// Add all participants
+		const participants = [createdBy, ...participantIds];
+		const uniqueParticipants = Array.from(new Set(participants));
+
+		const { error: participantsError } = await supabase
+			.from('chat_participants')
+			.insert(
+				uniqueParticipants.map(userId => ({
+					chat_id: newChat.id,
+					user_id: userId,
+				}))
+			);
+
+		if (participantsError) {
+			console.error('ChatService.createGroupChat participants error:', JSON.stringify(participantsError, null, 2));
+			throw participantsError;
+		}
+
+		console.log('ChatService.createGroupChat succeeded:', newChat);
+		return newChat as Chat;
+	}
+
+	async createOpportunityChat(opportunityId: string, participants: string[], createdBy: string): Promise<Chat> {
+		console.log('ChatService.createOpportunityChat called:', { opportunityId });
+
+		// Check if chat already exists for this opportunity
+		const { data: existingChat } = await supabase
+			.from('chats')
+			.select('*')
+			.eq('type', 'opportunity')
+			.eq('opportunity_id', opportunityId)
+			.single();
+
+		if (existingChat) {
+			console.log('ChatService.createOpportunityChat: Existing chat found');
+			return existingChat as Chat;
+		}
+
+		const { data: newChat, error: chatError } = await supabase
+			.from('chats')
+			.insert({
+				name: `Opportunity Discussion`,
+				type: 'opportunity',
+				opportunity_id: opportunityId,
+				created_by: createdBy,
+			})
+			.select()
+			.single();
+
+		if (chatError) {
+			console.error('ChatService.createOpportunityChat chat error:', JSON.stringify(chatError, null, 2));
+			throw chatError;
+		}
+
+		// Add participants
+		const uniqueParticipants = Array.from(new Set(participants));
+
+		const { error: participantsError } = await supabase
+			.from('chat_participants')
+			.insert(
+				uniqueParticipants.map(userId => ({
+					chat_id: newChat.id,
+					user_id: userId,
+				}))
+			);
+
+		if (participantsError) {
+			console.error('ChatService.createOpportunityChat participants error:', JSON.stringify(participantsError, null, 2));
+			throw participantsError;
+		}
+
+		return newChat as Chat;
+	}
+
+	async addChatParticipant(chatId: string, userId: string): Promise<ChatParticipant> {
+		console.log('ChatService.addChatParticipant called:', { chatId, userId });
+
+		const { data: participant, error: participantError } = await supabase
+			.from('chat_participants')
+			.insert({
+				chat_id: chatId,
+				user_id: userId,
+			})
+			.select()
+			.single();
+
+		if (participantError) {
+			console.error('ChatService.addChatParticipant error:', JSON.stringify(participantError, null, 2));
+			throw participantError;
+		}
+
+		console.log('ChatService.addChatParticipant succeeded');
+		return participant as ChatParticipant;
+	}
+
+	async removeChatParticipant(chatId: string, userId: string): Promise<void> {
+		console.log('ChatService.removeChatParticipant called:', { chatId, userId });
+
+		const { error } = await supabase
+			.from('chat_participants')
+			.delete()
+			.eq('chat_id', chatId)
+			.eq('user_id', userId);
+
+		if (error) {
+			console.error('ChatService.removeChatParticipant error:', JSON.stringify(error, null, 2));
+			throw error;
+		}
+
+		console.log('ChatService.removeChatParticipant succeeded');
+	}
+
+	async updateGroupChatName(chatId: string, newName: string): Promise<Chat> {
+		console.log('ChatService.updateGroupChatName called:', { chatId, newName });
+
+		const { data: updatedChat, error: updateError } = await supabase
+			.from('chats')
+			.update({ name: newName })
+			.eq('id', chatId)
+			.select()
+			.single();
+
+		if (updateError) {
+			console.error('ChatService.updateGroupChatName error:', JSON.stringify(updateError, null, 2));
+			throw updateError;
+		}
+
+		console.log('ChatService.updateGroupChatName succeeded');
+		return updatedChat as Chat;
+	}
+
+	async getGroupChatDetails(chatId: string): Promise<Chat | null> {
+		console.log('ChatService.getGroupChatDetails called:', chatId);
+
+		const { data: chat, error: chatError } = await supabase
+			.from('chats')
+			.select('*')
+			.eq('id', chatId)
+			.single();
+
+		if (chatError) {
+			console.error('ChatService.getGroupChatDetails error:', JSON.stringify(chatError, null, 2));
+			return null;
+		}
+
+		// Get all participants with their profiles
+		const { data: participants } = await supabase
+			.from('chat_participants')
+			.select('*, user:profiles(*)')
+			.eq('chat_id', chatId);
+
+		// Get last message
+		const { data: messages } = await supabase
+			.from('messages')
+			.select('*, sender:profiles(*)')
+			.eq('chat_id', chatId)
+			.order('created_at', { ascending: false })
+			.limit(1);
+
+		return {
+			...chat,
+			participants: participants || [],
+			lastMessage: messages?.[0],
+		} as Chat;
+	}
+
+	async leaveChatGroup(chatId: string, userId: string): Promise<void> {
+		console.log('ChatService.leaveChatGroup called:', { chatId, userId });
+
+		// Remove user from chat participants
+		const { error } = await supabase
+			.from('chat_participants')
+			.delete()
+			.eq('chat_id', chatId)
+			.eq('user_id', userId);
+
+		if (error) {
+			console.error('ChatService.leaveChatGroup error:', JSON.stringify(error, null, 2));
+			throw error;
+		}
+
+		// Check if chat is empty and delete if it is (optional)
+		const { data: remainingParticipants } = await supabase
+			.from('chat_participants')
+			.select('id')
+			.eq('chat_id', chatId);
+
+		if (!remainingParticipants || remainingParticipants.length === 0) {
+			// Delete empty group chat
+			await supabase.from('chats').delete().eq('id', chatId);
+		}
+
+		console.log('ChatService.leaveChatGroup succeeded');
+	}
+
+	async searchChatsAndMessages(userId: string, query: string): Promise<{ chats: ChatWithDetails[]; messages: Message[] }> {
+		console.log('ChatService.searchChatsAndMessages called:', { userId, query });
+
+		// Get user's chats
+		const userChats = await this.getUserChats(userId);
+
+		// Search in chat names and participants
+		const filteredChats = userChats.filter(chat => {
+			const chatName = chat.name?.toLowerCase() || '';
+			const participantNames = (chat.participants || [])
+				.map(p => p.user?.name.toLowerCase() || '')
+				.join(' ');
+			const lastMessageContent = chat.lastMessage?.content.toLowerCase() || '';
+
+			const lowerQuery = query.toLowerCase();
+			return chatName.includes(lowerQuery) || participantNames.includes(lowerQuery) || lastMessageContent.includes(lowerQuery);
+		});
+
+		// Search messages
+		const chatIds = userChats.map(c => c.id);
+		const { data: messages } = await supabase
+			.from('messages')
+			.select('*, sender:profiles(*)')
+			.in('chat_id', chatIds)
+			.ilike('content', `%${query}%`)
+			.order('created_at', { ascending: false })
+			.limit(50);
+
+		return {
+			chats: filteredChats,
+			messages: (messages || []) as Message[],
+		};
+	}
 }
 
 export const chatService = new ChatService();

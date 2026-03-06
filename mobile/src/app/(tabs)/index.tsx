@@ -29,11 +29,11 @@ export default function DashboardScreen() {
     const isGuest = !profile;
 
     const [latestOpportunities, setLatestOpportunities] = useState<Opportunity[]>([]);
-    const [recommendedOpportunities, setRecommendedOpportunities] = useState<Opportunity[]>([]);
     const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
     const [featuredTenants, setFeaturedTenants] = useState<Tenant[]>([]);
-    const [centersOfExcellence, setCentersOfExcellence] = useState<Tenant[]>([]);
     const [loading, setLoading] = useState(true);
+    // Kept for Hot Reload compatibility (Centers of Excellence section removed)
+    const [centersOfExcellence] = useState<Tenant[]>([]);
     const [loadingVerification, setLoadingVerification] = useState(false);
     const [verificationDocCount, setVerificationDocCount] = useState(0);
     const [verificationStatus, setVerificationStatus] = useState<'verified' | 'rejected' | 'pending' | 'incomplete' | 'not_submitted'>('not_submitted');
@@ -50,9 +50,14 @@ export default function DashboardScreen() {
             ]);
 
             const requiredTypes = ['Business Registration', 'ID Document', 'Business Profile'];
-            // Only count documents that have actually been uploaded (have a non-empty document_url)
+            // Only count documents that have actually been uploaded: non-empty URL and a valid storage URL
+            // (avoids counting placeholder or stray rows that might have a non-empty document_url)
+            const isValidStorageUrl = (url: string | undefined) => {
+                const u = url?.trim?.() ?? '';
+                return u.length > 0 && (u.includes('verification-documents') || u.includes('/storage/'));
+            };
             const requiredDocs = allDocs.filter(
-                doc => requiredTypes.includes(doc.document_type) && doc.document_url?.trim?.() !== ''
+                doc => requiredTypes.includes(doc.document_type) && isValidStorageUrl(doc.document_url)
             );
             const docCount = requiredDocs.length;
             setVerificationDocCount(docCount);
@@ -123,25 +128,12 @@ export default function DashboardScreen() {
             setLatestOpportunities(latest);
             setFeaturedOpportunity(pickFeaturedOpportunity(latest));
 
-            // Load recommended opportunities if user is logged in
-            if (profile?.id) {
-                try {
-                    const recommended = await OpportunityService.getRecommendedOpportunities(profile.id, 5);
-                    setRecommendedOpportunities(recommended);
-                } catch (error) {
-                    console.error('Error loading recommended opportunities:', error);
-                }
-            } else {
-                setRecommendedOpportunities([]);
-            }
-
-            // Load events
-            const events = await EventService.getUpcomingEvents(5);
-            setUpcomingEvents(events);
-
-            // Load tenants (centers of excellence)
-            const centers = await tenantService.getCentersOfExcellence();
-            setCentersOfExcellence(centers);
+            // Load events (upcoming first; if none, show recent past)
+            const all = await EventService.getAllEvents();
+            const now = new Date().toISOString();
+            const upcoming = all.filter((e) => e.date >= now).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(0, 5);
+            const past = all.filter((e) => e.date < now).sort((a, b) => (a.date > b.date ? -1 : 1));
+            setUpcomingEvents(upcoming.length > 0 ? upcoming : past.slice(0, 5));
 
             // Load featured tenants
             const tenants = await tenantService.getTenants(6);
@@ -150,10 +142,11 @@ export default function DashboardScreen() {
             console.error('Error loading dashboard data:', error);
             setLatestOpportunities([]);
             setFeaturedOpportunity(null);
+            setUpcomingEvents([]);
         } finally {
             setLoading(false);
         }
-    }, [pickFeaturedOpportunity, profile?.id]);
+    }, [pickFeaturedOpportunity]);
 
     // Initial load
     useEffect(() => {
@@ -167,28 +160,9 @@ export default function DashboardScreen() {
         }, [loadDashboardData])
     );
 
-    // Map centers to product lines format
-    const productLines = centersOfExcellence.map((center) => {
-        const nameLower = center.name.toLowerCase();
-        let icon = 'briefcase';
-        if (nameLower.includes('food') || nameLower.includes('water') || nameLower.includes('lab')) icon = 'droplet';
-        else if (nameLower.includes('design')) icon = 'pen-tool';
-        else if (nameLower.includes('digital') || nameLower.includes('tech')) icon = 'monitor';
-        else if (nameLower.includes('automotive')) icon = 'settings';
-        else if (nameLower.includes('energy')) icon = 'zap';
-
-        return {
-            id: center.id,
-            name: center.name,
-            icon,
-            description: center.description || 'Innovation center at ELIDZ STP',
-            image: require('../../../assets/images/connect-solve.png'),
-        };
-    });
-
     return (
         <ScreenScrollView contentContainerStyle={{ paddingBottom: 40 }}>
-            <TabsLayoutHeader title="Home" className="sticky top-0 z-10" profile={profile} />
+            <TabsLayoutHeader title="Home" className="sticky top-0 z-10" profile={profile} notificationIconColor={colors.text} noExtraPaddingTop reducePaddingTop={90} />
             
             {/* SMME Verification Banner - Dynamic status */}
             {profile?.role === 'SMME' && profile?.id && verificationStatus !== 'verified' && (
@@ -201,7 +175,7 @@ export default function DashboardScreen() {
                                 : verificationStatus === 'not_submitted'
                                     ? 'Verification required to access all features'
                                     : verificationStatus === 'incomplete'
-                                        ? `Upload remaining documents (${verificationDocCount}/3)`
+                                        ? `${verificationDocCount} of 3 documents uploaded — ${3 - verificationDocCount} remaining`
                                         : verificationStatus === 'rejected'
                                             ? 'Verification rejected — update your documents'
                                             : 'Verification submitted — pending review (24–48h)'}
@@ -239,9 +213,19 @@ export default function DashboardScreen() {
                         <View className="px-2.5 py-1 rounded-md bg-accent mr-3">
                             <Text className="text-white text-xs font-bold uppercase tracking-wider">Featured</Text>
                         </View>
-                        <Text className="text-white/80 text-xs font-medium uppercase tracking-widest">
-                            {featuredOpportunity?.org || 'ELIDZ-STP'}
-                        </Text>
+                        <View className="flex-row items-center flex-1">
+                            <View className="w-6 h-6 rounded-full bg-white/20 mr-2 overflow-hidden justify-center items-center">
+                                <TenantLogo
+                                    logoUrl={featuredOpportunity?.tenant?.logo_url ?? undefined}
+                                    name={featuredOpportunity?.tenant ? (featuredOpportunity.tenant.name || featuredOpportunity.org || 'ELIDZ-STP') : 'ELIDZ-STP'}
+                                    size={12}
+                                    className="w-5 h-5"
+                                />
+                            </View>
+                            <Text className="text-white/80 text-xs font-medium uppercase tracking-widest">
+                                {featuredOpportunity?.tenant?.name || featuredOpportunity?.org || 'ELIDZ-STP'}
+                            </Text>
+                        </View>
                     </View>
                     {loading ? (
                         <>
@@ -271,47 +255,14 @@ export default function DashboardScreen() {
                 </LinearGradient>
             </View>
 
-            {/* Quick Access Cards - Product Lines */}
-            <View className="mb-8">
-                <View className="flex-row justify-between items-end mx-5 mb-4">
-                    <Text className="text-xl font-bold text-foreground tracking-tight">
-                        Centers of Excellence
-                    </Text>
-                </View>
-                <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={{ paddingHorizontal: 20 }}
-                >
-                    {productLines.map((line) => (
-                        <Pressable
-                            key={line.id}
-                            className="mr-4 rounded-2xl bg-card active:opacity-90 shadow-sm p-3 border border-border/50"
-                            style={{ width: Math.min(144, width * 0.38), minHeight: 120 }}
-                            onPress={() => router.push({ pathname: '/center-detail', params: { name: line.name } })}
-                        >
-                            <View className="w-12 h-12 rounded-full bg-primary/5 justify-center items-center mb-3">
-                                <Feather name={line.icon as any} size={20} color="#002147" />
-                            </View>
-                            <Text className="text-sm font-bold mb-1 text-foreground leading-tight" numberOfLines={2}>
-                                {line.name}
-                            </Text>
-                            <Text className="text-muted-foreground text-xs leading-tight" numberOfLines={2}>
-                                {line.description}
-                            </Text>
-                        </Pressable>
-                    ))}
-                </ScrollView>
-            </View>
-
             {/* Explore Section */}
             <View className="mb-8 mx-5">
                 <Text className="text-xl font-bold text-foreground tracking-tight mb-4">
                     Explore
                 </Text>
-                <View className="flex-row justify-between">
+                <View className="flex-row flex-wrap" style={{ marginHorizontal: -4 }}>
                      <Pressable
-                        className="flex-1 mr-2 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
+                        className="flex-1 min-w-[45%] m-1 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
                         onPress={() => router.push('/(tabs)/verified-smmes')}
                     >
                         <View className="w-10 h-10 rounded-full bg-blue-100 justify-center items-center mb-2">
@@ -320,55 +271,16 @@ export default function DashboardScreen() {
                         <Text className="text-sm font-bold text-foreground">Verified SMMEs</Text>
                     </Pressable>
                      <Pressable
-                        className="flex-1 ml-2 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
+                        className="flex-1 min-w-[45%] m-1 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
                         onPress={() => router.push('/(tabs)/vr-tours')}
                     >
-                        <View className="w-10 h-10 rounded-full bg-primary/10 justify-center items-center mb-2">
-                            <Feather name="globe" size={20} color={colors.primary} />
+                        <View className="w-10 h-10 rounded-full bg-accent/15 justify-center items-center mb-2">
+                            <Feather name="globe" size={20} color={colors.accent} />
                         </View>
                         <Text className="text-sm font-bold text-foreground">Virtual Tours</Text>
                     </Pressable>
                 </View>
             </View>
-
-            {/* Recommended for You - Only show if logged in and has recommendations */}
-            {isLoggedIn && profile && recommendedOpportunities.length > 0 && (
-                <View className="mb-8">
-                    <View className="flex-row justify-between items-center mx-5 mb-4">
-                        <View className="flex-row items-center">
-                            <Feather name="star" size={20} color={colors.accent} className="mr-2" />
-                            <Text className="text-xl font-bold text-foreground tracking-tight">Recommended for You</Text>
-                        </View>
-                        <Pressable onPress={() => router.push('/opportunities')}>
-                            <Text className="text-accent text-sm font-semibold">View All</Text>
-                        </Pressable>
-                    </View>
-                    <View className="mx-5">
-                        {recommendedOpportunities.slice(0, 3).map((opp, index) => (
-                            <Pressable
-                                key={opp.id}
-                                className={`flex-row items-center p-4 mb-3 rounded-2xl bg-card active:opacity-95 shadow-sm ${index === 2 ? 'mb-0' : ''}`}
-                                onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: opp.id } })}
-                            >
-                                <View className="w-10 h-10 rounded-full justify-center items-center mr-3 bg-accent/10">
-                                    <Feather 
-                                        name={opp.type === 'Funding' ? 'dollar-sign' : 'briefcase'} 
-                                        size={18} 
-                                        color={colors.accent} 
-                                    />
-                                </View>
-                                <View className="flex-1">
-                                    <Text className="text-sm font-bold text-foreground mb-1" numberOfLines={1}>{opp.title}</Text>
-                                    <Text className="text-muted-foreground text-xs">
-                                        {opp.org} • {opp.deadline ? new Date(opp.deadline).toLocaleDateString() : 'No deadline'}
-                                    </Text>
-                                </View>
-                                <Feather name="chevron-right" size={20} color={colors.accent} />
-                            </Pressable>
-                        ))}
-                    </View>
-                </View>
-            )}
 
             {/* Latest Opportunities */}
             <View className="mb-8">
@@ -385,12 +297,8 @@ export default function DashboardScreen() {
                             className={`flex-row items-center p-4 mb-3 rounded-2xl bg-card active:opacity-95 border border-border/40 shadow-sm ${index === 2 ? 'mb-0' : ''}`}
                             onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: opp.id } })}
                         >
-                            <View className={`w-10 h-10 rounded-full justify-center items-center mr-3 ${opp.type === 'Funding' ? 'bg-green-100' : 'bg-primary/10'}`}>
-                                <Feather
-                                    name={opp.type === 'Funding' ? 'dollar-sign' : 'briefcase'}
-                                    size={18}
-                                    color={opp.type === 'Funding' ? colors.constructive : colors.primary}
-                                />
+                            <View className="w-10 h-10 rounded-full justify-center items-center mr-3 bg-primary/10 border border-border/40">
+                                <Feather name="briefcase" size={20} color={colors.primary} />
                             </View>
                             <View className="flex-1">
                                 <Text className="text-sm font-bold text-foreground mb-0.5" numberOfLines={1}>{opp.title}</Text>

@@ -165,7 +165,7 @@ export default function VerifiedSMMEsScreen() {
 
                             {/* Search Bar */}
                             <View 
-                                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+                                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4"
                             >
                                 <Feather name="search" size={20} color={colors.whiteOpacity70} />
                                 <TextInput

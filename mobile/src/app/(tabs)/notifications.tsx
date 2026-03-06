@@ -217,7 +217,7 @@ export default function NotificationsScreen() {
                     </Text>
                     <Pressable
                         className="bg-[#002147] py-3 px-4 rounded-xl items-center active:opacity-90"
-                        onPress={() => router.push('/(auth)/login')}
+                        onPress={() => router.push('/(auth)')}
                     >
                         <Text className="text-white font-bold text-sm">
                             Sign In

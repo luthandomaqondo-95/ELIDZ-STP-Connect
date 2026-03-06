@@ -8,6 +8,7 @@ import { withAuthGuard } from '@/components/withAuthGuard';
 import { ResourceService } from '@/services/resource.service';
 import { Resource } from '@/types';
 import { TabsLayoutHeader } from '@/components/Header';
+import { ListSkeleton } from '@/components/Loading';
 
 function ResourcesScreen() {
   const { colors } = useTheme();
@@ -91,7 +92,7 @@ function ResourcesScreen() {
                     </Text>
 
                     {/* Search Bar */}
-                    <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4">
+                    <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4">
                         <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
                         <TextInput
                             className="flex-1 ml-3 text-base text-white"
@@ -154,7 +155,7 @@ function ResourcesScreen() {
              {/* Resource List */}
              <View className="px-6">
                {loading ? (
-                 <ActivityIndicator size="large" color={colors.primary} />
+                 <ListSkeleton count={6} />
                ) : (
                  <>
                     {filteredResources.length === 0 ? (

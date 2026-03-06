@@ -1,5 +1,8 @@
 -- ELIDZ-STP Database Schema
--- Run this SQL in your Supabase SQL Editor
+-- PostgreSQL/Supabase SQL - Run this in your Supabase SQL Editor
+-- NOTE: This is PostgreSQL syntax, not MSSQL. IDE linter warnings can be safely ignored.
+-- These MSSQL linter errors are false positives - the file uses correct PostgreSQL DDL for Supabase.
+-- To silence them in VS Code, this file should use a PostgreSQL linter, not MSSQL.
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";

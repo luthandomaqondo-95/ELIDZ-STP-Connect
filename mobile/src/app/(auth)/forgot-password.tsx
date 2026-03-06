@@ -65,16 +65,17 @@ export default function ForgotPasswordScreen() {
 
     return (
 		<View className="flex-1 bg-background">
-			<LinearGradient
-				colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
-				className="absolute inset-0"
-				style={{ height: height * 0.4 }}
-				start={{ x: 0.5, y: 0 }}
-				end={{ x: 0.5, y: 1 }}
-			/>
-			<Stars />
-			<SafeAreaView className="flex-1" edges={['top']}>
-				<View className="px-6 pt-2 rounded-3xl" style={{ height: height * 0.24 }}>
+			<View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
+				<LinearGradient
+					colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+					style={{ position: 'absolute', top: 0, left: 0, right: 0, height: height * 0.4 }}
+					start={{ x: 0.5, y: 0 }}
+					end={{ x: 0.5, y: 1 }}
+				/>
+				<Stars />
+			</View>
+			<SafeAreaView className="flex-1" edges={['top']} style={{ zIndex: 1, position: 'relative' }}>
+				<View className="px-6 pt-2 rounded-3xl" style={{ height: height * 0.24, zIndex: 1 }}>
 					<TouchableOpacity
 						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
 						onPress={handleBackToLogin}
@@ -97,9 +98,10 @@ export default function ForgotPasswordScreen() {
 
 				<ScreenKeyboardAwareScrollView
 					contentContainerClassName="flex-grow rounded-3xl"
-					style={{ zIndex: 2 }}
+					contentContainerStyle={{ flexGrow: 1 }}
+					style={{ flex: 1, zIndex: 2 }}
 				>
-					<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background mt-4">
+					<View className="w-full px-6 pb-10 pt-6 rounded-3xl mt-4" style={{ backgroundColor: colors.background }}>
                     {!isEmailSent ? (
                         <>
                             {/* Email Input */}
