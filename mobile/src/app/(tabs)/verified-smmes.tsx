@@ -1,10 +1,8 @@
-import React, { useState } from 'react';
-import { View, Pressable, TextInput, ScrollView, Image, Dimensions } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Pressable, TextInput, Dimensions, FlatList } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAuthContext } from '@/hooks/use-auth-context';
 import { SMMEWithServicesProducts, SMMEServiceProduct } from '@/services/smme.service';
 import { TenantLogo } from '@/components/TenantLogo';
 import { TabsLayoutHeader } from '@/components/Header';
@@ -12,6 +10,7 @@ import { useBusinessSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { ListSkeleton } from '@/components/Loading';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -50,6 +49,55 @@ interface SMME {
     products: Product[];
     services: Service[];
 }
+
+interface SMMECardProps {
+    smme: SMME;
+    colors: any;
+    onPress: () => void;
+}
+
+const SMMECard = React.memo(({ smme, colors, onPress }: SMMECardProps) => (
+    <Pressable
+        className="bg-card mb-4 rounded-2xl border border-border shadow-sm overflow-hidden active:opacity-95"
+        onPress={onPress}
+    >
+        <View className="p-4">
+            <View className="flex-row items-start">
+                {/* Logo */}
+                <View className="w-14 h-14 rounded-xl justify-center items-center overflow-hidden bg-primary/5 border border-primary/10">
+                    <TenantLogo name={smme.name} logoUrl={smme.logo_url} />
+                </View>
+
+                {/* Info */}
+                <View className="flex-1 ml-4">
+                    <View className="flex-row items-center justify-between mb-1">
+                        <Text className="text-base font-bold text-foreground flex-1 mr-2" numberOfLines={1}>
+                            {smme.name}
+                        </Text>
+                    </View>
+
+                    <View className="flex-row items-center mb-2 flex-wrap">
+                        <View className="bg-green-50 px-2 py-0.5 rounded-md mr-2 mb-1 flex-row items-center border border-green-100">
+                            <Feather name="shield" size={10} color={colors.success} />
+                            <Text className="text-green-700 text-[10px] font-bold uppercase ml-1">Verified</Text>
+                        </View>
+                        {smme.bbbee && (
+                            <View className="bg-accent/10 px-2 py-0.5 rounded-md mb-1 border border-accent/20">
+                                <Text className="text-accent text-[10px] font-bold">B-BBEE {smme.bbbee}</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    <Text className="text-muted-foreground text-xs" numberOfLines={2}>
+                        {smme.description}
+                    </Text>
+                </View>
+            </View>
+        </View>
+    </Pressable>
+));
+
+SMMECard.displayName = 'SMMECard';
 
 // Map database SMME to SMME interface
 function mapSMMEToSMME(smmme: SMMEWithServicesProducts): SMME {
@@ -108,7 +156,6 @@ function mapSMMEToSMME(smmme: SMMEWithServicesProducts): SMME {
 }
 
 export default function VerifiedSMMEsScreen() {
-    const { profile: user } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme];
     const [searchQuery, setSearchQuery] = useState('');
@@ -119,12 +166,12 @@ export default function VerifiedSMMEsScreen() {
     // Use the search hook
     const { data: smmmes, isLoading: loading } = useBusinessSearch(debouncedSearch);
 
-    const verifiedSMMEs = React.useMemo(() => {
+    const verifiedSMMEs = useMemo(() => {
         return (smmmes || []).map(mapSMMEToSMME);
     }, [smmmes]);
 
     // Categories for filtering - extract unique industries from loaded SMMEs
-    const categories = React.useMemo(() => {
+    const categories = useMemo(() => {
         const industries = new Set<string>();
         verifiedSMMEs.forEach(smme => {
             if (smme.industry) {
@@ -137,7 +184,7 @@ export default function VerifiedSMMEsScreen() {
     // Filter SMMEs based on category (Search is handled by hook, but we might need to filter locally too if search didn't cover deep fields)
     // Since our hook only searches profile fields, we might miss product matches.
     // For now, let's assume the hook returns what we need, and we filter by category locally.
-    const filteredSMMEs = React.useMemo(() => {
+    const filteredSMMEs = useMemo(() => {
         return verifiedSMMEs.filter((smme) => {
             const matchesCategory =
                 selectedCategory === 'All' || smme.industry === selectedCategory;
@@ -145,165 +192,143 @@ export default function VerifiedSMMEsScreen() {
         });
     }, [verifiedSMMEs, selectedCategory]);
 
+    const handlePressSMME = useCallback((id: string) => {
+        router.push(`/user-profile?id=${id}`);
+    }, []);
+
+    const renderSMMEItem = useCallback(
+        ({ item }: { item: SMME }) => (
+            <SMMECard smme={item} colors={colors} onPress={() => handlePressSMME(item.id)} />
+        ),
+        [colors, handlePressSMME]
+    );
+
+    const renderCategoryItem = useCallback(
+        ({ item }: { item: string }) => (
+            <Pressable
+                className={`px-5 py-2.5 rounded-full border mr-3 shadow-sm ${
+                    selectedCategory === item ? 'bg-primary border-primary' : 'bg-card border-border'
+                }`}
+                onPress={() => setSelectedCategory(item)}
+            >
+                <Text
+                    className={`text-sm font-semibold ${
+                        selectedCategory === item ? 'text-white' : 'text-foreground'
+                    }`}
+                >
+                    {item}
+                </Text>
+            </Pressable>
+        ),
+        [selectedCategory]
+    );
+
+    const keyExtractor = useCallback((item: SMME) => item.id, []);
+    const categoryKeyExtractor = useCallback((item: string) => item, []);
+
     return (
         <View className="flex-1 bg-background">
-            <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-                {/* Header */}
-                <View className="bg-background">
-                    <TabsLayoutHeader title="Verified SMMEs" variant="navy">
-                        <View 
-                            style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
-                        >
-                            <Text className="text-white/80 text-base mb-6">
-                                Discover verified partners and their services.
-                            </Text>
+            <FlatList
+                data={filteredSMMEs}
+                keyExtractor={keyExtractor}
+                renderItem={renderSMMEItem}
+                contentContainerStyle={{ paddingBottom: 40 }}
+                ListHeaderComponent={
+                    <>
+                        {/* Header */}
+                        <View className="bg-background">
+                            <TabsLayoutHeader title="Verified SMMEs" variant="navy">
+                                <View
+                                    style={{
+                                        maxWidth: isTablet ? 1200 : '100%',
+                                        alignSelf: 'center',
+                                        width: '100%',
+                                    }}
+                                >
+                                    <Text className="text-white/80 text-base mb-6">
+                                        Discover verified partners and their services.
+                                    </Text>
 
-                            {/* Search Bar */}
-                            <View 
-                                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4"
-                            >
-                                <Feather name="search" size={20} color={colors.whiteOpacity70} />
-                                <TextInput
-                                    className="flex-1 ml-3 text-base text-white"
-                                    placeholder="Search SMMEs, products..."
-                                    placeholderTextColor={colors.whiteOpacity50}
-                                    value={searchQuery}
-                                    onChangeText={setSearchQuery}
-                                />
-                            </View>
-                        </View>
-                    </TabsLayoutHeader>
-                </View>
-
-                {/* Category Filters */}
-                <View 
-                  className="mt-6 mb-2"
-                  style={{ 
-                    paddingHorizontal: isTablet ? 24 : 20,
-                    maxWidth: isTablet ? 1200 : '100%',
-                    alignSelf: 'center',
-                    width: '100%'
-                  }}
-                >
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: isTablet ? 0 : 0 }}>
-                        {categories.map((category) => (
-                            <Pressable
-                                key={category}
-                                className={`px-5 py-2.5 rounded-full border mr-3 shadow-sm ${selectedCategory === category
-                                        ? 'bg-[#002147] border-[#002147]'
-                                        : 'bg-card border-border'
-                                    }`}
-                                onPress={() => setSelectedCategory(category)}
-                            >
-                                <Text className={`text-sm font-semibold ${selectedCategory === category ? 'text-white' : 'text-foreground'
-                                    }`}>
-                                    {category}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* Results Count */}
-                <View 
-                  className="mb-4 mt-2"
-                  style={{ 
-                    paddingHorizontal: isTablet ? 24 : 20,
-                    maxWidth: isTablet ? 1200 : '100%',
-                    alignSelf: 'center',
-                    width: '100%'
-                  }}
-                >
-                    {loading ? (
-                        <Text className="text-base font-semibold text-foreground">Loading...</Text>
-                    ) : (
-                        <Text className="text-base font-semibold text-foreground">
-                            {filteredSMMEs.length} Verified Partner{filteredSMMEs.length !== 1 ? 's' : ''}
-                        </Text>
-                    )}
-                </View>
-
-                {/* Loading State */}
-                {loading && (
-                    <View 
-                      style={{ 
-                        paddingHorizontal: isTablet ? 24 : 20,
-                        maxWidth: isTablet ? 1200 : '100%',
-                        alignSelf: 'center',
-                        width: '100%'
-                      }}
-                    >
-                        {Array.from({ length: 3 }).map((_, index) => (
-                            <View key={index} className="bg-card mb-4 rounded-2xl border border-border shadow-sm p-4">
-                                <View className="flex-row items-start">
-                                    <View className="w-14 h-14 rounded-xl bg-gray-200 animate-pulse" />
-                                    <View className="flex-1 ml-4">
-                                        <View className="h-5 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
-                                        <View className="h-4 bg-gray-200 rounded mb-2 w-1/2 animate-pulse" />
-                                        <View className="h-3 bg-gray-200 rounded w-full animate-pulse" />
+                                    {/* Search Bar */}
+                                    <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4">
+                                        <Feather name="search" size={20} color={colors.whiteOpacity70} />
+                                        <TextInput
+                                            className="flex-1 ml-3 text-base text-white"
+                                            placeholder="Search SMMEs, products..."
+                                            placeholderTextColor={colors.whiteOpacity50}
+                                            value={searchQuery}
+                                            onChangeText={setSearchQuery}
+                                        />
                                     </View>
                                 </View>
+                            </TabsLayoutHeader>
+                        </View>
+
+                        {/* Category Filters */}
+                        <View
+                            className="mt-6 mb-2"
+                            style={{
+                                paddingHorizontal: isTablet ? 24 : 20,
+                                maxWidth: isTablet ? 1200 : '100%',
+                                alignSelf: 'center',
+                                width: '100%',
+                            }}
+                        >
+                            <FlatList
+                                horizontal
+                                data={categories}
+                                keyExtractor={categoryKeyExtractor}
+                                renderItem={renderCategoryItem}
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingHorizontal: isTablet ? 0 : 0 }}
+                            />
+                        </View>
+
+                        {/* Results Count */}
+                        <View
+                            className="mb-4 mt-2"
+                            style={{
+                                paddingHorizontal: isTablet ? 24 : 20,
+                                maxWidth: isTablet ? 1200 : '100%',
+                                alignSelf: 'center',
+                                width: '100%',
+                            }}
+                        >
+                            {loading ? (
+                                <Text className="text-base font-semibold text-foreground">Loading...</Text>
+                            ) : (
+                                <Text className="text-base font-semibold text-foreground">
+                                    {filteredSMMEs.length} Verified Partner
+                                    {filteredSMMEs.length !== 1 ? 's' : ''}
+                                </Text>
+                            )}
+                        </View>
+
+                        {/* Loading State */}
+                        {loading && (
+                            <View
+                                style={{
+                                    paddingHorizontal: isTablet ? 24 : 20,
+                                    maxWidth: isTablet ? 1200 : '100%',
+                                    alignSelf: 'center',
+                                    width: '100%',
+                                }}
+                            >
+                                <ListSkeleton count={3} />
                             </View>
-                        ))}
-                    </View>
-                )}
-
-                {/* SMMEs List */}
-                {!loading && (
-                    <View 
-                      style={{ 
-                        paddingHorizontal: isTablet ? 24 : 20,
-                        maxWidth: isTablet ? 1200 : '100%',
-                        alignSelf: 'center',
-                        width: '100%'
-                      }}
-                    >
-                        {filteredSMMEs.map((smme) => {
-                            return (
-                                <Pressable
-                                    key={smme.id}
-                                    className="bg-card mb-4 rounded-2xl border border-border shadow-sm overflow-hidden active:opacity-95"
-                                    onPress={() => router.push(`/user-profile?id=${smme.id}`)}
-                                >
-                                    <View className="p-4">
-                                        <View className="flex-row items-start">
-                                            {/* Logo */}
-                                            <View className="w-14 h-14 rounded-xl justify-center items-center overflow-hidden bg-[#002147]/5 border border-[#002147]/10">
-                                                <TenantLogo name={smme.name} logoUrl={smme.logo_url} />
-                                            </View>
-
-                                            {/* Info */}
-                                            <View className="flex-1 ml-4">
-                                                <View className="flex-row items-center justify-between mb-1">
-                                                    <Text className="text-base font-bold text-foreground flex-1 mr-2" numberOfLines={1}>
-                                                        {smme.name}
-                                                    </Text>
-                                                </View>
-
-                                                <View className="flex-row items-center mb-2 flex-wrap">
-                                                    <View className="bg-green-50 px-2 py-0.5 rounded-md mr-2 mb-1 flex-row items-center border border-green-100">
-                                                        <Feather name="shield" size={10} color={colors.success} />
-                                                        <Text className="text-green-700 text-[10px] font-bold uppercase ml-1">Verified</Text>
-                                                    </View>
-                                                    {smme.bbbee && (
-                                                        <View className="bg-[#F38C1E]/10 px-2 py-0.5 rounded-md mb-1 border border-[#F38C1E]/20">
-                                                            <Text className="text-[#F38C1E] text-[10px] font-bold">B-BBEE {smme.bbbee}</Text>
-                                                        </View>
-                                                    )}
-                                                </View>
-
-                                                <Text className="text-muted-foreground text-xs" numberOfLines={2}>
-                                                    {smme.description}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </View>
-                                </Pressable>
-                            );
-                        })}
-
-                        {/* Empty State */}
-                        {filteredSMMEs.length === 0 && (
+                        )}
+                    </>
+                }
+                ListEmptyComponent={
+                    !loading ? (
+                        <View
+                            style={{
+                                paddingHorizontal: isTablet ? 24 : 20,
+                                maxWidth: isTablet ? 1200 : '100%',
+                                alignSelf: 'center',
+                                width: '100%',
+                            }}
+                        >
                             <View className="items-center py-12 mx-6 bg-card rounded-2xl border border-border border-dashed">
                                 <Feather name="search" size={48} color={colors.iconGray} />
                                 <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
@@ -319,16 +344,14 @@ export default function VerifiedSMMEsScreen() {
                                             setSelectedCategory('All');
                                         }}
                                     >
-                                        <Text className="text-[#F38C1E] text-sm font-bold">
-                                            Clear filters
-                                        </Text>
+                                        <Text className="text-accent text-sm font-bold">Clear filters</Text>
                                     </Pressable>
                                 )}
                             </View>
-                        )}
-                    </View>
-                )}
-            </ScrollView>
+                        </View>
+                    ) : null
+                }
+            />
         </View>
     );
 }

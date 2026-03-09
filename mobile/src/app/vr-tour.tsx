@@ -137,11 +137,11 @@ export default function VRTourScreen() {
 				<View className="flex-1 items-center justify-center py-12 px-6">
 					<Text className="text-xl font-semibold text-foreground mb-4">Tour unavailable</Text>
 					<Text className="text-center text-muted-foreground mb-6">
-						We could not find the requested virtual tour. Please select a facility from the VR Tours page.
+						We could not find the requested virtual tour. Please select a facility from the Services page.
 					</Text>
 					<Pressable
 						className="px-6 py-3 rounded-full bg-primary"
-						onPress={() => router.replace('/(tabs)/vr-tours')}
+						onPress={() => router.replace('/(tabs)/services')}
 					>
 						<Text className="text-white font-semibold">Back to VR Tours</Text>
 					</Pressable>
@@ -155,6 +155,32 @@ export default function VRTourScreen() {
 	const hasSections = facilityWithTour.sections.length > 0;
 	const section = hasSections ? facilityWithTour.sections[currentSection] : undefined;
 
+	const handleEnquiry = () => {
+		router.push({
+			pathname: '/enquiry-form',
+			params: {
+				type: 'Facility',
+				facilityId: facilityWithTour.id,
+				subject: section
+					? `Enquiry: ${section.title} (${facilityWithTour.name})`
+					: `Enquiry: ${facilityWithTour.name}`,
+			},
+		});
+	};
+
+	const handleBooking = () => {
+		router.push({
+			pathname: '/enquiry-form',
+			params: {
+				type: 'Facility',
+				facilityId: facilityWithTour.id,
+				subject: section
+					? `Booking Request: ${section.title} (${facilityWithTour.name})`
+					: `Booking Request: ${facilityWithTour.name}`,
+			},
+		});
+	};
+
 	const handleHotspotClick = (hotspotId: string) => {
 		if (!activeScene) return;
 		const hotspot = activeScene.hotspots.find((h: { id: string; targetSceneId?: string }) => h.id === hotspotId);
@@ -165,23 +191,40 @@ export default function VRTourScreen() {
 
 	return (
 		<View className="flex-1 bg-background">
-			<View className="px-6 pt-12 pb-6 flex-row items-center justify-between" style={{ backgroundColor: facilityWithTour.color }}>
-				<Pressable onPress={() => router.back()} className="p-2 bg-white/20 rounded-full">
+			<View
+				className="px-4 pt-12 pb-6 flex-row items-center"
+				style={{ backgroundColor: facilityWithTour.color }}
+			>
+				<Pressable onPress={() => router.back()} className="p-2 bg-white/20 rounded-full shrink-0">
 					<Feather name="arrow-left" size={24} color="#FFFFFF" />
 				</Pressable>
-				<View className="items-center">
-					<Text className="text-white text-lg font-bold">{facilityWithTour.name}</Text>
-					<Text className="text-white/80 text-xs">
-						{viewMode === 'panorama' && activeScene ? activeScene.title : 'Virtual Tour Details'}
+				<View className="flex-1 items-center mx-3">
+					<Text
+						className="text-white text-base font-bold text-center"
+						numberOfLines={2}
+						ellipsizeMode="tail"
+					>
+						{facilityWithTour.name}
+					</Text>
+					<Text
+						className="text-white/80 text-xs mt-1 text-center"
+						numberOfLines={1}
+						ellipsizeMode="tail"
+					>
+						{viewMode === 'panorama' && activeScene
+							? activeScene.title
+							: 'Virtual Tour Details'}
 					</Text>
 				</View>
-				<View className="flex-row gap-2">
-					<Pressable
-						className={`p-2 rounded-full ${viewMode === 'panorama' ? 'bg-white text-primary' : 'bg-white/20'}`}
-						onPress={() => setViewMode('panorama')}
-					>
-						<Feather name="globe" size={20} color={viewMode === 'panorama' ? facilityWithTour.color : '#FFFFFF'} />
-					</Pressable>
+				<View className="flex-row gap-2 items-center shrink-0">
+					{viewMode === 'sections' && (
+						<Pressable
+							className="p-2 rounded-full bg-white/20"
+							onPress={() => setViewMode('panorama')}
+						>
+							<Feather name="camera" size={20} color="#FFFFFF" />
+						</Pressable>
+					)}
 					<Pressable
 						className={`p-2 rounded-full ${viewMode === 'sections' ? 'bg-white text-primary' : 'bg-white/20'}`}
 						onPress={() => hasSections && setViewMode('sections')}
@@ -228,19 +271,20 @@ export default function VRTourScreen() {
 								</View>
 							))}
 
-							{section.has_vr && section.vr_scene_id && (
+							{/* Single CTA: Enquiry / Booking for this facility/section */}
+							<View className="mt-4">
 								<Pressable
-									className="mt-6 flex-row items-center justify-center px-6 py-3 rounded-full"
-									style={{ backgroundColor: facilityWithTour.color }}
-									onPress={() => {
-										setCurrentSceneId(section.vr_scene_id!);
-										setViewMode('panorama');
-									}}
+									className="px-4 py-3 rounded-full bg-accent active:opacity-90"
+									onPress={handleBooking}
 								>
-									<Feather name="globe" size={20} color="#FFFFFF" />
-									<Text className="ml-2 text-white font-semibold">View 360° Panorama</Text>
+									<View className="flex-row items-center justify-center">
+										<Feather name="calendar" size={16} color="#FFFFFF" />
+										<Text className="ml-2 text-white font-semibold text-sm">
+											Request Booking / Enquiry
+										</Text>
+									</View>
 								</Pressable>
-							)}
+							</View>
 						</View>
 					) : (
 						<View className="bg-card rounded-2xl p-6 shadow-sm border border-border mb-6">

@@ -342,7 +342,12 @@ function EnquiryFormScreen() {
           {/* Info */}
           <View className="bg-primary/10 border border-primary/20 rounded-xl p-4">
             <View className="flex-row items-start">
-              <Feather name="info" size={20} color="#002147" style={{ marginRight: 12, marginTop: 2 }} />
+              <Feather
+                name="info"
+                size={20}
+                color={colors.primary}
+                style={{ marginRight: 12, marginTop: 2 }}
+              />
               <View className="flex-1">
                 <Text className="text-foreground text-sm font-semibold mb-1">What happens next?</Text>
                 <Text className="text-muted-foreground text-xs leading-5">

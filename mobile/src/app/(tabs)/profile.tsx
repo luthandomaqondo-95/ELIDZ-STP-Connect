@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Pressable, ScrollView, Alert, Linking, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
@@ -12,6 +12,50 @@ import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
+
+interface MenuItemProps {
+    icon: string;
+    title: string;
+    subtitle: string;
+    onPress: () => void;
+    isDestructive?: boolean;
+    disabled?: boolean;
+    premium?: boolean;
+    colors: any;
+}
+
+const ProfileMenuItem = React.memo(
+    ({ icon, title, subtitle, onPress, isDestructive = false, disabled = false, premium = false, colors }: MenuItemProps) => (
+        <Pressable
+            onPress={disabled ? undefined : onPress}
+            className={`flex-row items-center py-4 border-b border-border active:opacity-70 ${disabled ? 'opacity-50' : ''}`}
+        >
+            <View
+                className={`w-10 h-10 rounded-full justify-center items-center mr-4 ${
+                    isDestructive ? 'bg-destructive/10' : 'bg-accent/10'
+                }`}
+            >
+                <Feather name={icon as any} size={20} color={isDestructive ? colors.destructive : colors.accent} />
+            </View>
+            <View className="flex-1">
+                <View className="flex-row items-center">
+                    <Text className={`text-base font-semibold ${isDestructive ? 'text-destructive' : 'text-foreground'}`}>
+                        {title}
+                    </Text>
+                    {premium && (
+                        <View className="ml-2 px-2 py-0.5 bg-accent/10 rounded-md">
+                            <Text className="text-accent text-[10px] font-bold uppercase">PRO</Text>
+                        </View>
+                    )}
+                </View>
+                {subtitle && <Text className="text-muted-foreground text-xs mt-0.5">{subtitle}</Text>}
+            </View>
+            <Feather name="chevron-right" size={20} color={colors.text} />
+        </Pressable>
+    )
+);
+
+ProfileMenuItem.displayName = 'ProfileMenuItem';
 
 function ProfileScreen() {
     const { profile, isLoggedIn, isLoading, logout } = useAuthContext();
@@ -147,29 +191,28 @@ function ProfileScreen() {
         }
     };
 
-    const renderMenuItem = (icon: string, title: string, subtitle: string, onPress: () => void, isDestructive = false, disabled = false, premium = false) => (
-        <Pressable
-            onPress={disabled ? undefined : onPress}
-            className={`flex-row items-center py-4 border-b border-border active:opacity-70 ${disabled ? 'opacity-50' : ''}`}
-        >
-            <View className={`w-10 h-10 rounded-full justify-center items-center mr-4 ${isDestructive ? 'bg-destructive/10' : 'bg-accent/10'}`}>
-                <Feather name={icon as any} size={20} color={isDestructive ? colors.destructive : colors.accent} />
-            </View>
-            <View className="flex-1">
-                <View className="flex-row items-center">
-                    <Text className={`text-base font-semibold ${isDestructive ? 'text-destructive' : 'text-foreground'}`}>
-                        {title}
-                    </Text>
-                    {premium && (
-                        <View className="ml-2 px-2 py-0.5 bg-accent/10 rounded-md">
-                            <Text className="text-accent text-[10px] font-bold uppercase">PRO</Text>
-                        </View>
-                    )}
-                </View>
-                {subtitle && <Text className="text-muted-foreground text-xs mt-0.5">{subtitle}</Text>}
-            </View>
-            <Feather name="chevron-right" size={20} color={colors.text} />
-        </Pressable>
+    const renderMenuItem = useCallback(
+        (
+            icon: string,
+            title: string,
+            subtitle: string,
+            onPress: () => void,
+            isDestructive = false,
+            disabled = false,
+            premium = false
+        ) => (
+            <ProfileMenuItem
+                icon={icon}
+                title={title}
+                subtitle={subtitle}
+                onPress={onPress}
+                isDestructive={isDestructive}
+                disabled={disabled}
+                premium={premium}
+                colors={colors}
+            />
+        ),
+        [colors]
     );
 
     return (
@@ -213,7 +256,7 @@ function ProfileScreen() {
                             </View>
                             {/* Premium Badge on Avatar */}
                             {profile?.isPremium && (
-                                <View className="absolute bottom-0 right-0 bg-[#FFD700] w-6 h-6 rounded-full items-center justify-center border-2 border-white">
+                                <View className="absolute bottom-0 right-0 bg-secondary w-6 h-6 rounded-full items-center justify-center border-2 border-white">
                                     <Feather name="star" size={12} color="white" />
                                 </View>
                             )}

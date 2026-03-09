@@ -293,90 +293,129 @@ function UserProfileScreen() {
 
 	return (
 		<ScreenScrollView>
-			<View className="p-5 rounded-xl mb-3 items-center bg-primary">
-				<Image
-					source={profileUserAvatarUri ? { uri: profileUserAvatarUri } : getAvatarSource(profileUser.avatar)}
-					className="w-[100px] h-[100px] rounded-full border-4 border-primary-foreground"
-					contentFit="cover"
-				/>
-				<Text className="text-xl font-bold text-white mt-3">
-					{profileUser.name}
-				</Text>
-				<Text className="text-base text-white/90 mt-1">
-					{profileUser.role}
-				</Text>
-				<Text className="text-sm text-primary-foreground/80 mt-1">
-					{profileUser.organization || 'No organization'}
-				</Text>
-			</View>
+			{/* Profile header - social media style */}
+			<View className="mb-4">
+				<View className="h-32 bg-primary rounded-b-3xl" />
 
-			{!isOwnProfile && currentUser && (
-				<View className="mb-3">
-					{connectionStatus === 'connected' ? (
-						<Pressable
-							className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-primary active:opacity-70"
-							onPress={handleMessage}
-						>
-							<Feather name="message-circle" size={20} color={colors.buttonText} />
-							<Text className="text-base font-semibold text-primary-foreground ml-2.5">
-								Message
+				<View className="-mt-12 px-5 flex-row items-end">
+					<Image
+						source={profileUserAvatarUri ? { uri: profileUserAvatarUri } : getAvatarSource(profileUser.avatar)}
+						className="w-[96px] h-[96px] rounded-full border-[4px] border-background bg-primary/40"
+						contentFit="cover"
+					/>
+
+					<View className="ml-3 flex-1">
+						<Text className="text-xl font-bold text-foreground" numberOfLines={1}>
+							{profileUser.name}
+						</Text>
+						<Text className="text-sm text-muted-foreground mt-0.5" numberOfLines={1}>
+							{profileUser.role}
+						</Text>
+						{profileUser.organization && (
+							<Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={1}>
+								{profileUser.organization}
 							</Text>
-						</Pressable>
-					) : connectionStatus === 'pending_received' ? (
-						<>
-							<Pressable
-								className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-green-600 active:opacity-70"
-								onPress={handleAcceptConnection}
-							>
-								<Feather name="check" size={20} color={colors.buttonText} />
-								<Text className="text-base font-semibold text-primary-foreground ml-2.5">
-									Accept Request
-								</Text>
-							</Pressable>
-							<Pressable
-								className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-destructive active:opacity-70"
-								onPress={handleDeclineConnection}
-							>
-								<Feather name="x" size={20} color={colors.buttonText} />
-								<Text className="text-base font-semibold text-primary-foreground ml-2.5">
-									Decline Request
-								</Text>
-							</Pressable>
-						</>
-					) : connectionStatus === 'pending_sent' ? (
-						<>
-							<Pressable
-								className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-muted active:opacity-70"
-								disabled
-							>
-								<Feather name="clock" size={20} color={colors.buttonText} />
-								<Text className="text-base font-semibold text-primary-foreground ml-2.5">
-									Request Sent
-								</Text>
-							</Pressable>
-							<Pressable
-								className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-destructive active:opacity-70"
-								onPress={handleCancelConnection}
-							>
-								<Feather name="x-circle" size={20} color={colors.buttonText} />
-								<Text className="text-base font-semibold text-primary-foreground ml-2.5">
-									Cancel Request
-								</Text>
-							</Pressable>
-						</>
-					) : (
-						<Pressable
-							className="flex-row justify-center items-center h-[52px] rounded-lg mb-2.5 bg-accent active:opacity-80 shadow-lg"
-							onPress={handleConnect}
-						>
-							<Feather name="user-plus" size={22} color={colors.buttonText} />
-							<Text className="text-base font-bold text-white ml-2.5">
-								Connect
-							</Text>
-						</Pressable>
-					)}
+						)}
+					</View>
 				</View>
-			)}
+
+				{/* Quick stats row */}
+				<View className="mt-4 px-5 flex-row justify-between">
+					<View className="items-center flex-1">
+						<Text className="text-base font-semibold text-foreground">
+							{smmeProducts.length}
+						</Text>
+						<Text className="text-xs text-muted-foreground mt-0.5">
+							Products
+						</Text>
+					</View>
+					<View className="items-center flex-1">
+						<Text className="text-base font-semibold text-foreground">
+							{smmeServices.length}
+						</Text>
+						<Text className="text-xs text-muted-foreground mt-0.5">
+							Services
+						</Text>
+					</View>
+					<View className="items-center flex-1">
+						<Text className="text-base font-semibold text-foreground">
+							{profileUser.role === 'SMME' ? 'Verified' : 'Member'}
+						</Text>
+						<Text className="text-xs text-muted-foreground mt-0.5">
+							Status
+						</Text>
+					</View>
+				</View>
+
+				{/* Primary actions */}
+				{!isOwnProfile && currentUser && (
+					<View className="mt-4 px-5 flex-row gap-3">
+						{connectionStatus === 'connected' ? (
+							<Pressable
+								className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-primary active:opacity-80 shadow-sm"
+								onPress={handleMessage}
+							>
+								<Feather name="message-circle" size={18} color={colors.buttonText} />
+								<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
+									Message
+								</Text>
+							</Pressable>
+						) : connectionStatus === 'pending_received' ? (
+							<>
+								<Pressable
+									className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-green-600 active:opacity-80"
+									onPress={handleAcceptConnection}
+								>
+									<Feather name="check" size={18} color={colors.buttonText} />
+									<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
+										Accept
+									</Text>
+								</Pressable>
+								<Pressable
+									className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-destructive active:opacity-80"
+									onPress={handleDeclineConnection}
+								>
+									<Feather name="x" size={18} color={colors.buttonText} />
+									<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
+										Decline
+									</Text>
+								</Pressable>
+							</>
+						) : connectionStatus === 'pending_sent' ? (
+							<>
+								<Pressable
+									className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-muted active:opacity-80"
+									disabled
+								>
+									<Feather name="clock" size={18} color={colors.buttonText} />
+									<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
+										Request sent
+									</Text>
+								</Pressable>
+								<Pressable
+									className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-destructive active:opacity-80"
+									onPress={handleCancelConnection}
+								>
+									<Feather name="x-circle" size={18} color={colors.buttonText} />
+									<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
+										Cancel
+									</Text>
+								</Pressable>
+							</>
+						) : (
+							<Pressable
+								className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-accent active:opacity-80 shadow-sm"
+								onPress={handleConnect}
+							>
+								<Feather name="user-plus" size={18} color={colors.buttonText} />
+								<Text className="text-sm font-semibold text-foreground ml-2.5">
+									Connect
+								</Text>
+							</Pressable>
+						)}
+					</View>
+				)}
+			</View>
 
 			{profileUser.bio && (
 				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">

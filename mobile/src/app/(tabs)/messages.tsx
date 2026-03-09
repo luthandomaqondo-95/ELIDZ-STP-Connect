@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabase';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { ListSkeleton } from '@/components/Loading';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -104,14 +105,14 @@ function MessagesScreen() {
 
     function getRoleColor(role: UserRole): string {
         const roleColors: Record<UserRole, string> = {
-            Entrepreneur: '#28A745', // Green
-            Researcher: '#002147',   // Navy Blue
-            SMME: '#F38C1E',          // Orange
-            Student: '#6F42C1',      // Purple
-            Investor: '#E83E8C',     // Pink
-            Tenant: '#17A2B8',       // Teal
+            Entrepreneur: colors.constructive,
+            Researcher: colors.primary,
+            SMME: colors.accent,
+            Student: colors.purple,
+            Investor: colors.pink,
+            Tenant: colors.teal,
         };
-        return roleColors[role] || '#002147';
+        return roleColors[role] || colors.primary;
     }
 
     function getRoleIcon(role: UserRole): string {
@@ -261,7 +262,7 @@ function MessagesScreen() {
                             </Text>
                         </View>
                         {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
-                            <View className="absolute -top-1 -right-1 w-5 h-5 bg-[#F38C1E] rounded-full justify-center items-center">
+                            <View className="absolute -top-1 -right-1 w-5 h-5 bg-accent rounded-full justify-center items-center">
                                 <Text className="text-white text-xs font-bold">{chat.unreadCount}</Text>
                             </View>
                         )}
@@ -308,7 +309,7 @@ function MessagesScreen() {
                     </View>
 
                     {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
-                        <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2" />
+                        <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2" />
                     )}
                 </View>
             </Pressable>
@@ -391,7 +392,7 @@ function MessagesScreen() {
                     </View>
 
                     {contact.hasUnreadMessages && (
-                        <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2" />
+                        <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2" />
                     )}
 
                     {contact.connectionStatus === 'available' && (
@@ -481,7 +482,7 @@ function MessagesScreen() {
                         Create an account to connect with all users, send messages, and build your professional network.
                     </Text>
                     <Pressable
-                        className="bg-[#002147] py-3 px-4 rounded-xl items-center active:opacity-90"
+                        className="bg-primary py-3 px-4 rounded-xl items-center active:opacity-90"
                         onPress={() => router.push('/(auth)/signup')}
                     >
                         <Text className="text-white font-bold text-sm">
@@ -535,15 +536,15 @@ function MessagesScreen() {
                 >
                     <View className="flex-row bg-card rounded-xl p-1 border border-border shadow-sm">
                         <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'messages' ? 'bg-[#002147]' : ''}`}
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'messages' ? 'bg-primary' : ''}`}
                             onPress={() => setActiveTab('messages')}
                         >
-                            <Feather name="message-circle" size={18} color={activeTab === 'messages' ? '#FFFFFF' : '#6C757D'} />
+                            <Feather name="message-circle" size={18} color={activeTab === 'messages' ? colors.white : colors.iconGrayDark} />
                             <Text className={`text-xs font-semibold mt-1 ${activeTab === 'messages' ? 'text-white' : 'text-foreground'}`}>
                                 Messages
                             </Text>
                             {chats && chats.some(c => (c.unreadCount || 0) > 0) && (
-                                <View className="absolute -top-1 -right-1 bg-[#F38C1E] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                <View className="absolute -top-1 -right-1 bg-accent rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
                                     <Text className="text-white text-[10px] font-bold">
                                         {chats.filter(c => (c.unreadCount || 0) > 0).length}
                                     </Text>
@@ -551,24 +552,24 @@ function MessagesScreen() {
                             )}
                         </Pressable>
                         <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'requests' ? 'bg-[#002147]' : ''}`}
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'requests' ? 'bg-primary' : ''}`}
                             onPress={() => setActiveTab('requests')}
                         >
-                            <Feather name="user-check" size={18} color={activeTab === 'requests' ? '#FFFFFF' : '#6C757D'} />
+                            <Feather name="user-check" size={18} color={activeTab === 'requests' ? colors.white : colors.iconGrayDark} />
                             <Text className={`text-xs font-semibold mt-1 ${activeTab === 'requests' ? 'text-white' : 'text-foreground'}`}>
                                 Requests
                             </Text>
                             {(pendingReceivedContacts.length + pendingSentContacts.length) > 0 && (
-                                <View className="absolute -top-1 -right-1 bg-[#F38C1E] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                <View className="absolute -top-1 -right-1 bg-accent rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
                                     <Text className="text-white text-[10px] font-bold">{pendingReceivedContacts.length + pendingSentContacts.length}</Text>
                                 </View>
                             )}
                         </Pressable>
                         <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'discover' ? 'bg-[#002147]' : ''}`}
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'discover' ? 'bg-primary' : ''}`}
                             onPress={() => setActiveTab('discover')}
                         >
-                            <Feather name="users" size={18} color={activeTab === 'discover' ? '#FFFFFF' : '#6C757D'} />
+                            <Feather name="users" size={18} color={activeTab === 'discover' ? colors.white : colors.iconGrayDark} />
                             <Text className={`text-xs font-semibold mt-1 ${activeTab === 'discover' ? 'text-white' : 'text-foreground'}`}>
                                 Discover
                             </Text>
@@ -609,17 +610,7 @@ function MessagesScreen() {
                     {/* Loading State */}
                     {loading && (
                         <View className="mx-5">
-                            {Array.from({ length: 3 }).map((_, index) => (
-                                <View key={`loading-${index}`} className="bg-card mb-3 rounded-2xl border border-border shadow-sm p-4">
-                                    <View className="flex-row items-center">
-                                        <View className="w-12 h-12 rounded-full bg-muted animate-pulse" />
-                                        <View className="flex-1 ml-3">
-                                            <View className="h-4 bg-muted rounded mb-2 w-3/4 animate-pulse" />
-                                            <View className="h-3 bg-muted rounded w-1/2 animate-pulse" />
-                                        </View>
-                                    </View>
-                                </View>
-                            ))}
+                            <ListSkeleton count={3} />
                         </View>
                     )}
 

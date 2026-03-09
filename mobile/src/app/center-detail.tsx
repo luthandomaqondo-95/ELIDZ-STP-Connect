@@ -220,7 +220,7 @@ function CenterDetailScreen() {
                 })
               }
             >
-              <Feather name="alert-triangle" size={18} color="#FFFFFF" />
+              <Feather name="alert-triangle" size={18} color="white" />
               <Text className="text-base text-white ml-2 font-semibold">Report Issue</Text>
             </Pressable>
           </View>

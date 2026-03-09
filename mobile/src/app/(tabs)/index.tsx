@@ -204,7 +204,7 @@ export default function DashboardScreen() {
             {/* Hero Banner */}
             <View className="mx-5 mb-6 shadow-md rounded-3xl overflow-hidden">
                 <LinearGradient
-                    colors={[colors.primary, '#003366']}
+                    colors={[colors.primary, colors.gradientMessageEnd]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 1 }}
                     className="p-6"
@@ -272,7 +272,7 @@ export default function DashboardScreen() {
                     </Pressable>
                      <Pressable
                         className="flex-1 min-w-[45%] m-1 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
-                        onPress={() => router.push('/(tabs)/vr-tours')}
+                        onPress={() => router.push('/(tabs)/services')}
                     >
                         <View className="w-10 h-10 rounded-full bg-accent/15 justify-center items-center mb-2">
                             <Feather name="globe" size={20} color={colors.accent} />
@@ -341,8 +341,8 @@ export default function DashboardScreen() {
                                         <Text className="text-primary text-xs font-bold">Free</Text>
                                     </View>
                                     <View className="flex-row items-center">
-                                        <Feather name="calendar" size={12} color={colors.iconGrayDark} className="mr-1" />
-                                        <Text className="text-muted-foreground text-xs">{formattedDate}</Text>
+                                        <Feather name="calendar" size={12} color={colors.iconGrayDark} />
+                                        <Text className="text-muted-foreground text-xs ml-1">{formattedDate}</Text>
                                     </View>
                                 </View>
                                 <Text className="text-base font-bold mb-2 text-foreground leading-tight" numberOfLines={2}>
@@ -350,8 +350,8 @@ export default function DashboardScreen() {
                                 </Text>
                                 {event.location && (
                                     <View className="flex-row items-center mt-1">
-                                        <Feather name="map-pin" size={12} color="#6C757D" className="mr-1" />
-                                        <Text className="text-muted-foreground text-xs" numberOfLines={1}>
+                                        <Feather name="map-pin" size={12} color={colors.iconGrayDark} />
+                                        <Text className="text-muted-foreground text-xs ml-1" numberOfLines={1}>
                                             {event.location}
                                         </Text>
                                     </View>
