@@ -11,7 +11,7 @@ export const Stars = () => {
     }));
 
     return (
-        <View className="absolute inset-0" pointerEvents="none">
+        <View className="absolute inset-0" style={{ zIndex: 0 }} pointerEvents="none">
             {stars.map((star) => (
                 <View
                     key={star.id}

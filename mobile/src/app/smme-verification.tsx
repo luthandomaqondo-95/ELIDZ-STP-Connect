@@ -325,15 +325,19 @@ export default function SMMEVerificationScreen() {
                                     <Text className="text-xs text-muted-foreground mt-0.5">{doc.description}</Text>
                                 </View>
                                 {doc.uri && (
-                                    <View className="w-6 h-6 bg-[#28A745] rounded-full items-center justify-center" style={{ backgroundColor: colors.success }}>
+                                    <View className="w-6 h-6 rounded-full items-center justify-center" style={{ backgroundColor: colors.constructive }}>
                                         <Feather name="check" size={14} color={colors.white} />
                                     </View>
                                 )}
                             </View>
                             
-                            <Pressable 
+                            <Pressable
                                 onPress={() => pickDocument(index)}
-                                className={`border-2 border-dashed rounded-xl h-32 items-center justify-center ${doc.uri ? 'border-constructive bg-constructive/10' : 'border-border bg-muted'}`}
+                                className="border-2 border-dashed rounded-xl h-32 items-center justify-center"
+                                style={{
+                                    borderColor: doc.uri ? colors.constructive : colors.border,
+                                    backgroundColor: doc.uri ? `${colors.constructive}20` : colors.backgroundSecondary,
+                                }}
                             >
                                 {doc.uri ? (
                                     <View className="items-center">
@@ -343,7 +347,7 @@ export default function SMMEVerificationScreen() {
                                     </View>
                                 ) : (
                                     <View className="items-center">
-                                        <Feather name="upload-cloud" size={32} color="#9CA3AF" />
+                                        <Feather name="upload-cloud" size={32} color={colors.textSecondary} />
                                         <Text className="text-muted-foreground font-medium text-sm mt-2">Tap to upload</Text>
                                         <Text className="text-xs text-muted-foreground mt-1">JPG, PNG supported</Text>
                                     </View>
@@ -382,9 +386,9 @@ export default function SMMEVerificationScreen() {
                 </Button>
 
                 {/* Info Box */}
-                <View className="bg-primary/10 p-5 rounded-xl border border-primary/20 mb-6">
+                <View className="p-5 rounded-xl border mb-6" style={{ backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}40` }}>
                     <View className="flex-row items-start">
-                        <Feather name="info" size={20} color="#3B6E8F" style={{ marginTop: 2, marginRight: 12 }} />
+                        <Feather name="info" size={20} color={colors.primary} style={{ marginTop: 2, marginRight: 12 }} />
                         <View className="flex-1">
                             <Text className="text-foreground font-semibold mb-2">Verification Process</Text>
                             <Text className="text-foreground text-sm leading-5">
@@ -414,7 +418,8 @@ export default function SMMEVerificationScreen() {
                         {!showAddForm && (
                             <Pressable
                                 onPress={() => setShowAddForm(true)}
-                                className="px-4 py-2 bg-[#3B6E8F] rounded-lg active:opacity-90"
+                                className="px-4 py-2 rounded-lg active:opacity-90"
+                                style={{ backgroundColor: colors.primary }}
                             >
                                 <View className="flex-row items-center">
                                     <Feather name="plus" size={16} color="white" />
@@ -432,7 +437,7 @@ export default function SMMEVerificationScreen() {
                                     {editingItem ? 'Edit' : 'Add'} {formType}
                                 </Text>
                                 <Pressable onPress={resetForm}>
-                                    <Feather name="x" size={20} color={colors.iconGrayDark} />
+                                    <Feather name="x" size={20} color={colors.text} />
                                 </Pressable>
                             </View>
 
@@ -467,7 +472,7 @@ export default function SMMEVerificationScreen() {
                                     value={formName}
                                     onChangeText={setFormName}
                                     placeholder="Enter name"
-                                    placeholderTextColor="#9CA3AF"
+                                    placeholderTextColor={colors.placeholder}
                                 />
                             </View>
 
@@ -479,7 +484,7 @@ export default function SMMEVerificationScreen() {
                                     value={formDescription}
                                     onChangeText={setFormDescription}
                                     placeholder="Describe your offering"
-                                    placeholderTextColor="#9CA3AF"
+                                    placeholderTextColor={colors.placeholder}
                                     multiline
                                     numberOfLines={4}
                                 />
@@ -488,15 +493,15 @@ export default function SMMEVerificationScreen() {
                             {/* Category */}
                             <View className="mb-4">
                                 <Text className="text-foreground font-semibold mb-2">Category *</Text>
-                                <View className="bg-input border border-border rounded-lg">
+                                <View className="border border-border rounded-lg" style={{ backgroundColor: colors.input }}>
                                     <Picker
                                         selectedValue={formCategory}
                                         onValueChange={setFormCategory}
-                                        style={{ color: colors.primary }}
+                                        style={{ color: colors.text }}
                                     >
                                         <Picker.Item label="Select Category" value="" color={colors.placeholder} />
                                         {categories.map((cat) => (
-                                            <Picker.Item key={cat} label={cat} value={cat} color={colors.primary} />
+                                            <Picker.Item key={cat} label={cat} value={cat} color={colors.text} />
                                         ))}
                                     </Picker>
                                 </View>
@@ -511,7 +516,7 @@ export default function SMMEVerificationScreen() {
                                         value={formPrice}
                                         onChangeText={setFormPrice}
                                         placeholder="e.g., R500 or Contact for quote"
-                                        placeholderTextColor="#9CA3AF"
+                                        placeholderTextColor={colors.placeholder}
                                     />
                                 </View>
                             )}
@@ -527,7 +532,7 @@ export default function SMMEVerificationScreen() {
                                         value={formContactEmail}
                                         onChangeText={setFormContactEmail}
                                         placeholder="contact@example.com"
-                                        placeholderTextColor="#9CA3AF"
+                                        placeholderTextColor={colors.placeholder}
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                     />
@@ -540,7 +545,7 @@ export default function SMMEVerificationScreen() {
                                         value={formContactPhone}
                                         onChangeText={setFormContactPhone}
                                         placeholder="+27 12 345 6789"
-                                        placeholderTextColor="#9CA3AF"
+                                        placeholderTextColor={colors.placeholder}
                                         keyboardType="phone-pad"
                                     />
                                 </View>
@@ -552,7 +557,7 @@ export default function SMMEVerificationScreen() {
                                         value={formWebsiteUrl}
                                         onChangeText={setFormWebsiteUrl}
                                         placeholder="https://example.com"
-                                        placeholderTextColor="#9CA3AF"
+                                        placeholderTextColor={colors.placeholder}
                                         keyboardType="url"
                                         autoCapitalize="none"
                                     />

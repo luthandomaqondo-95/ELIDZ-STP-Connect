@@ -108,6 +108,9 @@ const SYSTEM_COLORS = {
         textSecondary: '#6C757D',
         textTertiary: '#ADB5BD',
         buttonText: '#FFFFFF',
+        // Common aliases used across the app
+        foreground: '#212529',
+        mutedForeground: ELIDZ_BRAND_COLORS.grayMuted,
 
         // Brand colors
         primary: ELIDZ_BRAND_COLORS.primary,
@@ -203,11 +206,11 @@ const SYSTEM_COLORS = {
     },
 
     dark: {
-        // Base colors - dark navy to match global.css and ELIDZ brand
-        background: '#0a0913',
-        backgroundRoot: '#0a1628',
-        backgroundDefault: '#122436',
-        backgroundSecondary: '#162a42',
+        // Base colors - dark navy (#050C16) as whole background
+        background: '#050C16',
+        backgroundRoot: '#050C16',
+        backgroundDefault: '#050C16',
+        backgroundSecondary: '#0c1626',
 
         // Text colors – kept light for clear readability on dark backgrounds
         text: '#FFFFFF',
@@ -215,6 +218,9 @@ const SYSTEM_COLORS = {
         textSecondary: '#D4D4D4',
         textTertiary: '#A3A3A3',
         buttonText: '#FFFFFF',
+        // Common aliases used across the app
+        foreground: '#FFFFFF',
+        mutedForeground: 'rgba(255, 255, 255, 0.7)',
 
         // Brand colors
         primary: ELIDZ_BRAND_COLORS.primaryDark,

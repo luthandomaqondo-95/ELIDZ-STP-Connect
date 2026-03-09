@@ -77,3 +77,33 @@ $$;
 
 grant execute on function public.search_za_postal_codes(integer, text) to anon, authenticated;
 
+-- Get distinct provinces (admin_name1) for signup/forms
+create or replace function public.get_za_provinces()
+returns table (name text)
+language sql
+stable
+as $$
+  select distinct admin_name1 as name
+  from public.za_postal_codes
+  where country_code = 'ZA' and admin_name1 is not null and admin_name1 != ''
+  order by admin_name1;
+$$;
+
+-- Get distinct cities (place_name) for a province
+create or replace function public.get_za_cities_by_province(p_province text)
+returns table (name text)
+language sql
+stable
+as $$
+  select distinct place_name as name
+  from public.za_postal_codes
+  where country_code = 'ZA'
+    and admin_name1 = p_province
+    and place_name is not null
+    and place_name != ''
+  order by place_name;
+$$;
+
+grant execute on function public.get_za_provinces() to anon, authenticated;
+grant execute on function public.get_za_cities_by_province(text) to anon, authenticated;
+

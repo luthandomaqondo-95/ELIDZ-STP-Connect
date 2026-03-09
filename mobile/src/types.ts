@@ -1,4 +1,5 @@
 export interface Profile {
+  avatar_url: string | undefined;
   id: string;
   name: string;
   email: string;
@@ -22,6 +23,7 @@ export interface Tenant {
   contact_email?: string;
   contact_phone?: string;
   location?: string;
+  building?: string;
   address?: string;
   services?: string;
   capabilities?: string;
@@ -40,7 +42,7 @@ export interface Opportunity {
   id: string;
   title: string;
   description: string;
-  type: 'Job' | 'Partnership' | 'Funding' | 'Mentorship' | 'Event' | 'Other' | 'Tenders' | 'Employment' | 'Training' | 'Internships' | 'Bursaries' | 'Incubation';
+  type: 'Job' | 'Partnership' | 'Funding' | 'Grant' | 'Mentorship' | 'Event' | 'Other' | 'Tenders' | 'Employment' | 'Training' | 'Internships' | 'Bursaries' | 'Incubation';
   category?: string;
   requirements?: string;
   deadline?: string;
@@ -69,7 +71,10 @@ export interface Opportunity {
   tenderDocumentsUrl?: string;
   
   // Helper for UI
-  org?: string; 
+  org?: string;
+
+  // Joined tenant data (from tenant_id)
+  tenant?: { name: string; logo_url?: string | null } | null;
 }
 
 export interface Resource {

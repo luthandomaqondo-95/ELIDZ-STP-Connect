@@ -111,7 +111,7 @@ export default function VRToursScreen() {
 
 			{/* <ARCarDemo /> */}
 
-			<View className="flex-row items-center px-4 h-12 rounded-lg border border-border mx-6 mb-6 bg-card mt-6">
+			<View className="flex-row items-center px-4 h-12 rounded-full border border-border mx-6 mb-6 bg-card mt-6">
 				<Feather name="search" size={20} color={colors.textSecondary} />
 				<TextInput
 					className="flex-1 ml-3 text-base text-foreground"
@@ -140,42 +140,46 @@ export default function VRToursScreen() {
 					return (
 						<Pressable
 							key={facility.id}
-							className="mb-4 bg-card rounded-xl overflow-hidden shadow-sm border border-border active:opacity-90"
+							className="mb-4 bg-card rounded-xl overflow-hidden shadow-sm border border-border active:opacity-90 flex-row"
 							onPress={() => router.push({ pathname: '/vr-tour', params: { id: facility.id } })}
 						>
-							<View className="h-40 bg-muted relative">
+							{/* Left: Image */}
+							<View className="w-28 h-28 shrink-0 bg-muted relative">
 								<Image source={resolveFacilityImage(facility)} className="w-full h-full" resizeMode="cover" />
-								<View className="absolute inset-0 bg-black/30 flex-row items-center justify-center">
-									<View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center backdrop-blur-md">
-										<Feather name="play-circle" size={24} color={colors.white} />
+								<View className="absolute inset-0 bg-black/30 items-center justify-center">
+									<View className="w-10 h-10 rounded-full bg-white/20 items-center justify-center">
+										<Feather name="play-circle" size={20} color={colors.white} />
 									</View>
 								</View>
 							</View>
 
-							<View className="p-4">
-								<View className="flex-row items-center justify-between mb-2">
-									<Text className="text-xl font-bold text-foreground">{facility.name}</Text>
-									<Feather name={facility.icon as any} size={20} color={facility.color} />
+							{/* Right: Title and content */}
+							<View className="flex-1 p-4 min-w-0 justify-between">
+								<View>
+									<View className="flex-row items-center justify-between mb-1">
+										<Text className="text-base font-bold text-foreground flex-1 mr-2" numberOfLines={2}>
+											{facility.name}
+										</Text>
+										<Feather name={facility.icon as any} size={18} color={facility.color} />
+									</View>
+									<Text className="text-muted-foreground text-sm" numberOfLines={2}>
+										{facility.description}
+									</Text>
 								</View>
-
-								<Text className="text-muted-foreground text-sm mb-4">
-									{facility.description}
-								</Text>
-
 								{tenantsInFacility.length > 0 && (
-									<View className="bg-muted/10 rounded-lg p-3">
-										<Text className="text-xs font-semibold text-muted-foreground mb-2">
+									<View className="bg-muted/10 rounded-lg p-2 mt-2">
+										<Text className="text-xs font-semibold text-muted-foreground mb-1">
 											TENANTS IN THIS WING
 										</Text>
-										{tenantsInFacility.slice(0, 3).map(tenant => (
-											<View key={tenant.id} className="flex-row items-center mb-1">
-												<View className="w-1.5 h-1.5 rounded-full bg-primary mr-2" />
-												<Text className="text-xs text-foreground">{tenant.name}</Text>
+										{tenantsInFacility.slice(0, 2).map(tenant => (
+											<View key={tenant.id} className="flex-row items-center mb-0.5">
+												<View className="w-1 h-1 rounded-full bg-primary mr-1.5" />
+												<Text className="text-xs text-foreground" numberOfLines={1}>{tenant.name}</Text>
 											</View>
 										))}
-										{tenantsInFacility.length > 3 && (
-											<Text className="text-xs text-muted-foreground mt-1 ml-3.5">
-												+{tenantsInFacility.length - 3} more
+										{tenantsInFacility.length > 2 && (
+											<Text className="text-xs text-muted-foreground mt-0.5 ml-2.5">
+												+{tenantsInFacility.length - 2} more
 											</Text>
 										)}
 									</View>

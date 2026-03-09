@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { EventService, Event } from '@/services/event.service';
 import { useTheme } from '@/hooks/useTheme';
 import { TabsLayoutHeader } from '@/components/Header';
+import { ListSkeleton } from '@/components/Loading';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -54,8 +55,11 @@ export default function EventsScreen() {
       try {
         setLoading(true);
         setError(null);
-        const all = await EventService.getUpcomingEvents(100);
-        if (!cancelled) setEvents(all);
+        const all = await EventService.getAllEvents();
+        const now = new Date().toISOString();
+        const upcoming = all.filter((e) => e.date >= now).sort((a, b) => (a.date < b.date ? -1 : 1));
+        const past = all.filter((e) => e.date < now).sort((a, b) => (a.date > b.date ? -1 : 1));
+        if (!cancelled) setEvents([...upcoming, ...past]);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load events');
       } finally {
@@ -119,7 +123,7 @@ export default function EventsScreen() {
                 Discover upcoming events, workshops, and networking opportunities
               </Text>
 
-              <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4">
+              <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4">
                 <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
                 <TextInput
                   className="flex-1 ml-3 text-base text-white"
@@ -135,10 +139,7 @@ export default function EventsScreen() {
 
         <View className="px-6 mt-6">
           {loading ? (
-            <View className="py-12 items-center">
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text className="text-muted-foreground mt-4">Loading events...</Text>
-            </View>
+            <ListSkeleton count={5} />
           ) : error ? (
             <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
               <Feather name="alert-circle" size={48} color={colors.error ?? '#EF4444'} />

@@ -140,15 +140,12 @@ function OpportunityDetailScreen() {
 
   const handleApplyNow = () => {
     if (opportunity.type === 'Tenders') {
-      // For tenders, direct to the ELIDZ Tender Portal
       Linking.openURL('https://tenderportal.elidz.co.za/');
     } else if (opportunity.applicationUrl) {
       Linking.openURL(opportunity.applicationUrl);
     } else {
-      router.push({ pathname: '/application-form', params: {
-        opportunityTitle: opportunity.title,
-        opportunityId: opportunity.id,
-      } });
+      // Fallback: take user to the ELIDZ Science & Technology Park website
+      Linking.openURL('https://www.elidzstp.co.za');
     }
   };
 
@@ -508,13 +505,16 @@ function OpportunityDetailScreen() {
         className="h-[52px] rounded-lg justify-center items-center mb-5 bg-accent active:opacity-70"
         onPress={handleApplyNow}
       >
-        <Text className="text-base font-semibold text-primary-foreground">
-          {opportunity.type === 'Tenders'
-            ? 'Go to Tender Portal'
-            : opportunity.applicationUrl
-              ? 'Apply Online'
-              : 'Apply Now'}
-        </Text>
+        <View className="flex-row items-center">
+          <Feather name="external-link" size={18} color={colors.buttonText} style={{ marginRight: 8 }} />
+          <Text className="text-base font-semibold text-primary-foreground">
+            {opportunity.type === 'Tenders'
+              ? 'Go to Tender Portal'
+              : opportunity.applicationUrl
+                ? 'Apply on Website'
+                : 'Visit Science & Technology Park Website'}
+          </Text>
+        </View>
       </Pressable>
       </View>
     </ScreenScrollView>

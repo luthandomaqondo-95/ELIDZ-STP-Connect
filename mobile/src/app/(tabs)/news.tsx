@@ -1,17 +1,103 @@
 import React, { useState } from 'react';
-import { View, Pressable, ScrollView, TextInput, ActivityIndicator, Image, Dimensions } from 'react-native';
+import { View, Pressable, ScrollView, TextInput, ActivityIndicator, Dimensions, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useNewsSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import type { News } from '@/services/news.service';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
+
+const IMAGE_HEIGHT = 160;
+
+function NewsCard({
+  item,
+  getCategoryColor,
+  getCategoryIcon,
+  colors,
+}: {
+  item: News;
+  getCategoryColor: (c?: string) => string;
+  getCategoryIcon: (c?: string) => keyof typeof Feather.glyphMap;
+  colors: Record<string, string>;
+}) {
+  const [imageError, setImageError] = useState(false);
+  const imageUrl = item.image_url?.trim();
+  const showImage = imageUrl && imageUrl.startsWith('http') && !imageError;
+
+  return (
+    <Pressable
+      className="bg-card rounded-2xl mb-4 border border-border shadow-sm overflow-hidden active:opacity-95"
+      onPress={() => router.push(`/news-detail?id=${item.id}`)}
+    >
+      {/* Top: Image */}
+      <View className="w-full overflow-hidden bg-muted/30" style={{ height: IMAGE_HEIGHT }}>
+        {showImage ? (
+          <Image
+            source={{ uri: imageUrl! }}
+            style={{ width: '100%', height: IMAGE_HEIGHT, alignSelf: 'stretch' }}
+            resizeMode="cover"
+            onError={() => setImageError(true)}
+          />
+        ) : (
+          <View
+            className="w-full h-full justify-center items-center"
+            style={{ backgroundColor: getCategoryColor(item.category) }}
+          >
+            <Feather name={getCategoryIcon(item.category)} size={48} color="#FFFFFF" />
+          </View>
+        )}
+      </View>
+      {/* Bottom: Content */}
+      <View className="p-4">
+        {item.category && (
+          <View className="flex-row justify-between items-center mb-2">
+            <View
+              className="px-3 py-1 rounded-lg self-start"
+              style={{ backgroundColor: `${getCategoryColor(item.category)}20` }}
+            >
+              <Text
+                className="text-xs font-semibold"
+                style={{ color: getCategoryColor(item.category) }}
+              >
+                {item.category}
+              </Text>
+            </View>
+            <Text className="text-muted-foreground text-xs shrink-0 ml-2">
+              {item.formattedDate || new Date(item.published_at).toLocaleDateString()}
+            </Text>
+          </View>
+        )}
+        {!item.category && (
+          <View className="flex-row justify-end mb-2">
+            <Text className="text-muted-foreground text-xs">
+              {item.formattedDate || new Date(item.published_at).toLocaleDateString()}
+            </Text>
+          </View>
+        )}
+        <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
+          {item.title}
+        </Text>
+        <Text className="text-muted-foreground text-sm mb-2" numberOfLines={2}>
+          {item.excerpt || item.content?.substring(0, 150) + '...'}
+        </Text>
+        {item.author && (
+          <View className="flex-row items-center">
+            <Feather name="user" size={12} color={colors.iconGrayDark} />
+            <Text className="text-muted-foreground text-xs ml-1" numberOfLines={1}>
+              {item.author.name}
+            </Text>
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
+}
 
 export default function NewsScreen() {
   const { colorScheme } = useColorScheme();
@@ -73,7 +159,7 @@ export default function NewsScreen() {
 
               {/* Search Bar */}
               <View 
-                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4"
               >
                 <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
                 <TextInput
@@ -134,69 +220,13 @@ export default function NewsScreen() {
             </View>
           ) : (
             news.map((item) => (
-              <Pressable
+              <NewsCard
                 key={item.id}
-                className="bg-card rounded-2xl p-4 mb-4 border border-border shadow-sm active:opacity-95"
-                onPress={() => router.push(`/news-detail?id=${item.id}`)}
-              >
-                <View className="flex-row items-start">
-                  {item.image_url ? (
-                    <Image
-                      source={{ uri: item.image_url }}
-                      className="w-14 h-14 rounded-xl"
-                      resizeMode="cover"
-                    />
-                  ) : (
-                    <View 
-                      className="w-14 h-14 rounded-xl justify-center items-center"
-                      style={{ backgroundColor: getCategoryColor(item.category) }}
-                    >
-                      <Feather name={getCategoryIcon(item.category)} size={24} color="#FFFFFF" />
-                    </View>
-                  )}
-                  <View className="flex-1 ml-4">
-                    {item.category && (
-                      <View className="flex-row justify-between items-center mb-2">
-                        <View 
-                          className="px-3 py-1 rounded-lg"
-                          style={{ backgroundColor: `${getCategoryColor(item.category)}20` }}
-                        >
-                          <Text 
-                            className="text-xs font-semibold"
-                            style={{ color: getCategoryColor(item.category) }}
-                          >
-                            {item.category}
-                          </Text>
-                        </View>
-                        <Text className="text-gray-400 text-xs">
-                          {item.formattedDate || new Date(item.published_at).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    )}
-                    {!item.category && (
-                      <View className="flex-row justify-end mb-2">
-                        <Text className="text-muted-foreground text-xs">
-                          {item.formattedDate || new Date(item.published_at).toLocaleDateString()}
-                        </Text>
-                      </View>
-                    )}
-                    <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
-                      {item.title}
-                    </Text>
-                    <Text className="text-muted-foreground text-sm" numberOfLines={2}>
-                      {item.excerpt || item.content?.substring(0, 150) + '...'}
-                    </Text>
-                    {item.author && (
-                      <View className="flex-row items-center mt-2">
-                        <Feather name="user" size={12} color={colors.iconGrayDark} />
-                        <Text className="text-muted-foreground text-xs ml-1">
-                          {item.author.name}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                </View>
-              </Pressable>
+                item={item}
+                getCategoryColor={getCategoryColor}
+                getCategoryIcon={getCategoryIcon}
+                colors={colors}
+              />
             ))
           )}
         </View>

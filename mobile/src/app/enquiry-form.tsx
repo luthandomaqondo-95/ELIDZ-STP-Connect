@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, Alert, ScrollView } from 'react-native';
+import { View, TextInput, Pressable, ScrollView } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
@@ -10,6 +10,8 @@ import { Picker } from '@react-native-picker/picker';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { TabsLayoutHeader } from '@/components/Header';
+import { ErrorAlert } from '@/components/Error';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 
 function EnquiryFormScreen() {
   const { colorScheme } = useColorScheme();
@@ -21,60 +23,51 @@ function EnquiryFormScreen() {
     opportunityId?: string;
     subject?: string;
   }>();
+  const { isLoading, error, errorTitle, execute, clearError, setError, isSubmitting } = useAsyncOperation();
 
   const [enquiryType, setEnquiryType] = useState<CreateEnquiryData['enquiry_type']>(
     (params.type as CreateEnquiryData['enquiry_type']) || 'General'
   );
   const [subject, setSubject] = useState(params.subject || '');
   const [message, setMessage] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
     if (!subject.trim()) {
-      Alert.alert('Validation Error', 'Please enter a subject for your enquiry');
+      setError('Please enter a subject for your enquiry', 'Validation Error');
       return;
     }
 
     if (!message.trim()) {
-      Alert.alert('Validation Error', 'Please enter your message');
+      setError('Please enter your message', 'Validation Error');
       return;
     }
 
     if (message.trim().length < 10) {
-      Alert.alert('Validation Error', 'Please provide more details in your message (at least 10 characters)');
+      setError('Please provide more details in your message (at least 10 characters)', 'Message Too Short');
       return;
     }
 
-    setIsSubmitting(true);
-
-    try {
-      const enquiryData: CreateEnquiryData = {
-        enquiry_type: enquiryType,
-        subject: subject.trim(),
-        message: message.trim(),
-        related_facility_id: params.facilityId || undefined,
-        related_tenant_id: params.tenantId || undefined,
-        related_opportunity_id: params.opportunityId || undefined,
-      };
-
-      await enquiryService.createEnquiry(enquiryData);
-
-      Alert.alert(
-        'Enquiry Submitted',
-        'Your enquiry has been submitted successfully. We will get back to you soon!',
-        [
-          {
-            text: 'OK',
-            onPress: () => router.back(),
-          },
-        ]
-      );
-    } catch (error: any) {
-      console.error('Error submitting enquiry:', error);
-      Alert.alert('Error', error.message || 'Failed to submit enquiry. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
+    await execute(
+      () => {
+        const enquiryData: CreateEnquiryData = {
+          enquiry_type: enquiryType,
+          subject: subject.trim(),
+          message: message.trim(),
+          related_facility_id: params.facilityId || undefined,
+          related_tenant_id: params.tenantId || undefined,
+          related_opportunity_id: params.opportunityId || undefined,
+        };
+        return enquiryService.createEnquiry(enquiryData);
+      },
+      {
+        onSuccess: () => {
+          setError('Your enquiry has been submitted successfully. We will get back to you soon!', 'Enquiry Submitted', 'info');
+          setTimeout(() => {
+            router.back();
+          }, 2000);
+        },
+      }
+    );
   };
 
   return (
@@ -157,15 +150,15 @@ function EnquiryFormScreen() {
           {/* Submit Button */}
           <Pressable
             onPress={handleSubmit}
-            disabled={isSubmitting || !subject.trim() || !message.trim() || message.trim().length < 10}
+            disabled={isLoading || !subject.trim() || !message.trim() || message.trim().length < 10}
             className={`h-14 rounded-xl justify-center items-center mb-4 ${
-              isSubmitting || !subject.trim() || !message.trim() || message.trim().length < 10
+              isLoading || !subject.trim() || !message.trim() || message.trim().length < 10
                 ? 'bg-muted opacity-50'
                 : 'bg-accent active:opacity-90'
             }`}
           >
             <View className="flex-row items-center">
-              {isSubmitting ? (
+              {isLoading ? (
                 <>
                   <Feather name="loader" size={20} color="white" style={{ marginRight: 8 }} />
                   <Text className="text-white text-lg font-bold">Submitting...</Text>
@@ -194,6 +187,16 @@ function EnquiryFormScreen() {
           </View>
         </View>
       </ScreenKeyboardAwareScrollView>
+
+      {/* Error Alert */}
+      <ErrorAlert
+        visible={!!error}
+        title={errorTitle}
+        message={error ?? ''}
+        onDismiss={clearError}
+        severity="error"
+        autoDismissMs={error?.includes('submitted') ? 2000 : 5000}
+      />
     </View>
   );
 }

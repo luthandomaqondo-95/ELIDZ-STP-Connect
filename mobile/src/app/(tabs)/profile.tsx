@@ -63,24 +63,26 @@ function ProfileScreen() {
         }
     };
 
-    const getDocumentCount = () => {
-        const requiredTypes = ['Business Registration', 'ID Document', 'Business Profile'];
-        return allVerifications.filter(doc => requiredTypes.includes(doc.document_type)).length;
+    // Only count documents that have a valid storage URL (actually uploaded), not placeholders
+    const isValidStorageUrl = (url: string | undefined) => {
+        const u = url?.trim?.() ?? '';
+        return u.length > 0 && (u.includes('verification-documents') || u.includes('/storage/'));
     };
 
-    const getOverallStatus = () => {
-        const requiredTypes = ['Business Registration', 'ID Document', 'Business Profile'];
-        const requiredDocs = allVerifications.filter(doc => requiredTypes.includes(doc.document_type));
-        
-        if (requiredDocs.length < 3) return 'incomplete';
-        
-        const allVerified = requiredDocs.every(doc => doc.status === 'verified');
-        const anyRejected = requiredDocs.some(doc => doc.status === 'rejected');
-        
-        if (allVerified) return 'verified';
-        if (anyRejected) return 'rejected';
-        return 'pending';
-    };
+    const requiredTypes = ['Business Registration', 'ID Document', 'Business Profile'];
+    const requiredDocsWithValidUrl = allVerifications.filter(
+        doc => requiredTypes.includes(doc.document_type) && isValidStorageUrl(doc.document_url)
+    );
+
+    // Only show "pending" / "under review" when user has actually uploaded all 3 documents
+    const effectiveStatus = ((): string | undefined => {
+        if (requiredDocsWithValidUrl.length < 3) {
+            return requiredDocsWithValidUrl.length === 0 ? 'not_submitted' : 'incomplete';
+        }
+        return verificationStatus?.status;
+    })();
+
+    const getDocumentCount = () => requiredDocsWithValidUrl.length;
 
     const getVerificationStatusColor = (status?: string) => {
         switch (status) {
@@ -89,8 +91,12 @@ function ProfileScreen() {
             case 'rejected':
                 return colors.destructive;
             case 'pending':
-            default:
                 return colors.accent;
+            case 'incomplete':
+                return colors.accent;
+            case 'not_submitted':
+            default:
+                return colors.textSecondary;
         }
     };
 
@@ -101,8 +107,14 @@ function ProfileScreen() {
             case 'rejected':
                 return 'Rejected';
             case 'pending':
-            default:
                 return 'Pending Review';
+            case 'incomplete':
+                return requiredDocsWithValidUrl.length > 0
+                    ? `${requiredDocsWithValidUrl.length} of 3 uploaded`
+                    : 'Incomplete';
+            case 'not_submitted':
+            default:
+                return 'Not Submitted';
         }
     };
 
@@ -228,7 +240,8 @@ function ProfileScreen() {
                         {!isLoggedIn && (
                             <Pressable
                                 className="w-full bg-accent py-3 rounded-xl items-center mt-2 active:opacity-90"
-                                onPress={() => router.push('/(auth)/login')}
+                                
+                                onPress={() => router.push('/(auth)')}
                             >
                                 <Text className="text-white font-bold text-sm">Sign Up / Login</Text>
                             </Pressable>
@@ -253,16 +266,16 @@ function ProfileScreen() {
                                     </View>
                                 </View>
 
-                                {verificationStatus && (
+                                {effectiveStatus && (
                                     <View
                                         className="px-3 py-1 rounded-full"
-                                        style={{ backgroundColor: `${getVerificationStatusColor(verificationStatus.status)}20` }}
+                                        style={{ backgroundColor: `${getVerificationStatusColor(effectiveStatus)}20` }}
                                     >
                                         <Text
                                             className="text-xs font-semibold"
-                                            style={{ color: getVerificationStatusColor(verificationStatus.status) }}
+                                            style={{ color: getVerificationStatusColor(effectiveStatus) }}
                                         >
-                                            {getVerificationStatusText(verificationStatus.status)}
+                                            {getVerificationStatusText(effectiveStatus)}
                                         </Text>
                                     </View>
                                 )}
@@ -282,28 +295,28 @@ function ProfileScreen() {
                                     Business Verification
                                 </Text>
                                 <Text className="text-foreground text-sm font-semibold">
-                                    {verificationStatus ? getVerificationStatusText(verificationStatus.status) : 'Not Submitted'}
+                                    {effectiveStatus ? getVerificationStatusText(effectiveStatus) : 'Not Submitted'}
                                 </Text>
                             </View>
 
-                            {verificationStatus?.status === 'rejected' && verificationStatus.rejection_reason && (
+                            {effectiveStatus === 'rejected' && verificationStatus?.rejection_reason && (
                                 <View className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3">
                                     <Text className="text-destructive text-xs font-medium mb-1">Rejection Reason:</Text>
-                                    <Text className="text-destructive/90 text-xs">{verificationStatus.rejection_reason}</Text>
+                                    <Text style={{ color: colors.destructive, opacity: 0.9 }} className="text-xs">{verificationStatus.rejection_reason}</Text>
                                 </View>
                             )}
 
-                            {verificationStatus?.status === 'pending' && (
-                                <View className="bg-warning/10 border border-warning/30 rounded-lg p-3 mb-3">
-                                    <Text className="text-warning text-xs">
+                            {effectiveStatus === 'pending' && (
+                                <View style={{ backgroundColor: `${colors.accent}20`, borderColor: `${colors.accent}50`, borderWidth: 1 }} className="rounded-lg p-3 mb-3">
+                                    <Text style={{ color: colors.text }} className="text-xs">
                                         Your documents are under review. This process usually takes 24-48 hours.
                                     </Text>
                                 </View>
                             )}
 
-                            {verificationStatus?.status === 'verified' && (
+                            {effectiveStatus === 'verified' && (
                                 <View className="bg-constructive/10 border border-constructive/30 rounded-lg p-3 mb-3">
-                                    <Text className="text-constructive text-xs">
+                                    <Text style={{ color: colors.constructive }} className="text-xs">
                                         Your business has been verified! You now have access to exclusive SMME benefits.
                                     </Text>
                                 </View>
@@ -314,7 +327,7 @@ function ProfileScreen() {
                                 className="bg-accent py-3 rounded-xl items-center active:opacity-90"
                             >
                                 <Text className="text-white font-bold text-sm">
-                                    {verificationStatus ? 'Manage Business Profile' : 'Upload Documents'}
+                                    {effectiveStatus ? 'Manage Business Profile' : 'Upload Documents'}
                                 </Text>
                             </Pressable>
                         </View>

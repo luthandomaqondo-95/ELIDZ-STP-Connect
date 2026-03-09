@@ -24,6 +24,21 @@ export interface SMMEWithServicesProducts extends Profile {
 }
 
 class SMMEService {
+	async getDistinctCategories(): Promise<string[]> {
+		const { data, error } = await supabase
+			.from('sme_services_products')
+			.select('category')
+			.not('category', 'is', null);
+
+		if (error) {
+			console.error('SMMEService.getDistinctCategories error:', error);
+			return [];
+		}
+
+		const categories = [...new Set((data || []).map((r: any) => r.category?.trim()).filter(Boolean))].sort();
+		return categories.length > 0 ? [...categories, 'Other'] : [];
+	}
+
 	async getServicesProducts(smmmeId?: string): Promise<SMMEServiceProduct[]> {
 		console.log('SMMEService.getServicesProducts called with smmmeId:', smmmeId);
 

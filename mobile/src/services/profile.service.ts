@@ -1,185 +1,44 @@
 import { supabase } from '@/lib/supabase';
-import { Profile } from '@/types';
 
 class ProfileService {
-  async getProfile(userId: string): Promise<Profile | null> {
-    console.log('ProfileService.getProfile called for userId:', userId);
+  /**
+   * Upload a profile picture to the public `profile-avatars` bucket
+   * and return a storage reference string that `useAvatarUri` understands.
+   *
+   * The returned value has the form: "storage:profile-avatars/<userId>/<filename>".
+   */
+  async uploadProfilePicture(localUri: string, userId: string): Promise<string> {
+    try {
+      // Fetch the file data from the local URI (Expo / React Native)
+      const response = await fetch(localUri);
+      const blob = await response.blob();
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .single();
+      // Try to infer a file extension from the URI; default to jpg
+      const uriParts = localUri.split('?')[0].split('.');
+      const ext = uriParts.length > 1 ? uriParts[uriParts.length - 1] : 'jpg';
 
-    if (error) {
-      if (error.code === 'PGRST116') {
-        // Profile doesn't exist
-        console.log('ProfileService.getProfile: Profile not found');
-        return null;
-      }
-      console.error('ProfileService.getProfile error:', JSON.stringify(error, null, 2));
-      throw error;
-    }
+      const filePath = `${userId}/${Date.now()}.${ext}`;
 
-    console.log('ProfileService.getProfile succeeded');
-    return data as Profile;
-  }
-
-  async createProfile(userId: string, profileData: {
-    name: string;
-    email: string;
-    role: Profile['role'];
-    organization?: string;
-    bio?: string;
-    avatar?: string;
-    address?: string;
-  }): Promise<Profile> {
-    console.log('ProfileService.createProfile called with:', profileData);
-
-    // First, try direct insert
-    let { data, error } = await supabase
-      .from('profiles')
-      .insert({
-        id: userId,
-        ...profileData,
-      })
-      .select()
-      .single();
-
-    // If RLS blocks it, use the database function instead
-    if (error && error.code === '42501') {
-      console.log('ProfileService.createProfile: RLS blocked, trying function...');
-      
-      const { data: functionData, error: functionError } = await supabase
-        .rpc('create_user_profile', {
-          p_user_id: userId,
-          p_name: profileData.name,
-          p_email: profileData.email,
-          p_role: profileData.role,
-          p_address: profileData.address || null,
-          p_organization: profileData.organization || null,
-          p_bio: profileData.bio || null,
-          p_avatar: profileData.avatar || 'blue',
+      const { error } = await supabase.storage
+        .from('profile-avatars')
+        .upload(filePath, blob, {
+          contentType: blob.type || 'image/jpeg',
+          upsert: true,
         });
 
-      if (functionError) {
-        console.error('ProfileService.createProfile function error:', JSON.stringify(functionError, null, 2));
-        throw functionError;
+      if (error) {
+        console.error('ProfileService.uploadProfilePicture storage error:', error);
+        throw new Error(error.message || 'Failed to upload profile picture');
       }
 
-      console.log('ProfileService.createProfile succeeded via function:', functionData);
-      return functionData as Profile;
+      // Store as a storage reference so useAvatarUri can resolve it to a public URL
+      return `storage:profile-avatars/${filePath}`;
+    } catch (err: any) {
+      console.error('ProfileService.uploadProfilePicture error:', err);
+      throw new Error(err.message || 'Failed to upload profile picture');
     }
-
-    if (error) {
-      console.error('ProfileService.createProfile error:', JSON.stringify(error, null, 2));
-      throw error;
-    }
-
-    console.log('ProfileService.createProfile succeeded:', data);
-    return data as Profile;
-  }
-
-  async updateProfile(userId: string, updates: Partial<Profile>): Promise<Profile> {
-    console.log('ProfileService.updateProfile called for userId:', userId);
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .update(updates)
-      .eq('id', userId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('ProfileService.updateProfile error:', JSON.stringify(error, null, 2));
-      throw error;
-    }
-
-    console.log('ProfileService.updateProfile succeeded:', data);
-    return data as Profile;
-  }
-
-  /**
-   * Upload a profile picture to Supabase Storage
-   * @param fileUri - Local file URI from the device
-   * @param userId - User ID for organizing files
-   * @returns Storage reference string: "storage:<bucket>/<path>"
-   */
-  async uploadProfilePicture(fileUri: string, userId: string): Promise<string> {
-    try {
-      console.log('ProfileService.uploadProfilePicture called for userId:', userId);
-
-      // Get file extension from URI
-      const fileExtension = fileUri.split('.').pop()?.toLowerCase() || 'jpg';
-      const timestamp = Date.now();
-      const fileName = `avatar_${timestamp}.${fileExtension}`;
-      // File path should NOT include bucket name - just the folder structure
-      const filePath = `${userId}/${fileName}`;
-
-      // Read the file
-      const response = await fetch(fileUri);
-      const blob = await response.blob();
-      
-      // Convert blob to ArrayBuffer for Supabase
-      const arrayBuffer = await new Response(blob).arrayBuffer();
-  
-      // Determine content type
-      const contentType = this.getContentType(fileExtension);
-
-      // Prefer a dedicated avatar bucket, but fall back to an existing bucket
-      // so uploads still work on projects that haven't created `profile-avatars` yet.
-      const candidateBuckets = ['profile-avatars', 'chat-attachments'];
-
-      let lastError: any = null;
-      for (const bucket of candidateBuckets) {
-        const { error } = await supabase.storage
-          .from(bucket)
-          .upload(filePath, arrayBuffer, {
-            contentType: contentType,
-            cacheControl: '3600',
-            upsert: true,
-          });
-
-        if (error) {
-          lastError = error;
-          const message = (error.message ?? '').toLowerCase();
-          const isBucketMissing = message.includes('bucket not found');
-          if (isBucketMissing) {
-            console.warn(`ProfileService.uploadProfilePicture: bucket "${bucket}" missing, falling back...`);
-            continue;
-          }
-          console.error('ProfileService.uploadProfilePicture storage error:', error);
-          throw new Error(`Failed to upload profile picture: ${error.message}`);
-        }
-
-        const storageRef = `storage:${bucket}/${filePath}`;
-        console.log('ProfileService.uploadProfilePicture succeeded:', storageRef);
-        return storageRef;
-      }
-
-      // If we get here, all buckets failed (most likely missing).
-      const message = lastError?.message ? String(lastError.message) : 'Unknown storage error';
-      throw new Error(`Failed to upload profile picture: ${message}`);
-    } catch (error: any) {
-      console.error('ProfileService.uploadProfilePicture error:', error);
-      throw new Error(error.message || 'Failed to upload profile picture. Please try again.');
-    }
-  }
-
-  /**
-   * Get the appropriate content type for a file extension
-   */
-  private getContentType(extension: string): string {
-    const contentTypes: Record<string, string> = {
-      'jpg': 'image/jpeg',
-      'jpeg': 'image/jpeg',
-      'png': 'image/png',
-      'webp': 'image/webp',
-      'heic': 'image/heic',
-      'heif': 'image/heif',
-    };
-    return contentTypes[extension] || 'image/jpeg';
   }
 }
 
 export const profileService = new ProfileService();
+

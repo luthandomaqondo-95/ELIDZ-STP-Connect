@@ -11,6 +11,8 @@ import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { useDebounce } from '@/hooks/useDebounce';
 import { TabsLayoutHeader } from '@/components/Header';
+import { ListSkeleton } from '@/components/Loading';
+import { TenantLogo } from '@/components/TenantLogo';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -143,10 +145,20 @@ function OpportunitiesScreen() {
         <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
           {item.title}
         </Text>
-        {item.org && (
-          <Text className="text-muted-foreground text-sm mb-2">
-            {item.org}
-          </Text>
+        {(item.tenant || item.org) && (
+          <View className="flex-row items-center mb-2">
+            <View className="w-6 h-6 rounded-full overflow-hidden mr-2 bg-primary/5 border border-border/40">
+              <TenantLogo
+                logoUrl={item.tenant?.logo_url ?? undefined}
+                name={item.tenant ? (item.tenant.name || item.org || 'ELIDZ-STP') : 'ELIDZ-STP'}
+                size={12}
+                className="w-6 h-6"
+              />
+            </View>
+            <Text className="text-muted-foreground text-sm">
+              {item.tenant?.name || item.org}
+            </Text>
+          </View>
         )}
         <Text className="text-foreground text-sm" numberOfLines={2}>
           {item.description}
@@ -176,7 +188,7 @@ function OpportunitiesScreen() {
 
               {/* Search Bar */}
               <View
-                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4"
+                className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4"
               >
                 <Feather name="search" size={20} color={colors.whiteOpacity70} />
                 <TextInput
@@ -234,10 +246,7 @@ function OpportunitiesScreen() {
         {/* Opportunities List */}
         <View className="mx-5">
           {loading ? (
-            <View className="items-center py-12">
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Text className="text-muted-foreground mt-4">Loading opportunities...</Text>
-            </View>
+            <ListSkeleton count={6} />
           ) : opportunities.length === 0 ? (
             <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
               <Feather name="briefcase" size={48} color={colors.iconGray} />

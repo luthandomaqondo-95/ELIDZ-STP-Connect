@@ -1,11 +1,20 @@
 import React from 'react';
-import { View, ScrollView, Image, Pressable, Linking } from 'react-native';
+import { View, ScrollView, Pressable, Linking } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { TabsLayoutHeader } from '@/components/Header';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 export default function AboutScreen() {
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme];
+  const isDark = colorScheme === 'dark';
+  const cardBackground = isDark ? colors.backgroundDefault : colors.card;
+  const pillBackground = isDark ? colors.backgroundSecondary : `${colors.primary}15`;
+  const subtleRowBackground = isDark ? colors.backgroundSecondary : colors.backgroundSecondary;
+
   const handleContact = () => {
     Linking.openURL('mailto:info@elidz.co.za');
   };
@@ -33,8 +42,8 @@ export default function AboutScreen() {
             }
           >
             <View className="items-center mt-4">
-              <View className="w-24 h-24 bg-white rounded-3xl justify-center items-center shadow-lg mb-4">
-                <Text className="text-[#002147] font-bold text-center text-xs px-2">
+              <View className="w-24 h-24 rounded-3xl justify-center items-center shadow-lg mb-4" style={{ backgroundColor: cardBackground }}>
+                <Text className="font-bold text-center text-xs px-2" style={{ color: colors.primary }}>
                   ELIDZ
                   Science &
                   Tech Park
@@ -48,20 +57,20 @@ export default function AboutScreen() {
 
         <View className="px-6 mt-6">
             {/* Mission Card */}
-            <View className="bg-white p-6 rounded-2xl shadow-sm mb-6">
+            <View className="p-6 rounded-2xl shadow-sm mb-6 border border-border" style={{ backgroundColor: cardBackground }}>
                 <View className="flex-row items-center mb-3">
-                    <View className="w-10 h-10 bg-[#002147]/5 rounded-full items-center justify-center mr-3">
-                        <Feather name="target" size={20} color="#002147" />
+                    <View className="w-10 h-10 rounded-full items-center justify-center mr-3" style={{ backgroundColor: pillBackground }}>
+                        <Feather name="target" size={20} color={colors.primary} />
                     </View>
-                    <Text className="text-lg font-bold text-[#002147]">Our Mission</Text>
+                    <Text className="text-lg font-bold" style={{ color: colors.text }}>Our Mission</Text>
                 </View>
-                <Text className="text-gray-600 leading-relaxed text-sm">
+                <Text className="leading-relaxed text-sm text-muted-foreground">
                     To be a world-class Science and Technology Park that fosters innovation, entrepreneurship, and economic growth in the Eastern Cape region. We connect innovators, researchers, and businesses to create sustainable solutions for the future.
                 </Text>
             </View>
 
             {/* Features Grid */}
-            <Text className="text-[#002147] font-bold text-lg mb-4 ml-1">Key Features</Text>
+            <Text className="font-bold text-lg mb-4 ml-1 text-foreground">Key Features</Text>
             <View className="flex-row flex-wrap justify-between mb-6">
                 {[
                     { icon: 'users', title: 'Networking', desc: 'Connect with industry leaders' },
@@ -69,39 +78,41 @@ export default function AboutScreen() {
                     { icon: 'briefcase', title: 'Support', desc: 'Business incubation' },
                     { icon: 'globe', title: 'Growth', desc: 'Global market access' },
                 ].map((item, index) => (
-                    <View key={index} className="w-[48%] bg-white p-4 rounded-2xl shadow-sm mb-4 border border-gray-100">
-                        <Feather name={item.icon as any} size={24} color="#F38C1E" className="mb-2" />
-                        <Text className="font-bold text-[#002147] mb-1">{item.title}</Text>
-                        <Text className="text-xs text-gray-500">{item.desc}</Text>
+                    <View key={index} className="w-[48%] p-4 rounded-2xl shadow-sm mb-4 border border-border" style={{ backgroundColor: cardBackground }}>
+                        <Feather name={item.icon as any} size={24} color={colors.accent} className="mb-2" />
+                        <Text className="font-bold mb-1 text-foreground">{item.title}</Text>
+                        <Text className="text-xs text-muted-foreground">{item.desc}</Text>
                     </View>
                 ))}
             </View>
 
             {/* Contact & Info */}
-            <View className="bg-white rounded-2xl overflow-hidden shadow-sm">
-                <Pressable 
+            <View className="rounded-2xl overflow-hidden shadow-sm border border-border" style={{ backgroundColor: cardBackground }}>
+                <Pressable
                     onPress={handleWebsite}
-                    className="flex-row items-center p-4 border-b border-gray-100 active:bg-gray-50"
+                    className="flex-row items-center p-4 border-b border-border active:opacity-80"
+                    style={({ pressed }) => ({ backgroundColor: pressed ? subtleRowBackground : undefined })}
                 >
-                    <Feather name="globe" size={20} color="#002147" />
-                    <Text className="flex-1 ml-3 text-gray-700 font-medium">Visit Website</Text>
-                    <Feather name="external-link" size={16} color="#9CA3AF" />
+                    <Feather name="globe" size={20} color={colors.primary} />
+                    <Text className="flex-1 ml-3 font-medium text-foreground">Visit Website</Text>
+                    <Feather name="external-link" size={16} color={colors.textSecondary} />
                 </Pressable>
-                <Pressable 
+                <Pressable
                     onPress={handleContact}
-                    className="flex-row items-center p-4 border-b border-gray-100 active:bg-gray-50"
+                    className="flex-row items-center p-4 border-b border-border active:opacity-80"
+                    style={({ pressed }) => ({ backgroundColor: pressed ? subtleRowBackground : undefined })}
                 >
-                    <Feather name="mail" size={20} color="#002147" />
-                    <Text className="flex-1 ml-3 text-gray-700 font-medium">Contact Us</Text>
-                    <Feather name="chevron-right" size={16} color="#9CA3AF" />
+                    <Feather name="mail" size={20} color={colors.primary} />
+                    <Text className="flex-1 ml-3 font-medium text-foreground">Contact Us</Text>
+                    <Feather name="chevron-right" size={16} color={colors.textSecondary} />
                 </Pressable>
-                <View className="flex-row items-center p-4 bg-gray-50">
-                    <Feather name="shield" size={20} color="#002147" />
-                    <Text className="flex-1 ml-3 text-gray-700 font-medium">Privacy Policy</Text>
+                <View className="flex-row items-center p-4" style={{ backgroundColor: subtleRowBackground }}>
+                    <Feather name="shield" size={20} color={colors.primary} />
+                    <Text className="flex-1 ml-3 font-medium text-foreground">Privacy Policy</Text>
                 </View>
             </View>
 
-            <Text className="text-center text-gray-400 text-xs mt-8">
+            <Text className="text-center text-xs mt-8 text-muted-foreground">
                 © 2025 East London Industrial Development Zone SOC Ltd. All rights reserved.
             </Text>
         </View>

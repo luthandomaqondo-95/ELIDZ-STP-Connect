@@ -50,15 +50,18 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		});
 
 		if (error) {
-			console.error('Login error:', error);
-			// Provide more helpful error messages
-			if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+			if (__DEV__) console.warn('Login error:', error?.message ?? error);
+			const msg = typeof error.message === 'string' ? error.message : '';
+			const code = typeof (error as { code?: string }).code === 'string' ? (error as { code?: string }).code : '';
+			// Email not confirmed (AuthApiError / email_not_confirmed)
+			if (code === 'email_not_confirmed' || /email not confirmed/i.test(msg)) {
 				throw new Error('Please check your email and confirm your account before logging in.');
 			}
-			if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials')) {
+			// Invalid credentials
+			if (code === 'invalid_credentials' || /invalid login credentials/i.test(msg)) {
 				throw new Error('Invalid email or password. Please check your credentials and try again.');
 			}
-			throw new Error(error.message);
+			throw new Error(msg || 'Something went wrong. Please try again.');
 		}
 
 		console.log('Login successful, user:', data?.user?.email);
@@ -164,14 +167,16 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			}
 		}
 
-		// Only load profile if email is confirmed (session will be available)
-		if (!requiresEmailConfirmation) {
-			await loadProfile(userId);
-		}
-		
 		// If email confirmation is required, throw a special error that the UI can handle
 		if (requiresEmailConfirmation) {
 			throw new Error('EMAIL_CONFIRMATION_REQUIRED: Please check your email to confirm your account before logging in.');
+		}
+
+		// Set session immediately so auth state is ready before navigation (fixes race where
+		// user signs up, navigates to tabs, then clicks Messages before onAuthStateChange fires)
+		if (authData.session) {
+			setSession(authData.session);
+			await loadProfile(userId);
 		}
 	}
 
@@ -203,7 +208,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			const { data, error } = await supabase.auth.signInWithOAuth({
 				provider: 'google',
 				options: {
-					redirectTo: 'elidzstp://(auth)/callback',
+					// Keep a stable deep link even if the screen is removed.
+					redirectTo: 'elidzstp://oauth-callback',
 					queryParams: {
 						access_type: 'offline',
 						prompt: 'consent',
@@ -230,7 +236,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				
 				const result = await WebBrowser.openAuthSessionAsync(
 					data.url,
-					'elidzstp://(auth)/callback'
+					'elidzstp://oauth-callback'
 				);
 
 				if (result.type === 'success' && result.url) {
@@ -264,6 +270,67 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			return data;
 		} catch (error: any) {
 			console.error('Google sign-in error:', error);
+			throw error;
+		}
+	}
+
+	async function signInWithApple() {
+		try {
+			const { data, error } = await supabase.auth.signInWithOAuth({
+				provider: 'apple',
+				options: {
+					redirectTo: 'elidzstp://oauth-callback',
+				},
+			});
+
+			if (error) {
+				const message = error.message ?? '';
+				if (/provider is not enabled|unsupported provider/i.test(message)) {
+					throw new Error(
+						'Apple sign-in is not enabled in Supabase. Enable Apple under Authentication > Providers > Apple, then try again.'
+					);
+				}
+				throw new Error(error.message);
+			}
+
+			if (data?.url) {
+				const WebBrowser = require('expo-web-browser');
+				WebBrowser.maybeCompleteAuthSession();
+
+				const result = await WebBrowser.openAuthSessionAsync(
+					data.url,
+					'elidzstp://oauth-callback'
+				);
+
+				if (result.type === 'success' && result.url) {
+					const url = new URL(result.url);
+					const code = url.searchParams.get('code');
+
+					if (code) {
+						const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
+
+						if (sessionError) {
+							throw new Error(sessionError.message);
+						}
+
+						if (sessionData?.session?.user) {
+							await loadProfile(sessionData.session.user.id);
+						}
+					} else {
+						throw new Error('No authorization code received from Apple');
+					}
+				} else if (result.type === 'cancel') {
+					throw new Error('Apple sign-in was cancelled');
+				} else {
+					throw new Error('Failed to complete Apple sign-in');
+				}
+			} else {
+				throw new Error('No OAuth URL received');
+			}
+
+			return data;
+		} catch (error: any) {
+			console.error('Apple sign-in error:', error);
 			throw error;
 		}
 	}
@@ -368,7 +435,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 								organization: userMetadata.organization || null,
 								bio: null,
 								avatar: 'blue',
-							}, { ignoreDuplicates: true });
+							});
 					} catch (error) {
 						console.error('Error creating OAuth profile:', error);
 						// Try using RPC function if direct insert fails
@@ -427,6 +494,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				signup,
 				resendSignupConfirmation,
 				signInWithGoogle,
+				signInWithApple,
 				logout,
 				updateProfile,
 			}}

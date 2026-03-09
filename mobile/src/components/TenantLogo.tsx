@@ -13,6 +13,10 @@ function getTenantLogo(name: string): any {
 
     // Exact name matches (most specific first)
     const exactMatches: Record<string, any> = {
+        'elidz': require('../../assets/logos/blue text-idz logo.png'),
+        'elidzstp': require('../../assets/logos/blue text-idz logo.png'),
+        'elidz stp': require('../../assets/logos/blue text-idz logo.png'),
+        'elidz-stp': require('../../assets/logos/blue text-idz logo.png'),
         'samrc': require('../../assets/images/tenants/samrc-logo.png'),
         'southafricanmedicalresearchcouncil': require('../../assets/images/tenants/samrc-logo.png'),
         'ecsa': require('../../assets/images/tenants/ecsa-logo.png'),
@@ -62,6 +66,9 @@ function getTenantLogo(name: string): any {
     }
 
     // Fuzzy matching (more specific patterns first)
+    if (nameLower.includes('elidz') || nameNormalized.includes('elidz')) {
+        return require('../../assets/logos/blue text-idz logo.png');
+    }
     // KGI BPO must come before KGI
     if ((nameLower.includes('kgi') && nameLower.includes('bpo')) || 
         (nameNormalized.includes('kgi') && nameNormalized.includes('bpo'))) {
@@ -138,10 +145,10 @@ function getTenantLogo(name: string): any {
         return require('../../assets/images/tenants/analytical-lab.png');
     }
     
-    if (nameLower.includes('design') && nameLower.includes('centre') || 
-        nameLower.includes('design') && nameLower.includes('center') ||
+    // ELIDZ STP facilities (Design Centre, Innovation Hub) - use company logo, not Cortex Hub
+    if (nameLower.includes('design') && (nameLower.includes('centre') || nameLower.includes('center')) ||
         (nameLower.includes('innovation') && nameLower.includes('hub') && !nameLower.includes('cortex'))) {
-        return require('../../assets/images/tenants/cortex-hub-logo.png');
+        return require('../../assets/logos/blue text-idz logo.png');
     }
     
     if (nameLower.includes('renewable') && nameLower.includes('energy') && !nameLower.includes('msc')) {

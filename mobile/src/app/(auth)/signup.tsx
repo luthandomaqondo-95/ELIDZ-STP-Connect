@@ -1,5 +1,5 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image, ActivityIndicator, Modal, FlatList } from 'react-native';
+import { View, TextInput, Pressable, TouchableOpacity, Image, ActivityIndicator, Modal, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -13,24 +13,26 @@ import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
 import { PasswordField } from '@/components/PasswordField';
-import { Picker } from '@react-native-picker/picker';
-import { fetchZaPostalCodesForCity } from '@/services/za-postal-codes.service';
+import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
+import { fetchZaPostalCodesForCity, fetchZaCitiesByProvince, fetchZaProvinces } from '@/services/za-postal-codes.service';
+import { ErrorAlert } from '@/components/Error';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 
-const { height } = Dimensions.get('window');
+const ROLES = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'] as const;
 
 export default function SignupScreen() {
-	const { signup, signInWithGoogle } = useAuthContext();
+	const { signup, signInWithGoogle, signInWithApple } = useAuthContext();
 	const { colorScheme } = useColorScheme();
 	const colors = COLORS[colorScheme];
+	const { isLoading, error, errorTitle, execute, clearError, setError } = useAsyncOperation();
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
-	const [province, setProvince] = useState('Eastern Cape');
+	const [province, setProvince] = useState<string>('');
 	const [city, setCity] = useState('');
 	const [postalCode, setPostalCode] = useState('');
 	const [password, setPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
 	const [role, setRole] = useState<'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant'>('Entrepreneur');
-	const [isLoading, setIsLoading] = useState(false);
 	const isSubmittingRef = useRef(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
 	const [cooldownSeconds, setCooldownSeconds] = useState(0);
@@ -39,31 +41,49 @@ export default function SignupScreen() {
 	const [loadingPostalCodes, setLoadingPostalCodes] = useState(false);
 	const [postalCodeSearch, setPostalCodeSearch] = useState('');
 	const [postalCodeModalVisible, setPostalCodeModalVisible] = useState(false);
+	const [provinceModalVisible, setProvinceModalVisible] = useState(false);
+	const [cityModalVisible, setCityModalVisible] = useState(false);
+	const [roleModalVisible, setRoleModalVisible] = useState(false);
 
-	const provinces = [
-		'Eastern Cape',
-		'Free State',
-		'Gauteng',
-		'KwaZulu-Natal',
-		'Limpopo',
-		'Mpumalanga',
-		'North West',
-		'Northern Cape',
-		'Western Cape',
-	];
+	const [provinces, setProvinces] = useState<string[]>([]);
+	const [citiesByProvince, setCitiesByProvince] = useState<string[]>([]);
+	const [loadingProvinces, setLoadingProvinces] = useState(true);
+	const [loadingCities, setLoadingCities] = useState(false);
 
-	// Map of major cities/towns for each province
-	const citiesByProvince: Record<string, string[]> = {
-		'Eastern Cape': ['East London', 'Gqeberha (Port Elizabeth)', 'Mthatha', 'Bhisho', 'Uitenhage', 'Grahamstown', 'Queenstown', 'King William\'s Town', 'Other'],
-		'Free State': ['Bloemfontein', 'Welkom', 'Sasolburg', 'Parys', 'Phuthaditjhaba', 'Kroonstad', 'Other'],
-		'Gauteng': ['Johannesburg', 'Pretoria', 'Soweto', 'Centurion', 'Sandton', 'Midrand', 'Roodepoort', 'Kempton Park', 'Other'],
-		'KwaZulu-Natal': ['Durban', 'Pietermaritzburg', 'Richards Bay', 'Newcastle', 'Port Shepstone', 'Other'],
-		'Limpopo': ['Polokwane', 'Thohoyandou', 'Tzaneen', 'Mokopane', 'Bela-Bela', 'Other'],
-		'Mpumalanga': ['Mbombela (Nelspruit)', 'Witbank', 'Secunda', 'Middelburg', 'Other'],
-		'North West': ['Mahikeng', 'Klerksdorp', 'Rustenburg', 'Potchefstroom', 'Brits', 'Other'],
-		'Northern Cape': ['Kimberley', 'Upington', 'Springbok', 'De Aar', 'Other'],
-		'Western Cape': ['Cape Town', 'Stellenbosch', 'George', 'Paarl', 'Worcester', 'Mossel Bay', 'Knysna', 'Other'],
-	};
+	// Fetch provinces from za_postal_codes on mount
+	useEffect(() => {
+		let cancelled = false;
+		fetchZaProvinces()
+			.then((list) => {
+				if (!cancelled) {
+					setProvinces(list);
+					if (list.length > 0) setProvince((p) => (p ? p : list[0]));
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setLoadingProvinces(false);
+			});
+		return () => { cancelled = true; };
+	}, []);
+
+	// Fetch cities when province changes
+	useEffect(() => {
+		if (!province) {
+			setCitiesByProvince([]);
+			return;
+		}
+		let cancelled = false;
+		setLoadingCities(true);
+		setCity('');
+		fetchZaCitiesByProvince(province)
+			.then((list) => {
+				if (!cancelled) setCitiesByProvince(list);
+			})
+			.finally(() => {
+				if (!cancelled) setLoadingCities(false);
+			});
+		return () => { cancelled = true; };
+	}, [province]);
 
 	// Fetch postal codes from Supabase (GeoNames dump) when city changes
 	useEffect(() => {
@@ -113,33 +133,33 @@ export default function SignupScreen() {
 			return;
 		}
 		if (cooldownSeconds > 0) {
-			Alert.alert('Please wait', `Too many attempts. Try again in ${cooldownSeconds}s.`);
+			setError(`Too many attempts. Try again in ${cooldownSeconds}s.`, 'Rate Limited');
 			return;
 		}
 
 		if (!name || !email || !password || !province || !city || !postalCode) {
-			Alert.alert('Error', 'Please fill in all fields');
+			setError('Please fill in all fields', 'Missing Fields');
 			return;
 		}
 
 		// Postal code must be selected from list (no manual entry) unless city is "Other"
 		if (city !== 'Other') {
 			if (loadingPostalCodes) {
-				Alert.alert('Please wait', 'Postal codes are still loading for your city.');
+				setError('Postal codes are still loading for your city. Please wait.', 'Loading');
 				return;
 			}
 			if (postalCodesForCity.length === 0) {
-				Alert.alert('Postal code required', `No postal codes found for ${city}. Please select another city.`);
+				setError(`No postal codes found for ${city}. Please select another city.`, 'No Postal Codes');
 				return;
 			}
 			if (!postalCodesForCity.includes(postalCode)) {
-				Alert.alert('Invalid postal code', 'Please select your postal code from the list.');
+				setError('Please select your postal code from the list.', 'Invalid Postal Code');
 				return;
 			}
 		} else {
 			// "Other" city: allow manual 4-digit code only
 			if (!/^\d{4}$/.test(postalCode.trim())) {
-				Alert.alert('Invalid postal code', 'Please enter a valid 4-digit South African postal code.');
+				setError('Please enter a valid 4-digit South African postal code.', 'Invalid Postal Code');
 				return;
 			}
 		}
@@ -148,96 +168,74 @@ export default function SignupScreen() {
 
 		const emailCheck = validateEmail(email);
 		if (!emailCheck.valid) {
-			Alert.alert('Invalid Email', emailCheck.message ?? 'Please enter a valid email address');
+			setError(emailCheck.message ?? 'Please enter a valid email address', 'Invalid Email');
 			return;
 		}
 		const pwdCheck = validatePassword(password);
 		if (!pwdCheck.valid) {
-			Alert.alert('Error', pwdCheck.message ?? 'Password must be at least 8 characters');
+			setError(pwdCheck.message ?? 'Password must be at least 8 characters', 'Weak Password');
 			return;
 		}
 		const confirmCheck = validateConfirmPassword(password, confirmPassword);
 		if (!confirmCheck.valid) {
-			Alert.alert('Error', confirmCheck.message ?? 'Passwords do not match');
+			setError(confirmCheck.message ?? 'Passwords do not match', 'Password Mismatch');
 			return;
 		}
 
 		if (!acceptedTerms) {
-			Alert.alert('Error', 'Please accept the Terms & Conditions');
+			setError('Please accept the Terms & Conditions', 'Terms Required');
 			return;
 		}
 
 		isSubmittingRef.current = true;
-		setIsLoading(true);
-		try {
-			await signup(name, email, password, role, fullAddress);
-			// If we get here, email confirmation is not required or user is already confirmed
-
-			// Show verification notice for SMME users
-			if (role === 'SMME') {
-				Alert.alert(
-					'Welcome, SMME Partner!',
-					'To access all features and appear in the Verified SMMEs directory, you need to complete business verification. This requires uploading 3 documents: Business Registration, ID Document, and Business Profile.\n\nYou can start the verification process from your profile page.',
-					[
-						{
-							text: 'Go to Profile',
-							onPress: () => {
-								router.replace('/(tabs)');
-								// Navigate to profile after a short delay to ensure tabs are loaded
-								setTimeout(() => {
-									router.push('/(tabs)/profile');
-								}, 500);
-							}
-						},
-						{
-							text: 'Later',
-							style: 'cancel',
-							onPress: () => router.replace('/(tabs)')
+		await execute(
+			() => signup(name, email, password, role, fullAddress),
+			{
+				onSuccess: () => {
+					// Email confirmation not required (e.g. dev mode) - sign in and navigate
+					const navigate = () => {
+						if (role === 'SMME') {
+							router.replace('/(tabs)');
+							setTimeout(() => router.push('/(tabs)/profile'), 300);
+						} else {
+							router.replace('/(tabs)/messages');
 						}
-					]
-				);
-			} else {
-				router.replace('/(tabs)');
+					};
+					setTimeout(navigate, 0);
+				},
+				onError: (err: any) => {
+					const message = err?.message ?? '';
+					// Email confirmation required: redirect to login with success message
+					if (message.includes('EMAIL_CONFIRMATION_REQUIRED')) {
+						clearError();
+						router.replace({
+							pathname: '/(auth)',
+							params: { signupSuccess: '1', email: email.trim().toLowerCase() },
+						});
+						return;
+					}
+					if (/too many|rate limit|over_email_send_rate_limit/i.test(message)) {
+						setCooldownSeconds(60);
+					}
+				},
 			}
-		} catch (error: any) {
-			const errorMessage = error?.message || 'Failed to sign up. Please try again.';
-			if (/too many|rate limit|over_email_send_rate_limit/i.test(errorMessage)) {
-				setCooldownSeconds(60);
-			}
-
-			// Check if this is an email confirmation error
-			if (errorMessage.includes('EMAIL_CONFIRMATION_REQUIRED')) {
-				Alert.alert(
-					'Account Created Successfully',
-					'Please check your email to confirm your account. You will be able to log in after confirming your email address.' + (role === 'SMME' ? '\n\nNote: As an SMME, you will need to complete business verification after logging in to access all features.' : ''),
-					[
-						{
-							text: 'OK',
-							onPress: () => router.replace('/(auth)')
-						}
-					]
-				);
-			} else {
-				Alert.alert('Error', errorMessage);
-			}
-		} finally {
-			isSubmittingRef.current = false;
-			setIsLoading(false);
-		}
+		);
+		isSubmittingRef.current = false;
 	}
 
 	return (
 		<View className="flex-1 bg-background">
-			<LinearGradient
-				colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
-				className="absolute inset-0"
-				style={{ height: height * 0.4 }}
-				start={{ x: 0.5, y: 0 }}
-				end={{ x: 0.5, y: 1 }}
-			/>
-			<Stars />
-			<SafeAreaView className="flex-1" edges={['top']}>
-				<View className="px-6 pt-2 rounded-3xl" style={{ height: height * 0.24 }}>
+			<View className="absolute inset-0 z-0">
+				<LinearGradient
+					colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+					className="absolute top-0 left-0 right-0 h-2/5"
+					start={{ x: 0.5, y: 0 }}
+					end={{ x: 0.5, y: 1 }}
+				/>
+				<Stars />
+			</View>
+			<SafeAreaView className="flex-1 z-10 relative" edges={['top']}>
+				<View className="px-6 pt-2 rounded-3xl h-1/4 z-10">
 					<TouchableOpacity
 						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
 						onPress={() => router.back()}
@@ -248,7 +246,7 @@ export default function SignupScreen() {
 					<View className="items-center mt-2">
 						<Image
 							source={require('../../../assets/logos/blue text-idz logo.png')}
-							style={{ width: 240, height: 100 }}
+							className="w-60 h-[100px]"
 							resizeMode="contain"
 						/>
 						<Text className="text-white text-3xl font-bold mt-4 mb-2">Register</Text>
@@ -258,14 +256,16 @@ export default function SignupScreen() {
 
 				<ScreenKeyboardAwareScrollView
 					contentContainerClassName="flex-grow rounded-3xl"
-					style={{ zIndex: 2 }}
+					className="flex-1 z-10"
 				>
-					<View className="w-full px-6 pb-10 pt-6 rounded-3xl bg-background mt-4">
+					<View className="w-full px-6 pb-10 pt-6 rounded-3xl mt-4 bg-background flex flex-col">
 					{/* Full Name Input */}
-					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="person-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="person-outline" size={20} color={colors.accent} />
+						</View>
 						<TextInput
-							className="flex-1 text-base text-foreground"
+							className="flex-1 min-h-0 py-0 text-base text-foreground"
 							value={name}
 							onChangeText={setName}
 							placeholder="Full Name"
@@ -276,10 +276,12 @@ export default function SignupScreen() {
 					</View>
 
 					{/* Email Input */}
-					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="mail-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="mail-outline" size={20} color={colors.accent} />
+						</View>
 						<TextInput
-							className="flex-1 text-base text-foreground"
+							className="flex-1 min-h-0 py-0 text-base text-foreground"
 							value={email}
 							onChangeText={setEmail}
 							placeholder="Email address"
@@ -290,57 +292,134 @@ export default function SignupScreen() {
 						/>
 					</View>
 
-					{/* Province Picker */}
-					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border">
-						<Ionicons name="map-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
-						<View className="flex-1 ml-1">
-							<Picker
-								selectedValue={province}
-								onValueChange={(v) => {
-									setProvince(v as string);
-									setCity('');
-								}}
-								style={{ color: colors.text }}
-								itemStyle={colorScheme === 'dark' ? { color: colors.text } : undefined}
-								prompt="Select province"
-							>
-								{provinces.map((p) => (
-									<Picker.Item key={p} label={p} value={p} color={colors.text} />
-								))}
-							</Picker>
+					{/* Province selector (modal list, same on iOS & Android) */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="map-outline" size={20} color={colors.accent} />
 						</View>
+						<Pressable
+							className="flex-1 min-h-0 ml-1 flex-row items-center justify-between py-2"
+							onPress={() => setProvinceModalVisible(true)}
+						>
+							<Text className={province ? 'text-base text-foreground' : 'text-base text-muted-foreground'}>
+								{province || 'Select province'}
+							</Text>
+							<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+						</Pressable>
+						<Modal
+							visible={provinceModalVisible}
+							animationType="slide"
+							transparent
+							onRequestClose={() => setProvinceModalVisible(false)}
+						>
+							<Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setProvinceModalVisible(false)}>
+								<Pressable className="bg-card border-t border-border rounded-t-2xl max-h-[70%]" onPress={(e) => e.stopPropagation()}>
+									<View className="p-4 border-b border-border">
+										<Text className="text-lg font-semibold text-foreground">Select province</Text>
+									</View>
+									<FlatList
+										keyboardShouldPersistTaps="handled"
+										data={provinces}
+										keyExtractor={(item) => item}
+										className="max-h-[280px]"
+										ListEmptyComponent={
+											loadingProvinces ? (
+												<View className="py-8 items-center">
+													<ActivityIndicator size="small" color={colors.primary} />
+													<Text className="text-muted-foreground mt-2">Loading provinces…</Text>
+												</View>
+											) : (
+												<Text className="text-muted-foreground text-center py-8">No provinces. Ensure za_postal_codes is loaded.</Text>
+											)
+										}
+										renderItem={({ item }) => (
+											<Pressable
+												className="px-4 py-3 active:bg-muted"
+												onPress={() => {
+													setProvince(item);
+													setCity('');
+													setProvinceModalVisible(false);
+												}}
+											>
+												<Text className="text-foreground text-base">{item}</Text>
+											</Pressable>
+										)}
+									/>
+								</Pressable>
+							</Pressable>
+						</Modal>
 					</View>
 
-					{/* City Picker */}
-					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border">
-						<Ionicons name="business-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
-						<View className="flex-1 ml-1">
-							<Picker
-								selectedValue={city}
-								onValueChange={(v) => setCity((v as string) || '')}
-								enabled={!!province}
-								style={{ color: colors.text }}
-								itemStyle={colorScheme === 'dark' ? { color: colors.text } : undefined}
-								prompt={province ? 'Select city' : 'Select province first'}
-							>
-								<Picker.Item label={province ? 'Select city' : 'Select province first'} value="" color={colors.placeholder} />
-								{(citiesByProvince[province] ?? []).map((c) => (
-									<Picker.Item key={c} label={c} value={c} color={colors.text} />
-								))}
-							</Picker>
+					{/* City selector (modal list, same on iOS & Android) */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="business-outline" size={20} color={colors.accent} />
 						</View>
+						<Pressable
+							className="flex-1 min-h-0 ml-1 flex-row items-center justify-between py-2"
+							onPress={() => province && setCityModalVisible(true)}
+							disabled={!province}
+						>
+							<Text className={city ? 'text-base text-foreground' : 'text-base text-muted-foreground'}>
+								{city || (province ? 'Select city' : 'Select province first')}
+							</Text>
+							<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+						</Pressable>
+						<Modal
+							visible={cityModalVisible}
+							animationType="slide"
+							transparent
+							onRequestClose={() => setCityModalVisible(false)}
+						>
+							<Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setCityModalVisible(false)}>
+								<Pressable className="bg-card border-t border-border rounded-t-2xl max-h-[70%]" onPress={(e) => e.stopPropagation()}>
+									<View className="p-4 border-b border-border">
+										<Text className="text-lg font-semibold text-foreground">Select city</Text>
+									</View>
+									<FlatList
+										keyboardShouldPersistTaps="handled"
+										data={citiesByProvince}
+										keyExtractor={(item) => item}
+										className="max-h-[280px]"
+										ListEmptyComponent={
+											loadingCities ? (
+												<View className="py-8 items-center">
+													<ActivityIndicator size="small" color={colors.primary} />
+													<Text className="text-muted-foreground mt-2">Loading cities…</Text>
+												</View>
+											) : (
+												<Text className="text-muted-foreground text-center py-8">No cities for this province.</Text>
+											)
+										}
+										renderItem={({ item }) => (
+											<Pressable
+												className="px-4 py-3 active:bg-muted"
+												onPress={() => {
+													setCity(item);
+													setCityModalVisible(false);
+												}}
+											>
+												<Text className="text-foreground text-base">{item}</Text>
+											</Pressable>
+										)}
+									/>
+								</Pressable>
+							</Pressable>
+						</Modal>
 					</View>
 
 					{/* Postal Code: Picker from API (no manual entry) or manual only for "Other" */}
-					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border">
-						<Ionicons name="location-outline" size={20} color="#F38C1E" style={{ marginRight: 12 }} />
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="location-outline" size={20} color="#F38C1E" />
+						</View>
 						{!city ? (
-							<View className="flex-1 flex-row items-center">
+							<View className="flex-1 flex-row items-center min-h-0">
 								<Text className="text-muted-foreground text-base">Select city first</Text>
 							</View>
 						) : city === 'Other' ? (
 							<TextInput
-								className="flex-1 text-base text-foreground"
+								className="flex-1 min-h-0 py-0 text-base text-foreground"
 								value={postalCode}
 								onChangeText={(t) => setPostalCode(t.replace(/\D/g, '').slice(0, 4))}
 								placeholder="4-digit postal code"
@@ -349,21 +428,23 @@ export default function SignupScreen() {
 								maxLength={4}
 							/>
 						) : loadingPostalCodes ? (
-							<View className="flex-1 flex-row items-center">
-								<ActivityIndicator size="small" color={colors.accent} style={{ marginRight: 8 }} />
+							<View className="flex-1 flex-row items-center min-h-0">
+								<View className="mr-2">
+									<ActivityIndicator size="small" color={colors.accent} />
+								</View>
 								<Text className="text-muted-foreground text-base">Loading postal codes for {city}…</Text>
 							</View>
 						) : postalCodesForCity.length === 0 ? (
-							<View className="flex-1">
+							<View className="flex-1 min-h-0">
 								<Text className="text-muted-foreground text-base">No postal codes for {city}. Pick another city.</Text>
 							</View>
 						) : (
-							<View className="flex-1 ml-1">
+							<View className="flex-1 min-h-0 ml-1">
 								<Pressable
 									onPress={() => setPostalCodeModalVisible(true)}
 									className="flex-row items-center justify-between py-2"
 								>
-									<Text className="text-base" style={{ color: postalCode ? colors.text : colors.placeholder }}>
+									<Text className={postalCode ? 'text-base text-foreground' : 'text-base text-muted-foreground'}>
 										{postalCode || 'Select postal code'}
 									</Text>
 									<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
@@ -384,49 +465,56 @@ export default function SignupScreen() {
 											setPostalCodeSearch('');
 										}}
 									>
-										<Pressable
-											className="bg-card border-t border-border rounded-t-2xl max-h-[70%]"
-											onPress={(e) => e.stopPropagation()}
+										<KeyboardAvoidingView
+											behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+											className="w-full"
 										>
-											<View className="p-4 border-b border-border">
-												<Text className="text-lg font-semibold text-foreground mb-3">Select postal code</Text>
-												<View className="flex-row items-center bg-input border border-border rounded-lg px-3 h-11">
-													<Ionicons name="search-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
-													<TextInput
-														className="flex-1 text-base text-foreground py-0"
-														value={postalCodeSearch}
-														onChangeText={setPostalCodeSearch}
-														placeholder="Search postal code"
-														placeholderTextColor={colors.placeholder}
-														keyboardType="number-pad"
-														autoFocus
-													/>
-												</View>
-											</View>
-											<FlatList
-												keyboardShouldPersistTaps="handled"
-												data={filteredPostalCodes}
-												keyExtractor={(item) => item}
-												style={{ maxHeight: 280 }}
-												ListEmptyComponent={
-													<View className="py-6 px-4">
-														<Text className="text-center text-muted-foreground">No matches</Text>
+											<Pressable
+												className="bg-card border-t border-border rounded-2xl max-h-[70%]"
+												onPress={(e) => e.stopPropagation()}
+											>
+												<View className="p-4 border-b border-border">
+													<Text className="text-lg font-semibold text-foreground mb-3">Select postal code</Text>
+													<View className="flex-row items-center bg-input border border-border rounded-lg px-3 h-11 overflow-hidden">
+														<View className="mr-2">
+															<Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+														</View>
+														<TextInput
+															className="flex-1 min-h-0 py-0 text-base text-foreground"
+															value={postalCodeSearch}
+															onChangeText={setPostalCodeSearch}
+															placeholder="Search postal code"
+															placeholderTextColor={colors.placeholder}
+															keyboardType="number-pad"
+															autoFocus
+														/>
 													</View>
-												}
-												renderItem={({ item }) => (
-													<Pressable
-														className="px-4 py-3 active:bg-muted"
-														onPress={() => {
-															setPostalCode(item);
-															setPostalCodeModalVisible(false);
-															setPostalCodeSearch('');
-														}}
-													>
-														<Text className="text-foreground text-base">{item}</Text>
-													</Pressable>
-												)}
-											/>
-										</Pressable>
+												</View>
+												<FlatList
+													keyboardShouldPersistTaps="handled"
+													data={filteredPostalCodes}
+													keyExtractor={(item) => item}
+													className="max-h-[280px]"
+													ListEmptyComponent={
+														<View className="py-6 px-4">
+															<Text className="text-center text-muted-foreground">No matches</Text>
+														</View>
+													}
+													renderItem={({ item }) => (
+														<Pressable
+															className="px-4 py-3 active:bg-muted"
+															onPress={() => {
+																setPostalCode(item);
+																setPostalCodeModalVisible(false);
+																setPostalCodeSearch('');
+															}}
+														>
+															<Text className="text-foreground text-base">{item}</Text>
+														</Pressable>
+													)}
+												/>
+											</Pressable>
+										</KeyboardAvoidingView>
 									</Pressable>
 								</Modal>
 							</View>
@@ -440,7 +528,7 @@ export default function SignupScreen() {
 						accentColor={colors.accent}
 						placeholderColor={colors.placeholder}
 						autoComplete="password-new"
-						containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border"
+						containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden"
 					/>
 					<PasswordField
 						value={confirmPassword}
@@ -449,54 +537,63 @@ export default function SignupScreen() {
 						accentColor={colors.accent}
 						placeholderColor={colors.placeholder}
 						autoComplete="password-new"
-						containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border"
+						containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden"
 					/>
 
-					{/* Role Picker */}
-					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border">
-						<Ionicons name="briefcase-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
-						<View className="flex-1 ml-1">
-							<Picker
-								selectedValue={role}
-								onValueChange={(v) => setRole(v as typeof role)}
-								style={{ color: colors.text }}
-								itemStyle={colorScheme === 'dark' ? { color: colors.text } : undefined}
-								prompt="Select role"
-							>
-								{(['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'] as const).map((r) => (
-									<Picker.Item key={r} label={r} value={r} color={colors.text} />
-								))}
-							</Picker>
+					{/* Role selector (modal list, same on iOS & Android) */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="briefcase-outline" size={20} color={colors.accent} />
 						</View>
+						<Pressable
+							className="flex-1 min-h-0 ml-1 flex-row items-center justify-between py-2"
+							onPress={() => setRoleModalVisible(true)}
+						>
+							<Text className="text-base text-foreground">{role}</Text>
+							<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+						</Pressable>
+						<Modal
+							visible={roleModalVisible}
+							animationType="slide"
+							transparent
+							onRequestClose={() => setRoleModalVisible(false)}
+						>
+							<Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setRoleModalVisible(false)}>
+								<Pressable className="bg-card border-t border-border rounded-t-2xl max-h-[70%]" onPress={(e) => e.stopPropagation()}>
+									<View className="p-4 border-b border-border">
+										<Text className="text-lg font-semibold text-foreground">Select role</Text>
+									</View>
+									<FlatList
+										keyboardShouldPersistTaps="handled"
+										data={ROLES}
+										keyExtractor={(item) => item}
+										className="max-h-[280px]"
+										renderItem={({ item }) => (
+											<Pressable
+												className="px-4 py-3 active:bg-muted"
+												onPress={() => {
+													setRole(item);
+													setRoleModalVisible(false);
+												}}
+											>
+												<Text className="text-foreground text-base">{item}</Text>
+											</Pressable>
+										)}
+									/>
+								</Pressable>
+							</Pressable>
+						</Modal>
 					</View>
 
 					{/* Terms & Conditions */}
-					<View className="flex-row items-start mb-6 pr-2">
-						<Pressable
-							onPress={() => setAcceptedTerms(!acceptedTerms)}
-							style={{ flexDirection: 'row', alignItems: 'center' }}
-						>
-							<View style={{
-								width: 20,
-								height: 20,
-								borderRadius: 4,
-								borderWidth: 2,
-								borderColor: acceptedTerms ? '#F38C1E' : '#F38C1E',
-								backgroundColor: acceptedTerms ? '#F38C1E' : 'transparent',
-								alignItems: 'center',
-								justifyContent: 'center',
-								marginRight: 10
-							}}>
-								{acceptedTerms && <Ionicons name="checkmark" size={16} color="white" />}
-							</View>
-						</Pressable>
-						<Text className="flex-1 text-[13px] text-muted-foreground leading-5">
-							By Creating an account, you agree to our{' '}
-							<Text className="text-accent font-semibold">Terms & Conditions</Text>
-							{' '}and agree to{' '}
-							<Text className="text-accent font-semibold">Privacy Policy</Text>
-						</Text>
-					</View>
+					<TermsAndPrivacyNotice
+						accepted={acceptedTerms}
+						onToggle={() => setAcceptedTerms(!acceptedTerms)}
+					/>
+
+					<Text className="text-muted-foreground text-xs text-center mb-4">
+						After signing up, check your email to confirm your account before signing in.
+					</Text>
 
 					{/* Sign Up Button */}
 					<Button
@@ -504,7 +601,7 @@ export default function SignupScreen() {
 						onPress={handleSignup}
 						disabled={isLoading || cooldownSeconds > 0}
 					>
-						<Text className="text-lg font-semibold text-white">
+						<Text className="text-lg h-10 min-h-8 font-semibold text-white">
 							{isLoading ? 'Creating Account...' : cooldownSeconds > 0 ? `Try again in ${cooldownSeconds}s` : 'Sign Up'}
 						</Text>
 					</Button>
@@ -520,18 +617,18 @@ export default function SignupScreen() {
 
 					{/* Google Sign In Button */}
 					<Pressable
-						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-4 active:opacity-80 active:scale-95"
 						onPress={async () => {
 							try {
 								await signInWithGoogle();
 							} catch (error: any) {
-								Alert.alert('Error', error?.message || 'Failed to sign in with Google');
+								setError(error?.message || 'Failed to sign in with Google', 'Error');
 							}
 						}}
 					>
 						<Image
 							source={require('../../../assets/logos/search.png')}
-							style={{ width: 22, height: 22, marginRight: 12 }}
+							className="w-[22px] h-[22px] mr-3"
 							resizeMode="contain"
 						/>
 						<Text className="text-base font-semibold text-foreground">
@@ -539,16 +636,50 @@ export default function SignupScreen() {
 						</Text>
 					</Pressable>
 
+					{/* Apple Sign In Button */}
+					<Pressable
+						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+						onPress={async () => {
+							try {
+								await signInWithApple();
+							} catch (error: any) {
+								setError(error?.message || 'Failed to sign in with Apple', 'Error');
+							}
+						}}
+					>
+						<Image
+							source={require('../../../assets/logos/apple-logo.png')}
+							className="w-[22px] h-[22px] mr-3"
+							resizeMode="contain"
+						/>
+						<Text className="text-base font-semibold text-foreground">
+							Continue with Apple
+						</Text>
+					</Pressable>
+
 					{/* Login Link */}
 					<View className="flex-row justify-center items-center">
 						<Text className="text-sm text-muted-foreground">Already have an account? </Text>
-						<Pressable onPress={() => router.push('/(auth)/login')}>
+						<Pressable onPress={() => router.push('/(auth)')}>
 							<Text className="text-sm font-semibold text-accent underline">Log In</Text>
 						</Pressable>
 					</View>
 					</View>
 				</ScreenKeyboardAwareScrollView>
 			</SafeAreaView>
+
+			{/* Error Alert */}
+			<ErrorAlert
+				visible={!!error}
+				title={errorTitle}
+				message={error ?? ''}
+				onDismiss={clearError}
+				severity={
+					error?.includes('Rate Limited') || error?.includes('Loading') ? 'warning'
+						: 'error'
+				}
+				autoDismissMs={5000}
+			/>
 		</View>
 	);
 }

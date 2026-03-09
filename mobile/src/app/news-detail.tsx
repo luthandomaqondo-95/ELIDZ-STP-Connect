@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Image } from 'react-native';
+import { View, ActivityIndicator, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
@@ -138,6 +139,9 @@ function NewsDetailScreen() {
     }
   };
 
+  const { width } = Dimensions.get('window');
+  const imageHeight = Math.min(240, width * 0.55);
+
   return (
     <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="bg-background">
@@ -149,34 +153,39 @@ function NewsDetailScreen() {
       </View>
 
       <View className="mt-6 px-5">
-        <View
-          className="p-5 rounded-xl mb-3"
-          style={{ backgroundColor: categoryColors[category] || colors.primary }}
-        >
-          {category && (
-            <View className="self-start px-2.5 py-1 rounded-lg bg-primary-foreground">
-              <Text className="text-xs" style={{ color: categoryColors[category] || colors.primary }}>
-                {category}
-              </Text>
-            </View>
-          )}
-          <View className="mt-3 items-center">
-            {news.image_url ? (
-              <Image
-                source={{ uri: news.image_url }}
-                className="w-[120px] h-[120px] rounded-xl"
-                resizeMode="cover"
-              />
-            ) : (
-              <Feather name={getCategoryIcon(category)} size={48} color={colors.buttonText} />
-            )}
+        {/* Hero image - full picture visible */}
+        {news.image_url ? (
+          <View className="rounded-2xl overflow-hidden mb-4 border border-border bg-muted/20">
+            <Image
+              source={{ uri: news.image_url }}
+              style={{ width: width - 40, height: imageHeight }}
+              contentFit="contain"
+            />
           </View>
-          <Text className="text-xl font-bold text-primary-foreground mt-3">
-            {news.title}
-          </Text>
-        </View>
+        ) : (
+          <View
+            className="rounded-2xl mb-4 p-6 justify-center items-center"
+            style={{ backgroundColor: categoryColors[category] || colors.primary, minHeight: imageHeight }}
+          >
+            <Feather name={getCategoryIcon(category)} size={64} color={colors.buttonText} />
+          </View>
+        )}
 
-        <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
+        {category && (
+          <View
+            className="self-start px-3 py-1.5 rounded-lg mb-3"
+            style={{ backgroundColor: `${categoryColors[category] || colors.primary}20` }}
+          >
+            <Text className="text-xs font-semibold" style={{ color: categoryColors[category] || colors.primary }}>
+              {category}
+            </Text>
+          </View>
+        )}
+        <Text className="text-xl font-bold text-foreground mb-4">
+          {news.title}
+        </Text>
+
+        <View className="p-4 rounded-xl mb-4 bg-card shadow-sm border border-border">
           <View className="flex-row justify-between flex-wrap">
             <View className="flex-row items-center mb-2">
               <Feather name="calendar" size={16} color={colors.textSecondary} />

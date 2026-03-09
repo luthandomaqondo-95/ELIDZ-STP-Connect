@@ -11,6 +11,7 @@ export type AuthData = {
     signup: (name: string, email: string, password: string, role: Profile['role'], address: string) => Promise<void>
     resendSignupConfirmation: (email: string) => Promise<void>
     signInWithGoogle: () => Promise<any>
+    signInWithApple: () => Promise<any>
     logout: () => Promise<void>
     updateProfile: (updates: Partial<Profile>) => Promise<void>
 }
@@ -24,6 +25,7 @@ export const AuthContext = createContext<AuthData>({
     signup: async () => {},
     resendSignupConfirmation: async () => {},
     signInWithGoogle: async () => {},
+    signInWithApple: async () => {},
     logout: async () => {},
     updateProfile: async () => {},
 })
