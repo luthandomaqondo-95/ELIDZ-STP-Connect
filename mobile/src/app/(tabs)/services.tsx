@@ -529,7 +529,7 @@ export default function ServicesScreen() {
 										</Pressable>
 										{service.has_vr && (
 											<Pressable
-												onPress={() => handleServiceSelect(service)}
+												onPress={handleOpenVR}
 												className="px-4 py-2.5 border border-accent rounded-lg active:opacity-90"
 											>
 												<View className="flex-row items-center">

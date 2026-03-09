@@ -290,38 +290,6 @@ function ProfileScreen() {
                                 </Text>
                             </View>
 
-                            <View className="flex-row items-center justify-between mb-4">
-                                <Text className="text-muted-foreground text-sm">
-                                    Business Verification
-                                </Text>
-                                <Text className="text-foreground text-sm font-semibold">
-                                    {effectiveStatus ? getVerificationStatusText(effectiveStatus) : 'Not Submitted'}
-                                </Text>
-                            </View>
-
-                            {effectiveStatus === 'rejected' && verificationStatus?.rejection_reason && (
-                                <View className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3">
-                                    <Text className="text-destructive text-xs font-medium mb-1">Rejection Reason:</Text>
-                                    <Text style={{ color: colors.destructive, opacity: 0.9 }} className="text-xs">{verificationStatus.rejection_reason}</Text>
-                                </View>
-                            )}
-
-                            {effectiveStatus === 'pending' && (
-                                <View style={{ backgroundColor: `${colors.accent}20`, borderColor: `${colors.accent}50`, borderWidth: 1 }} className="rounded-lg p-3 mb-3">
-                                    <Text style={{ color: colors.text }} className="text-xs">
-                                        Your documents are under review. This process usually takes 24-48 hours.
-                                    </Text>
-                                </View>
-                            )}
-
-                            {effectiveStatus === 'verified' && (
-                                <View className="bg-constructive/10 border border-constructive/30 rounded-lg p-3 mb-3">
-                                    <Text style={{ color: colors.constructive }} className="text-xs">
-                                        Your business has been verified! You now have access to exclusive SMME benefits.
-                                    </Text>
-                                </View>
-                            )}
-
                             <Pressable
                                 onPress={() => router.push('/smme-verification')}
                                 className="bg-accent py-3 rounded-xl items-center active:opacity-90"
@@ -393,6 +361,7 @@ function ProfileScreen() {
                         <View className="bg-card rounded-2xl px-4 shadow-sm">
                             {renderMenuItem('user', 'Personal Information', 'Manage your profile details', () => router.push('/edit-profile'), false, !isLoggedIn)}
                             {renderMenuItem('bell', 'Notifications', 'View admin communications', () => router.push('/(tabs)/notifications'), false, !isLoggedIn)}
+                            {renderMenuItem('mail', 'My Enquiries', 'View and track your enquiries', () => router.push('/my-enquiries'), false, !isLoggedIn)}
                             {renderMenuItem('settings', 'Settings', 'Notifications, privacy & more', () => router.push('/settings'), false, !isLoggedIn)}
                             {/* Premium Features (disabled) */}
                             {/* {renderMenuItem('star', 'Premium Features', 'Manage subscription', () => router.push('/(modals)/premium-upgrade'), false, !isLoggedIn, true)} */}

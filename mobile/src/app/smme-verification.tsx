@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import * as ImagePicker from 'expo-image-picker';
-import { verificationService } from '@/services/verification.service';
+import { verificationService, SMMEVerification } from '@/services/verification.service';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { useQueryClient } from '@tanstack/react-query';
@@ -52,6 +52,8 @@ export default function SMMEVerificationScreen() {
         }
     ]);
     const [isUploading, setIsUploading] = useState(false);
+    const [loadingDocuments, setLoadingDocuments] = useState(false);
+    const [verificationStatus, setVerificationStatus] = useState<SMMEVerification | null>(null);
     
     // Products/Services state
     const [servicesProducts, setServicesProducts] = useState<{ services: SMMEServiceProduct[]; products: SMMEServiceProduct[] }>({ services: [], products: [] });
@@ -71,6 +73,8 @@ export default function SMMEVerificationScreen() {
     const [submittingForm, setSubmittingForm] = useState(false);
 
     const uploadedCount = documents.filter((d) => Boolean(d.uri)).length;
+    const allRequiredUploaded = uploadedCount === 3;
+    const isVerified = verificationStatus?.status === 'verified';
 
     const categories = [
         'Technology',
@@ -88,9 +92,39 @@ export default function SMMEVerificationScreen() {
 
     useEffect(() => {
         if (profile?.id) {
+            loadExistingDocuments();
             loadServicesProducts();
         }
     }, [profile?.id]);
+
+    const loadExistingDocuments = async () => {
+        if (!profile?.id) return;
+        setLoadingDocuments(true);
+        try {
+            const existingDocs = await verificationService.getAllVerifications(profile.id);
+            const status = await verificationService.getVerificationStatus(profile.id);
+            setVerificationStatus(status);
+
+            if (existingDocs && existingDocs.length > 0) {
+                setDocuments((prev) =>
+                    prev.map((slot) => {
+                        const match = existingDocs.find(
+                            (doc) => doc.document_type === slot.type
+                        );
+                        if (!match) return slot;
+                        return {
+                            ...slot,
+                            uri: match.document_url, // persisted public URL
+                        };
+                    })
+                );
+            }
+        } catch (error) {
+            console.error('Error loading existing verification documents:', error);
+        } finally {
+            setLoadingDocuments(false);
+        }
+    };
 
     const loadServicesProducts = async () => {
         if (!profile?.id) return;
@@ -297,10 +331,12 @@ export default function SMMEVerificationScreen() {
                 >
                     <View className="px-0">
                         <Text className="text-white/80 text-base mb-1">
-                            Upload 3 documents for verification.
+                            {isVerified
+                                ? 'Your documents have been verified.'
+                                : 'Upload 3 documents for verification.'}
                         </Text>
                         <Text className="text-white/60 text-sm">
-                            {uploadedCount}/3 uploaded
+                            {isVerified ? 'Verification complete' : `${uploadedCount}/3 uploaded`}
                         </Text>
                     </View>
                 </TabsLayoutHeader>
@@ -362,13 +398,13 @@ export default function SMMEVerificationScreen() {
                     <View className="flex-row items-center justify-between mb-2">
                         <Text className="text-sm font-semibold text-foreground">Upload Progress</Text>
                         <Text className="text-sm font-bold text-foreground">
-                            {documents.filter(d => d.uri).length}/3
+                            {isVerified ? '3/3 (Verified)' : `${uploadedCount}/3`}
                         </Text>
                     </View>
                     <View className="h-2 bg-muted rounded-full overflow-hidden">
                         <View 
                             className="h-full bg-constructive rounded-full"
-                            style={{ width: `${(documents.filter(d => d.uri).length / 3) * 100}%` }}
+                            style={{ width: `${(uploadedCount / 3) * 100}%` }}
                         />
                     </View>
                 </View>
@@ -376,12 +412,16 @@ export default function SMMEVerificationScreen() {
                 {/* Submit Button */}
                 <Button
                     className="h-14 rounded-full mb-6"
-                    style={{ backgroundColor: colors.primary }}
+                    style={{ backgroundColor: colors.primary, opacity: isVerified ? 0.5 : 1 }}
                     onPress={handleUpload}
-                    disabled={isUploading || documents.some(d => !d.uri)}
+                    disabled={isUploading || !allRequiredUploaded || isVerified}
                 >
                     <Text className="text-white font-bold text-lg">
-                        {isUploading ? 'Submitting Documents...' : `Submit All Documents (${documents.filter(d => d.uri).length}/3)`}
+                        {isVerified
+                            ? 'Documents Verified'
+                            : isUploading
+                                ? 'Submitting Documents...'
+                                : `Submit All Documents (${uploadedCount}/3)`}
                     </Text>
                 </Button>
 

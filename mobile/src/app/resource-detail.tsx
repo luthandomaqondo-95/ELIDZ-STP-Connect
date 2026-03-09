@@ -185,20 +185,58 @@ function ResourceDetailScreen() {
         </View>
 
         {displayResource.bookingRequired && (
-          <Pressable
-            className={`flex-row justify-center items-center h-[52px] rounded-lg mb-5 active:opacity-70 ${displayResource.status === 'Available' ? 'bg-accent' : 'bg-muted-foreground'}`}
-            onPress={handleRequestAccess}
-            disabled={displayResource.status !== 'Available'}
-          >
-            <Feather
-              name={displayResource.status === 'Available' ? 'calendar' : 'clock'}
-              size={20}
-              color={colors.buttonText}
-            />
-            <Text className="text-base font-semibold text-primary-foreground ml-2.5">
-              {displayResource.status === 'Available' ? 'Request Access' : displayResource.status === 'In Use' ? 'Currently In Use' : 'Coming Soon'}
-            </Text>
-          </Pressable>
+          <View className="mb-5">
+            <View className="flex-row gap-3">
+              <Pressable
+                className={`flex-1 flex-row justify-center items-center h-[52px] rounded-lg active:opacity-70 ${displayResource.status === 'Available' ? 'bg-accent' : 'bg-muted-foreground'}`}
+                onPress={handleRequestAccess}
+                disabled={displayResource.status !== 'Available'}
+              >
+                <Feather
+                  name={displayResource.status === 'Available' ? 'calendar' : 'clock'}
+                  size={20}
+                  color={colors.buttonText}
+                />
+                <Text className="text-base font-semibold text-primary-foreground ml-2.5">
+                  {displayResource.status === 'Available'
+                    ? 'Request Access'
+                    : displayResource.status === 'In Use'
+                      ? 'Currently In Use'
+                      : 'Coming Soon'}
+                </Text>
+              </Pressable>
+              <Pressable
+                className="flex-1 flex-row justify-center items-center h-[52px] rounded-lg border border-border bg-card active:opacity-80"
+                onPress={async () => {
+                  try {
+                    const message = [
+                      `Resource: ${displayResource.name}`,
+                      `Category: ${displayResource.category}`,
+                      '',
+                      'Issue details:',
+                      '(Please describe the problem in as much detail as possible.)',
+                    ].join('\n');
+                    await enquiryService.createEnquiry({
+                      enquiry_type: 'Other',
+                      subject: `Resource Issue: ${displayResource.name}`,
+                      message,
+                    });
+                    Alert.alert(
+                      'Issue Reported',
+                      `Your issue report for ${displayResource.name} has been submitted. Thank you for letting us know.`
+                    );
+                  } catch (error) {
+                    Alert.alert('Error', 'Failed to submit issue report. Please try again.');
+                  }
+                }}
+              >
+                <Feather name="alert-triangle" size={18} color={colors.warning} />
+                <Text className="text-sm font-semibold ml-2" style={{ color: colors.warning }}>
+                  Report Issue
+                </Text>
+              </Pressable>
+            </View>
+          </View>
         )}
       </View>
 

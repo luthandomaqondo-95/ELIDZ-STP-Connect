@@ -139,6 +139,18 @@ export default function NotificationsScreen() {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const handleNotificationPress = async (notification: Notification) => {
+        await handleMarkAsRead(notification);
+
+        // Deep-link into related entities where possible
+        if (notification.related_entity_type === 'enquiry' && notification.related_entity_id) {
+            router.push({ pathname: '/enquiry-detail', params: { id: notification.related_entity_id } });
+            return;
+        }
+
+        // Fallback: no deep-link available, just keep it marked as read
+    };
+
     const renderNotification = (notification: Notification) => {
         const isUnread = !notification.read_at;
         const icon = notificationService.getNotificationIcon(notification.type);
@@ -147,7 +159,7 @@ export default function NotificationsScreen() {
         return (
             <Pressable
                 key={notification.id}
-                onPress={() => handleMarkAsRead(notification)}
+                onPress={() => handleNotificationPress(notification)}
                 className={`bg-card mb-3 rounded-2xl border ${isUnread ? 'border-[#F38C1E]/50 border-l-4' : 'border-border'} shadow-sm overflow-hidden active:opacity-95`}
             >
                 <View className="p-4">

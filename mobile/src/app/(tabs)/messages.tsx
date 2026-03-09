@@ -167,6 +167,8 @@ function MessagesScreen() {
         const userId = profile?.id;
         try {
             await connectionService.cancelConnectionRequest(connectionId);
+
+            // Optimistically update any cached contacts so this entry becomes "available"
             if (userId) {
                 queryClient.setQueriesData(
                     { queryKey: ['contacts', userId], exact: false },
@@ -180,8 +182,14 @@ function MessagesScreen() {
                     }
                 );
             }
-            await queryClient.refetchQueries({ queryKey: ['contacts'] });
-            setTimeout(() => Alert.alert('Request Cancelled', `Connection request to ${userName} has been cancelled.`), 0);
+
+            // Immediately jump user back to Discover tab where the contact will now appear
+            setActiveTab('discover');
+
+            // Ensure all contacts queries refetch from server
+            await queryClient.invalidateQueries({ queryKey: ['contacts'] });
+
+            Alert.alert('Request Cancelled', `Connection request to ${userName} has been cancelled.`);
         } catch (error: any) {
             console.error('Error cancelling connection request:', error);
             Alert.alert('Error', error.message || 'Failed to cancel connection request.');
@@ -386,44 +394,6 @@ function MessagesScreen() {
                         <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2" />
                     )}
 
-                    {contact.connectionStatus === 'pending_received' && (
-                        <View className="flex-row ml-2">
-                            <Pressable
-                                className="w-10 h-10 rounded-full bg-green-500 justify-center items-center mr-2"
-                                onPress={() => handleAcceptConnection(contact.connectionId!, contact.name)}
-                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                                <Feather name="check" size={18} color="white" />
-                            </Pressable>
-                            <Pressable
-                                className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
-                                onPress={() => handleDeclineConnection(contact.connectionId!, contact.name)}
-                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                                <Feather name="x" size={18} color="white" />
-                            </Pressable>
-                        </View>
-                    )}
-
-                    {contact.connectionStatus === 'pending_sent' && (
-                        <View className="flex-row items-center ml-2">
-                            <View className="flex-row items-center bg-muted px-3 py-1.5 rounded-full mr-2">
-                                <Feather name="clock" size={14} color={colors.iconGrayDark} style={{ marginRight: 6 }} />
-                                <Text className="text-xs font-medium text-muted-foreground">Requested</Text>
-                            </View>
-                            <Pressable
-                                className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
-                                onPress={(e) => {
-                                    e.stopPropagation();
-                                    if (contact.connectionId) handleCancelRequest(contact.connectionId, contact.name);
-                                }}
-                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                                <Feather name="x" size={18} color="white" />
-                            </Pressable>
-                        </View>
-                    )}
-
                     {contact.connectionStatus === 'available' && (
                         <Pressable
                             className="ml-2 bg-[#002147] px-4 py-2 rounded-full flex-row items-center active:opacity-90"
@@ -440,6 +410,46 @@ function MessagesScreen() {
                         </View>
                     )}
                 </View>
+
+                {/* Pending actions in a separate row to avoid overlapping text */}
+                {contact.connectionStatus === 'pending_received' && (
+                    <View className="flex-row justify-end items-center px-4 pb-3 pt-0">
+                        <Pressable
+                            className="w-10 h-10 rounded-full bg-green-500 justify-center items-center mr-2"
+                            onPress={() => handleAcceptConnection(contact.connectionId!, contact.name)}
+                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        >
+                            <Feather name="check" size={18} color="white" />
+                        </Pressable>
+                        <Pressable
+                            className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
+                            onPress={() => handleDeclineConnection(contact.connectionId!, contact.name)}
+                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        >
+                            <Feather name="x" size={18} color="white" />
+                        </Pressable>
+                    </View>
+                )}
+
+                {contact.connectionStatus === 'pending_sent' && (
+                    <View className="flex-row justify-end items-center px-4 pb-3 pt-0">
+                        <View className="flex-row items-center bg-muted px-3 py-1.5 rounded-full mr-2">
+                            <Feather name="clock" size={14} color={colors.iconGrayDark} style={{ marginRight: 6 }} />
+                            <Text className="text-xs font-medium text-muted-foreground">Requested</Text>
+                        </View>
+                        <Pressable
+                            className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
+                            onPress={(e) => {
+                                e.stopPropagation();
+                                if (contact.connectionId) handleCancelRequest(contact.connectionId, contact.name);
+                            }}
+                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        >
+                            <Feather name="x" size={18} color="white" />
+                        </Pressable>
+                    </View>
+                )}
+
             </Pressable>
         );
     }
