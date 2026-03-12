@@ -83,6 +83,10 @@ export default function LoginScreen() {
             setError('Please enter both email and password', 'Missing fields');
             return;
         }
+        if (!acceptedTerms) {
+            setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
+            return;
+        }
         if (cooldownSeconds > 0) {
             setError(`Too many attempts. Try again in ${cooldownSeconds}s.`, 'Rate limited');
             return;
@@ -93,15 +97,20 @@ export default function LoginScreen() {
             return;
         }
 
+        const normalizedEmail = email.trim().toLowerCase();
+        console.log('LoginScreen: starting login', { email: normalizedEmail });
+
         await execute(
-            () => login(email.trim().toLowerCase(), password),
+            () => login(normalizedEmail, password),
             {
                 onSuccess: () => {
+                    console.log('LoginScreen: login success, navigating to /(tabs)');
                     clearError();
                     router.replace('/(tabs)');
                 },
                 onError: (error: any) => {
                     const message = error?.message ?? '';
+                    console.log('LoginScreen: login failed', { message, error });
                     if (/too many|rate limit|over_email_send_rate_limit|over_request_rate_limit|429/i.test(message)) {
                         setCooldownSeconds(60);
                     }

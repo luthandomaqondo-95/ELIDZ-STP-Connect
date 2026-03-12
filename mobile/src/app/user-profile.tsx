@@ -14,11 +14,13 @@ import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { Profile } from '@/types';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
 import { DEFAULT_AVATAR } from '@/constants/avatars';
+import { useQueryClient } from '@tanstack/react-query';
 
 function UserProfileScreen() {
     const { colors } = useTheme();
     const { profile: currentUser } = useAuthContext();
     const params = useLocalSearchParams<{ id?: string; userId?: string }>();
+    const queryClient = useQueryClient();
 
     const [profileUser, setProfileUser] = useState<Profile | null>(null);
     const { uri: profileUserAvatarUri } = useAvatarUri(profileUser?.avatar);
@@ -129,12 +131,16 @@ function UserProfileScreen() {
         try {
             await connectionService.sendConnectionRequest(currentUser.id, profileUser.id);
             setConnectionStatus('pending_sent');
+            // Keep contacts/messages views in sync so the user
+            // immediately sees this under Requests instead of Discover.
+            queryClient.invalidateQueries({ queryKey: ['contacts'] });
+
             Alert.alert('Request sent', `Connection request sent to ${profileUser.name}.`);
         } catch (error: any) {
             console.error('Connect error:', error);
-            Alert.alert('Error', error?.message || 'Failed to send connection request.');
+            Alert.alert('Error', error?.message || 'Failed to send request.');
         }
-    }, [currentUser?.id, profileUser?.id, profileUser?.name]);
+    }, [currentUser?.id, profileUser?.id, profileUser?.name, queryClient]);
 
     const handleAccept = useCallback(async () => {
         if (!connectionId) return;
@@ -221,21 +227,23 @@ function UserProfileScreen() {
                 </View>
             </View>
 
-            {/* Stats row (reference-style) */}
-            <View className="flex-row mx-6 mt-2 mb-2 justify-around">
-                <View className="items-center">
-                    <Text className="text-base font-extrabold text-foreground">{smmeProducts.length}</Text>
-                    <Text className="text-xs text-muted-foreground mt-0.5">Products</Text>
+            {/* Stats row - only relevant for SMMEs (verification, products & services) */}
+            {isSMME && (
+                <View className="flex-row mx-6 mt-2 mb-2 justify-around">
+                    <View className="items-center">
+                        <Text className="text-base font-extrabold text-foreground">{smmeProducts.length}</Text>
+                        <Text className="text-xs text-muted-foreground mt-0.5">Products</Text>
+                    </View>
+                    <View className="items-center">
+                        <Text className="text-base font-extrabold text-foreground">{smmeServices.length}</Text>
+                        <Text className="text-xs text-muted-foreground mt-0.5">Services</Text>
+                    </View>
+                    <View className="items-center">
+                        <Text className="text-base font-extrabold text-foreground">{isVerifiedSMME ? 'Yes' : 'No'}</Text>
+                        <Text className="text-xs text-muted-foreground mt-0.5">Verified</Text>
+                    </View>
                 </View>
-                <View className="items-center">
-                    <Text className="text-base font-extrabold text-foreground">{smmeServices.length}</Text>
-                    <Text className="text-xs text-muted-foreground mt-0.5">Services</Text>
-                </View>
-                <View className="items-center">
-                    <Text className="text-base font-extrabold text-foreground">{isVerifiedSMME ? 'Yes' : 'No'}</Text>
-                    <Text className="text-xs text-muted-foreground mt-0.5">Verified</Text>
-                </View>
-            </View>
+            )}
 
             {/* Action Buttons */}
             {!isOwnProfile && currentUser && (
@@ -286,15 +294,21 @@ function UserProfileScreen() {
                     <Text className="text-lg font-bold text-foreground mb-4">Contact Details</Text>
                     <View className="gap-y-4">
                         <Pressable onPress={() => Linking.openURL(`mailto:${profileUser.email}`)} className="flex-row items-center">
-                            <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-                                <Feather name="mail" size={18} color={colors.primary} />
+                            <View
+                                className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                                style={{ backgroundColor: colors.whiteOpacity10 }}
+                            >
+                                <Feather name="mail" size={18} color={colors.accent} />
                             </View>
                             <Text className="text-foreground font-medium flex-1">{profileUser.email}</Text>
                         </Pressable>
                         {profileUser.address && (
                             <View className="flex-row items-center">
-                                <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-                                    <Feather name="map-pin" size={18} color={colors.primary} />
+                                <View
+                                    className="w-10 h-10 rounded-full items-center justify-center mr-3"
+                                    style={{ backgroundColor: colors.whiteOpacity10 }}
+                                >
+                                    <Feather name="map-pin" size={18} color={colors.accent} />
                                 </View>
                                 <Text className="text-foreground font-medium flex-1">{profileUser.address}</Text>
                             </View>
@@ -334,7 +348,11 @@ function UserProfileScreen() {
                                 <Text className="text-base font-extrabold text-foreground mb-3">Products</Text>
                                 <View className="gap-y-3">
                                     {smmeProducts.map((item) => (
-                                        <View key={item.id} className="bg-background p-4 rounded-2xl border border-border">
+                                        <View
+                                            key={item.id}
+                                            className="p-4 rounded-2xl border border-border"
+                                            style={{ backgroundColor: colors.backgroundSecondary }}
+                                        >
                                             <View className="flex-row items-start justify-between">
                                                 <View className="flex-1 pr-3">
                                                     <Text className="text-base font-bold text-foreground">{item.name}</Text>
@@ -376,7 +394,11 @@ function UserProfileScreen() {
                                 <Text className="text-base font-extrabold text-foreground mb-3">Services</Text>
                                 <View className="gap-y-3">
                                     {smmeServices.map((item) => (
-                                        <View key={item.id} className="bg-background p-4 rounded-2xl border border-border">
+                                        <View
+                                            key={item.id}
+                                            className="p-4 rounded-2xl border border-border"
+                                            style={{ backgroundColor: colors.backgroundSecondary }}
+                                        >
                                             <View className="flex-row items-start justify-between">
                                                 <View className="flex-1 pr-3">
                                                     <Text className="text-base font-bold text-foreground">{item.name}</Text>

@@ -40,8 +40,8 @@ export default function ForgotPasswordScreen() {
             // In dev-client / standalone builds, use the stable custom scheme.
             const redirectTo =
                 Constants.appOwnership === 'expo'
-                    ? ExpoLinking.createURL('reset-password')
-                    : 'elidzstp://reset-password';
+                    ? ExpoLinking.createURL('change-password')
+                    : 'elidzstp://change-password';
 
             const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
                 // Route groups like "(auth)" are not part of deep-link paths in expo-router.

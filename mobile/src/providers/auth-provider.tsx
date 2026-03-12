@@ -42,7 +42,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		// Normalize email to lowercase to match signup behavior
 		const normalizedEmail = email.trim().toLowerCase();
 		
-		console.log('Attempting login with email:', normalizedEmail);
+		console.log('AuthProvider.login: Attempting login with email:', normalizedEmail);
 		
 		const { data, error } = await supabase.auth.signInWithPassword({
 			email: normalizedEmail,
@@ -50,7 +50,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		});
 
 		if (error) {
-			if (__DEV__) console.warn('Login error:', error?.message ?? error);
+			console.warn('AuthProvider.login: Login error:', error?.message ?? error);
 			const msg = typeof error.message === 'string' ? error.message : '';
 			const code = typeof (error as { code?: string }).code === 'string' ? (error as { code?: string }).code : '';
 			// Email not confirmed (AuthApiError / email_not_confirmed)
@@ -64,7 +64,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			throw new Error(msg || 'Something went wrong. Please try again.');
 		}
 
-		console.log('Login successful, user:', data?.user?.email);
+		console.log('AuthProvider.login: Login successful, user:', data?.user?.email);
 		
 		if (data?.user) {
 			await loadProfile(data.user.id);

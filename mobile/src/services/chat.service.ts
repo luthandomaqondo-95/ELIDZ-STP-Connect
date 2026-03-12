@@ -199,16 +199,24 @@ class ChatService {
 
 		if (attachment) {
 			try {
-				// 1. Upload file
+				// 1. Upload file (Expo / React Native-safe: use ArrayBuffer instead of Blob)
 				const response = await fetch(attachment.uri);
-				const blob = await response.blob();
+				const arrayBuffer = await response.arrayBuffer();
 				const fileExt = attachment.name?.split('.').pop() || 'jpg';
 				const fileName = `${chatId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+				const contentType =
+					attachment.type === 'image'
+						? 'image/jpeg'
+						: attachment.type === 'video'
+						? 'video/mp4'
+						: attachment.type === 'audio'
+						? 'audio/mpeg'
+						: 'application/octet-stream';
 
 				const { data: uploadData, error: uploadError } = await supabase.storage
 					.from('chat-attachments')
-					.upload(fileName, blob, {
-						contentType: attachment.type === 'image' ? 'image/jpeg' : undefined, // Add other types as needed
+					.upload(fileName, arrayBuffer, {
+						contentType,
 					});
 
 				if (uploadError) {

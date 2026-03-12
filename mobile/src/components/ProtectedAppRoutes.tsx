@@ -23,6 +23,7 @@ export default function ProtectedAppRoutes() {
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
+            <Stack.Screen name="change-password" options={{ title: 'Change Password', headerShown: false }} />
 
             <Stack.Protected guard={!isLoggedIn} >
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />

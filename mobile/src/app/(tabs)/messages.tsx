@@ -3,7 +3,7 @@ import { View, TextInput, Pressable, ScrollView, Alert, Dimensions, Image } from
 import { Text } from '@/components/ui/text';
 import { useAuthContext } from '../../hooks/use-auth-context';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { chatService, ChatWithDetails } from '@/services/chat.service';
 import { connectionService, ContactWithConnection, ConnectionRequest } from '@/services/connection.service';
@@ -39,12 +39,16 @@ type UserRole = 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' 
 type TabType = 'messages' | 'requests' | 'discover';
 
 function MessagesScreen() {
+    const params = useLocalSearchParams<{ tab?: string }>();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme ?? 'light'];
     const { profile, isLoggedIn } = useAuthContext();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRole, setSelectedRole] = useState<UserRole | 'All'>('All');
-    const [activeTab, setActiveTab] = useState<TabType>('messages');
+    const initialTabParam = (params.tab as TabType | undefined) ?? 'messages';
+    const [activeTab, setActiveTab] = useState<TabType>(
+        initialTabParam === 'requests' || initialTabParam === 'discover' ? initialTabParam : 'messages'
+    );
     const queryClient = useQueryClient();
 
     const debouncedSearch = useDebounce(searchQuery, 300);
@@ -166,11 +170,49 @@ function MessagesScreen() {
         }
     }
 
-    async function handleAcceptConnection(connectionId: string, userName: string) {
+    async function handleAcceptConnection(contact: ContactWithConnection) {
+        if (!profile?.id || !contact.connectionId) {
+            Alert.alert('Error', 'Unable to accept this connection right now.');
+            return;
+        }
+
         try {
-            await connectionService.acceptConnectionRequest(connectionId);
-            Alert.alert('Success', `You are now connected with ${userName}!`);
-            queryClient.invalidateQueries({ queryKey: ['contacts'] });
+            await connectionService.acceptConnectionRequest(contact.connectionId);
+
+            // Create (or reuse) a direct chat so the conversation
+            // immediately appears in the Messages tab.
+            try {
+                const chat = await chatService.createDirectChat(profile.id, contact.id);
+
+                // Switch to Messages tab and refresh lists so the new chat is visible
+                setActiveTab('messages');
+                queryClient.invalidateQueries({ queryKey: ['contacts', profile.id] });
+                queryClient.invalidateQueries({ queryKey: ['chats', profile.id] });
+
+                Alert.alert(
+                    'Success',
+                    `You are now connected with ${contact.name}! A conversation has been created in Messages.`,
+                    [
+                        {
+                            text: 'Open Chat',
+                            onPress: () => {
+                                router.push(`/message?chatId=${chat.id}&userName=${encodeURIComponent(contact.name)}`);
+                            },
+                        },
+                        { text: 'OK' },
+                    ]
+                );
+            } catch (chatError: any) {
+                console.error('Error creating chat after accepting connection:', chatError);
+                // Even if chat creation fails, keep the connection accepted
+                setActiveTab('messages');
+                queryClient.invalidateQueries({ queryKey: ['contacts', profile.id] });
+                queryClient.invalidateQueries({ queryKey: ['chats', profile.id] });
+                Alert.alert(
+                    'Connection Accepted',
+                    `You are now connected with ${contact.name}, but we could not start a conversation automatically. You can start one from the Messages tab.`
+                );
+            }
         } catch (error: any) {
             console.error('Error accepting connection:', error);
             Alert.alert('Error', error.message || 'Failed to accept connection request.');
@@ -437,12 +479,12 @@ function MessagesScreen() {
                 </View>
 
                 {/* Pending actions in a separate row to avoid overlapping text */}
-                {contact.connectionStatus === 'pending_received' && (
+                        {contact.connectionStatus === 'pending_received' && (
                     <View className="flex-row justify-end items-center px-4 pb-3 pt-0">
                         <Pressable
                             className="w-10 h-10 rounded-full justify-center items-center mr-2"
                             style={{ backgroundColor: colors.constructive }}
-                            onPress={() => handleAcceptConnection(contact.connectionId!, contact.name)}
+                            onPress={() => handleAcceptConnection(contact)}
                             hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                         >
                             <Feather name="check" size={18} color="white" />

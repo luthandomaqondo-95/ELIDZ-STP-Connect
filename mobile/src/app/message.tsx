@@ -310,7 +310,11 @@ function MessageScreen() {
   const queryClient = useQueryClient();
   const { colorScheme } = useColorScheme();
   const colors = COLORS[colorScheme ?? 'light'];
-  const { userName, chatId } = useLocalSearchParams<{ userName: string; chatId: string }>();
+  const { userName, chatId: paramChatId, userId: paramUserId } = useLocalSearchParams<{
+    userName?: string;
+    chatId?: string;
+    userId?: string;
+  }>();
   const { profile: user } = useAuthContext();
 
   const [message, setMessage] = useState('');
@@ -319,7 +323,8 @@ function MessageScreen() {
   const [sending, setSending] = useState(false);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [showMenu, setShowMenu] = useState(false);
-  const [otherUserId, setOtherUserId] = useState<string | null>(null);
+  const [chatId, setChatId] = useState<string | null>(() => (paramChatId as string) || null);
+  const [otherUserId, setOtherUserId] = useState<string | null>(() => (paramUserId as string) || null);
   const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(false);
   const { uri: otherAvatarUri } = useAvatarUri(otherUserAvatar);
@@ -366,6 +371,22 @@ function MessageScreen() {
   }, [chatId, user]);
 
   // ── Effects ────────────────────────────────────────────────────────────────
+
+  // If we were opened from a profile with only userId (no existing chat),
+  // create or reuse a direct chat first, then enable sending.
+  useEffect(() => {
+    if (chatId || !user || !otherUserId) return;
+
+    (async () => {
+      try {
+        const chat = await chatService.createDirectChat(user.id, otherUserId);
+        setChatId(chat.id);
+      } catch (err) {
+        console.error('MessageScreen: failed to create direct chat', err);
+        Alert.alert('Error', 'Unable to start this conversation. Please try again later.');
+      }
+    })();
+  }, [chatId, user, otherUserId]);
 
   useEffect(() => {
     if (!chatId || !user) {
@@ -573,7 +594,7 @@ function MessageScreen() {
   }
 
   const avatarSource = otherAvatarUri ? { uri: otherAvatarUri } : DEFAULT_AVATAR;
-  const canSend = (message.trim().length > 0 || !!attachment) && !sending;
+  const canSend = !!chatId && (message.trim().length > 0 || !!attachment) && !sending;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
