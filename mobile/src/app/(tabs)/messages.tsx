@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, TextInput, Pressable, ScrollView, Alert, Dimensions } from 'react-native';
+import { View, TextInput, Pressable, ScrollView, Alert, Dimensions, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useAuthContext } from '../../hooks/use-auth-context';
 import { Feather } from '@expo/vector-icons';
@@ -16,8 +16,22 @@ import { TabsLayoutHeader } from '@/components/Header';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { ListSkeleton } from '@/components/Loading';
+import { useAvatarUri } from '@/hooks/use-avatar-uri';
+import { DEFAULT_AVATAR } from '@/constants/avatars';
 
 const { width } = Dimensions.get('window');
+
+function ContactAvatar({ avatar, size = 48 }: { avatar?: string; size?: number }) {
+    const { uri } = useAvatarUri(avatar);
+    const source = uri ? { uri } : DEFAULT_AVATAR;
+    return (
+        <Image
+            source={source as any}
+            style={{ width: size, height: size, borderRadius: size / 2 }}
+            resizeMode="cover"
+        />
+    );
+}
 const isTablet = width >= 768;
 
 type UserRole = 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
@@ -44,35 +58,45 @@ function MessagesScreen() {
         if (!profile?.id) return;
 
         // Subscribe to new messages to update the list in real-time
-        // Use a debounced invalidation to avoid too many refreshes
         let invalidationTimeout: ReturnType<typeof setTimeout>;
-        
+        let connectionsTimeout: ReturnType<typeof setTimeout>;
+
         const channel = supabase
-            .channel('public:messages')
+            .channel('public:messages-and-connections')
             .on(
                 'postgres_changes',
-                {
-                    event: 'INSERT',
-                    schema: 'public',
-                    table: 'messages',
-                },
+                { event: 'INSERT', schema: 'public', table: 'messages' },
                 (payload: any) => {
                     const newMessage = payload.new;
-                    // Only invalidate if message is not from current user (to avoid unnecessary refreshes)
                     if (newMessage.sender_id !== profile.id) {
-                        // Debounce invalidations to avoid rapid-fire refreshes
                         clearTimeout(invalidationTimeout);
                         invalidationTimeout = setTimeout(() => {
                             queryClient.invalidateQueries({ queryKey: ['contacts'] });
                             queryClient.invalidateQueries({ queryKey: ['chats'] });
-                        }, 500); // Wait 500ms for potential batch of messages
+                        }, 500);
                     }
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'connections',
+                },
+                () => {
+                    // Connection created, updated, or deleted - refetch contacts to stay in sync with Supabase
+                    clearTimeout(connectionsTimeout);
+                    connectionsTimeout = setTimeout(() => {
+                        queryClient.refetchQueries({ queryKey: ['contacts'] });
+                    }, 300);
                 }
             )
             .subscribe();
 
         return () => {
             clearTimeout(invalidationTimeout);
+            clearTimeout(connectionsTimeout);
             supabase.removeChannel(channel);
         };
     }, [profile?.id, queryClient]);
@@ -167,14 +191,15 @@ function MessagesScreen() {
     async function handleCancelRequest(connectionId: string, userName: string) {
         const userId = profile?.id;
         try {
+            // 1. Delete from Supabase (source of truth)
             await connectionService.cancelConnectionRequest(connectionId);
 
-            // Optimistically update any cached contacts so this entry becomes "available"
+            // 2. Optimistically update cache - move contact from pending_sent to available
             if (userId) {
                 queryClient.setQueriesData(
-                    { queryKey: ['contacts', userId], exact: false },
+                    { queryKey: ['contacts'] },
                     (old: ContactWithConnection[] | undefined) => {
-                        if (!old) return old;
+                        if (!Array.isArray(old)) return old;
                         return old.map((c) =>
                             c.connectionId === connectionId
                                 ? { ...c, connectionStatus: 'available' as const, connectionId: undefined }
@@ -183,14 +208,23 @@ function MessagesScreen() {
                     }
                 );
             }
-
-            // Immediately jump user back to Discover tab where the contact will now appear
+            // 3. Switch to Discover tab immediately so user sees the updated list
             setActiveTab('discover');
 
-            // Ensure all contacts queries refetch from server
-            await queryClient.invalidateQueries({ queryKey: ['contacts'] });
-
-            Alert.alert('Request Cancelled', `Connection request to ${userName} has been cancelled.`);
+            // 4. Show alert - refetch ONLY when user dismisses, so we don't overwrite optimistic update with stale data
+            Alert.alert(
+                'Request Cancelled',
+                `Connection request to ${userName} has been cancelled.`,
+                [
+                    {
+                        text: 'OK',
+                        onPress: async () => {
+                            setActiveTab('discover');
+                            await queryClient.refetchQueries({ queryKey: ['contacts'] });
+                        },
+                    },
+                ]
+            );
         } catch (error: any) {
             console.error('Error cancelling connection request:', error);
             Alert.alert('Error', error.message || 'Failed to cancel connection request.');
@@ -215,13 +249,6 @@ function MessagesScreen() {
         const displayName = chat.type === 'direct' && chat.otherUser
             ? chat.otherUser.name
             : chat.name || 'Group Chat';
-
-        const initials = displayName
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .substring(0, 2);
 
         const role = chat.type === 'direct' && chat.otherUser
             ? chat.otherUser.role as UserRole
@@ -253,13 +280,8 @@ function MessagesScreen() {
             >
                 <View className="flex-row items-center p-4">
                     <View className="relative">
-                        <View
-                            className="w-12 h-12 rounded-full justify-center items-center"
-                            style={{ backgroundColor: getRoleColor(role) + '20' }}
-                        >
-                            <Text className="text-base font-bold" style={{ color: getRoleColor(role) }}>
-                                {initials}
-                            </Text>
+                        <View className="w-12 h-12 rounded-full overflow-hidden justify-center items-center">
+                            <ContactAvatar avatar={chat.type === 'direct' ? chat.otherUser?.avatar : undefined} size={48} />
                         </View>
                         {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
                             <View className="absolute -top-1 -right-1 w-5 h-5 bg-accent rounded-full justify-center items-center">
@@ -318,13 +340,6 @@ function MessagesScreen() {
 
 
     function renderContact(contact: ContactWithConnection) {
-        const initials = contact.name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .substring(0, 2);
-
         return (
             <Pressable
                 key={contact.id}
@@ -340,21 +355,29 @@ function MessagesScreen() {
             >
                 <View className="flex-row items-center p-4">
                     <View className="relative">
-                        <View
-                            className="w-12 h-12 rounded-full justify-center items-center"
-                            style={{ backgroundColor: getRoleColor(contact.role as UserRole) + '20' }}
-                        >
-                            <Text className="text-base font-bold" style={{ color: getRoleColor(contact.role as UserRole) }}>
-                                {initials}
-                            </Text>
+                        <View className="w-12 h-12 rounded-full overflow-hidden">
+                            <ContactAvatar avatar={contact.avatar} size={48} />
                         </View>
                     </View>
 
                     <View className="flex-1 ml-3">
-                        <View className="flex-row items-center justify-between mb-1">
+                        <View className="flex-row items-center mb-1">
                             <Text className="text-base font-bold text-foreground flex-1" numberOfLines={1}>
                                 {contact.name}
                             </Text>
+                            {contact.connectionStatus === 'pending_sent' && (
+                                <Pressable
+                                    className="ml-2 w-9 h-9 rounded-full justify-center items-center"
+                                    style={{ backgroundColor: colors.destructive }}
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        if (contact.connectionId) handleCancelRequest(contact.connectionId, contact.name);
+                                    }}
+                                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                                >
+                                    <Feather name="x" size={18} color="white" />
+                                </Pressable>
+                            )}
                             {contact.lastMessageTime && (
                                 <Text className="text-xs text-muted-foreground ml-2">
                                     {contact.lastMessageTime}
@@ -397,7 +420,8 @@ function MessagesScreen() {
 
                     {contact.connectionStatus === 'available' && (
                         <Pressable
-                            className="ml-2 bg-[#002147] px-4 py-2 rounded-full flex-row items-center active:opacity-90"
+                            className="ml-2 px-4 py-2 rounded-full flex-row items-center active:opacity-90"
+                            style={{ backgroundColor: colors.primary }}
                             onPress={() => handleConnect(contact)}
                         >
                             <Feather name="user-plus" size={14} color="white" style={{ marginRight: 6 }} />
@@ -406,7 +430,7 @@ function MessagesScreen() {
                     )}
 
                     {contact.connectionStatus === 'connected' && (
-                        <View className="ml-2 bg-[#002147]/10 p-2 rounded-full">
+                        <View className="ml-2 p-2 rounded-full" style={{ backgroundColor: colors.primary + '20' }}>
                             <Feather name="message-circle" size={20} color={colors.primary} />
                         </View>
                     )}
@@ -416,34 +440,17 @@ function MessagesScreen() {
                 {contact.connectionStatus === 'pending_received' && (
                     <View className="flex-row justify-end items-center px-4 pb-3 pt-0">
                         <Pressable
-                            className="w-10 h-10 rounded-full bg-green-500 justify-center items-center mr-2"
+                            className="w-10 h-10 rounded-full justify-center items-center mr-2"
+                            style={{ backgroundColor: colors.constructive }}
                             onPress={() => handleAcceptConnection(contact.connectionId!, contact.name)}
                             hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                         >
                             <Feather name="check" size={18} color="white" />
                         </Pressable>
                         <Pressable
-                            className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
+                            className="w-10 h-10 rounded-full justify-center items-center"
+                            style={{ backgroundColor: colors.destructive }}
                             onPress={() => handleDeclineConnection(contact.connectionId!, contact.name)}
-                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                        >
-                            <Feather name="x" size={18} color="white" />
-                        </Pressable>
-                    </View>
-                )}
-
-                {contact.connectionStatus === 'pending_sent' && (
-                    <View className="flex-row justify-end items-center px-4 pb-3 pt-0">
-                        <View className="flex-row items-center bg-muted px-3 py-1.5 rounded-full mr-2">
-                            <Feather name="clock" size={14} color={colors.iconGrayDark} style={{ marginRight: 6 }} />
-                            <Text className="text-xs font-medium text-muted-foreground">Requested</Text>
-                        </View>
-                        <Pressable
-                            className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
-                            onPress={(e) => {
-                                e.stopPropagation();
-                                if (contact.connectionId) handleCancelRequest(contact.connectionId, contact.name);
-                            }}
                             hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
                         >
                             <Feather name="x" size={18} color="white" />
@@ -590,13 +597,13 @@ function MessagesScreen() {
                                 <Pressable
                                     key={role}
                                     className={`px-4 py-2 rounded-full border mr-2 shadow-sm ${selectedRole === role
-                                        ? 'bg-primary border-primary'
+                                        ? 'border-primary'
                                         : 'bg-card border-border'
                                         }`}
+                                    style={selectedRole === role ? { backgroundColor: colors.primary } : {}}
                                     onPress={() => setSelectedRole(role)}
                                 >
-                                    <Text className={`text-xs font-semibold ${selectedRole === role ? 'text-primary-foreground' : 'text-foreground'
-                                        }`}>
+                                    <Text className="text-xs font-semibold" style={{ color: selectedRole === role ? colors.white : colors.foreground }}>
                                         {role}
                                     </Text>
                                 </Pressable>

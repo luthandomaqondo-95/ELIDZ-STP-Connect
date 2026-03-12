@@ -306,6 +306,22 @@ class ConnectionService {
 		console.log('ConnectionService.cancelConnectionRequest succeeded');
 	}
 
+	/** Cancel a pending connection request between two users (works for both sent and received requests) */
+	async cancelConnectionRequestByUsers(userId1: string, userId2: string): Promise<boolean> {
+		const { data, error } = await supabase
+			.from('connections')
+			.delete()
+			.eq('status', 'pending')
+			.or(`and(user_id.eq.${userId1},connected_user_id.eq.${userId2}),and(user_id.eq.${userId2},connected_user_id.eq.${userId1})`)
+			.select('id');
+
+		if (error) {
+			console.error('ConnectionService.cancelConnectionRequestByUsers error:', error);
+			throw error;
+		}
+		return (data?.length ?? 0) > 0;
+	}
+
 	async acceptConnection(connectionId: string): Promise<Connection> {
 		console.log('ConnectionService.acceptConnection called for connectionId:', connectionId);
 

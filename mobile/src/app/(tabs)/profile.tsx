@@ -12,6 +12,7 @@ import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
+import { DEFAULT_AVATAR } from '@/constants/avatars';
 
 interface MenuItemProps {
     icon: string;
@@ -249,9 +250,11 @@ function ProfileScreen() {
                                         resizeMode="cover"
                                     />
                                 ) : (
-                                    <Text className="text-foreground text-4xl font-bold">
-                                        {profile?.name?.charAt(0).toUpperCase() || 'G'}
-                                    </Text>
+                                    <Image 
+                                        source={DEFAULT_AVATAR} 
+                                        style={{ width: '100%', height: '100%' }}
+                                        resizeMode="cover"
+                                    />
                                 )}
                             </View>
                             {/* Premium Badge on Avatar */}

@@ -137,23 +137,22 @@ class ChatService {
 			unreadCountByChat.set(msg.chat_id, count + 1);
 		});
 
-		// Build chat details efficiently
-		const chatsWithDetails: ChatWithDetails[] = (chats || []).map((chat) => {
-			const chatParticipants = participantsByChat.get(chat.id) || [];
+		let chatsWithDetails: ChatWithDetails[] = (chats || []).map((chat) => {
+			const participants = participantsByChat.get(chat.id) || [];
 			const lastMessage = lastMessageByChat.get(chat.id);
 			const unreadCount = unreadCountByChat.get(chat.id) || 0;
 
+			// For direct chats, find the other user (not current user)
 			let otherUser: Profile | undefined;
-			if (chat.type === 'direct' && chatParticipants.length > 0) {
-				const otherParticipant = chatParticipants.find((p: any) => p.user_id !== userId);
-				if (otherParticipant?.user) {
-					otherUser = otherParticipant.user as Profile;
-				}
+			if (chat.type === 'direct' && participants.length >= 2) {
+				otherUser = participants.find((p: any) => p.user_id !== userId)?.user as Profile;
+			} else if (chat.type === 'direct' && participants.length === 1) {
+				otherUser = participants[0]?.user as Profile;
 			}
 
 			return {
 				...chat,
-				participants: chatParticipants,
+				participants,
 				lastMessage,
 				unreadCount,
 				otherUser,
@@ -163,12 +162,9 @@ class ChatService {
 		if (search) {
 			const lowerSearch = search.toLowerCase();
 			chatsWithDetails = chatsWithDetails.filter(chat => {
-				// Search by other user name (direct chat)
-				if (chat.otherUser?.name.toLowerCase().includes(lowerSearch)) return true;
-				// Search by chat name (group chat)
+				if (chat.otherUser?.name?.toLowerCase().includes(lowerSearch)) return true;
 				if (chat.name?.toLowerCase().includes(lowerSearch)) return true;
-				// Search by last message content
-				if (chat.lastMessage?.content.toLowerCase().includes(lowerSearch)) return true;
+				if (chat.lastMessage?.content?.toLowerCase().includes(lowerSearch)) return true;
 				return false;
 			});
 		}
@@ -238,9 +234,9 @@ class ChatService {
 			.insert({
 				chat_id: chatId,
 				sender_id: senderId,
-				content: content.trim(),
-				attachment_url: attachmentUrl,
-				attachment_type: attachment?.type,
+				content: (content || '').trim(),
+				attachment_url: attachmentUrl || null,
+				attachment_type: attachment?.type || null,
 			})
 			.select('*, sender:profiles(*)')
 			.single();

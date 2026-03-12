@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Pressable, Alert, Linking } from 'react-native';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+import { View, Pressable, Alert, Linking, ActivityIndicator } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '../components/ScreenScrollView';
@@ -13,547 +13,407 @@ import { connectionService } from '@/services/connection.service';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { Profile } from '@/types';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
-
-
-
-
+import { DEFAULT_AVATAR } from '@/constants/avatars';
 
 function UserProfileScreen() {
-	const { colors } = useTheme();
-	const { profile: currentUser } = useAuthContext();
-	const params = useLocalSearchParams<{ id?: string; userId?: string; name?: string }>();
+    const { colors } = useTheme();
+    const { profile: currentUser } = useAuthContext();
+    const params = useLocalSearchParams<{ id?: string; userId?: string }>();
 
-	const [profileUser, setProfileUser] = useState<Profile | null>(null);
-	const { uri: profileUserAvatarUri } = useAvatarUri(profileUser?.avatar);
-	const [connectionStatus, setConnectionStatus] = useState<'connected' | 'pending_sent' | 'pending_received' | 'available' | null>(null);
-	const [loading, setLoading] = useState(true);
-	const [connectionId, setConnectionId] = useState<string | null>(null);
-	const [smmeServices, setSmmeServices] = useState<SMMEServiceProduct[]>([]);
-	const [smmeProducts, setSmmeProducts] = useState<SMMEServiceProduct[]>([]);
+    const [profileUser, setProfileUser] = useState<Profile | null>(null);
+    const { uri: profileUserAvatarUri } = useAvatarUri(profileUser?.avatar);
+    const [connectionStatus, setConnectionStatus] = useState<'connected' | 'pending_sent' | 'pending_received' | 'available' | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [connectionId, setConnectionId] = useState<string | null>(null);
+    const [smmeServices, setSmmeServices] = useState<SMMEServiceProduct[]>([]);
+    const [smmeProducts, setSmmeProducts] = useState<SMMEServiceProduct[]>([]);
+    const [loadingOfferings, setLoadingOfferings] = useState(false);
+    const [offeringsError, setOfferingsError] = useState<string | null>(null);
 
-	// Handle both 'id' and 'userId' params
-	const userId = params?.id || params?.userId;
+    const userId = params?.id || params?.userId;
+    const isOwnProfile = currentUser?.id === userId;
+    const isSMME = profileUser?.role === 'SMME';
+    const isVerifiedSMME = isSMME && profileUser?.verification_status === 'verified';
 
-	const isOwnProfile = currentUser?.id === userId;
+    const avatarSource = useMemo(() => {
+        if (profileUserAvatarUri) return { uri: profileUserAvatarUri };
+        return DEFAULT_AVATAR;
+    }, [profileUserAvatarUri]);
 
-	useEffect(() => {
-		console.log('useEffect triggered, userId:', userId, 'currentUser:', currentUser);
-		if (!userId) {
-			console.log('No userId provided, setting loading to false');
-			setLoading(false);
-			return;
-		}
+    useEffect(() => {
+        if (!userId) {
+            setLoading(false);
+            return;
+        }
 
-		// Continue with profile fetch even if not logged in
+        const fetchUserData = async () => {
+            try {
+                setLoading(true);
+                const { data: userData, error: userError } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
 
-		const fetchUserData = async () => {
-			try {
-				setLoading(true);
-				console.log('Starting to fetch user data for:', userId);
+                if (userError) throw userError;
+                setProfileUser(userData);
 
-				// Fetch user profile
-				const { data: userData, error: userError } = await supabase
-					.from('profiles')
-					.select('*')
-					.eq('id', userId)
-					.single();
+                if (isOwnProfile || !currentUser) {
+                    setLoading(false);
+                    return;
+                }
 
-				if (userError) {
-					console.error('Error fetching user:', userError);
-					return;
-				}
+                // Connection Logic
+                const { data: directConnection } = await supabase
+                    .from('connections')
+                    .select('*')
+                    .or(`and(user_id.eq.${currentUser.id},connected_user_id.eq.${userId}),and(user_id.eq.${userId},connected_user_id.eq.${currentUser.id})`)
+                    .maybeSingle();
 
-				setProfileUser(userData);
+                if (directConnection) {
+                    setConnectionId(directConnection.id);
+                    if (directConnection.status === 'accepted') setConnectionStatus('connected');
+                    else if (directConnection.user_id === currentUser.id) setConnectionStatus('pending_sent');
+                    else setConnectionStatus('pending_received');
+                } else {
+                    setConnectionStatus('available');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
 
-				// If it's the current user's profile or no user is logged in, skip connection check
-				if (isOwnProfile || !currentUser) {
-					setConnectionStatus(null);
-					setLoading(false);
-					return;
-				}
+        fetchUserData();
+    }, [userId, currentUser?.id]);
 
-				// Check connection status - first try direct database query for accuracy
-				console.log('Checking connection status for userId:', userId, 'currentUserId:', currentUser.id);
-				try {
-					// Direct query to check connection status
-					const { data: directConnection, error: directError } = await supabase
-						.from('connections')
-						.select('*')
-						.or(`and(user_id.eq.${currentUser.id},connected_user_id.eq.${userId}),and(user_id.eq.${userId},connected_user_id.eq.${currentUser.id})`)
-						.maybeSingle();
+    useEffect(() => {
+        if (!profileUser?.id || profileUser.role !== 'SMME') {
+            setSmmeServices([]);
+            setSmmeProducts([]);
+            setLoadingOfferings(false);
+            setOfferingsError(null);
+            return;
+        }
 
-					if (directConnection) {
-						console.log('Direct connection found:', directConnection);
-						if (directConnection.status === 'accepted') {
-							setConnectionStatus('connected');
-							setConnectionId(directConnection.id);
-						} else if (directConnection.status === 'pending') {
-							if (directConnection.user_id === currentUser.id) {
-								setConnectionStatus('pending_sent');
-							} else {
-								setConnectionStatus('pending_received');
-							}
-							setConnectionId(directConnection.id);
-						} else {
-							setConnectionStatus('available');
-						}
-					} else {
-						// Fallback to getAllContacts if direct query doesn't find it
-						console.log('No direct connection found, checking getAllContacts');
-						const contacts = await connectionService.getAllContacts(currentUser.id);
-						console.log('Found contacts:', contacts.length, 'contacts');
-						const contact = contacts.find(c => c.id === userId);
-						console.log('Contact found in getAllContacts:', contact);
+        let cancelled = false;
+        setLoadingOfferings(true);
+        setOfferingsError(null);
+        smmmeService
+            .getServicesProductsBySMME(profileUser.id)
+            .then(({ services, products }) => {
+                if (cancelled) return;
+                setSmmeServices(services);
+                setSmmeProducts(products);
+            })
+            .catch((err: any) => {
+                if (cancelled) return;
+                console.warn('UserProfile: failed to load SMME services/products', err);
+                setSmmeServices([]);
+                setSmmeProducts([]);
+                setOfferingsError('Could not load products & services.');
+            })
+            .finally(() => {
+                if (cancelled) return;
+                setLoadingOfferings(false);
+            });
 
-						if (contact) {
-							console.log('Setting connection status from getAllContacts:', contact.connectionStatus);
-							setConnectionStatus(contact.connectionStatus);
-							setConnectionId(contact.connectionId || null);
-						} else {
-							console.log('No contact found, setting status to available');
-							setConnectionStatus('available');
-						}
-					}
-				} catch (error) {
-					console.error('Error fetching connection status:', error);
-					// If connection service fails, assume available for connection
-					setConnectionStatus('available');
-				}
+        return () => {
+            cancelled = true;
+        };
+    }, [profileUser?.id, profileUser?.role]);
 
-			} catch (error) {
-				console.error('Error fetching user data:', error);
-			} finally {
-				setLoading(false);
-			}
-		};
+    const handleConnect = useCallback(async () => {
+        if (!currentUser?.id || !profileUser?.id) return;
+        try {
+            await connectionService.sendConnectionRequest(currentUser.id, profileUser.id);
+            setConnectionStatus('pending_sent');
+            Alert.alert('Request sent', `Connection request sent to ${profileUser.name}.`);
+        } catch (error: any) {
+            console.error('Connect error:', error);
+            Alert.alert('Error', error?.message || 'Failed to send connection request.');
+        }
+    }, [currentUser?.id, profileUser?.id, profileUser?.name]);
 
-		fetchUserData();
-	}, [userId, currentUser?.id, isOwnProfile]);
+    const handleAccept = useCallback(async () => {
+        if (!connectionId) return;
+        try {
+            await connectionService.acceptConnectionRequest(connectionId);
+            setConnectionStatus('connected');
+        } catch (error: any) {
+            console.error('Accept error:', error);
+            Alert.alert('Error', error?.message || 'Failed to accept request.');
+        }
+    }, [connectionId]);
 
-	// Fetch SMME services and products when viewing a verified SMME profile
-	useEffect(() => {
-		if (!profileUser || profileUser.role !== 'SMME') {
-			setSmmeServices([]);
-			setSmmeProducts([]);
-			return;
-		}
-		let cancelled = false;
-		smmmeService.getServicesProductsBySMME(profileUser.id).then(({ services, products }) => {
-			if (!cancelled) {
-				setSmmeServices(services);
-				setSmmeProducts(products);
-			}
-		}).catch((err) => {
-			if (!cancelled) {
-				setSmmeServices([]);
-				setSmmeProducts([]);
-			}
-			console.warn('UserProfile: failed to load SMME services/products', err);
-		});
-		return () => { cancelled = true; };
-	}, [profileUser?.id, profileUser?.role]);
+    const handleDecline = useCallback(async () => {
+        if (!connectionId) return;
+        try {
+            await connectionService.declineConnectionRequest(connectionId);
+            setConnectionStatus('available');
+            setConnectionId(null);
+        } catch (error: any) {
+            console.error('Decline error:', error);
+            Alert.alert('Error', error?.message || 'Failed to decline request.');
+        }
+    }, [connectionId]);
 
-	const getAvatarSource = (avatar?: string) => {
-		switch (avatar) {
-			case 'blue': return require('../../assets/avatars/avatar-blue.png');
-			case 'green': return require('../../assets/avatars/avatar-green.png');
-			case 'orange': return require('../../assets/avatars/avatar-orange.png');
-			default: return require('../../assets/avatars/avatar-blue.png');
-		}
-	};
+    if (loading) {
+        return (
+            <View className="flex-1 justify-center items-center bg-background">
+                <ActivityIndicator size="large" color={colors.primary} />
+            </View>
+        );
+    }
 
-	const handleMessage = () => {
-		if (!profileUser) {
-			console.error('Cannot message: user data is missing');
-			return;
-		}
-		router.push({ pathname: '/message', params: { userId: profileUser.id, userName: profileUser.name } });
-	};
+    if (!profileUser) {
+        return (
+            <ScreenScrollView>
+                <View className="flex-1 justify-center items-center p-10 mt-20">
+                    <View className="bg-muted p-6 rounded-full">
+                        <Feather name="user-x" size={48} color={colors.mutedForeground} />
+                    </View>
+                    <Text className="text-xl font-bold mt-6 text-foreground">User Not Found</Text>
+                    <Text className="text-muted-foreground text-center mt-2">The user might have moved or deactivated their account.</Text>
+                </View>
+            </ScreenScrollView>
+        );
+    }
 
-	const handleConnect = async () => {
-		if (!profileUser || !currentUser) {
-			console.error('Cannot connect: user data is missing');
-			return;
-		}
+    return (
+        <ScreenScrollView className="bg-background">
+            {/* Header + avatar area (reference-style) */}
+            <View className="px-6 pt-5 pb-4">
+                <View className="flex-row items-center justify-between">
+                    <Pressable onPress={() => router.back()} className="w-10 h-10 rounded-full items-center justify-center active:opacity-80">
+                        <Feather name="chevron-left" size={26} color={colors.text} />
+                    </Pressable>
+                </View>
 
-		try {
-			await connectionService.sendConnectionRequest(currentUser.id, profileUser.id);
-			Alert.alert('Success', `Connection request sent to ${profileUser.name}!`);
-			setConnectionStatus('pending_sent');
-		} catch (error: any) {
-			console.error('Error sending connection request:', error);
-			Alert.alert('Error', error.message || 'Failed to send connection request.');
-		}
-	};
+                <View className="items-center pt-0 mb-1">
+                    <View
+                        className="rounded-full border-4 border-background shadow-sm overflow-hidden"
+                        style={{ width: 96, height: 96, backgroundColor: colors.backgroundSecondary }}
+                    >
+                        <Image
+                            source={avatarSource}
+                            style={{ width: 96, height: 96 }}
+                            contentFit="cover"
+                            contentPosition="center"
+                        />
+                        {isVerifiedSMME && (
+                            <View
+                                className="absolute bottom-1 right-1 w-8 h-8 rounded-full items-center justify-center border-4 border-background"
+                                style={{ backgroundColor: colors.success }}
+                            >
+                                <Feather name="check" size={16} color="white" />
+                            </View>
+                        )}
+                    </View>
 
-	const handleAcceptConnection = () => {
-		if (!connectionId) {
-			console.error('Cannot accept connection: connection ID is missing');
-			return;
-		}
-		const name = profileUser?.name;
-		connectionService.acceptConnectionRequest(connectionId)
-			.then(() => {
-				setTimeout(() => {
-					setConnectionStatus('connected');
-					Alert.alert('Success', `You are now connected with ${name}!`);
-				}, 0);
-			})
-			.catch((error: any) => {
-				console.error('Error accepting connection:', error);
-				setTimeout(() => Alert.alert('Error', error.message || 'Failed to accept connection request.'), 0);
-			});
-	};
+                    <Text className="text-xl font-extrabold text-foreground mt-3 text-center">{profileUser.name}</Text>
+                    {profileUser.organization ? (
+                        <Text className="text-muted-foreground mt-1 font-medium text-center">{profileUser.organization}</Text>
+                    ) : (
+                        <Text className="text-muted-foreground mt-1 font-medium text-center">{profileUser.role}</Text>
+                    )}
+                </View>
+            </View>
 
-	const handleDeclineConnection = () => {
-		if (!connectionId) {
-			console.error('Cannot decline connection: connection ID is missing');
-			return;
-		}
-		const name = profileUser?.name;
-		connectionService.declineConnectionRequest(connectionId)
-			.then(() => {
-				setTimeout(() => {
-					setConnectionStatus('available');
-					setConnectionId(null);
-					Alert.alert('Request Declined', `Connection request from ${name} has been declined.`);
-				}, 0);
-			})
-			.catch((error: any) => {
-				console.error('Error declining connection:', error);
-				setTimeout(() => Alert.alert('Error', error.message || 'Failed to decline connection request.'), 0);
-			});
-	};
+            {/* Stats row (reference-style) */}
+            <View className="flex-row mx-6 mt-2 mb-2 justify-around">
+                <View className="items-center">
+                    <Text className="text-base font-extrabold text-foreground">{smmeProducts.length}</Text>
+                    <Text className="text-xs text-muted-foreground mt-0.5">Products</Text>
+                </View>
+                <View className="items-center">
+                    <Text className="text-base font-extrabold text-foreground">{smmeServices.length}</Text>
+                    <Text className="text-xs text-muted-foreground mt-0.5">Services</Text>
+                </View>
+                <View className="items-center">
+                    <Text className="text-base font-extrabold text-foreground">{isVerifiedSMME ? 'Yes' : 'No'}</Text>
+                    <Text className="text-xs text-muted-foreground mt-0.5">Verified</Text>
+                </View>
+            </View>
 
-	const handleCancelConnection = async () => {
-		if (!connectionId) {
-			console.error('Cannot cancel connection: connection ID is missing');
-			return;
-		}
+            {/* Action Buttons */}
+            {!isOwnProfile && currentUser && (
+                <View className="flex-row px-6 mt-6 gap-3">
+                    {connectionStatus === 'connected' ? (
+                        <Pressable 
+                            onPress={() => router.push({ pathname: '/message', params: { userId: profileUser.id, userName: profileUser.name } })}
+                            className="flex-1 flex-row bg-primary h-12 rounded-2xl items-center justify-center shadow-md active:opacity-90"
+                        >
+                            <Feather name="message-square" size={18} color="white" />
+                            <Text className="text-white font-bold ml-2">Message</Text>
+                        </Pressable>
+                    ) : connectionStatus === 'pending_received' ? (
+                        <>
+                            <Pressable onPress={handleAccept} className="flex-1 bg-green-600 h-12 rounded-2xl items-center justify-center shadow-md active:opacity-90">
+                                <Text className="text-white font-bold">Accept</Text>
+                            </Pressable>
+                            <Pressable onPress={handleDecline} className="flex-1 bg-destructive/10 h-12 rounded-2xl items-center justify-center border border-destructive/20 active:opacity-90">
+                                <Text className="text-destructive font-bold">Decline</Text>
+                            </Pressable>
+                        </>
+                    ) : (
+                        <Pressable 
+                            onPress={handleConnect} 
+                            disabled={connectionStatus === 'pending_sent'}
+                            className={`flex-1 h-12 rounded-2xl items-center justify-center shadow-md ${connectionStatus === 'pending_sent' ? 'bg-muted' : 'bg-foreground dark:bg-white'}`}
+                        >
+                            <Text className={`font-bold ${connectionStatus === 'pending_sent' ? 'text-muted-foreground' : 'text-background dark:text-black'}`}>
+                                {connectionStatus === 'pending_sent' ? 'Request Sent' : 'Connect'}
+                            </Text>
+                        </Pressable>
+                    )}
+                </View>
+            )}
 
-		Alert.alert(
-			'Cancel Connection Request',
-			`Are you sure you want to cancel the connection request to ${profileUser?.name}?`,
-			[
-				{
-					text: 'No',
-					style: 'cancel',
-				},
-				{
-					text: 'Yes, Cancel',
-					style: 'destructive',
-					onPress: () => {
-						const name = profileUser?.name;
-						connectionService.cancelConnectionRequest(connectionId)
-							.then(() => {
-								setTimeout(() => {
-									setConnectionStatus('available');
-									setConnectionId(null);
-									Alert.alert('Request Cancelled', `Connection request to ${name} has been cancelled.`);
-								}, 0);
-							})
-							.catch((error: any) => {
-								console.error('Error cancelling connection:', error);
-								setTimeout(() => Alert.alert('Error', error.message || 'Failed to cancel connection request.'), 0);
-							});
-					},
-				},
-			]
-		);
-	};
+            {/* Content Sections */}
+            <View className="px-6 py-8 gap-y-6">
+                {/* About */}
+                {profileUser.bio && (
+                    <View>
+                        <Text className="text-lg font-bold text-foreground mb-2">About</Text>
+                        <Text className="text-base text-muted-foreground leading-6">{profileUser.bio}</Text>
+                    </View>
+                )}
 
-	if (loading) {
-		return (
-			<ScreenScrollView>
-				<View className="p-5 rounded-xl mb-3 items-center bg-primary">
-					<View className="w-[100px] h-[100px] rounded-full border-4 border-primary-foreground bg-white/20" />
-					<View className="w-[200px] h-6 bg-white/20 rounded mt-3" />
-					<View className="w-[150px] h-4 bg-white/15 rounded mt-1" />
-					<View className="w-[120px] h-3.5 bg-white/10 rounded mt-1" />
-				</View>
-			</ScreenScrollView>
-		);
-	}
+                {/* Contact Info */}
+                <View className="bg-card p-5 rounded-3xl border border-border">
+                    <Text className="text-lg font-bold text-foreground mb-4">Contact Details</Text>
+                    <View className="gap-y-4">
+                        <Pressable onPress={() => Linking.openURL(`mailto:${profileUser.email}`)} className="flex-row items-center">
+                            <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
+                                <Feather name="mail" size={18} color={colors.primary} />
+                            </View>
+                            <Text className="text-foreground font-medium flex-1">{profileUser.email}</Text>
+                        </Pressable>
+                        {profileUser.address && (
+                            <View className="flex-row items-center">
+                                <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
+                                    <Feather name="map-pin" size={18} color={colors.primary} />
+                                </View>
+                                <Text className="text-foreground font-medium flex-1">{profileUser.address}</Text>
+                            </View>
+                        )}
+                    </View>
+                </View>
 
-	if (!profileUser) {
-		return (
-			<ScreenScrollView>
-				<View className="flex-1 justify-center items-center p-5">
-					<Feather name="user-x" size={48} color={colors.textSecondary} />
-					<Text className="text-lg font-bold text-foreground mt-3 mb-2.5">
-						User Not Found
-					</Text>
-					<Text className="text-base text-muted-foreground text-center">
-						The user you&apos;re looking for doesn&apos;t exist or has been removed.
-					</Text>
-				</View>
-			</ScreenScrollView>
-		);
-	}
+                {/* Verified SMME offerings */}
+                {isSMME && (
+                    <View className="bg-card p-5 rounded-3xl border border-border">
+                        <View className="flex-row items-center justify-between mb-4">
+                            <Text className="text-lg font-bold text-foreground">Products & Services</Text>
+                            {loadingOfferings ? (
+                                <View className="flex-row items-center">
+                                    <ActivityIndicator size="small" color={colors.primary} />
+                                    <Text className="text-muted-foreground text-xs ml-2">Loading</Text>
+                                </View>
+                            ) : null}
+                        </View>
 
-	return (
-		<ScreenScrollView>
-			{/* Profile header - social media style */}
-			<View className="mb-4">
-				<View className="h-32 bg-primary rounded-b-3xl" />
+                        {offeringsError ? (
+                            <View className="py-6 items-center">
+                                <Feather name="alert-circle" size={22} color={colors.mutedForeground} />
+                                <Text className="text-muted-foreground mt-2 text-center">{offeringsError}</Text>
+                            </View>
+                        ) : null}
 
-				<View className="-mt-12 px-5 flex-row items-end">
-					<Image
-						source={profileUserAvatarUri ? { uri: profileUserAvatarUri } : getAvatarSource(profileUser.avatar)}
-						className="w-[96px] h-[96px] rounded-full border-[4px] border-background bg-primary/40"
-						contentFit="cover"
-					/>
+                        {!loadingOfferings && !offeringsError && smmeProducts.length === 0 && smmeServices.length === 0 ? (
+                            <View className="py-8 items-center">
+                                <Feather name="grid" size={26} color={colors.mutedForeground} />
+                                <Text className="text-muted-foreground mt-2 text-center">No products or services listed yet.</Text>
+                            </View>
+                        ) : null}
 
-					<View className="ml-3 flex-1">
-						<Text className="text-xl font-bold text-foreground" numberOfLines={1}>
-							{profileUser.name}
-						</Text>
-						<Text className="text-sm text-muted-foreground mt-0.5" numberOfLines={1}>
-							{profileUser.role}
-						</Text>
-						{profileUser.organization && (
-							<Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={1}>
-								{profileUser.organization}
-							</Text>
-						)}
-					</View>
-				</View>
+                        {!offeringsError && smmeProducts.length > 0 && (
+                            <View className="mb-4">
+                                <Text className="text-base font-extrabold text-foreground mb-3">Products</Text>
+                                <View className="gap-y-3">
+                                    {smmeProducts.map((item) => (
+                                        <View key={item.id} className="bg-background p-4 rounded-2xl border border-border">
+                                            <View className="flex-row items-start justify-between">
+                                                <View className="flex-1 pr-3">
+                                                    <Text className="text-base font-bold text-foreground">{item.name}</Text>
+                                                    <Text className="text-sm text-muted-foreground mt-1" numberOfLines={2}>
+                                                        {item.description}
+                                                    </Text>
+                                                </View>
+                                                <View className="items-end">
+                                                    <View className="bg-primary/10 px-2 py-1 rounded-lg">
+                                                        <Text className="text-xs font-bold text-primary">{item.category}</Text>
+                                                    </View>
+                                                    <Text className="text-foreground font-extrabold mt-2 text-sm">
+                                                        {item.price || 'Contact'}
+                                                    </Text>
+                                                </View>
+                                            </View>
+                                            {(item.contact_email || item.contact_phone) && (
+                                                <View className="flex-row flex-wrap mt-3">
+                                                    {item.contact_email ? (
+                                                        <Pressable onPress={() => Linking.openURL(`mailto:${item.contact_email}`)} className="mr-3 mt-1">
+                                                            <Text className="text-xs text-primary font-semibold">{item.contact_email}</Text>
+                                                        </Pressable>
+                                                    ) : null}
+                                                    {item.contact_phone ? (
+                                                        <Pressable onPress={() => Linking.openURL(`tel:${item.contact_phone}`)} className="mt-1">
+                                                            <Text className="text-xs text-primary font-semibold">{item.contact_phone}</Text>
+                                                        </Pressable>
+                                                    ) : null}
+                                                </View>
+                                            )}
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
 
-				{/* Quick stats row */}
-				<View className="mt-4 px-5 flex-row justify-between">
-					<View className="items-center flex-1">
-						<Text className="text-base font-semibold text-foreground">
-							{smmeProducts.length}
-						</Text>
-						<Text className="text-xs text-muted-foreground mt-0.5">
-							Products
-						</Text>
-					</View>
-					<View className="items-center flex-1">
-						<Text className="text-base font-semibold text-foreground">
-							{smmeServices.length}
-						</Text>
-						<Text className="text-xs text-muted-foreground mt-0.5">
-							Services
-						</Text>
-					</View>
-					<View className="items-center flex-1">
-						<Text className="text-base font-semibold text-foreground">
-							{profileUser.role === 'SMME' ? 'Verified' : 'Member'}
-						</Text>
-						<Text className="text-xs text-muted-foreground mt-0.5">
-							Status
-						</Text>
-					</View>
-				</View>
-
-				{/* Primary actions */}
-				{!isOwnProfile && currentUser && (
-					<View className="mt-4 px-5 flex-row gap-3">
-						{connectionStatus === 'connected' ? (
-							<Pressable
-								className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-primary active:opacity-80 shadow-sm"
-								onPress={handleMessage}
-							>
-								<Feather name="message-circle" size={18} color={colors.buttonText} />
-								<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
-									Message
-								</Text>
-							</Pressable>
-						) : connectionStatus === 'pending_received' ? (
-							<>
-								<Pressable
-									className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-green-600 active:opacity-80"
-									onPress={handleAcceptConnection}
-								>
-									<Feather name="check" size={18} color={colors.buttonText} />
-									<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
-										Accept
-									</Text>
-								</Pressable>
-								<Pressable
-									className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-destructive active:opacity-80"
-									onPress={handleDeclineConnection}
-								>
-									<Feather name="x" size={18} color={colors.buttonText} />
-									<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
-										Decline
-									</Text>
-								</Pressable>
-							</>
-						) : connectionStatus === 'pending_sent' ? (
-							<>
-								<Pressable
-									className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-muted active:opacity-80"
-									disabled
-								>
-									<Feather name="clock" size={18} color={colors.buttonText} />
-									<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
-										Request sent
-									</Text>
-								</Pressable>
-								<Pressable
-									className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-destructive active:opacity-80"
-									onPress={handleCancelConnection}
-								>
-									<Feather name="x-circle" size={18} color={colors.buttonText} />
-									<Text className="text-sm font-semibold text-primary-foreground ml-2.5">
-										Cancel
-									</Text>
-								</Pressable>
-							</>
-						) : (
-							<Pressable
-								className="flex-1 flex-row justify-center items-center h-[44px] rounded-full bg-accent active:opacity-80 shadow-sm"
-								onPress={handleConnect}
-							>
-								<Feather name="user-plus" size={18} color={colors.buttonText} />
-								<Text className="text-sm font-semibold text-foreground ml-2.5">
-									Connect
-								</Text>
-							</Pressable>
-						)}
-					</View>
-				)}
-			</View>
-
-			{profileUser.bio && (
-				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-					<Text className="text-lg font-bold mb-2.5">About</Text>
-					<Text className="text-base text-foreground leading-6">
-						{profileUser.bio}
-					</Text>
-				</View>
-			)}
-
-			<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-				<Text className="text-lg font-bold mb-2.5">Contact Information</Text>
-				<Pressable onPress={() => Linking.openURL(`mailto:${profileUser.email}`)} className="flex-row items-center">
-					<Feather name="mail" size={18} color={colors.textSecondary} />
-					<Text className="text-base text-primary ml-2.5">
-						{profileUser.email}
-					</Text>
-				</Pressable>
-				{profileUser.address && (
-					<View className="flex-row items-center mt-2.5">
-						<Feather name="map-pin" size={18} color={colors.textSecondary} />
-						<Text className="text-base text-foreground ml-2.5">
-							{profileUser.address}
-						</Text>
-					</View>
-				)}
-				{(() => {
-					const firstWithContact = [...smmeServices, ...smmeProducts].find(
-						(i) => i.contact_phone || i.website_url
-					);
-					const phone = firstWithContact?.contact_phone;
-					const website = firstWithContact?.website_url;
-					return (
-						<>
-							{phone && (
-								<Pressable onPress={() => Linking.openURL(`tel:${phone}`)} className="flex-row items-center mt-2.5">
-									<Feather name="phone" size={18} color={colors.textSecondary} />
-									<Text className="text-base text-primary ml-2.5">{phone}</Text>
-								</Pressable>
-							)}
-							{website && (
-								<Pressable onPress={() => Linking.openURL(website)} className="flex-row items-center mt-2.5">
-									<Feather name="globe" size={18} color={colors.textSecondary} />
-									<Text className="text-base text-primary ml-2.5" numberOfLines={1}>{website}</Text>
-									<Feather name="external-link" size={14} color={colors.primary} style={{ marginLeft: 4 }} />
-								</Pressable>
-							)}
-						</>
-					);
-				})()}
-			</View>
-
-			{smmeProducts.length > 0 && (
-				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-					<Text className="text-lg font-bold mb-2.5">Products</Text>
-					{smmeProducts.map((product) => (
-						<View key={product.id} className="mb-4 last:mb-0 p-3 rounded-lg bg-muted/40 border border-border">
-							<Text className="text-base font-semibold text-foreground">{product.name}</Text>
-							{product.description ? (
-								<Text className="text-sm text-muted-foreground mt-1" numberOfLines={3}>{product.description}</Text>
-							) : null}
-							<View className="flex-row flex-wrap gap-2 mt-2">
-								<View className="bg-primary/10 px-2 py-0.5 rounded">
-									<Text className="text-xs text-primary font-medium">{product.category}</Text>
-								</View>
-								{product.price && (
-									<Text className="text-xs text-foreground font-medium">{product.price}</Text>
-								)}
-							</View>
-							{(product.contact_email || product.contact_phone) && (
-								<View className="flex-row flex-wrap gap-3 mt-2">
-									{product.contact_email && (
-										<Pressable onPress={() => Linking.openURL(`mailto:${product.contact_email}`)}>
-											<Text className="text-xs text-primary">{product.contact_email}</Text>
-										</Pressable>
-									)}
-									{product.contact_phone && (
-										<Pressable onPress={() => Linking.openURL(`tel:${product.contact_phone}`)}>
-											<Text className="text-xs text-primary">{product.contact_phone}</Text>
-										</Pressable>
-									)}
-								</View>
-							)}
-						</View>
-					))}
-				</View>
-			)}
-
-			{smmeServices.length > 0 && (
-				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-					<Text className="text-lg font-bold mb-2.5">Services</Text>
-					{smmeServices.map((service) => (
-						<View key={service.id} className="mb-4 last:mb-0 p-3 rounded-lg bg-muted/40 border border-border">
-							<Text className="text-base font-semibold text-foreground">{service.name}</Text>
-							{service.description ? (
-								<Text className="text-sm text-muted-foreground mt-1" numberOfLines={3}>{service.description}</Text>
-							) : null}
-							<View className="flex-row flex-wrap gap-2 mt-2">
-								<View className="bg-primary/10 px-2 py-0.5 rounded">
-									<Text className="text-xs text-primary font-medium">{service.category}</Text>
-								</View>
-								{service.price && (
-									<Text className="text-xs text-foreground font-medium">{service.price}</Text>
-								)}
-							</View>
-							{(service.contact_email || service.contact_phone) && (
-								<View className="flex-row flex-wrap gap-3 mt-2">
-									{service.contact_email && (
-										<Pressable onPress={() => Linking.openURL(`mailto:${service.contact_email}`)}>
-											<Text className="text-xs text-primary">{service.contact_email}</Text>
-										</Pressable>
-									)}
-									{service.contact_phone && (
-										<Pressable onPress={() => Linking.openURL(`tel:${service.contact_phone}`)}>
-											<Text className="text-xs text-primary">{service.contact_phone}</Text>
-										</Pressable>
-									)}
-								</View>
-							)}
-						</View>
-					))}
-				</View>
-			)}
-
-			{connectionStatus === 'connected' && (
-				<View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
-					<Text className="text-lg font-bold mb-2.5">Connection Status</Text>
-					<View className="flex-row items-center">
-						<Feather name="check-circle" size={20} color={colors.success} />
-						<Text className="text-base text-foreground ml-2.5">
-							Connected
-						</Text>
-					</View>
-				</View>
-			)}
-		</ScreenScrollView>
-	);
+                        {!offeringsError && smmeServices.length > 0 && (
+                            <View>
+                                <Text className="text-base font-extrabold text-foreground mb-3">Services</Text>
+                                <View className="gap-y-3">
+                                    {smmeServices.map((item) => (
+                                        <View key={item.id} className="bg-background p-4 rounded-2xl border border-border">
+                                            <View className="flex-row items-start justify-between">
+                                                <View className="flex-1 pr-3">
+                                                    <Text className="text-base font-bold text-foreground">{item.name}</Text>
+                                                    <Text className="text-sm text-muted-foreground mt-1" numberOfLines={2}>
+                                                        {item.description}
+                                                    </Text>
+                                                </View>
+                                                <View className="items-end">
+                                                    <View className="bg-primary/10 px-2 py-1 rounded-lg">
+                                                        <Text className="text-xs font-bold text-primary">{item.category}</Text>
+                                                    </View>
+                                                </View>
+                                            </View>
+                                            {(item.contact_email || item.contact_phone) && (
+                                                <View className="flex-row flex-wrap mt-3">
+                                                    {item.contact_email ? (
+                                                        <Pressable onPress={() => Linking.openURL(`mailto:${item.contact_email}`)} className="mr-3 mt-1">
+                                                            <Text className="text-xs text-primary font-semibold">{item.contact_email}</Text>
+                                                        </Pressable>
+                                                    ) : null}
+                                                    {item.contact_phone ? (
+                                                        <Pressable onPress={() => Linking.openURL(`tel:${item.contact_phone}`)} className="mt-1">
+                                                            <Text className="text-xs text-primary font-semibold">{item.contact_phone}</Text>
+                                                        </Pressable>
+                                                    ) : null}
+                                                </View>
+                                            )}
+                                        </View>
+                                    ))}
+                                </View>
+                            </View>
+                        )}
+                    </View>
+                )}
+            </View>
+        </ScreenScrollView>
+    );
 }
 
 export default withAuthGuard(UserProfileScreen);
-
