@@ -42,6 +42,7 @@ function MessagesScreen() {
     const params = useLocalSearchParams<{ tab?: string }>();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme ?? 'light'];
+    const isDarkMode = colorScheme === 'dark';
     const { profile, isLoggedIn } = useAuthContext();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRole, setSelectedRole] = useState<UserRole | 'All'>('All');
@@ -70,15 +71,25 @@ function MessagesScreen() {
             .on(
                 'postgres_changes',
                 { event: 'INSERT', schema: 'public', table: 'messages' },
-                (payload: any) => {
-                    const newMessage = payload.new;
-                    if (newMessage.sender_id !== profile.id) {
-                        clearTimeout(invalidationTimeout);
-                        invalidationTimeout = setTimeout(() => {
-                            queryClient.invalidateQueries({ queryKey: ['contacts'] });
-                            queryClient.invalidateQueries({ queryKey: ['chats'] });
-                        }, 500);
-                    }
+                () => {
+                    // Invalidate on any new message (sent or received) so last message preview and unread badge update immediately
+                    clearTimeout(invalidationTimeout);
+                    invalidationTimeout = setTimeout(() => {
+                        queryClient.invalidateQueries({ queryKey: ['contacts'] });
+                        queryClient.invalidateQueries({ queryKey: ['chats'] });
+                    }, 300);
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'messages' },
+                () => {
+                    // When messages are marked read (read_at updated), refresh to clear unread badge
+                    clearTimeout(invalidationTimeout);
+                    invalidationTimeout = setTimeout(() => {
+                        queryClient.invalidateQueries({ queryKey: ['contacts'] });
+                        queryClient.invalidateQueries({ queryKey: ['chats'] });
+                    }, 300);
                 }
             )
             .on(
@@ -325,7 +336,8 @@ function MessagesScreen() {
                         <View className="w-12 h-12 rounded-full overflow-hidden justify-center items-center">
                             <ContactAvatar avatar={chat.type === 'direct' ? chat.otherUser?.avatar : undefined} size={48} />
                         </View>
-                        {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
+                        {chat.unreadCount !== undefined && chat.unreadCount > 0 &&
+                         chat.lastMessage?.sender_id !== profile?.id && (
                             <View className="absolute -top-1 -right-1 w-5 h-5 bg-accent rounded-full justify-center items-center">
                                 <Text className="text-white text-xs font-bold">{chat.unreadCount}</Text>
                             </View>
@@ -347,10 +359,19 @@ function MessagesScreen() {
                         <View className="flex-row items-center mb-1.5">
                             <View
                                 className="flex-row items-center px-2 py-0.5 rounded-md"
-                                style={{ backgroundColor: getRoleColor(role) + '10' }}
+                                style={{
+                                    backgroundColor: isDarkMode ? getRoleColor(role) : getRoleColor(role) + '10',
+                                }}
                             >
-                                <Feather name={getRoleIcon(role) as any} size={10} color={getRoleColor(role)} />
-                                <Text className="text-[10px] font-medium ml-1" style={{ color: getRoleColor(role) }}>
+                                <Feather
+                                    name={getRoleIcon(role) as any}
+                                    size={10}
+                                    color={isDarkMode ? colors.white : getRoleColor(role)}
+                                />
+                                <Text
+                                    className="text-[10px] font-medium ml-1"
+                                    style={{ color: isDarkMode ? colors.white : getRoleColor(role) }}
+                                >
                                     {chat.type === 'direct' ? role : 'Group'}
                                 </Text>
                             </View>
@@ -362,8 +383,26 @@ function MessagesScreen() {
                         </View>
 
                         {chat.lastMessage ? (
-                            <Text className={`text-sm ${chat.unreadCount && chat.unreadCount > 0 ? 'text-foreground font-semibold' : 'text-muted-foreground'}`} numberOfLines={1}>
-                                {chat.lastMessage.content}
+                            <Text
+                                className={`text-sm ${
+                                    chat.lastMessage.sender_id === profile?.id
+                                        ? 'text-muted-foreground'
+                                        : chat.unreadCount && chat.unreadCount > 0
+                                            ? 'text-foreground font-semibold'
+                                            : 'text-muted-foreground'
+                                }`}
+                                numberOfLines={1}
+                            >
+                                {chat.lastMessage.content
+                                    || (chat.lastMessage.attachment_url
+                                        ? (chat.lastMessage.attachment_type === 'image'
+                                            ? 'Photo'
+                                            : chat.lastMessage.attachment_type === 'video'
+                                                ? 'Video'
+                                                : chat.lastMessage.attachment_type === 'audio'
+                                                    ? 'Audio'
+                                                    : 'Document')
+                                        : '')}
                             </Text>
                         ) : (
                             <Text className="text-xs text-muted-foreground italic">
@@ -372,7 +411,8 @@ function MessagesScreen() {
                         )}
                     </View>
 
-                    {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
+                    {chat.unreadCount !== undefined && chat.unreadCount > 0 &&
+                     chat.lastMessage?.sender_id !== profile?.id && (
                         <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2" />
                     )}
                 </View>
@@ -430,29 +470,36 @@ function MessagesScreen() {
                         <View className="flex-row items-center mb-1.5">
                             <View
                                 className="flex-row items-center px-2 py-0.5 rounded-md"
-                                style={{ backgroundColor: getRoleColor(contact.role as UserRole) + '10' }}
+                                style={{
+                                    backgroundColor: isDarkMode
+                                        ? getRoleColor(contact.role as UserRole)
+                                        : getRoleColor(contact.role as UserRole) + '10',
+                                }}
                             >
-                                <Feather name={getRoleIcon(contact.role as UserRole) as any} size={10} color={getRoleColor(contact.role as UserRole)} />
-                                <Text className="text-[10px] font-medium ml-1" style={{ color: getRoleColor(contact.role as UserRole) }}>
+                                <Feather
+                                    name={getRoleIcon(contact.role as UserRole) as any}
+                                    size={10}
+                                    color={isDarkMode ? colors.white : getRoleColor(contact.role as UserRole)}
+                                />
+                                <Text
+                                    className="text-[10px] font-medium ml-1"
+                                    style={{ color: isDarkMode ? colors.white : getRoleColor(contact.role as UserRole) }}
+                                >
                                     {contact.role}
                                 </Text>
                             </View>
-                            <Text className="text-muted-foreground text-xs ml-2" numberOfLines={1}>
-                                • {contact.organization || 'No organization'}
-                            </Text>
                         </View>
+
+                        <Text className="text-muted-foreground text-xs" numberOfLines={1}>
+                            {contact.organization || 'No organization'}
+                        </Text>
 
                         {contact.lastMessage ? (
                             <Text className={`text-sm ${contact.hasUnreadMessages ? 'text-foreground font-semibold' : 'text-muted-foreground'}`} numberOfLines={1}>
                                 {contact.lastMessage}
                             </Text>
                         ) : (
-                            <Text className="text-xs text-muted-foreground italic">
-                                {contact.connectionStatus === 'connected' ? 'Tap to message' :
-                                 contact.connectionStatus === 'available' ? 'Tap to connect' :
-                                 contact.connectionStatus === 'pending_sent' ? 'Request sent' :
-                                 'Pending approval'}
-                            </Text>
+                            <Text className="text-xs text-muted-foreground italic"></Text>
                         )}
                     </View>
 

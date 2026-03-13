@@ -11,6 +11,7 @@ import { withAuthGuard } from '@/components/withAuthGuard';
 import { supabase } from '@/lib/supabase';
 import { connectionService } from '@/services/connection.service';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
+import { verificationService } from '@/services/verification.service';
 import { Profile } from '@/types';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
 import { DEFAULT_AVATAR } from '@/constants/avatars';
@@ -31,11 +32,11 @@ function UserProfileScreen() {
     const [smmeProducts, setSmmeProducts] = useState<SMMEServiceProduct[]>([]);
     const [loadingOfferings, setLoadingOfferings] = useState(false);
     const [offeringsError, setOfferingsError] = useState<string | null>(null);
+    const [isVerifiedSMME, setIsVerifiedSMME] = useState(false);
 
     const userId = params?.id || params?.userId;
     const isOwnProfile = currentUser?.id === userId;
     const isSMME = profileUser?.role === 'SMME';
-    const isVerifiedSMME = isSMME && profileUser?.verification_status === 'verified';
 
     const avatarSource = useMemo(() => {
         if (profileUserAvatarUri) return { uri: profileUserAvatarUri };
@@ -96,12 +97,15 @@ function UserProfileScreen() {
             setSmmeProducts([]);
             setLoadingOfferings(false);
             setOfferingsError(null);
+            setIsVerifiedSMME(false);
             return;
         }
 
         let cancelled = false;
         setLoadingOfferings(true);
         setOfferingsError(null);
+
+        // Load SMME offerings
         smmmeService
             .getServicesProductsBySMME(profileUser.id)
             .then(({ services, products }) => {
@@ -119,6 +123,18 @@ function UserProfileScreen() {
             .finally(() => {
                 if (cancelled) return;
                 setLoadingOfferings(false);
+            });
+
+        // Load verification status (matches Verified SMMEs logic)
+        verificationService
+            .getVerificationStatus(profileUser.id)
+            .then((status) => {
+                if (cancelled) return;
+                setIsVerifiedSMME(status?.status === 'verified');
+            })
+            .catch((err) => {
+                console.warn('UserProfile: failed to load verification status', err);
+                if (!cancelled) setIsVerifiedSMME(false);
             });
 
         return () => {

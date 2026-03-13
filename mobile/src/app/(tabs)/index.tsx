@@ -23,7 +23,7 @@ const { width } = Dimensions.get('window');
 export default function DashboardScreen() {
     const { isLoggedIn, isLoading , profile} = useAuthContext();
     const { colorScheme } = useColorScheme();
-    const colors = COLORS[colorScheme];
+    const colors = COLORS[colorScheme ?? 'light'];
 
     // Check if user is guest (from route params or context)
     const isGuest = !profile;
@@ -247,7 +247,7 @@ export default function DashboardScreen() {
                                     onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: featuredOpportunity.id } })}
                                 >
                                     <Text className="text-primary font-bold text-sm mr-2">Explore Opportunity</Text>
-                                    <Feather name="arrow-right" size={16} color={colors.primary} />
+                                    <Feather name="arrow-right" size={16} color={colorScheme === 'dark' ? colors.secondary : colors.primary} />
                                 </Pressable>
                             )}
                         </>
@@ -265,8 +265,8 @@ export default function DashboardScreen() {
                         className="flex-1 min-w-[45%] m-1 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
                         onPress={() => router.push('/(tabs)/verified-smmes')}
                     >
-                        <View className="w-10 h-10 rounded-full bg-blue-100 justify-center items-center mb-2">
-                            <Feather name="shield" size={20} color={colors.primary} />
+                        <View className={`w-10 h-10 rounded-full justify-center items-center mb-2 ${colorScheme === 'dark' ? 'bg-secondary/15' : 'bg-blue-100'}`}>
+                            <Feather name="shield" size={20} color={colorScheme === 'dark' ? colors.secondary : colors.primary} />
                         </View>
                         <Text className="text-sm font-bold text-foreground">Verified SMMEs</Text>
                     </Pressable>
@@ -297,8 +297,8 @@ export default function DashboardScreen() {
                             className={`flex-row items-center p-4 mb-3 rounded-2xl bg-card active:opacity-95 border border-border/40 shadow-sm ${index === 2 ? 'mb-0' : ''}`}
                             onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: opp.id } })}
                         >
-                            <View className="w-10 h-10 rounded-full justify-center items-center mr-3 bg-primary/10 border border-border/40">
-                                <Feather name="briefcase" size={20} color={colors.primary} />
+                            <View className={`w-10 h-10 rounded-full justify-center items-center mr-3 border border-border/40 ${colorScheme === 'dark' ? 'bg-secondary/10' : 'bg-primary/10'}`}>
+                                <Feather name="briefcase" size={20} color={colorScheme === 'dark' ? colors.secondary : colors.primary} />
                             </View>
                             <View className="flex-1">
                                 <Text className="text-sm font-bold text-foreground mb-0.5" numberOfLines={1}>{opp.title}</Text>
@@ -337,8 +337,8 @@ export default function DashboardScreen() {
                                 onPress={() => router.push({ pathname: '/event-detail', params: { id: event.id } })}
                             >
                                 <View className="flex-row justify-between items-start mb-3">
-                                    <View className="bg-primary/10 px-2.5 py-1 rounded-md">
-                                        <Text className="text-primary text-xs font-bold">Free</Text>
+                                    <View className={`px-2.5 py-1 rounded-md ${colorScheme === 'dark' ? 'bg-secondary/10' : 'bg-primary/10'}`}>
+                                        <Text className={`text-xs font-bold ${colorScheme === 'dark' ? 'text-secondary' : 'text-primary'}`}>Free</Text>
                                     </View>
                                     <View className="flex-row items-center">
                                         <Feather name="calendar" size={12} color={colors.iconGrayDark} />

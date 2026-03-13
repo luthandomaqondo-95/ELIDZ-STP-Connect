@@ -7,10 +7,13 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Image,
   Alert,
   StyleSheet,
+  Modal,
+  Linking,
 } from 'react-native';
+import { Image } from 'expo-image';
+import { useVideoPlayer, VideoView } from 'expo-video';
 import { useLocalSearchParams, router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -86,14 +89,31 @@ async function deleteChat(chatId: string): Promise<void> {
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
 
-function DateDivider({ label }: { label: string }) {
+function DateDivider({ label, accentColor }: { label: string; accentColor: string }) {
   return (
     <View className="flex-row items-center my-4 px-2">
-      <View className="flex-1 h-px bg-border" />
-      <View className="mx-3 px-3 py-1 rounded-full bg-muted border border-border">
-        <Text className="text-[11px] text-muted-foreground font-medium">{label}</Text>
+      <View className="flex-1 h-px" style={{ backgroundColor: accentColor + '30' }} />
+      <View className="mx-3 px-3 py-1 rounded-full" style={{ backgroundColor: accentColor + '15', borderColor: accentColor + '40', borderWidth: 1 }}>
+        <Text className="text-[11px] font-medium" style={{ color: accentColor }}>{label}</Text>
       </View>
-      <View className="flex-1 h-px bg-border" />
+      <View className="flex-1 h-px" style={{ backgroundColor: accentColor + '30' }} />
+    </View>
+  );
+}
+
+// Video attachment with expo-video preview (requires dev build; fallback: tappable link)
+function VideoAttachment({ url, isMe, colors }: { url: string; isMe: boolean; colors: AppColors }) {
+  const player = useVideoPlayer(url, (p) => {
+    p.loop = false;
+  });
+  return (
+    <View style={[styles.videoContainer, { backgroundColor: isMe ? 'rgba(0,0,0,0.3)' : colors.muted }]}>
+      <VideoView
+        player={player}
+        style={styles.videoPreview}
+        contentFit="contain"
+        nativeControls
+      />
     </View>
   );
 }
@@ -102,41 +122,55 @@ interface MessageBubbleProps {
   item: Message;
   isMe: boolean;
   colors: AppColors;
+  onImagePress?: (url: string) => void;
 }
 
-function MessageBubble({ item, isMe, colors }: MessageBubbleProps) {
+function MessageBubble({ item, isMe, colors, onImagePress }: MessageBubbleProps) {
+  const handleOpenAttachment = useCallback(() => {
+    if (item.attachment_url) {
+      Linking.openURL(item.attachment_url).catch(() => {
+        Alert.alert('Error', 'Could not open attachment.');
+      });
+    }
+  }, [item.attachment_url]);
+
   return (
     <View className={`mb-3 ${isMe ? 'items-end' : 'items-start'}`}>
       <View
         style={[
           styles.bubble,
           isMe
-            ? { backgroundColor: colors.primary, borderBottomRightRadius: 4 }
-            : { backgroundColor: colors.card, borderBottomLeftRadius: 4, borderColor: colors.border, borderWidth: 1 },
+            ? { backgroundColor: colors.accent, borderBottomRightRadius: 4 }
+            : { backgroundColor: colors.card, borderBottomLeftRadius: 4, borderColor: colors.accent + '30', borderWidth: 1 },
         ]}
       >
         {/* Attachment */}
         {item.attachment_url && (
           <View className="mb-2">
             {item.attachment_type === 'image' ? (
-              <Image
-                source={{ uri: item.attachment_url }}
-                style={styles.attachmentImage}
-                resizeMode="cover"
-              />
+              <Pressable onPress={() => onImagePress?.(item.attachment_url!)}>
+                <Image
+                  source={{ uri: item.attachment_url }}
+                  style={styles.attachmentImage}
+                  contentFit="cover"
+                />
+              </Pressable>
+            ) : item.attachment_type === 'video' ? (
+              <VideoAttachment url={item.attachment_url} isMe={isMe} colors={colors} />
             ) : (
-              <View
-                className="flex-row items-center p-2.5 rounded-xl"
+              <Pressable
+                onPress={handleOpenAttachment}
+                className="flex-row items-center p-2.5 rounded-xl active:opacity-80"
                 style={{ backgroundColor: isMe ? 'rgba(255,255,255,0.12)' : colors.muted }}
               >
                 <View
                   className="w-8 h-8 rounded-lg items-center justify-center mr-2"
-                  style={{ backgroundColor: isMe ? 'rgba(255,255,255,0.15)' : colors.primary + '18' }}
+                  style={{ backgroundColor: isMe ? 'rgba(255,255,255,0.15)' : colors.accent + '25' }}
                 >
                   <Feather
                     name={item.attachment_type === 'audio' ? 'music' : 'file-text'}
                     size={16}
-                    color={isMe ? colors.white : colors.primary}
+                    color={isMe ? colors.white : colors.accent}
                   />
                 </View>
                 <Text
@@ -144,9 +178,10 @@ function MessageBubble({ item, isMe, colors }: MessageBubbleProps) {
                   style={{ color: isMe ? colors.whiteOpacity80 : colors.foreground }}
                   numberOfLines={1}
                 >
-                  {item.attachment_type?.charAt(0).toUpperCase() + (item.attachment_type?.slice(1) || '')} attachment
+                  Tap to open {item.attachment_type === 'audio' ? 'audio' : 'document'}
                 </Text>
-              </View>
+                <Feather name="external-link" size={12} color={isMe ? colors.whiteOpacity80 : colors.foreground} />
+              </Pressable>
             )}
           </View>
         )}
@@ -169,7 +204,7 @@ function MessageBubble({ item, isMe, colors }: MessageBubbleProps) {
           <Feather
             name={item.read_at ? 'check-circle' : 'check'}
             size={11}
-            color={item.read_at ? colors.accent : colors.iconGray}
+            color={item.read_at ? colors.primary : colors.iconGray}
           />
         )}
       </View>
@@ -205,7 +240,6 @@ function DropdownMenu({
   if (!visible) return null;
 
   const items = [
-    { icon: 'user', label: 'View Profile', onPress: onViewProfile, danger: false },
     { icon: 'bell-off', label: 'Mute Notifications', onPress: onMute, danger: false },
     { icon: 'rotate-ccw', label: 'Cancel Request', onPress: onCancelRequest, danger: false },
     { icon: 'trash-2', label: 'Clear Chat', onPress: onClearChat, danger: false },
@@ -274,18 +308,28 @@ function AttachmentPreview({
       className="flex-row items-center mb-2 p-2 rounded-xl self-start border"
       style={{ backgroundColor: colors.muted, borderColor: colors.border }}
     >
-      <View
-        className="w-9 h-9 rounded-lg items-center justify-center mr-2"
-        style={{ backgroundColor: colors.primary + '15' }}
-      >
-        <Feather
-          name={attachment.type === 'image' ? 'image' : attachment.type === 'audio' ? 'music' : 'file-text'}
-          size={16}
-          color={colors.primary}
-        />
-      </View>
+      {attachment.type === 'image' ? (
+        <View className="w-12 h-12 rounded-lg overflow-hidden mr-2">
+          <Image
+            source={{ uri: attachment.uri }}
+            style={{ width: 48, height: 48 }}
+            contentFit="cover"
+          />
+        </View>
+      ) : (
+        <View
+          className="w-9 h-9 rounded-lg items-center justify-center mr-2"
+          style={{ backgroundColor: colors.primary + '15' }}
+        >
+          <Feather
+            name={attachment.type === 'audio' ? 'music' : 'file-text'}
+            size={16}
+            color={colors.primary}
+          />
+        </View>
+      )}
       <Text
-        className="text-sm font-medium max-w-[180px]"
+        className="text-sm font-medium max-w-[180px] flex-1"
         style={{ color: colors.foreground }}
         numberOfLines={1}
       >
@@ -327,6 +371,7 @@ function MessageScreen() {
   const [otherUserId, setOtherUserId] = useState<string | null>(() => (paramUserId as string) || null);
   const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(false);
+  const [fullScreenImageUrl, setFullScreenImageUrl] = useState<string | null>(null);
   const { uri: otherAvatarUri } = useAvatarUri(otherUserAvatar);
 
   const flatListRef = useRef<FlatList>(null);
@@ -346,7 +391,11 @@ function MessageScreen() {
         const other = participants.find((p) => p.user_id !== user.id);
         if (other) {
           setOtherUserId(other.user_id);
-          const { data: profile } = await supabase.from('profiles').select('avatar').eq('id', other.user_id).single();
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('avatar')
+            .eq('id', other.user_id)
+            .single();
           if (profile?.avatar) setOtherUserAvatar(profile.avatar);
         }
       }
@@ -470,6 +519,9 @@ function MessageScreen() {
         return [...curr, newMessage];
       });
       setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+      // Invalidate chats/contacts so messages tab updates immediately: last message grey, no unread badge
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+      queryClient.invalidateQueries({ queryKey: ['contacts'] });
     } catch (err) {
       console.error('handleSend error:', err);
       Alert.alert('Error', 'Failed to send message. Please try again.');
@@ -533,6 +585,9 @@ function MessageScreen() {
             try {
               await clearChatMessages(chatId);
               setMessages([]);
+              queryClient.invalidateQueries({ queryKey: ['chats'] });
+              queryClient.invalidateQueries({ queryKey: ['contacts'] });
+              Alert.alert('Chat Cleared', 'All messages have been deleted.');
             } catch (err) {
               console.error('handleClearChat error:', err);
               Alert.alert('Error', 'Failed to clear chat. Please try again.');
@@ -570,10 +625,40 @@ function MessageScreen() {
 
   const handleBlockUser = () => {
     setShowMenu(false);
+    if (!user || !otherUserId) {
+      Alert.alert('Error', 'Unable to block this user.');
+      return;
+    }
     Alert.alert(
       'Block User',
-      'Block user feature will be available in a future update.',
-      [{ text: 'OK' }]
+      `Are you sure you want to block ${userName || 'this user'}? You will no longer see each other in Discover or be able to message.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await connectionService.blockUser(user.id, otherUserId);
+              if (chatId) {
+                try {
+                  await deleteChat(chatId);
+                } catch (deleteErr) {
+                  console.warn('Could not delete chat after block:', deleteErr);
+                }
+              }
+              queryClient.invalidateQueries({ queryKey: ['contacts'] });
+              queryClient.invalidateQueries({ queryKey: ['chats'] });
+              Alert.alert('User Blocked', `${userName || 'User'} has been blocked.`, [
+                { text: 'OK', onPress: () => router.back() },
+              ]);
+            } catch (err) {
+              console.error('handleBlockUser error:', err);
+              Alert.alert('Error', 'Failed to block user. Please try again.');
+            }
+          },
+        },
+      ]
     );
   };
 
@@ -587,8 +672,13 @@ function MessageScreen() {
 
     return (
       <View>
-        {showDivider && <DateDivider label={formatDateDivider(item.created_at)} />}
-        <MessageBubble item={item} isMe={isMe} colors={colors} />
+        {showDivider && <DateDivider label={formatDateDivider(item.created_at)} accentColor={colors.accent} />}
+        <MessageBubble
+          item={item}
+          isMe={isMe}
+          colors={colors}
+          onImagePress={(url) => setFullScreenImageUrl(url)}
+        />
       </View>
     );
   }
@@ -626,7 +716,7 @@ function MessageScreen() {
             <Image
               source={avatarSource as any}
               style={{ width: '100%', height: '100%', borderRadius: 21 }}
-              resizeMode="cover"
+              contentFit="cover"
             />
             {/* Online dot */}
             <View style={[styles.onlineDot, { backgroundColor: colors.online }]} />
@@ -645,36 +735,59 @@ function MessageScreen() {
         </View>
 
         {/* Right actions */}
-        <View className="flex-row items-center">
-          <Pressable
-            style={[styles.headerIconBtn, { backgroundColor: 'rgba(255,255,255,0.12)', marginRight: 8 }]}
-            hitSlop={8}
-          >
-            <Feather name="phone" size={18} color="white" />
-          </Pressable>
-          <View style={{ position: 'relative' }}>
-            <Pressable
-              onPress={() => setShowMenu((v) => !v)}
-              style={[styles.headerIconBtn, { backgroundColor: 'rgba(255,255,255,0.12)' }]}
-              hitSlop={8}
-            >
-              <Feather name="more-vertical" size={18} color="white" />
-            </Pressable>
-
-            <DropdownMenu
-              visible={showMenu}
-              colors={colors}
-              onClose={() => setShowMenu(false)}
-              onViewProfile={handleViewProfile}
-              onMute={handleMuteNotifications}
-              onCancelRequest={handleCancelRequest}
-              onClearChat={handleClearChat}
-              onDeleteChat={handleDeleteChat}
-              onBlockUser={handleBlockUser}
-            />
-          </View>
-        </View>
+        <Pressable
+          onPress={() => setShowMenu(true)}
+          style={[styles.headerIconBtn, { backgroundColor: 'rgba(255,255,255,0.12)' }]}
+          hitSlop={8}
+        >
+          <Feather name="more-vertical" size={18} color="white" />
+        </Pressable>
       </LinearGradient>
+
+      {/* ── Full-screen image modal ── */}
+      <Modal
+        visible={!!fullScreenImageUrl}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFullScreenImageUrl(null)}
+      >
+        <Pressable
+          style={StyleSheet.absoluteFill}
+          onPress={() => setFullScreenImageUrl(null)}
+        >
+          <View style={[StyleSheet.absoluteFill, styles.fullScreenImageBackdrop]}>
+            {fullScreenImageUrl && (
+              <Image
+                source={{ uri: fullScreenImageUrl }}
+                style={styles.fullScreenImage}
+                contentFit="contain"
+              />
+            )}
+          </View>
+        </Pressable>
+      </Modal>
+
+      {/* ── Menu Modal ── */}
+      <Modal
+        visible={showMenu}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowMenu(false)}
+      >
+        <View style={{ flex: 1 }}>
+          <DropdownMenu
+            visible={showMenu}
+            colors={colors}
+            onClose={() => setShowMenu(false)}
+            onViewProfile={handleViewProfile}
+            onMute={handleMuteNotifications}
+            onCancelRequest={handleCancelRequest}
+            onClearChat={handleClearChat}
+            onDeleteChat={handleDeleteChat}
+            onBlockUser={handleBlockUser}
+          />
+        </View>
+      </Modal>
 
       {/* ── Messages ── */}
       <View style={{ flex: 1 }}>
@@ -695,9 +808,9 @@ function MessageScreen() {
             ListEmptyComponent={
               <View className="flex-1 items-center justify-center py-20">
                 <View
-                  style={[styles.emptyIconWrapper, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '20' }]}
+                  style={[styles.emptyIconWrapper, { backgroundColor: colors.accent + '18', borderColor: colors.accent + '35' }]}
                 >
-                  <Feather name="message-circle" size={32} color={colors.primary} />
+                  <Feather name="message-circle" size={32} color={colors.accent} />
                 </View>
                 <Text className="text-base font-semibold text-foreground mt-4">No messages yet</Text>
                 <Text className="text-sm text-muted-foreground mt-1 text-center px-8">
@@ -714,7 +827,8 @@ function MessageScreen() {
             styles.inputBar,
             {
               backgroundColor: colors.card,
-              borderTopColor: colors.border,
+              borderTopColor: colors.accent + '35',
+              borderTopWidth: 1,
               paddingBottom: insets.bottom + 10,
             },
           ]}
@@ -733,17 +847,17 @@ function MessageScreen() {
             <Pressable
               onPress={handlePickDocument}
               disabled={sending}
-              style={[styles.attachBtn, { backgroundColor: colors.primary + '12' }]}
+              style={[styles.attachBtn, { backgroundColor: colors.accent + '20' }]}
               hitSlop={6}
             >
-              <Feather name="paperclip" size={20} color={colors.primary} />
+              <Feather name="paperclip" size={20} color={colors.accent} />
             </Pressable>
 
             {/* Text input */}
             <View
               style={[
                 styles.inputWrapper,
-                { backgroundColor: colors.input, borderColor: colors.border },
+                { backgroundColor: colors.input, borderColor: colors.accent + '40' },
               ]}
             >
               <TextInput
@@ -838,6 +952,25 @@ const styles = StyleSheet.create({
     width: 200,
     height: 150,
     borderRadius: 10,
+  },
+  videoContainer: {
+    width: 200,
+    height: 150,
+    borderRadius: 10,
+    overflow: 'hidden',
+  },
+  videoPreview: {
+    width: '100%',
+    height: '100%',
+  },
+  fullScreenImageBackdrop: {
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  fullScreenImage: {
+    width: '100%',
+    height: '100%',
   },
   menuCard: {
     position: 'absolute',
