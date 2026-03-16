@@ -30,6 +30,7 @@ export default function LoginScreen() {
     const [hasCheckedVerification, setHasCheckedVerification] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [showVerificationAlert, setShowVerificationAlert] = useState(false);
+    const [isResending, setIsResending] = useState(false);
 
     // Show success message when redirected from signup (email confirmation required)
     const hasShownSignupSuccess = useRef(false);
@@ -253,7 +254,8 @@ export default function LoginScreen() {
                 message={error ?? ''}
                 onDismiss={clearError}
                 severity={
-                    error?.includes('Rate limited') ? 'warning'
+                    error?.includes('Rate limited') || error?.includes('Too many') ? 'warning'
+                        : error?.includes('Confirmation email sent') ? 'success'
                         : error?.includes('Account created!') || error?.includes('confirm your account') ? 'info'
                         : error?.includes('Email') ? 'info'
                         : 'error'
@@ -266,18 +268,37 @@ export default function LoginScreen() {
                 <View className="absolute top-28 left-4 right-4 z-40">
                     <Pressable
                         onPress={async () => {
+                            if (cooldownSeconds > 0 || isResending) return;
+                            setIsResending(true);
                             try {
-                                await resendSignupConfirmation(email);
+                                await resendSignupConfirmation(email.trim().toLowerCase());
                                 clearError();
-                                setError('Confirmation email sent. Check your inbox (and spam folder).', 'Email Sent');
+                                setCooldownSeconds(60);
+                                setError(
+                                    'Confirmation email sent. Check your inbox and spam folder.',
+                                    'Email Sent'
+                                );
                             } catch (e: any) {
-                                setError(e?.message ?? 'Failed to resend', 'Error');
+                                const msg = e?.message ?? 'Failed to resend';
+                                if (/rate limit|over_email_send_rate_limit/i.test(msg)) {
+                                    setCooldownSeconds(60);
+                                    setError('Too many requests. Please wait a minute and try again.', 'Rate Limited');
+                                } else {
+                                    setError(msg, 'Error');
+                                }
+                            } finally {
+                                setIsResending(false);
                             }
                         }}
+                        disabled={cooldownSeconds > 0 || isResending}
                         className="py-2 px-4 bg-primary/10 rounded-lg border border-primary/30"
                     >
                         <Text className="text-primary text-sm font-medium text-center">
-                            Resend confirmation email
+                            {isResending
+                                ? 'Sending…'
+                                : cooldownSeconds > 0
+                                    ? `Resend in ${cooldownSeconds}s`
+                                    : 'Resend confirmation email'}
                         </Text>
                     </Pressable>
                 </View>

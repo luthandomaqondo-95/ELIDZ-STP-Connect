@@ -23,6 +23,7 @@ export interface Tenant {
   contact_email?: string;
   contact_phone?: string;
   location?: string;
+  facility_id?: string | null;
   building?: string;
   address?: string;
   services?: string;

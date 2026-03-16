@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { View, TextInput, Pressable, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
@@ -15,6 +15,7 @@ import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { validateEmail } from '@/utils/validation';
 import { authBack } from '@/utils/navigation';
+import { ErrorAlert } from '@/components/Error';
 
 const { height } = Dimensions.get('window');
 
@@ -24,38 +25,46 @@ export default function ForgotPasswordScreen() {
     const [email, setEmail] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isEmailSent, setIsEmailSent] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [errorTitle, setErrorTitle] = useState('Error');
 
     const handleResetPassword = async () => {
-        const trimmedEmail = email.trim();
-        const emailCheck = validateEmail(trimmedEmail);
+        const normalizedEmail = email.trim().toLowerCase();
+        const emailCheck = validateEmail(normalizedEmail);
         if (!emailCheck.valid) {
-            Alert.alert('Error', emailCheck.message ?? 'Please enter your email address');
+            setError(emailCheck.message ?? 'Please enter your email address');
+            setErrorTitle('Invalid Email');
             return;
         }
 
         setIsLoading(true);
+        setError(null);
 
         try {
-            // In Expo Go, prefer the generated exp://... deep link.
-            // In dev-client / standalone builds, use the stable custom scheme.
             const redirectTo =
                 Constants.appOwnership === 'expo'
                     ? ExpoLinking.createURL('change-password')
                     : 'elidzstp://change-password';
 
-            const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-                // Route groups like "(auth)" are not part of deep-link paths in expo-router.
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
                 redirectTo,
             });
 
-            if (error) {
-                throw error;
+            if (resetError) {
+                throw resetError;
             }
 
             setIsEmailSent(true);
-        } catch (error: any) {
-            console.error('Password reset error:', error);
-            Alert.alert('Error', error.message || 'Failed to send reset email. Please try again.');
+        } catch (err: any) {
+            console.error('Password reset error:', err);
+            const message = err?.message || 'Failed to send reset email. Please try again.';
+            if (/rate limit|over_email_send_rate_limit/i.test(message)) {
+                setError('Too many requests. Please wait a minute and try again.');
+                setErrorTitle('Rate Limited');
+            } else {
+                setError(message);
+                setErrorTitle('Error');
+            }
         } finally {
             setIsLoading(false);
         }
@@ -147,9 +156,12 @@ export default function ForgotPasswordScreen() {
                             </View>
 
                             <Text className="text-2xl font-bold text-center text-foreground mb-3">Check Your Email</Text>
-                            <Text className="text-center text-muted-foreground mb-8 px-4 leading-6">
+                            <Text className="text-center text-muted-foreground mb-4 px-4 leading-6">
                                 We&apos;ve sent a password reset link to{'\n'}
-                                <Text className="font-bold text-foreground">{email}</Text>
+                                <Text className="font-bold text-foreground">{email.trim().toLowerCase()}</Text>
+                            </Text>
+                            <Text className="text-center text-muted-foreground text-sm mb-8 px-4">
+                                The link will expire in 1 hour. Check your spam folder if you don&apos;t see it.
                             </Text>
 
                             {/* Back to Login Button */}
@@ -172,6 +184,15 @@ export default function ForgotPasswordScreen() {
 					</View>
 				</ScreenKeyboardAwareScrollView>
 			</SafeAreaView>
+
+			<ErrorAlert
+				visible={!!error}
+				title={errorTitle}
+				message={error ?? ''}
+				onDismiss={() => setError(null)}
+				severity={errorTitle === 'Rate Limited' ? 'warning' : 'error'}
+				autoDismissMs={6000}
+			/>
 		</View>
     );
 }

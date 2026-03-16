@@ -49,7 +49,6 @@ function CenterDetailScreen() {
 
   const getImageSource = (): { uri: string } | number | null => {
     if (!facility?.image_url) return null;
-    if (facility.image_url.startsWith('http')) return { uri: facility.image_url };
     return facilitiesService.getFacilityCardImage(facility.image_url) ?? null;
   };
 

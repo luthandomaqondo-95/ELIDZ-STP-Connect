@@ -33,13 +33,39 @@ async function createSessionFromUrl(url: string) {
 
 		const access_token = get('access_token');
 		const refresh_token = get('refresh_token');
-		if (!access_token || !refresh_token) return;
+		const code = get('code');
+		const token_hash = get('token_hash');
+		const type = get('type');
 
-		const { error } = await supabase.auth.setSession({
-			access_token,
-			refresh_token,
-		});
-		if (error) throw error;
+		if (access_token && refresh_token) {
+			const { error } = await supabase.auth.setSession({
+				access_token,
+				refresh_token,
+			});
+			if (error) throw error;
+			return;
+		}
+		if (code) {
+			const { error } = await supabase.auth.exchangeCodeForSession(code);
+			if (error) throw error;
+			return;
+		}
+		if (token_hash && type === 'recovery') {
+			const { error } = await supabase.auth.verifyOtp({
+				type: 'recovery',
+				token_hash,
+			});
+			if (error) throw error;
+			return;
+		}
+		if (token_hash && (type === 'signup' || type === 'email')) {
+			const { error } = await supabase.auth.verifyOtp({
+				type: type as 'signup' | 'email',
+				token_hash,
+			});
+			if (error) throw error;
+			return;
+		}
 	} catch (err) {
 		console.error('Error creating session from URL:', err);
 	}

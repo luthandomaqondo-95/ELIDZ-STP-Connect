@@ -151,13 +151,20 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
     React.useEffect(() => {
         async function fetchFacilities() {
             try {
-                const { data } = await supabase.from('facilities').select('*')
+                const { data } = await supabase.from('facilities').select('service_id, service_name, service_icon')
                 if (data) {
-                    const mappedProjects = data.map(facility => ({
-                        name: facility.name,
-                        url: `/dashboard/projects/${facility.id}`,
-                        icon: iconMap[facility.icon] || iconMap['default']
-                    }))
+                    const seen = new Set<string>()
+                    const mappedProjects = data
+                        .filter((r: { service_id: string }) => {
+                            if (seen.has(r.service_id)) return false
+                            seen.add(r.service_id)
+                            return true
+                        })
+                        .map((r: { service_id: string; service_name: string; service_icon: string }) => ({
+                            name: r.service_name,
+                            url: `/dashboard/projects/${r.service_id}`,
+                            icon: iconMap[r.service_icon] || iconMap['default']
+                        }))
                     setProjects(mappedProjects)
                 }
             } catch (error) {

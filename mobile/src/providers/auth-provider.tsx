@@ -4,6 +4,15 @@ import type { Session } from '@supabase/supabase-js'
 import { PropsWithChildren, useEffect, useState } from 'react'
 import { Profile } from '@/types'
 import * as Sentry from '@sentry/react-native';
+import * as ExpoLinking from 'expo-linking';
+import Constants from 'expo-constants';
+
+/** Redirect URL for email confirmation. Route groups like (auth) are omitted from paths. */
+function getEmailConfirmationRedirectUrl(): string {
+	return Constants.appOwnership === 'expo'
+		? ExpoLinking.createURL('email-confirmed')
+		: 'elidzstp://email-confirmed';
+}
 
 export default function AuthProvider({ children }: PropsWithChildren) {
 	const [session, setSession] = useState<Session | undefined | null>()
@@ -80,7 +89,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			email: normalizedEmail,
 			password,
 			options: {
-				emailRedirectTo: 'elidzstp://(auth)/email-confirmed',
+				emailRedirectTo: getEmailConfirmationRedirectUrl(),
 				data: {
 					name: trimmedName,
 					role,
@@ -190,7 +199,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			type: 'signup',
 			email: normalizedEmail,
 			options: {
-				emailRedirectTo: 'elidzstp://(auth)/email-confirmed',
+				emailRedirectTo: getEmailConfirmationRedirectUrl(),
 			},
 		});
 

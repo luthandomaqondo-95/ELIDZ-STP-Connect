@@ -68,6 +68,23 @@ class TenantService {
     return uniqueCenters;
   }
 
+  /**
+   * Get tenants by facility ID. Uses facility_id from DB (source of truth from ELIDZ STP).
+   */
+  async getTenantsByFacilityId(facilityId: string): Promise<Tenant[]> {
+    const { data, error } = await supabase
+      .from('tenants')
+      .select('*')
+      .eq('facility_id', facilityId)
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('TenantService.getTenantsByFacilityId error:', error);
+      return [];
+    }
+    return (data ?? []) as Tenant[];
+  }
+
   async getTenantById(id: string): Promise<Tenant | null> {
     console.log('TenantService.getTenantById called for id:', id);
 

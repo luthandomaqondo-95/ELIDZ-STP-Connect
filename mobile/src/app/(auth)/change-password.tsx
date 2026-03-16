@@ -11,7 +11,7 @@ import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { validatePassword, validateConfirmPassword } from '@/utils/validation';
+import { validatePassword, validateConfirmPassword, MIN_PASSWORD_LENGTH } from '@/utils/validation';
 import { authBack } from '@/utils/navigation';
 import { PasswordField } from '@/components/PasswordField';
 
@@ -94,9 +94,9 @@ export default function ChangePasswordScreen() {
     }, [trySetSessionFromUrl]);
 
     const handleChangePassword = async () => {
-        const pwdCheck = validatePassword(newPassword, { minLength: 6 });
+        const pwdCheck = validatePassword(newPassword, { minLength: MIN_PASSWORD_LENGTH });
         if (!pwdCheck.valid) {
-            Alert.alert('Error', pwdCheck.message ?? 'Please enter a new password');
+            Alert.alert('Invalid Password', pwdCheck.message ?? `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
             return;
         }
         const confirmCheck = validateConfirmPassword(newPassword.trim(), confirmPassword.trim());
@@ -111,9 +111,11 @@ export default function ChangePasswordScreen() {
             const { error } = await supabase.auth.updateUser({ password: trimmed });
             if (error) throw error;
             await supabase.auth.signOut();
-            Alert.alert('Password Changed', 'Your password has been successfully changed.', [
-                { text: 'OK', onPress: () => router.replace('/(auth)') },
-            ]);
+            Alert.alert(
+                'Password Changed',
+                'Your password has been successfully updated. You can now sign in with your new password.',
+                [{ text: 'OK', onPress: () => router.replace('/(auth)') }]
+            );
         } catch (err: any) {
             Alert.alert('Error', err?.message ?? 'Failed to change password. Please try again.');
         } finally {
@@ -180,7 +182,7 @@ export default function ChangePasswordScreen() {
                     <PasswordField
                         value={newPassword}
                         onChangeText={setNewPassword}
-                        placeholder="New password (min 6 characters)"
+                        placeholder={`New password (min ${MIN_PASSWORD_LENGTH} characters)`}
                         accentColor={colors.accent}
                         placeholderColor={colors.placeholder}
                         editable={!isLoading}
