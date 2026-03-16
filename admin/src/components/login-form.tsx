@@ -79,11 +79,6 @@ export function LoginForm({
 				<CardContent className="pt-0">
 					<form onSubmit={handleSubmit}>
 						<FieldGroup className="gap-4">
-							{error && (
-								<div className="rounded-2xl bg-red-50 p-3 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-500/20">
-									{error}
-								</div>
-							)}
 							<Field>
 								<FieldLabel htmlFor="email" className="text-zinc-300">Email</FieldLabel>
 								<Input
@@ -92,7 +87,7 @@ export function LoginForm({
 									placeholder="admin@elidz.co.za"
 									required
 									value={formData.email}
-									onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+									onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setError(null); }}
 									disabled={isLoading}
 									className="bg-zinc-950/50 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500/50 placeholder:text-zinc-600 focus-visible:border-indigo-500/50 rounded-3xl h-12"
 								/>
@@ -113,7 +108,7 @@ export function LoginForm({
 										type={showPassword ? "text" : "password"}
 										required
 										value={formData.password}
-										onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+										onChange={(e) => { setFormData({ ...formData, password: e.target.value }); setError(null); }}
 										disabled={isLoading}
 										className="bg-zinc-950/50 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-indigo-500/50 rounded-3xl h-10 pr-12"
 									/>
@@ -131,6 +126,11 @@ export function LoginForm({
 										)}
 									</button>
 								</div>
+								{error && (
+									<div className="mt-2 rounded-2xl bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-600 dark:text-red-400 border border-red-500/20">
+										{error}
+									</div>
+								)}
 							</Field>
 							<Field className="pt-2">
 								<Button

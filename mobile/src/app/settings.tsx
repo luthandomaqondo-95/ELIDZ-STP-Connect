@@ -230,10 +230,16 @@ function SettingsScreen() {
           <Text className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">Account</Text>
           <View className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <SettingRow
+              icon="lock"
+              title="Change Password"
+              subtitle="Update your password"
+              isFirst
+              onPress={() => router.push('/(auth)/change-password')}
+            />
+            <SettingRow
               icon="log-out"
               title="Logout"
               destructive
-              isFirst
               onPress={handleLogout}
             />
             <SettingRow

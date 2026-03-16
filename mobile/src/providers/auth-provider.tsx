@@ -7,8 +7,15 @@ import * as Sentry from '@sentry/react-native';
 import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
 
-/** Redirect URL for email confirmation. Route groups like (auth) are omitted from paths. */
+/** Redirect URL for email confirmation. Route groups like (auth) are omitted from paths.
+ * Prefer web URL when set (app.json extra.appWebUrl) so links work in desktop browsers and Mailtrap.
+ * Deep links (elidzstp://) only work when the app is installed; web URL works everywhere. */
 function getEmailConfirmationRedirectUrl(): string {
+	const appWebUrl = Constants.expoConfig?.extra?.appWebUrl as string | undefined;
+	if (appWebUrl) {
+		const base = appWebUrl.replace(/\/$/, '');
+		return `${base}/email-confirmed`;
+	}
 	return Constants.appOwnership === 'expo'
 		? ExpoLinking.createURL('email-confirmed')
 		: 'elidzstp://email-confirmed';
@@ -80,10 +87,11 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		}
 	}
 
-	async function signup(name: string, email: string, password: string, role: Profile['role'], address: string) {
+	async function signup(name: string, email: string, password: string, role: Profile['role'], address: string, idNumber?: string) {
 		const trimmedName = name.trim();
 		const normalizedEmail = email.trim().toLowerCase();
 		const normalizedAddress = address.trim();
+		const trimmedIdNumber = (idNumber ?? '').trim() || null;
 
 		const { data: authData, error: authError } = await supabase.auth.signUp({
 			email: normalizedEmail,
@@ -94,6 +102,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					name: trimmedName,
 					role,
 					address: normalizedAddress,
+					id_number: trimmedIdNumber,
 				}
 			}
 		});
@@ -122,7 +131,6 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		// Check if email confirmation is required
 		const requiresEmailConfirmation = authData.user.email_confirmed_at === null;
 
-		// Create profile regardless of email confirmation status
 		const { error: profileError } = await supabase
 			.from('profiles')
 			.upsert(
@@ -132,8 +140,9 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					email: normalizedEmail,
 					role,
 					address: normalizedAddress,
+					id_number: trimmedIdNumber,
 				},
-				{ onConflict: 'id' }
+				{ onConflict: 'email' }
 			);
 
 		if (profileError) {
@@ -146,8 +155,15 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					'Database schema is missing profiles.address (or schema cache is stale). Run the Supabase SQL migration: mobile/database/fix_profiles_address_column_schema_cache.sql'
 				);
 			}
+			if (profileError.code === '23505' && /profiles_email_key|duplicate key.*email/i.test(profileError.message ?? '')) {
+				throw new Error(
+					'This email is already registered. Please log in or use a different email address.'
+				);
+			}
 
-			if (profileError.code === '42501') {
+			// 42501 = permission denied, 23503 = foreign key violation (e.g. connections_user_id_fkey)
+			// Use RPC which updates related tables before reassigning profile id
+			if (profileError.code === '42501' || profileError.code === '23503') {
 				const { error: rpcError } = await supabase.rpc('create_user_profile', {
 					p_user_id: userId,
 					p_name: trimmedName,
@@ -157,6 +173,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					p_organization: null,
 					p_bio: null,
 					p_avatar: 'blue',
+					p_id_number: trimmedIdNumber,
 				});
 
 				if (rpcError) {

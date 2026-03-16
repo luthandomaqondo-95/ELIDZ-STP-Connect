@@ -11,11 +11,10 @@ import { Button } from '@/components/ui/button';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
+import { validateEmail, validatePassword, validateConfirmPassword, validateIdNumber } from '@/utils/validation';
 import { PasswordField } from '@/components/PasswordField';
 import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
 import { fetchZaPostalCodesForCity, fetchZaCitiesByProvince, fetchZaProvinces } from '@/services/za-postal-codes.service';
-import { ErrorAlert } from '@/components/Error';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 
 const ROLES = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'] as const;
@@ -26,6 +25,7 @@ export default function SignupScreen() {
 	const colors = COLORS[colorScheme];
 	const { isLoading, error, errorTitle, execute, clearError, setError } = useAsyncOperation();
 	const [name, setName] = useState('');
+	const [idNumber, setIdNumber] = useState('');
 	const [email, setEmail] = useState('');
 	const [province, setProvince] = useState<string>('');
 	const [city, setCity] = useState('');
@@ -137,8 +137,14 @@ export default function SignupScreen() {
 			return;
 		}
 
-		if (!name || !email || !password || !province || !city || !postalCode) {
+		if (!name || !idNumber || !email || !password || !province || !city || !postalCode) {
 			setError('Please fill in all fields', 'Missing Fields');
+			return;
+		}
+
+		const idCheck = validateIdNumber(idNumber);
+		if (!idCheck.valid) {
+			setError(idCheck.message ?? 'Please enter a valid South African ID number', 'Invalid ID Number');
 			return;
 		}
 
@@ -189,7 +195,7 @@ export default function SignupScreen() {
 
 		isSubmittingRef.current = true;
 		await execute(
-			() => signup(name, email, password, role, fullAddress),
+			() => signup(name, email, password, role, fullAddress, idNumber.trim()),
 			{
 				onSuccess: () => {
 					// Email confirmation not required (e.g. dev mode) - sign in and navigate
@@ -272,6 +278,23 @@ export default function SignupScreen() {
 							placeholderTextColor={colors.placeholder}
 							autoCapitalize="words"
 							autoComplete="name"
+						/>
+					</View>
+
+					{/* ID Number Input */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="card-outline" size={20} color={colors.accent} />
+						</View>
+						<TextInput
+							className="flex-1 min-h-0 py-0 text-base text-foreground"
+							value={idNumber}
+							onChangeText={(t) => setIdNumber(t.replace(/\D/g, '').slice(0, 13))}
+							placeholder="ID number (13 digits)"
+							placeholderTextColor={colors.placeholder}
+							keyboardType="number-pad"
+							maxLength={13}
+							autoComplete="off"
 						/>
 					</View>
 
@@ -591,6 +614,12 @@ export default function SignupScreen() {
 						onToggle={() => setAcceptedTerms(!acceptedTerms)}
 					/>
 
+					{error && (
+						<View className="mb-4 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
+							<Text className="text-destructive text-sm">{error}</Text>
+						</View>
+					)}
+
 					<Text className="text-muted-foreground text-xs text-center mb-4">
 						After signing up, check your email to confirm your account before signing in.
 					</Text>
@@ -668,18 +697,7 @@ export default function SignupScreen() {
 				</ScreenKeyboardAwareScrollView>
 			</SafeAreaView>
 
-			{/* Error Alert */}
-			<ErrorAlert
-				visible={!!error}
-				title={errorTitle}
-				message={error ?? ''}
-				onDismiss={clearError}
-				severity={
-					error?.includes('Rate Limited') || error?.includes('Loading') ? 'warning'
-						: 'error'
-				}
-				autoDismissMs={5000}
-			/>
+			{/* ErrorAlert removed - all errors shown inline below form fields */}
 		</View>
 	);
 }

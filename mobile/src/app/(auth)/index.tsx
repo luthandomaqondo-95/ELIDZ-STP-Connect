@@ -171,7 +171,7 @@ export default function LoginScreen() {
                             <TextInput
                                 className="flex-1 min-h-0 py-0 text-base text-foreground"
                                 value={email}
-                                onChangeText={setEmail}
+                                onChangeText={(t) => { setEmail(t); clearError(); }}
                                 placeholder="Email"
                                 placeholderTextColor={colors.placeholder}
                                 keyboardType="email-address"
@@ -181,14 +181,14 @@ export default function LoginScreen() {
                         </View>
                         <PasswordField
                             value={password}
-                            onChangeText={setPassword}
+                            onChangeText={(t) => { setPassword(t); clearError(); }}
                             placeholder="Password"
                             accentColor={colors.accent}
                             placeholderColor={colors.placeholder}
                             editable={!isLoading}
                             containerClassName="flex-row items-center bg-input rounded-xl mb-2 px-4 h-14 border border-border overflow-hidden"
                         />
-                        <View className="flex-row justify-end mb-6">
+                        <View className="flex-row justify-end mb-4">
                             <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
                                 <Text className="text-accent text-sm">Forgot Password?</Text>
                             </Pressable>
@@ -197,6 +197,11 @@ export default function LoginScreen() {
                             accepted={acceptedTerms}
                             onToggle={() => setAcceptedTerms(!acceptedTerms)}
                         />
+                        {error && !error?.includes('Account created!') && !error?.includes('Confirmation email sent') && (
+                            <View className="mb-4 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
+                                <Text className="text-destructive text-sm">{error}</Text>
+                            </View>
+                        )}
                         <Button
                             className="rounded-xl bg-secondary justify-center rounded-full items-center mb-6 py-3.5 px-6 min-h-[48px]"
                             onPress={handleLogin}
@@ -247,24 +252,22 @@ export default function LoginScreen() {
                 </ScreenKeyboardAwareScrollView>
             </SafeAreaView>
 
-            {/* Error Alert */}
+            {/* Error Alert - only for success/info messages (Account created, Confirmation email sent) */}
             <ErrorAlert
-                visible={!!error}
+                visible={!!error && (error?.includes('Account created!') || error?.includes('Confirmation email sent'))}
                 title={errorTitle}
                 message={error ?? ''}
                 onDismiss={clearError}
                 severity={
-                    error?.includes('Rate limited') || error?.includes('Too many') ? 'warning'
-                        : error?.includes('Confirmation email sent') ? 'success'
+                    error?.includes('Confirmation email sent') ? 'success'
                         : error?.includes('Account created!') || error?.includes('confirm your account') ? 'info'
-                        : error?.includes('Email') ? 'info'
                         : 'error'
                 }
                 autoDismissMs={error?.includes('Account created!') ? 5000 : 6000}
             />
 
-            {/* Resend confirmation link when login fails due to unconfirmed email */}
-            {error?.includes('confirm your account') && !error?.includes('Account created!') && email && (
+            {/* Resend confirmation: show after signup ("Account created!") or when login fails due to unconfirmed email */}
+            {error?.includes('confirm your account') && email && (
                 <View className="absolute top-28 left-4 right-4 z-40">
                     <Pressable
                         onPress={async () => {

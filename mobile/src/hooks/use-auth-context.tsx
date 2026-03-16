@@ -8,7 +8,7 @@ export type AuthData = {
     isLoading: boolean
     isLoggedIn: boolean
     login: (email: string, password: string) => Promise<void>
-    signup: (name: string, email: string, password: string, role: Profile['role'], address: string) => Promise<void>
+    signup: (name: string, email: string, password: string, role: Profile['role'], address: string, idNumber?: string) => Promise<void>
     resendSignupConfirmation: (email: string) => Promise<void>
     signInWithGoogle: () => Promise<any>
     signInWithApple: () => Promise<any>
