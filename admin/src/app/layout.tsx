@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
 	title: "ELIDZ-STP Admin Portal",
 	description: "Admin portal for ELIDZ-STP Connect",
+	icons: {
+		icon: "/logos/elidz-icon.png",
+	},
 };
 
 export default function RootLayout({

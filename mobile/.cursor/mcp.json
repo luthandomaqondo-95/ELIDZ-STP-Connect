@@ -1,7 +1,6 @@
 {
   "mcpServers": {
-    "Sentry": {
-      "url": "https://mcp.sentry.dev/mcp/appimate/elidz-stp"
-    }
+    "Sentry": { "url": "https://mcp.sentry.dev/mcp/appimate/elidz-stp" },
+    "supabase": { "url": "https://mcp.supabase.com/mcp" }
   }
 }

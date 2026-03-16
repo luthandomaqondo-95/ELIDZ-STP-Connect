@@ -137,7 +137,7 @@ function namedColorToRgb(color: string): string {
         black: '0, 0, 0',
         white: '255, 255, 255',
         gray: '128, 128, 128',
-        orange: '255, 165, 0',
+        orange: '243, 140, 30',
         purple: '128, 0, 128',
         brown: '165, 42, 42',
         pink: '255, 192, 203',

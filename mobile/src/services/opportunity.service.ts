@@ -7,8 +7,9 @@ class OpportunityServiceClass {
 
 		let query = supabase
 			.from('opportunities')
-			.select('*, posted_by(organization, name)')
-			.eq('status', 'active');
+			.select('*, posted_by(organization, name), tenant:tenants(name, logo_url)')
+			.eq('status', 'active')
+			.order('created_at', { ascending: false });
 
 		if (filter && filter !== 'All') {
 			query = query.eq('type', filter);
@@ -26,8 +27,9 @@ class OpportunityServiceClass {
 				console.warn('OpportunityService.getOpportunities: Join with posted_by failed for some rows, returning partial data.');
 				const { data: fallbackData, error: fallbackError } = await supabase
 					.from('opportunities')
-					.select('*')
-					.eq('status', 'active');
+					.select('*, tenant:tenants(name, logo_url)')
+					.eq('status', 'active')
+					.order('created_at', { ascending: false });
 				if (fallbackError) throw fallbackError;
 				return (fallbackData || []).map((item: any) => ({
 					...item,
@@ -41,7 +43,8 @@ class OpportunityServiceClass {
 		return (data || []).map((item: any) => ({
 			...item,
 			org: item.posted_by?.organization || 'ELIDZ',
-			postedByDetails: item.posted_by
+			postedByDetails: item.posted_by,
+			tenant: item.tenant ?? item.tenants ?? null
 		})) as Opportunity[];
 	}
 
@@ -50,7 +53,7 @@ class OpportunityServiceClass {
 
 		const { data, error } = await supabase
 			.from('opportunities')
-			.select('*, posted_by(organization, name)')
+			.select('*, posted_by(organization, name), tenant:tenants(name, logo_url)')
 			.eq('id', id)
 			.single();
 
@@ -65,7 +68,8 @@ class OpportunityServiceClass {
 		return {
 			...data,
 			org: data.posted_by?.organization || 'ELIDZ',
-			postedByDetails: data.posted_by
+			postedByDetails: data.posted_by,
+			tenant: data.tenant ?? data.tenants ?? null
 		} as Opportunity;
 	}
 
@@ -85,6 +89,39 @@ class OpportunityServiceClass {
 
 		return data as Opportunity;
 	}
+
+	async applyToOpportunity(opportunityId: string, coverLetter?: string): Promise<{ id: string }> {
+		const { data: { user } } = await supabase.auth.getUser();
+		if (!user) {
+			throw new Error('You must be logged in to apply for an opportunity');
+		}
+
+		const { data, error } = await supabase
+			.from('applications')
+			.insert({
+				opportunity_id: opportunityId,
+				applicant_id: user.id,
+				cover_letter: coverLetter || null,
+				status: 'pending',
+			})
+			.select('id')
+			.single();
+
+		if (error) {
+			console.error('OpportunityService.applyToOpportunity error:', JSON.stringify(error, null, 2));
+			if (error.code === '23505') {
+				throw new Error('You have already applied for this opportunity.');
+			}
+			if (error.code === '22P02') {
+				throw new Error('Invalid opportunity selected. Please try again from the opportunities list.');
+			}
+			throw new Error(error.message || 'Failed to submit application');
+		}
+
+		return data as { id: string };
+	}
+
+	
 }
 
 export const OpportunityService = new OpportunityServiceClass();

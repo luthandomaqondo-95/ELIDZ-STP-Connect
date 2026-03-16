@@ -1,5 +1,8 @@
 -- ELIDZ-STP Database Schema
--- Run this SQL in your Supabase SQL Editor
+-- PostgreSQL/Supabase SQL - Run this in your Supabase SQL Editor
+-- NOTE: This is PostgreSQL syntax, not MSSQL. IDE linter warnings can be safely ignored.
+-- These MSSQL linter errors are false positives - the file uses correct PostgreSQL DDL for Supabase.
+-- To silence them in VS Code, this file should use a PostgreSQL linter, not MSSQL.
 
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -9,7 +12,9 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID REFERENCES auth.users(id) PRIMARY KEY,
   name TEXT NOT NULL,
   email TEXT UNIQUE NOT NULL,
-  role TEXT NOT NULL CHECK (role IN ('Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant')),
+  -- Single-line address/location string (e.g. "City, Province, 1234")
+  address TEXT,
+  role TEXT NOT NULL CHECK (role IN ('Entrepreneur', 'Researcher', 'SME', 'SMME', 'Student', 'Investor', 'Tenant', 'Admin', 'Super Admin')),
   organization TEXT,
   bio TEXT,
   avatar TEXT DEFAULT 'blue',
@@ -103,13 +108,13 @@ CREATE TABLE IF NOT EXISTS public.resources (
 -- Connections/Network table
 CREATE TABLE IF NOT EXISTS public.connections (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES public.profiles(id) NOT NULL,
-  connected_user_id UUID REFERENCES public.profiles(id) NOT NULL,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'blocked')),
+  requester_id UUID REFERENCES public.profiles(id) NOT NULL,
+  addressee_id UUID REFERENCES public.profiles(id) NOT NULL,
+  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined', 'blocked')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
-  UNIQUE(user_id, connected_user_id),
-  CHECK (user_id != connected_user_id)
+  UNIQUE(requester_id, addressee_id),
+  CHECK (requester_id != addressee_id)
 );
 
 -- Messages table

@@ -78,7 +78,7 @@ export default function NotFoundScreen() {
                                 {/* <Text className="text-4xl font-bold text-foreground">404</Text> */}
                                 <Text className="text-2xl font-semibold text-foreground">Page Not Found</Text>
                                 <Text className="text-base text-muted-foreground text-center mt-2">
-                                    Oops! The page you're looking for doesn't exist or has been moved.
+                                    Oops! The page you&apos;re looking for doesn&apos;t exist or has been moved.
                                 </Text>
                             </View>
 

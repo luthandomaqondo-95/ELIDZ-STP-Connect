@@ -25,6 +25,17 @@ In the output, you'll find options to open the app in a
 
 You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
 
+## Authentication (Supabase)
+
+Email confirmation and password reset require redirect URLs to be whitelisted in Supabase:
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard) → your project → **Authentication** → **URL Configuration**
+2. Add these to **Redirect URLs**:
+   - `elidzstp://email-confirmed` (email confirmation)
+   - `elidzstp://change-password` (password reset)
+   - `elidzstp://oauth-callback` (Google/Apple sign-in)
+3. For Expo Go development, also add the URL shown when running `npx expo start` (e.g. `exp://192.168.x.x:8081/--/email-confirmed`)
+
 ## Get a fresh project
 
 When you're ready, run:

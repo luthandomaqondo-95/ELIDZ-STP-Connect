@@ -1,252 +1,685 @@
-import React, { useState } from 'react';
-import { View, TextInput, Pressable, Alert, Dimensions, TouchableOpacity } from 'react-native';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
+import { View, TextInput, Pressable, TouchableOpacity, Image, ActivityIndicator, Modal, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { Ionicons } from '@expo/vector-icons';
-import { Picker } from '@react-native-picker/picker';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
+import { PasswordField } from '@/components/PasswordField';
+import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
+import { fetchZaPostalCodesForCity, fetchZaCitiesByProvince, fetchZaProvinces } from '@/services/za-postal-codes.service';
+import { ErrorAlert } from '@/components/Error';
+import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 
-const { width, height } = Dimensions.get('window');
+const ROLES = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'] as const;
 
 export default function SignupScreen() {
-	const { signup } = useAuthContext();
+	const { signup, signInWithGoogle, signInWithApple } = useAuthContext();
+	const { colorScheme } = useColorScheme();
+	const colors = COLORS[colorScheme];
+	const { isLoading, error, errorTitle, execute, clearError, setError } = useAsyncOperation();
 	const [name, setName] = useState('');
 	const [email, setEmail] = useState('');
+	const [province, setProvince] = useState<string>('');
+	const [city, setCity] = useState('');
+	const [postalCode, setPostalCode] = useState('');
 	const [password, setPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
-	const [role, setRole] = useState<'Entrepreneur' | 'Researcher' | 'SME' | 'Student' | 'Investor' | 'Tenant'>('Entrepreneur');
-	const [isLoading, setIsLoading] = useState(false);
-	const [showPassword, setShowPassword] = useState(false);
-	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+	const [role, setRole] = useState<'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant'>('Entrepreneur');
+	const isSubmittingRef = useRef(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
+	const [cooldownSeconds, setCooldownSeconds] = useState(0);
+
+	const [postalCodesForCity, setPostalCodesForCity] = useState<string[]>([]);
+	const [loadingPostalCodes, setLoadingPostalCodes] = useState(false);
+	const [postalCodeSearch, setPostalCodeSearch] = useState('');
+	const [postalCodeModalVisible, setPostalCodeModalVisible] = useState(false);
+	const [provinceModalVisible, setProvinceModalVisible] = useState(false);
+	const [cityModalVisible, setCityModalVisible] = useState(false);
+	const [roleModalVisible, setRoleModalVisible] = useState(false);
+
+	const [provinces, setProvinces] = useState<string[]>([]);
+	const [citiesByProvince, setCitiesByProvince] = useState<string[]>([]);
+	const [loadingProvinces, setLoadingProvinces] = useState(true);
+	const [loadingCities, setLoadingCities] = useState(false);
+
+	// Fetch provinces from za_postal_codes on mount
+	useEffect(() => {
+		let cancelled = false;
+		fetchZaProvinces()
+			.then((list) => {
+				if (!cancelled) {
+					setProvinces(list);
+					if (list.length > 0) setProvince((p) => (p ? p : list[0]));
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setLoadingProvinces(false);
+			});
+		return () => { cancelled = true; };
+	}, []);
+
+	// Fetch cities when province changes
+	useEffect(() => {
+		if (!province) {
+			setCitiesByProvince([]);
+			return;
+		}
+		let cancelled = false;
+		setLoadingCities(true);
+		setCity('');
+		fetchZaCitiesByProvince(province)
+			.then((list) => {
+				if (!cancelled) setCitiesByProvince(list);
+			})
+			.finally(() => {
+				if (!cancelled) setLoadingCities(false);
+			});
+		return () => { cancelled = true; };
+	}, [province]);
+
+	// Fetch postal codes from Supabase (GeoNames dump) when city changes
+	useEffect(() => {
+		if (!city || city === 'Other') {
+			setPostalCodesForCity([]);
+			setPostalCode('');
+			setPostalCodeSearch('');
+			return;
+		}
+		let cancelled = false;
+		setPostalCode('');
+		setPostalCodeSearch('');
+		setLoadingPostalCodes(true);
+		fetchZaPostalCodesForCity(city, 50)
+			.then((codes) => {
+				if (!cancelled) {
+					setPostalCodesForCity(codes);
+					// Auto-select first code if only one
+					if (codes.length === 1) setPostalCode(codes[0]);
+				}
+			})
+			.finally(() => {
+				if (!cancelled) setLoadingPostalCodes(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [city]);
+
+	const filteredPostalCodes = useMemo(() => {
+		const q = postalCodeSearch.trim();
+		const list = q ? postalCodesForCity.filter((c) => c.includes(q)) : postalCodesForCity;
+		return list.slice(0, 50);
+	}, [postalCodesForCity, postalCodeSearch]);
+
+	// Simple client-side cooldown to avoid hammering Supabase rate limits.
+	useEffect(() => {
+		if (cooldownSeconds <= 0) return;
+		const id = setInterval(() => {
+			setCooldownSeconds((s) => (s > 0 ? s - 1 : 0));
+		}, 1000);
+		return () => clearInterval(id);
+	}, [cooldownSeconds]);
 
 	async function handleSignup() {
-		if (!name || !email || !password) {
-			Alert.alert('Error', 'Please fill in all fields');
+		if (isSubmittingRef.current || isLoading) {
+			return;
+		}
+		if (cooldownSeconds > 0) {
+			setError(`Too many attempts. Try again in ${cooldownSeconds}s.`, 'Rate Limited');
 			return;
 		}
 
-		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+(\.[^\s@]+)*$/;
-		if (!emailRegex.test(email.trim())) {
-			Alert.alert('Invalid Email', 'Please enter a valid email address');
+		if (!name || !email || !password || !province || !city || !postalCode) {
+			setError('Please fill in all fields', 'Missing Fields');
 			return;
 		}
 
-		if (password.length < 8) {
-			Alert.alert('Error', 'Password must be at least 8 characters');
-			return;
+		// Postal code must be selected from list (no manual entry) unless city is "Other"
+		if (city !== 'Other') {
+			if (loadingPostalCodes) {
+				setError('Postal codes are still loading for your city. Please wait.', 'Loading');
+				return;
+			}
+			if (postalCodesForCity.length === 0) {
+				setError(`No postal codes found for ${city}. Please select another city.`, 'No Postal Codes');
+				return;
+			}
+			if (!postalCodesForCity.includes(postalCode)) {
+				setError('Please select your postal code from the list.', 'Invalid Postal Code');
+				return;
+			}
+		} else {
+			// "Other" city: allow manual 4-digit code only
+			if (!/^\d{4}$/.test(postalCode.trim())) {
+				setError('Please enter a valid 4-digit South African postal code.', 'Invalid Postal Code');
+				return;
+			}
 		}
 
-		if (password !== confirmPassword) {
-			Alert.alert('Error', 'Passwords do not match');
+		const fullAddress = `${city}, ${province}, ${postalCode}`;
+
+		const emailCheck = validateEmail(email);
+		if (!emailCheck.valid) {
+			setError(emailCheck.message ?? 'Please enter a valid email address', 'Invalid Email');
+			return;
+		}
+		const pwdCheck = validatePassword(password);
+		if (!pwdCheck.valid) {
+			setError(pwdCheck.message ?? 'Password must be at least 8 characters', 'Weak Password');
+			return;
+		}
+		const confirmCheck = validateConfirmPassword(password, confirmPassword);
+		if (!confirmCheck.valid) {
+			setError(confirmCheck.message ?? 'Passwords do not match', 'Password Mismatch');
 			return;
 		}
 
 		if (!acceptedTerms) {
-			Alert.alert('Error', 'Please accept the Terms & Conditions');
+			setError('Please accept the Terms & Conditions', 'Terms Required');
 			return;
 		}
 
-		setIsLoading(true);
-		try {
-			await signup(name, email, password, role);
-			router.replace('/(tabs)');
-		} catch (error: any) {
-			Alert.alert('Error', error?.message || 'Failed to sign up. Please try again.');
-		} finally {
-			setIsLoading(false);
-		}
+		isSubmittingRef.current = true;
+		await execute(
+			() => signup(name, email, password, role, fullAddress),
+			{
+				onSuccess: () => {
+					// Email confirmation not required (e.g. dev mode) - sign in and navigate
+					const navigate = () => {
+						if (role === 'SMME') {
+							router.replace('/(tabs)');
+							setTimeout(() => router.push('/(tabs)/profile'), 300);
+						} else {
+							router.replace('/(tabs)/messages');
+						}
+					};
+					setTimeout(navigate, 0);
+				},
+				onError: (err: any) => {
+					const message = err?.message ?? '';
+					// Email confirmation required: redirect to login with success message
+					if (message.includes('EMAIL_CONFIRMATION_REQUIRED')) {
+						clearError();
+						router.replace({
+							pathname: '/(auth)',
+							params: { signupSuccess: '1', email: email.trim().toLowerCase() },
+						});
+						return;
+					}
+					if (/too many|rate limit|over_email_send_rate_limit/i.test(message)) {
+						setCooldownSeconds(60);
+					}
+				},
+			}
+		);
+		isSubmittingRef.current = false;
 	}
 
 	return (
-		<View className="flex-1 bg-white">
-			<LinearGradient
-				colors={['#0a1628', '#122a4d', '#1a3a5c']}
-				className="absolute inset-0"
-				style={{ height: height * 0.35 }}
-				start={{ x: 0.5, y: 0 }}
-				end={{ x: 0.5, y: 1 }}
-			/>
-			<Stars />
-			{/* Header Section */}
-			<View className="px-4 pt-1" style={{ height: height * 0.25 }}>
-				{/* Back Button */}
-				<TouchableOpacity
-					className="w-10 h-10 rounded-full flex-row justify-center items-center"
-					style={{ marginTop: 40 }}
-					onPress={() => router.back()}
-				>
-					<Ionicons name="chevron-back" size={24} color="#fff" />
-					<Text className="text-white text-sm">Back</Text>
-				</TouchableOpacity>
-
-				{/* Title */}
-				<View className="items-center">
-					<Text className="text-3xl font-bold text-white mb-2">Register</Text>
-					<Text className="text-white/80">Create a new account</Text>
-				</View>
+		<View className="flex-1 bg-background">
+			<View className="absolute inset-0 z-0">
+				<LinearGradient
+					colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+					className="absolute top-0 left-0 right-0 h-2/5"
+					start={{ x: 0.5, y: 0 }}
+					end={{ x: 0.5, y: 1 }}
+				/>
+				<Stars />
 			</View>
+			<SafeAreaView className="flex-1 z-10 relative" edges={['top']}>
+				<View className="px-6 pt-2 rounded-3xl h-1/4 z-10">
+					<TouchableOpacity
+						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
+						onPress={() => router.back()}
+					>
+						<Ionicons name="chevron-back" size={24} color={colors.white} />
+						<Text className="text-white text-sm ml-1">Back</Text>
+					</TouchableOpacity>
+					<View className="items-center mt-2">
+						<Image
+							source={require('../../../assets/logos/blue text-idz logo.png')}
+							className="w-60 h-[100px]"
+							resizeMode="contain"
+						/>
+						<Text className="text-white text-3xl font-bold mt-4 mb-2">Register</Text>
+						<Text className="text-white/80 text-base mb-2">Create a new account</Text>
+					</View>
+				</View>
 
-			<ScreenKeyboardAwareScrollView
-				contentContainerClassName="flex-grow"
-				style={{ zIndex: 2 }}
-			>
-				{/* White Card Form */}
-				<View className="flex-1 bg-white w-full px-6 pb-10 -mt-16 pt-12 " style={{ borderTopLeftRadius: 50, borderTopRightRadius: 50, marginTop: -70, paddingTop: 50 }}>
+				<ScreenKeyboardAwareScrollView
+					contentContainerClassName="flex-grow rounded-3xl"
+					className="flex-1 z-10"
+				>
+					<View className="w-full px-6 pb-10 pt-6 rounded-3xl mt-4 bg-background flex flex-col">
 					{/* Full Name Input */}
-					<View className="hidden" />
-					<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14">
-						<Ionicons name="person-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="person-outline" size={20} color={colors.accent} />
+						</View>
 						<TextInput
-							className="flex-1 text-base text-[#333]"
+							className="flex-1 min-h-0 py-0 text-base text-foreground"
 							value={name}
 							onChangeText={setName}
-							placeholder="Your mail"
-							placeholderTextColor="#D4A03B"
-							keyboardType="email-address"
-							autoCapitalize="none"
-							autoComplete="email"
+							placeholder="Full Name"
+							placeholderTextColor={colors.placeholder}
+							autoCapitalize="words"
+							autoComplete="name"
 						/>
 					</View>
 
 					{/* Email Input */}
-					<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14">
-						<Ionicons name="mail-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="mail-outline" size={20} color={colors.accent} />
+						</View>
 						<TextInput
-							className="flex-1 text-base text-[#333]"
+							className="flex-1 min-h-0 py-0 text-base text-foreground"
 							value={email}
 							onChangeText={setEmail}
-							placeholder="Your mail"
-							placeholderTextColor="#D4A03B"
+							placeholder="Email address"
+							placeholderTextColor={colors.placeholder}
 							keyboardType="email-address"
 							autoCapitalize="none"
 							autoComplete="email"
 						/>
 					</View>
 
-					{/* Password Input */}
-					<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14">
-						<Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
-						<TextInput
-							className="flex-1 text-base text-[#333]"
-							value={password}
-							onChangeText={setPassword}
-							placeholder="Password"
-							placeholderTextColor="#D4A03B"
-							secureTextEntry={!showPassword}
-							autoCapitalize="none"
-							autoComplete="password-new"
-						/>
-						<Pressable
-							className="p-1"
-							onPress={() => setShowPassword(!showPassword)}
-						>
-							<Ionicons
-								name={showPassword ? "eye-outline" : "eye-off-outline"}
-								size={20}
-								color="#D4A03B"
-							/>
-						</Pressable>
-					</View>
-
-					{/* Confirm Password Input */}
-					<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14">
-						<Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
-						<TextInput
-							className="flex-1 text-base text-[#333]"
-							value={confirmPassword}
-							onChangeText={setConfirmPassword}
-							placeholder="Confirm Password"
-							placeholderTextColor="#D4A03B"
-							secureTextEntry={!showConfirmPassword}
-							autoCapitalize="none"
-							autoComplete="password-new"
-						/>
-						<Pressable
-							className="p-1"
-							onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-						>
-							<Ionicons
-								name={showConfirmPassword ? "eye-outline" : "eye-off-outline"}
-								size={20}
-								color="#D4A03B"
-							/>
-						</Pressable>
-					</View>
-
-					{/* Role Picker */}
-					<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 pl-4 h-14">
-						<Ionicons name="briefcase-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
-						<View className="flex-1 ml-1">
-							<Picker
-								selectedValue={role}
-								onValueChange={(value) => setRole(value)}
-								style={{ flex: 1, color: '#333' }}
-								dropdownIconColor="#D4A03B"
-							>
-								<Picker.Item label="Entrepreneur" value="Entrepreneur" color="#333" />
-								<Picker.Item label="Researcher" value="Researcher" color="#333" />
-								<Picker.Item label="SME" value="SME" color="#333" />
-								<Picker.Item label="Student" value="Student" color="#333" />
-								<Picker.Item label="Investor" value="Investor" color="#333" />
-								<Picker.Item label="Tenant" value="Tenant" color="#333" />
-							</Picker>
+					{/* Province selector (modal list, same on iOS & Android) */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="map-outline" size={20} color={colors.accent} />
 						</View>
+						<Pressable
+							className="flex-1 min-h-0 ml-1 flex-row items-center justify-between py-2"
+							onPress={() => setProvinceModalVisible(true)}
+						>
+							<Text className={province ? 'text-base text-foreground' : 'text-base text-muted-foreground'}>
+								{province || 'Select province'}
+							</Text>
+							<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+						</Pressable>
+						<Modal
+							visible={provinceModalVisible}
+							animationType="slide"
+							transparent
+							onRequestClose={() => setProvinceModalVisible(false)}
+						>
+							<Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setProvinceModalVisible(false)}>
+								<Pressable className="bg-card border-t border-border rounded-t-2xl max-h-[70%]" onPress={(e) => e.stopPropagation()}>
+									<View className="p-4 border-b border-border">
+										<Text className="text-lg font-semibold text-foreground">Select province</Text>
+									</View>
+									<FlatList
+										keyboardShouldPersistTaps="handled"
+										data={provinces}
+										keyExtractor={(item) => item}
+										className="max-h-[280px]"
+										ListEmptyComponent={
+											loadingProvinces ? (
+												<View className="py-8 items-center">
+													<ActivityIndicator size="small" color={colors.primary} />
+													<Text className="text-muted-foreground mt-2">Loading provinces…</Text>
+												</View>
+											) : (
+												<Text className="text-muted-foreground text-center py-8">No provinces. Ensure za_postal_codes is loaded.</Text>
+											)
+										}
+										renderItem={({ item }) => (
+											<Pressable
+												className="px-4 py-3 active:bg-muted"
+												onPress={() => {
+													setProvince(item);
+													setCity('');
+													setProvinceModalVisible(false);
+												}}
+											>
+												<Text className="text-foreground text-base">{item}</Text>
+											</Pressable>
+										)}
+									/>
+								</Pressable>
+							</Pressable>
+						</Modal>
+					</View>
+
+					{/* City selector (modal list, same on iOS & Android) */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="business-outline" size={20} color={colors.accent} />
+						</View>
+						<Pressable
+							className="flex-1 min-h-0 ml-1 flex-row items-center justify-between py-2"
+							onPress={() => province && setCityModalVisible(true)}
+							disabled={!province}
+						>
+							<Text className={city ? 'text-base text-foreground' : 'text-base text-muted-foreground'}>
+								{city || (province ? 'Select city' : 'Select province first')}
+							</Text>
+							<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+						</Pressable>
+						<Modal
+							visible={cityModalVisible}
+							animationType="slide"
+							transparent
+							onRequestClose={() => setCityModalVisible(false)}
+						>
+							<Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setCityModalVisible(false)}>
+								<Pressable className="bg-card border-t border-border rounded-t-2xl max-h-[70%]" onPress={(e) => e.stopPropagation()}>
+									<View className="p-4 border-b border-border">
+										<Text className="text-lg font-semibold text-foreground">Select city</Text>
+									</View>
+									<FlatList
+										keyboardShouldPersistTaps="handled"
+										data={citiesByProvince}
+										keyExtractor={(item) => item}
+										className="max-h-[280px]"
+										ListEmptyComponent={
+											loadingCities ? (
+												<View className="py-8 items-center">
+													<ActivityIndicator size="small" color={colors.primary} />
+													<Text className="text-muted-foreground mt-2">Loading cities…</Text>
+												</View>
+											) : (
+												<Text className="text-muted-foreground text-center py-8">No cities for this province.</Text>
+											)
+										}
+										renderItem={({ item }) => (
+											<Pressable
+												className="px-4 py-3 active:bg-muted"
+												onPress={() => {
+													setCity(item);
+													setCityModalVisible(false);
+												}}
+											>
+												<Text className="text-foreground text-base">{item}</Text>
+											</Pressable>
+										)}
+									/>
+								</Pressable>
+							</Pressable>
+						</Modal>
+					</View>
+
+					{/* Postal Code: Picker from API (no manual entry) or manual only for "Other" */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="location-outline" size={20} color={colors.accent} />
+						</View>
+						{!city ? (
+							<View className="flex-1 flex-row items-center min-h-0">
+								<Text className="text-muted-foreground text-base">Select city first</Text>
+							</View>
+						) : city === 'Other' ? (
+							<TextInput
+								className="flex-1 min-h-0 py-0 text-base text-foreground"
+								value={postalCode}
+								onChangeText={(t) => setPostalCode(t.replace(/\D/g, '').slice(0, 4))}
+								placeholder="4-digit postal code"
+								placeholderTextColor={colors.placeholder}
+								keyboardType="number-pad"
+								maxLength={4}
+							/>
+						) : loadingPostalCodes ? (
+							<View className="flex-1 flex-row items-center min-h-0">
+								<View className="mr-2">
+									<ActivityIndicator size="small" color={colors.accent} />
+								</View>
+								<Text className="text-muted-foreground text-base">Loading postal codes for {city}…</Text>
+							</View>
+						) : postalCodesForCity.length === 0 ? (
+							<View className="flex-1 min-h-0">
+								<Text className="text-muted-foreground text-base">No postal codes for {city}. Pick another city.</Text>
+							</View>
+						) : (
+							<View className="flex-1 min-h-0 ml-1">
+								<Pressable
+									onPress={() => setPostalCodeModalVisible(true)}
+									className="flex-row items-center justify-between py-2"
+								>
+									<Text className={postalCode ? 'text-base text-foreground' : 'text-base text-muted-foreground'}>
+										{postalCode || 'Select postal code'}
+									</Text>
+									<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+								</Pressable>
+								<Modal
+									visible={postalCodeModalVisible}
+									animationType="slide"
+									transparent
+									onRequestClose={() => {
+										setPostalCodeModalVisible(false);
+										setPostalCodeSearch('');
+									}}
+								>
+									<Pressable
+										className="flex-1 bg-black/50 justify-end"
+										onPress={() => {
+											setPostalCodeModalVisible(false);
+											setPostalCodeSearch('');
+										}}
+									>
+										<KeyboardAvoidingView
+											behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+											className="w-full"
+										>
+											<Pressable
+												className="bg-card border-t border-border rounded-2xl max-h-[70%]"
+												onPress={(e) => e.stopPropagation()}
+											>
+												<View className="p-4 border-b border-border">
+													<Text className="text-lg font-semibold text-foreground mb-3">Select postal code</Text>
+													<View className="flex-row items-center bg-input border border-border rounded-lg px-3 h-11 overflow-hidden">
+														<View className="mr-2">
+															<Ionicons name="search-outline" size={18} color={colors.textSecondary} />
+														</View>
+														<TextInput
+															className="flex-1 min-h-0 py-0 text-base text-foreground"
+															value={postalCodeSearch}
+															onChangeText={setPostalCodeSearch}
+															placeholder="Search postal code"
+															placeholderTextColor={colors.placeholder}
+															keyboardType="number-pad"
+															autoFocus
+														/>
+													</View>
+												</View>
+												<FlatList
+													keyboardShouldPersistTaps="handled"
+													data={filteredPostalCodes}
+													keyExtractor={(item) => item}
+													className="max-h-[280px]"
+													ListEmptyComponent={
+														<View className="py-6 px-4">
+															<Text className="text-center text-muted-foreground">No matches</Text>
+														</View>
+													}
+													renderItem={({ item }) => (
+														<Pressable
+															className="px-4 py-3 active:bg-muted"
+															onPress={() => {
+																setPostalCode(item);
+																setPostalCodeModalVisible(false);
+																setPostalCodeSearch('');
+															}}
+														>
+															<Text className="text-foreground text-base">{item}</Text>
+														</Pressable>
+													)}
+												/>
+											</Pressable>
+										</KeyboardAvoidingView>
+									</Pressable>
+								</Modal>
+							</View>
+						)}
+					</View>
+
+					<PasswordField
+						value={password}
+						onChangeText={setPassword}
+						placeholder="Password"
+						accentColor={colors.accent}
+						placeholderColor={colors.placeholder}
+						autoComplete="password-new"
+						containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden"
+					/>
+					<PasswordField
+						value={confirmPassword}
+						onChangeText={setConfirmPassword}
+						placeholder="Confirm Password"
+						accentColor={colors.accent}
+						placeholderColor={colors.placeholder}
+						autoComplete="password-new"
+						containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden"
+					/>
+
+					{/* Role selector (modal list, same on iOS & Android) */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 pl-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="briefcase-outline" size={20} color={colors.accent} />
+						</View>
+						<Pressable
+							className="flex-1 min-h-0 ml-1 flex-row items-center justify-between py-2"
+							onPress={() => setRoleModalVisible(true)}
+						>
+							<Text className="text-base text-foreground">{role}</Text>
+							<Ionicons name="chevron-down" size={18} color={colors.textSecondary} />
+						</Pressable>
+						<Modal
+							visible={roleModalVisible}
+							animationType="slide"
+							transparent
+							onRequestClose={() => setRoleModalVisible(false)}
+						>
+							<Pressable className="flex-1 bg-black/50 justify-end" onPress={() => setRoleModalVisible(false)}>
+								<Pressable className="bg-card border-t border-border rounded-t-2xl max-h-[70%]" onPress={(e) => e.stopPropagation()}>
+									<View className="p-4 border-b border-border">
+										<Text className="text-lg font-semibold text-foreground">Select role</Text>
+									</View>
+									<FlatList
+										keyboardShouldPersistTaps="handled"
+										data={ROLES}
+										keyExtractor={(item) => item}
+										className="max-h-[280px]"
+										renderItem={({ item }) => (
+											<Pressable
+												className="px-4 py-3 active:bg-muted"
+												onPress={() => {
+													setRole(item);
+													setRoleModalVisible(false);
+												}}
+											>
+												<Text className="text-foreground text-base">{item}</Text>
+											</Pressable>
+										)}
+									/>
+								</Pressable>
+							</Pressable>
+						</Modal>
 					</View>
 
 					{/* Terms & Conditions */}
-					<View className="flex-row items-start mb-6 pr-2">
-						<Pressable
-							onPress={() => setAcceptedTerms(!acceptedTerms)}
-							style={{ flexDirection: 'row', alignItems: 'center' }}
-						>
-							<View style={{
-								width: 20,
-								height: 20,
-								borderRadius: 4,
-								borderWidth: 2,
-								borderColor: acceptedTerms ? '#D4A03B' : '#D4A03B',
-								backgroundColor: acceptedTerms ? '#D4A03B' : 'transparent',
-								alignItems: 'center',
-								justifyContent: 'center',
-								marginRight: 10
-							}}>
-								{acceptedTerms && <Ionicons name="checkmark" size={16} color="white" />}
-							</View>
-						</Pressable>
-						<Text className="flex-1 text-[13px] text-[#8a8a8a] leading-5">
-							By Creating an account, you agree to our{' '}
-							<Text className="text-[#D4A03B] font-semibold">Terms & Conditions</Text>
-							{' '}and agree to{' '}
-							<Text className="text-[#D4A03B] font-semibold">Privacy Policy</Text>
-						</Text>
-					</View>
+					<TermsAndPrivacyNotice
+						accepted={acceptedTerms}
+						onToggle={() => setAcceptedTerms(!acceptedTerms)}
+					/>
+
+					<Text className="text-muted-foreground text-xs text-center mb-4">
+						After signing up, check your email to confirm your account before signing in.
+					</Text>
 
 					{/* Sign Up Button */}
 					<Button
-						className="h-14 rounded-full bg-[#D4A03B] justify-center items-center mb-6 active:opacity-80 active:scale-95"
+						className="h-14 rounded-full bg-accent justify-center items-center mb-6 active:opacity-80 active:scale-95"
 						onPress={handleSignup}
-						disabled={isLoading}
+						disabled={isLoading || cooldownSeconds > 0}
 					>
-						<Text className="text-lg font-semibold text-white">
-							{isLoading ? 'Creating Account...' : 'Sign Up'}
+						<Text className="text-lg h-10 min-h-8 font-semibold text-white">
+							{isLoading ? 'Creating Account...' : cooldownSeconds > 0 ? `Try again in ${cooldownSeconds}s` : 'Sign Up'}
 						</Text>
 					</Button>
 
+					{/* Divider */}
+					<View className="flex-row items-center my-6">
+						<View className="flex-1 h-px bg-border" />
+						<Text className="text-muted-foreground mx-4 text-sm font-medium">
+							Or continue with
+						</Text>
+						<View className="flex-1 h-px bg-border" />
+					</View>
+
+					{/* Google Sign In Button */}
+					<Pressable
+						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-4 active:opacity-80 active:scale-95"
+						onPress={async () => {
+							try {
+								await signInWithGoogle();
+							} catch (error: any) {
+								setError(error?.message || 'Failed to sign in with Google', 'Error');
+							}
+						}}
+					>
+						<Image
+							source={require('../../../assets/logos/search.png')}
+							className="w-[22px] h-[22px] mr-3"
+							resizeMode="contain"
+						/>
+						<Text className="text-base font-semibold text-foreground">
+							Continue with Google
+						</Text>
+					</Pressable>
+
+					{/* Apple Sign In Button */}
+					<Pressable
+						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+						onPress={async () => {
+							try {
+								await signInWithApple();
+							} catch (error: any) {
+								setError(error?.message || 'Failed to sign in with Apple', 'Error');
+							}
+						}}
+					>
+						<Image
+							source={require('../../../assets/logos/apple-logo.png')}
+							className="w-[22px] h-[22px] mr-3"
+							resizeMode="contain"
+						/>
+						<Text className="text-base font-semibold text-foreground">
+							Continue with Apple
+						</Text>
+					</Pressable>
+
 					{/* Login Link */}
 					<View className="flex-row justify-center items-center">
-						<Text className="text-sm text-[#8a8a8a]">Already have an account? </Text>
+						<Text className="text-sm text-muted-foreground">Already have an account? </Text>
 						<Pressable onPress={() => router.push('/(auth)')}>
-							<Text className="text-sm font-semibold text-[#2a5298] underline">Log In</Text>
+							<Text className="text-sm font-semibold text-accent underline">Log In</Text>
 						</Pressable>
 					</View>
-				</View>
-			</ScreenKeyboardAwareScrollView>
+					</View>
+				</ScreenKeyboardAwareScrollView>
+			</SafeAreaView>
+
+			{/* Error Alert */}
+			<ErrorAlert
+				visible={!!error}
+				title={errorTitle}
+				message={error ?? ''}
+				onDismiss={clearError}
+				severity={
+					error?.includes('Rate Limited') || error?.includes('Loading') ? 'warning'
+						: 'error'
+				}
+				autoDismissMs={5000}
+			/>
 		</View>
 	);
 }

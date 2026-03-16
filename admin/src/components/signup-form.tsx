@@ -1,55 +1,40 @@
+"use client"
+
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ShieldCheck } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ShieldCheck, Lock } from "lucide-react";
 
 export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <div className="flex flex-col items-center gap-2 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 mb-2">
-                    <ShieldCheck className="w-6 h-6" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight">Create an account</h1>
-                <p className="text-muted-foreground text-sm text-balance">
-                    Enter your details to create an admin account.
-                </p>
-            </div>
-
-            <form className="grid gap-6">
-                <div className="grid gap-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" type="text" placeholder="John Doe" required />
-                </div>
-
-                <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="m@example.com" required />
-                </div>
-
-                <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input id="password" type="password" required />
-                </div>
-
-                <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-700">
-                    Sign Up
-                </Button>
-            </form>
-
-            <div className="text-center text-sm text-muted-foreground">
-                Already have an account?{" "}
-                <Link href="/auth/login" className="text-indigo-600 hover:text-indigo-500 hover:underline font-medium">
-                    Log in
-                </Link>
-            </div>
-            
-            <div className="text-center text-xs text-muted-foreground mt-4">
-                By clicking continue, you agree to our <a href="#" className="underline hover:text-indigo-600">Terms of Service</a>{" "}
-                and <a href="#" className="underline hover:text-indigo-600">Privacy Policy</a>.
-            </div>
+            <Card className="shadow-2xl rounded-3xl overflow-hidden">
+                <CardHeader className="text-center pb-8">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                        <ShieldCheck className="h-6 w-6 text-indigo-400" />
+                        <CardTitle className="text-2xl font-bold">Access Restricted</CardTitle>
+                    </div>
+                    <CardDescription className="text-zinc-400">
+                        Admin account creation is currently invitation-only.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="pt-0">
+                    <div className="flex flex-col items-center gap-4 py-4 text-center">
+                        <div className="h-12 w-12 rounded-full bg-zinc-800/50 flex items-center justify-center">
+                            <Lock className="h-6 w-6 text-zinc-400" />
+                        </div>
+                        <p className="text-sm text-zinc-300">
+                            Please contact the system administrator or IT department to request access to the ELIDZ-STP Admin Portal.
+                        </p>
+                        
+                        <Button asChild className="w-full bg-indigo-600 hover:bg-indigo-700 text-white border-0 rounded-3xl h-12 mt-4">
+                            <Link href="/auth/login">Return to Login</Link>
+                        </Button>
+                    </div>
+                </CardContent>
+            </Card>
         </div>
     );
 }

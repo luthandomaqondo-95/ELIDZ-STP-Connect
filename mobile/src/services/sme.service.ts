@@ -1,9 +1,9 @@
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types';
 
-export interface SMEServiceProduct {
+export interface SMMEServiceProduct {
 	id: string;
-	sme_id: string;
+	sme_id: string; // Database column name - keep as sme_id for backward compatibility
 	type: 'Service' | 'Product';
 	name: string;
 	description: string;
@@ -18,46 +18,46 @@ export interface SMEServiceProduct {
 	updated_at: string;
 }
 
-export interface SMEWithServicesProducts extends Profile {
-	services: SMEServiceProduct[];
-	products: SMEServiceProduct[];
+export interface SMMEWithServicesProducts extends Profile {
+	services: SMMEServiceProduct[];
+	products: SMMEServiceProduct[];
 }
 
-class SMEService {
-	async getServicesProducts(smeId?: string): Promise<SMEServiceProduct[]> {
-		console.log('SMEService.getServicesProducts called with smeId:', smeId);
+class SMMEService {
+	async getServicesProducts(smmmeId?: string): Promise<SMMEServiceProduct[]> {
+		console.log('SMMEService.getServicesProducts called with smmmeId:', smmmeId);
 
 		let query = supabase
 			.from('sme_services_products')
 			.select('*')
 			.eq('status', 'active');
 
-		if (smeId) {
-			query = query.eq('sme_id', smeId);
+		if (smmmeId) {
+			query = query.eq('sme_id', smmmeId); // Database column is still sme_id
 		}
 
 		const { data, error } = await query.order('created_at', { ascending: false });
 
 		if (error) {
-			console.error('SMEService.getServicesProducts error:', JSON.stringify(error, null, 2));
+			console.error('SMMEService.getServicesProducts error:', JSON.stringify(error, null, 2));
 			throw error;
 		}
 
-		console.log('SMEService.getServicesProducts succeeded:', data?.length || 0, 'items');
+		console.log('SMMEService.getServicesProducts succeeded:', data?.length || 0, 'items');
 		return data || [];
 	}
 
-	async getServicesProductsBySME(smeId: string): Promise<{ services: SMEServiceProduct[]; products: SMEServiceProduct[] }> {
-		console.log('SMEService.getServicesProductsBySME called with smeId:', smeId);
+	async getServicesProductsBySMME(smmmeId: string): Promise<{ services: SMMEServiceProduct[]; products: SMMEServiceProduct[] }> {
+		console.log('SMMEService.getServicesProductsBySMME called with smmmeId:', smmmeId);
 
-		const all = await this.getServicesProducts(smeId);
+		const all = await this.getServicesProducts(smmmeId);
 		const services = all.filter(item => item.type === 'Service');
 		const products = all.filter(item => item.type === 'Product');
 
 		return { services, products };
 	}
 
-	async createServiceProduct(smeId: string, data: {
+	async createServiceProduct(smmmeId: string, data: {
 		type: 'Service' | 'Product';
 		name: string;
 		description: string;
@@ -67,13 +67,13 @@ class SMEService {
 		contact_email?: string;
 		contact_phone?: string;
 		website_url?: string;
-	}): Promise<SMEServiceProduct> {
-		console.log('SMEService.createServiceProduct called for smeId:', smeId, 'with data:', data);
+	}): Promise<SMMEServiceProduct> {
+		console.log('SMMEService.createServiceProduct called for smmmeId:', smmmeId, 'with data:', data);
 
 		const { data: result, error } = await supabase
 			.from('sme_services_products')
 			.insert({
-				sme_id: smeId,
+				sme_id: smmmeId, // Database column is still sme_id
 				...data,
 				status: 'active',
 			})
@@ -81,21 +81,21 @@ class SMEService {
 			.single();
 
 		if (error) {
-			console.error('SMEService.createServiceProduct error:', JSON.stringify(error, null, 2));
+			console.error('SMMEService.createServiceProduct error:', JSON.stringify(error, null, 2));
 			throw error;
 		}
 
-		console.log('SMEService.createServiceProduct succeeded:', result);
+		console.log('SMMEService.createServiceProduct succeeded:', result);
 		return result;
 	}
 
-	async getAllSMEsWithServicesProducts(search?: string): Promise<SMEWithServicesProducts[]> {
-		console.log('SMEService.getAllSMEsWithServicesProducts called', { search });
+	async getAllSMMEsWithServicesProducts(search?: string): Promise<SMMEWithServicesProducts[]> {
+		console.log('SMMEService.getAllSMMEsWithServicesProducts called', { search });
 
 		let query = supabase
 			.from('profiles')
 			.select('*')
-			.eq('role', 'SME')
+			.eq('role', 'SMME')
 			.order('name', { ascending: true });
 
 		if (search) {
@@ -105,43 +105,43 @@ class SMEService {
 		const { data: profiles, error: profilesError } = await query;
 
 		if (profilesError) {
-			console.error('SMEService.getAllSMEsWithServicesProducts profiles error:', JSON.stringify(profilesError, null, 2));
+			console.error('SMMEService.getAllSMMEsWithServicesProducts profiles error:', JSON.stringify(profilesError, null, 2));
 			throw profilesError;
 		}
 
 		if (!profiles || profiles.length === 0) {
-			console.log('SMEService.getAllSMEsWithServicesProducts: No SMEs found');
+			console.log('SMMEService.getAllSMMEsWithServicesProducts: No SMMEs found');
 			return [];
 		}
 
-		const smeIds = profiles.map(p => p.id);
+		const smmmeIds = profiles.map(p => p.id);
 		const { data: servicesProducts, error: spError } = await supabase
 			.from('sme_services_products')
 			.select('*')
-			.in('sme_id', smeIds)
+			.in('sme_id', smmmeIds) // Database column is still sme_id
 			.eq('status', 'active');
 
 		if (spError) {
-			console.error('SMEService.getAllSMEsWithServicesProducts services/products error:', JSON.stringify(spError, null, 2));
+			console.error('SMMEService.getAllSMMEsWithServicesProducts services/products error:', JSON.stringify(spError, null, 2));
 			throw spError;
 		}
 
-		const smeMap = new Map<string, { services: SMEServiceProduct[]; products: SMEServiceProduct[] }>();
+		const smmmeMap = new Map<string, { services: SMMEServiceProduct[]; products: SMMEServiceProduct[] }>();
 
-		(servicesProducts || []).forEach((item: SMEServiceProduct) => {
-			if (!smeMap.has(item.sme_id)) {
-				smeMap.set(item.sme_id, { services: [], products: [] });
+		(servicesProducts || []).forEach((item: SMMEServiceProduct) => {
+			if (!smmmeMap.has(item.sme_id)) {
+				smmmeMap.set(item.sme_id, { services: [], products: [] });
 			}
-			const smeData = smeMap.get(item.sme_id)!;
+			const smmmeData = smmmeMap.get(item.sme_id)!;
 			if (item.type === 'Service') {
-				smeData.services.push(item);
+				smmmeData.services.push(item);
 			} else {
-				smeData.products.push(item);
+				smmmeData.products.push(item);
 			}
 		});
 
-		const result: SMEWithServicesProducts[] = profiles.map((profile: Profile) => {
-			const spData = smeMap.get(profile.id) || { services: [], products: [] };
+		const result: SMMEWithServicesProducts[] = profiles.map((profile: Profile) => {
+			const spData = smmmeMap.get(profile.id) || { services: [], products: [] };
 			return {
 				...profile,
 				services: spData.services,
@@ -149,9 +149,9 @@ class SMEService {
 			};
 		});
 
-		console.log('SMEService.getAllSMEsWithServicesProducts succeeded:', result.length, 'SMEs');
+		console.log('SMMEService.getAllSMMEsWithServicesProducts succeeded:', result.length, 'SMMEs');
 		return result;
 	}
 }
 
-export const smeService = new SMEService();
+export const smmmeService = new SMMEService();

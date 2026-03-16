@@ -1,80 +1,82 @@
-import React from 'react';
-import { View, Pressable } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Pressable, ScrollView, ActivityIndicator, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { NewsService, News } from '@/services/news.service';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
 
 export default function NewsScreen() {
-  const news = [
-    {
-      id: '1',
-      title: 'ELIDZ AGM Reflects on 2024/25 Performance and Reaffirms Commitment to Vision 2030',
-      category: 'Corporate',
-      date: 'November 13, 2025',
-      excerpt: 'ELIDZ held its Annual General Meeting, presenting 2024/25 financial year performance highlights and strategic developments driving industrial growth.',
-      image: 'trending-up',
-    },
-    {
-      id: '2',
-      title: 'ELIDZ Marks 10 Years of Clean Audits – A Decade of Excellence, Integrity, and Impact',
-      category: 'Achievements',
-      date: 'August 15, 2025',
-      excerpt: 'ELIDZ announces its 10th consecutive clean audit opinion from the Auditor General of South Africa for the 2024/25 financial year.',
-      image: 'award',
-    },
-    {
-      id: '3',
-      title: 'ELIDZ-STP Hosts an Innovative Training Workshop on Electric Vehicle Fundamentals',
-      category: 'Training',
-      date: 'March 27, 2025',
-      excerpt: 'ELIDZ-STP hosted a five-day Professional Certificate of Competency in Fundamentals of Electric Vehicles training workshop.',
-      image: 'zap',
-    },
-    {
-      id: '4',
-      title: 'THE ELIDZ Science and Technology Park Head Elected as IASP Africa Division President',
-      category: 'Achievements',
-      date: 'December 3, 2024',
-      excerpt: 'Ludwe Macingwane, Head of ELIDZ-STP, has been elected as the new Africa Division President of the International Association of Science Parks.',
-      image: 'star',
-    },
-    {
-      id: '5',
-      title: 'MEC FOR DEDEAT UNVEILS NEW 4IR COMPUTER LABORATORY AT UMTIZA HIGH SCHOOL',
-      category: 'Community',
-      date: 'October 31, 2024',
-      excerpt: 'MEC for DEDEAT unveiled a state-of-the-art Community-Based Digital (4IR) Computer Laboratory at Umtiza High School in partnership with Microsoft South Africa.',
-      image: 'monitor',
-    },
-    {
-      id: '6',
-      title: 'East London IDZ STP in partnership with UNISA launches Eastern Cape Innovation Challenge 2025',
-      category: 'Partnership',
-      date: 'Recent',
-      excerpt: 'ELIDZ-STP in partnership with UNISA launched the Eastern Cape Innovation Challenge 2025, a province-wide initiative to drive socio-economic innovation.',
-      image: 'users',
-    },
-  ];
+  const { colorScheme } = useColorScheme();
+  const colors = COLORS[colorScheme];
+  const [news, setNews] = useState<News[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const getCategoryColorClass = (category: string): string => {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await NewsService.getAllNews();
+        if (!cancelled) setNews(data);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load news');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const getCategoryColor = (category?: string): string => {
     switch (category) {
-      case 'Corporate':
-        return 'bg-primary';
-      case 'Achievements':
-        return 'bg-accent';
-      case 'Training':
-        return 'bg-secondary';
-      case 'Community':
-        return 'bg-primary';
-      case 'Partnership':
-        return 'bg-secondary';
-      case 'Events':
-        return 'bg-accent';
-      default:
-        return 'bg-primary';
+      case 'Corporate': return colors.primary;
+      case 'Achievements': return colors.accent;
+      case 'Training': return colors.success;
+      case 'Community': return colors.info;
+      case 'Partnership': return colors.purple;
+      case 'Events': return '#E83E8C';
+      default: return '#3B6E8F';
     }
   };
+
+  const getCategoryIcon = (category?: string): keyof typeof Feather.glyphMap => {
+    switch (category) {
+      case 'Corporate': return 'trending-up';
+      case 'Achievements': return 'award';
+      case 'Training': return 'zap';
+      case 'Community': return 'monitor';
+      case 'Partnership': return 'users';
+      case 'Events': return 'calendar';
+      default: return 'file-text';
+    }
+  };
+
+  if (loading) {
+    return (
+      <ScreenScrollView>
+        <View className="items-center py-12">
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text className="text-muted-foreground mt-4">Loading news...</Text>
+        </View>
+      </ScreenScrollView>
+    );
+  }
+
+  if (error) {
+    return (
+      <ScreenScrollView>
+        <View className="items-center py-12">
+          <Feather name="alert-circle" size={48} color={colors.error ?? '#EF4444'} />
+          <Text className="text-destructive text-base mt-4 text-center font-medium">{error}</Text>
+        </View>
+      </ScreenScrollView>
+    );
+  }
 
   return (
     <ScreenScrollView>
@@ -82,34 +84,54 @@ export default function NewsScreen() {
         Stay updated with the latest news and announcements from ELIDZ-STP
       </Text>
 
-      {news.map((item) => (
-        <Pressable
-          key={item.id}
-          className="flex-row p-4 rounded-xl mb-3 bg-card active:opacity-90 shadow-sm"
-          onPress={() => router.push(`/news-detail?id=${item.id}`)}
-        >
-          <View className={`w-14 h-14 rounded-xl justify-center items-center ${getCategoryColorClass(item.category)}`}>
-            <Feather name={item.image as any} size={24} color="#FFFFFF" />
-          </View>
-          <View className="flex-1 ml-4">
-            <View className="flex-row justify-between items-center">
-              <View className={`px-3 py-1 rounded-lg ${getCategoryColorClass(item.category)}`}>
-                <Text className="text-white text-xs">{item.category}</Text>
+      {!news || news.length === 0 ? (
+        <View className="items-center py-12">
+          <Feather name="file-text" size={48} color={colors.iconGray} />
+          <Text className="text-muted-foreground text-base mt-4 text-center">No news available</Text>
+        </View>
+      ) : (
+        news.map((item) => (
+          <Pressable
+            key={item.id}
+            className="bg-card rounded-2xl mb-4 border border-border shadow-sm overflow-hidden active:opacity-95"
+            onPress={() => router.push(`/news-detail?id=${item.id}`)}
+          >
+            {item.image_url ? (
+              <Image source={{ uri: item.image_url }} className="w-full h-40" resizeMode="cover" />
+            ) : (
+              <View
+                className="w-full h-32 justify-center items-center"
+                style={{ backgroundColor: getCategoryColor(item.category) }}
+              >
+                <Feather name={getCategoryIcon(item.category)} size={48} color="#FFFFFF" />
               </View>
-              <Text className="text-muted-foreground text-xs">
-                {item.date}
+            )}
+            <View className="p-4">
+              <View className="flex-row justify-between items-center mb-2">
+                {item.category && (
+                  <View
+                    className="px-3 py-1 rounded-lg"
+                    style={{ backgroundColor: `${getCategoryColor(item.category)}20` }}
+                  >
+                    <Text className="text-xs font-semibold" style={{ color: getCategoryColor(item.category) }}>
+                      {item.category}
+                    </Text>
+                  </View>
+                )}
+                <Text className="text-muted-foreground text-xs">
+                  {item.formattedDate || new Date(item.published_at).toLocaleDateString()}
+                </Text>
+              </View>
+              <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
+                {item.title}
+              </Text>
+              <Text className="text-muted-foreground text-sm" numberOfLines={2}>
+                {item.excerpt || item.content?.substring(0, 150) + '...'}
               </Text>
             </View>
-            <Text className="text-base font-semibold mt-2 text-foreground">
-              {item.title}
-            </Text>
-            <Text className="text-muted-foreground text-sm mt-2" numberOfLines={2}>
-              {item.excerpt}
-            </Text>
-          </View>
-        </Pressable>
-      ))}
+          </Pressable>
+        ))
+      )}
     </ScreenScrollView>
   );
 }
-

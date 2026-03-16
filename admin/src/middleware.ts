@@ -1,55 +1,71 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import { auth } from "@/auth";
-import { roleMap } from "@/lib/definitions"; 
+import { createServerClient } from '@supabase/ssr'
+import { NextResponse, type NextRequest } from 'next/server'
 
-// Invert roleMap to get role name by numeric code
-const reverseRoleMap = Object.fromEntries(
-  Object.entries(roleMap).map(([key, value]) => [value.toString(), key])
-) as Record<string, string>;
+export async function middleware(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-export default async function middleware(req: NextRequest) {
-  const session = await auth();
-  const pathname = req.nextUrl.pathname;
-
-  // If user is not authenticated, redirect to login (except for login page itself)
-  if (!session) {
-    // Don't redirect if already on login page to avoid loops
-    if (pathname === "/auth/login" || pathname.startsWith("/auth/")) {
-      return NextResponse.next();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            response.cookies.set(name, value, options)
+          )
+        },
+      },
     }
-    return NextResponse.redirect(new URL("/auth/login", req.url));
+  )
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  // Protect dashboard routes
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    if (!user) {
+      return NextResponse.redirect(new URL('/auth/login', request.url))
+    }
+
+    // Check user role in profiles table
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', user.id)
+      .single()
+
+    // If no profile or role is not Admin or Super Admin, redirect to unauthorized page
+    if (!profile || (profile.role !== 'Admin' && profile.role !== 'Super Admin')) {
+      return NextResponse.redirect(new URL('/auth/unauthorized', request.url))
+    }
   }
 
-  // Get user role from session
-  const userType = session.user?.userType || session.user?.role;
-  const userRole = reverseRoleMap[userType?.toString() || ""];
-
-  // If user is authenticated but on login page, redirect to dashboard
-  if (pathname === "/auth/login") {
-    return NextResponse.redirect(new URL("/dashboard", req.url));
-  }
-
-  // Role-based route protection (only for authenticated users)
-  
-  // Admin can access all routes
-  if (userRole === "admin") {
-    return NextResponse.next();
-  }
-
-  // For now, only admins can access the admin portal
-  // Redirect non-admins to login
-  if (userRole !== "admin") {
-    return NextResponse.redirect(new URL("/auth/login", req.url));
-  }
-
-  return NextResponse.next();
+  return response
 }
 
 export const config = {
   matcher: [
-    "/dashboard/:path*",
-    "/auth/login",
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public files (images etc)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-};
-
+}

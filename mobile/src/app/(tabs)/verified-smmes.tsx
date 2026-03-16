@@ -1,14 +1,19 @@
-import React, { useState } from 'react';
-import { View, Pressable, TextInput, ScrollView, Image } from 'react-native';
+import React, { useState, useCallback, useMemo } from 'react';
+import { View, Pressable, TextInput, Dimensions, FlatList } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useAuthContext } from '@/hooks/use-auth-context';
-import { SMEWithServicesProducts, SMEServiceProduct } from '@/services/sme.service';
+import { SMMEWithServicesProducts, SMMEServiceProduct } from '@/services/smme.service';
 import { TenantLogo } from '@/components/TenantLogo';
+import { TabsLayoutHeader } from '@/components/Header';
 import { useBusinessSearch } from '@/hooks/useSearch';
 import { useDebounce } from '@/hooks/useDebounce';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
+import { ListSkeleton } from '@/components/Loading';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
 
 interface Product {
     id: string;
@@ -45,18 +50,67 @@ interface SMME {
     services: Service[];
 }
 
-// Map database SME to SMME interface
-function mapSMEToSMME(sme: SMEWithServicesProducts): SMME {
+interface SMMECardProps {
+    smme: SMME;
+    colors: any;
+    onPress: () => void;
+}
+
+const SMMECard = React.memo(({ smme, colors, onPress }: SMMECardProps) => (
+    <Pressable
+        className="bg-card mb-4 rounded-2xl border border-border shadow-sm overflow-hidden active:opacity-95"
+        onPress={onPress}
+    >
+        <View className="p-4">
+            <View className="flex-row items-start">
+                {/* Logo */}
+                <View className="w-14 h-14 rounded-xl justify-center items-center overflow-hidden bg-primary/5 border border-primary/10">
+                    <TenantLogo name={smme.name} logoUrl={smme.logo_url} />
+                </View>
+
+                {/* Info */}
+                <View className="flex-1 ml-4">
+                    <View className="flex-row items-center justify-between mb-1">
+                        <Text className="text-base font-bold text-foreground flex-1 mr-2" numberOfLines={1}>
+                            {smme.name}
+                        </Text>
+                    </View>
+
+                    <View className="flex-row items-center mb-2 flex-wrap">
+                        <View className="bg-green-50 px-2 py-0.5 rounded-md mr-2 mb-1 flex-row items-center border border-green-100">
+                            <Feather name="shield" size={10} color={colors.success} />
+                            <Text className="text-green-700 text-[10px] font-bold uppercase ml-1">Verified</Text>
+                        </View>
+                        {smme.bbbee && (
+                            <View className="bg-accent/10 px-2 py-0.5 rounded-md mb-1 border border-accent/20">
+                                <Text className="text-accent text-[10px] font-bold">B-BBEE {smme.bbbee}</Text>
+                            </View>
+                        )}
+                    </View>
+
+                    <Text className="text-muted-foreground text-xs" numberOfLines={2}>
+                        {smme.description}
+                    </Text>
+                </View>
+            </View>
+        </View>
+    </Pressable>
+));
+
+SMMECard.displayName = 'SMMECard';
+
+// Map database SMME to SMME interface
+function mapSMMEToSMME(smmme: SMMEWithServicesProducts): SMME {
     // Get contact info from first service/product if available
-    const firstItem = [...sme.services, ...sme.products][0];
-    const contactEmail = firstItem?.contact_email || sme.email;
+    const firstItem = [...smmme.services, ...smmme.products][0];
+    const contactEmail = firstItem?.contact_email || smmme.email;
     const contactPhone = firstItem?.contact_phone;
     const website = firstItem?.website_url;
 
     // Determine industry from organization or services/products
-    let industry = sme.organization || 'General';
-    if (sme.services.length > 0 || sme.products.length > 0) {
-        const categories = [...sme.services.map(s => s.category), ...sme.products.map(p => p.category)];
+    let industry = smmme.organization || 'General';
+    if (smmme.services.length > 0 || smmme.products.length > 0) {
+        const categories = [...smmme.services.map(s => s.category), ...smmme.products.map(p => p.category)];
         if (categories.some(cat => cat?.toLowerCase().includes('software') || cat?.toLowerCase().includes('development'))) {
             industry = 'Technology';
         } else if (categories.some(cat => cat?.toLowerCase().includes('design'))) {
@@ -71,28 +125,28 @@ function mapSMEToSMME(sme: SMEWithServicesProducts): SMME {
     }
 
     return {
-        id: sme.id,
-        name: sme.name,
+        id: smmme.id,
+        name: smmme.name,
         industry: industry,
-        sector: sme.organization || industry,
+        sector: smmme.organization || industry,
         location: 'ELIDZ STP',
-        description: sme.bio || sme.organization || 'Verified SME partner',
-        logo_url: sme.avatar !== 'blue' ? sme.avatar : undefined, // Assuming avatar might be a URL or 'blue'
-        verified: true, // All SMEs from database are considered verified
+        description: smmme.bio || smmme.organization || 'Verified SMME partner',
+        logo_url: smmme.avatar !== 'blue' ? smmme.avatar : undefined, // Assuming avatar might be a URL or 'blue'
+        verified: true, // Only verified SMMEs are returned by the service
         bbbee: undefined, // Can be added to profiles table later
         contact: {
             email: contactEmail,
             phone: contactPhone,
             website: website,
         },
-        products: sme.products.map((p: SMEServiceProduct) => ({
+        products: smmme.products.map((p: SMMEServiceProduct) => ({
             id: p.id,
             name: p.name,
             description: p.description,
             category: p.category,
             price: p.price,
         })),
-        services: sme.services.map((s: SMEServiceProduct) => ({
+        services: smmme.services.map((s: SMMEServiceProduct) => ({
             id: s.id,
             name: s.name,
             description: s.description,
@@ -102,23 +156,22 @@ function mapSMEToSMME(sme: SMEWithServicesProducts): SMME {
 }
 
 export default function VerifiedSMMEsScreen() {
-    const { profile: user } = useAuthContext();
-    const isSME = user?.role === 'SME';
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
-    const [expandedSMME, setExpandedSMME] = useState<string | null>(null);
 
     const debouncedSearch = useDebounce(searchQuery, 300);
 
     // Use the search hook
-    const { data: smes, isLoading: loading } = useBusinessSearch(debouncedSearch);
+    const { data: smmmes, isLoading: loading } = useBusinessSearch(debouncedSearch);
 
-    const verifiedSMMEs = React.useMemo(() => {
-        return (smes || []).map(mapSMEToSMME);
-    }, [smes]);
+    const verifiedSMMEs = useMemo(() => {
+        return (smmmes || []).map(mapSMMEToSMME);
+    }, [smmmes]);
 
-    // Categories for filtering - extract unique industries from loaded SMEs
-    const categories = React.useMemo(() => {
+    // Categories for filtering - extract unique industries from loaded SMMEs
+    const categories = useMemo(() => {
         const industries = new Set<string>();
         verifiedSMMEs.forEach(smme => {
             if (smme.industry) {
@@ -131,7 +184,7 @@ export default function VerifiedSMMEsScreen() {
     // Filter SMMEs based on category (Search is handled by hook, but we might need to filter locally too if search didn't cover deep fields)
     // Since our hook only searches profile fields, we might miss product matches.
     // For now, let's assume the hook returns what we need, and we filter by category locally.
-    const filteredSMMEs = React.useMemo(() => {
+    const filteredSMMEs = useMemo(() => {
         return verifiedSMMEs.filter((smme) => {
             const matchesCategory =
                 selectedCategory === 'All' || smme.industry === selectedCategory;
@@ -139,289 +192,146 @@ export default function VerifiedSMMEsScreen() {
         });
     }, [verifiedSMMEs, selectedCategory]);
 
-    const toggleExpand = (smmeId: string) => {
-        setExpandedSMME(expandedSMME === smmeId ? null : smmeId);
-    };
+    const handlePressSMME = useCallback((id: string) => {
+        router.push(`/user-profile?id=${id}`);
+    }, []);
+
+    const renderSMMEItem = useCallback(
+        ({ item }: { item: SMME }) => (
+            <SMMECard smme={item} colors={colors} onPress={() => handlePressSMME(item.id)} />
+        ),
+        [colors, handlePressSMME]
+    );
+
+    const renderCategoryItem = useCallback(
+        ({ item }: { item: string }) => (
+            <Pressable
+                className={`px-5 py-2.5 rounded-full border mr-3 shadow-sm ${
+                    selectedCategory === item ? 'bg-primary border-primary' : 'bg-card border-border'
+                }`}
+                onPress={() => setSelectedCategory(item)}
+            >
+                <Text
+                    className={`text-sm font-semibold ${
+                        selectedCategory === item ? 'text-white' : 'text-foreground'
+                    }`}
+                >
+                    {item}
+                </Text>
+            </Pressable>
+        ),
+        [selectedCategory]
+    );
+
+    const keyExtractor = useCallback((item: SMME) => item.id, []);
+    const categoryKeyExtractor = useCallback((item: string) => item, []);
 
     return (
-        <View className="flex-1 bg-gray-50">
-            <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
-                {/* Header */}
-                <LinearGradient
-                    colors={['#002147', '#003366']}
-                    className="pt-12 pb-6 px-6 rounded-b-[30px] shadow-lg"
-                >
-                    <View className="flex-row justify-between items-start mb-2">
-                        <View className="flex-1">
-                            <Text className="text-white text-3xl font-bold mb-2">Verified SMMEs</Text>
-                            <Text className="text-white/80 text-base">
-                                Discover verified partners and their services.
-                            </Text>
-                        </View>
-                        {isSME && (
-                            <Pressable
-                                className="bg-white/20 border border-white/30 px-4 py-2 rounded-xl active:opacity-80 ml-4"
-                                onPress={() => router.push({ pathname: '/post-service-product' as any })}
-                            >
-                                <View className="flex-row items-center">
-                                    <Feather name="plus" size={16} color="white" />
-                                    <Text className="text-white text-sm font-semibold ml-2">Post</Text>
-                                </View>
-                            </Pressable>
-                        )}
-                    </View>
+        <View className="flex-1 bg-background">
+            <FlatList
+                data={filteredSMMEs}
+                keyExtractor={keyExtractor}
+                renderItem={renderSMMEItem}
+                contentContainerStyle={{ paddingBottom: 40 }}
+                ListHeaderComponent={
+                    <>
+                        {/* Header */}
+                        <View className="bg-background">
+                            <TabsLayoutHeader title="Verified SMMEs" variant="navy">
+                                <View
+                                    style={{
+                                        maxWidth: isTablet ? 1200 : '100%',
+                                        alignSelf: 'center',
+                                        width: '100%',
+                                    }}
+                                >
+                                    <Text className="text-white/80 text-base mb-6">
+                                        Discover verified partners and their services.
+                                    </Text>
 
-                    {/* Search Bar */}
-                    <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-xl px-4 mt-6 backdrop-blur-sm">
-                        <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
-                        <TextInput
-                            className="flex-1 ml-3 text-base text-white"
-                            placeholder="Search SMMEs, products..."
-                            placeholderTextColor="rgba(255,255,255,0.5)"
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                        />
-                    </View>
-                </LinearGradient>
-
-                {/* Category Filters */}
-                <View className="mt-6 mb-2">
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24 }}>
-                        {categories.map((category) => (
-                            <Pressable
-                                key={category}
-                                className={`px-5 py-2.5 rounded-full border mr-3 shadow-sm ${selectedCategory === category
-                                        ? 'bg-[#002147] border-[#002147]'
-                                        : 'bg-white border-gray-200'
-                                    }`}
-                                onPress={() => setSelectedCategory(category)}
-                            >
-                                <Text className={`text-sm font-semibold ${selectedCategory === category ? 'text-white' : 'text-gray-600'
-                                    }`}>
-                                    {category}
-                                </Text>
-                            </Pressable>
-                        ))}
-                    </ScrollView>
-                </View>
-
-                {/* Results Count */}
-                <View className="px-6 mb-4 mt-2">
-                    {loading ? (
-                        <Text className="text-base font-semibold text-[#002147]">Loading...</Text>
-                    ) : (
-                        <Text className="text-base font-semibold text-[#002147]">
-                            {filteredSMMEs.length} Verified Partner{filteredSMMEs.length !== 1 ? 's' : ''}
-                        </Text>
-                    )}
-                </View>
-
-                {/* Loading State */}
-                {loading && (
-                    <View className="px-6">
-                        {Array.from({ length: 3 }).map((_, index) => (
-                            <View key={index} className="bg-white mb-4 rounded-2xl border border-gray-100 shadow-sm p-4">
-                                <View className="flex-row items-start">
-                                    <View className="w-14 h-14 rounded-xl bg-gray-200 animate-pulse" />
-                                    <View className="flex-1 ml-4">
-                                        <View className="h-5 bg-gray-200 rounded mb-2 w-3/4 animate-pulse" />
-                                        <View className="h-4 bg-gray-200 rounded mb-2 w-1/2 animate-pulse" />
-                                        <View className="h-3 bg-gray-200 rounded w-full animate-pulse" />
+                                    {/* Search Bar */}
+                                    <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4">
+                                        <Feather name="search" size={20} color={colors.whiteOpacity70} />
+                                        <TextInput
+                                            className="flex-1 ml-3 text-base text-white"
+                                            placeholder="Search SMMEs, products..."
+                                            placeholderTextColor={colors.whiteOpacity50}
+                                            value={searchQuery}
+                                            onChangeText={setSearchQuery}
+                                        />
                                     </View>
                                 </View>
+                            </TabsLayoutHeader>
+                        </View>
+
+                        {/* Category Filters */}
+                        <View
+                            className="mt-6 mb-2"
+                            style={{
+                                paddingHorizontal: isTablet ? 24 : 20,
+                                maxWidth: isTablet ? 1200 : '100%',
+                                alignSelf: 'center',
+                                width: '100%',
+                            }}
+                        >
+                            <FlatList
+                                horizontal
+                                data={categories}
+                                keyExtractor={categoryKeyExtractor}
+                                renderItem={renderCategoryItem}
+                                showsHorizontalScrollIndicator={false}
+                                contentContainerStyle={{ paddingHorizontal: isTablet ? 0 : 0 }}
+                            />
+                        </View>
+
+                        {/* Results Count */}
+                        <View
+                            className="mb-4 mt-2"
+                            style={{
+                                paddingHorizontal: isTablet ? 24 : 20,
+                                maxWidth: isTablet ? 1200 : '100%',
+                                alignSelf: 'center',
+                                width: '100%',
+                            }}
+                        >
+                            {loading ? (
+                                <Text className="text-base font-semibold text-foreground">Loading...</Text>
+                            ) : (
+                                <Text className="text-base font-semibold text-foreground">
+                                    {filteredSMMEs.length} Verified Partner
+                                    {filteredSMMEs.length !== 1 ? 's' : ''}
+                                </Text>
+                            )}
+                        </View>
+
+                        {/* Loading State */}
+                        {loading && (
+                            <View
+                                style={{
+                                    paddingHorizontal: isTablet ? 24 : 20,
+                                    maxWidth: isTablet ? 1200 : '100%',
+                                    alignSelf: 'center',
+                                    width: '100%',
+                                }}
+                            >
+                                <ListSkeleton count={3} />
                             </View>
-                        ))}
-                    </View>
-                )}
-
-                {/* SMMEs List */}
-                {!loading && (
-                    <View className="px-6">
-                        {filteredSMMEs.map((smme) => {
-                            const isExpanded = expandedSMME === smme.id;
-
-                            return (
-                                <View
-                                    key={smme.id}
-                                    className="bg-white mb-4 rounded-2xl border border-gray-100 shadow-sm overflow-hidden"
-                                >
-                                    {/* SMME Header */}
-                                    <Pressable
-                                        className="p-4 active:opacity-95"
-                                        onPress={() => toggleExpand(smme.id)}
-                                    >
-                                        <View className="flex-row items-start">
-                                            {/* Logo */}
-                                            <View className="w-14 h-14 rounded-xl justify-center items-center overflow-hidden bg-[#002147]/5 border border-[#002147]/10">
-                                                <TenantLogo name={smme.name} logoUrl={smme.logo_url} />
-                                            </View>
-
-                                            {/* Info */}
-                                            <View className="flex-1 ml-4">
-                                                <View className="flex-row items-center justify-between mb-1">
-                                                    <Text className="text-base font-bold text-[#002147] flex-1 mr-2" numberOfLines={1}>
-                                                        {smme.name}
-                                                    </Text>
-                                                    <Feather
-                                                        name={isExpanded ? 'chevron-up' : 'chevron-down'}
-                                                        size={20}
-                                                        color="#CBD5E0"
-                                                    />
-                                                </View>
-
-                                                <View className="flex-row items-center mb-2 flex-wrap">
-                                                    <View className="bg-green-50 px-2 py-0.5 rounded-md mr-2 mb-1 flex-row items-center border border-green-100">
-                                                        <Feather name="shield" size={10} color="#28A745" className="mr-1" />
-                                                        <Text className="text-green-700 text-[10px] font-bold uppercase">Verified</Text>
-                                                    </View>
-                                                    {smme.bbbee && (
-                                                        <View className="bg-[#FF6600]/10 px-2 py-0.5 rounded-md mb-1 border border-[#FF6600]/20">
-                                                            <Text className="text-[#FF6600] text-[10px] font-bold">B-BBEE {smme.bbbee}</Text>
-                                                        </View>
-                                                    )}
-                                                </View>
-
-                                                <Text className="text-gray-500 text-xs" numberOfLines={2}>
-                                                    {smme.description}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                    </Pressable>
-
-                                    {/* Expanded Content */}
-                                    {isExpanded && (
-                                        <View className="px-4 pb-5 border-t border-gray-100 bg-gray-50/50">
-                                            {/* Contact Information */}
-                                            {smme.contact && (
-                                                <View className="mt-4 p-3 rounded-xl bg-white border border-gray-100 shadow-sm">
-                                                    <Text className="text-xs font-bold text-[#002147] mb-2 uppercase tracking-wide">
-                                                        Contact Information
-                                                    </Text>
-                                                    {smme.contact.email && (
-                                                        <View className="flex-row items-center mb-1.5">
-                                                            <Feather name="mail" size={12} color="#6C757D" />
-                                                            <Text className="text-gray-600 text-xs ml-2 font-medium">
-                                                                {smme.contact.email}
-                                                            </Text>
-                                                        </View>
-                                                    )}
-                                                    {smme.contact.phone && (
-                                                        <View className="flex-row items-center mb-1.5">
-                                                            <Feather name="phone" size={12} color="#6C757D" />
-                                                            <Text className="text-gray-600 text-xs ml-2 font-medium">
-                                                                {smme.contact.phone}
-                                                            </Text>
-                                                        </View>
-                                                    )}
-                                                    {smme.contact.website && (
-                                                        <View className="flex-row items-center">
-                                                            <Feather name="globe" size={12} color="#6C757D" />
-                                                            <Text className="text-gray-600 text-xs ml-2 font-medium">
-                                                                {smme.contact.website}
-                                                            </Text>
-                                                        </View>
-                                                    )}
-                                                </View>
-                                            )}
-
-                                            {/* Products Section - Preview */}
-                                            <View className="mt-5">
-                                                <View className="flex-row items-center mb-3">
-                                                    <Feather name="package" size={16} color="#002147" />
-                                                    <Text className="text-sm font-bold ml-2 text-[#002147]">
-                                                        Products
-                                                    </Text>
-                                                    <View className="bg-[#002147]/10 px-2 py-0.5 rounded-full ml-2">
-                                                        <Text className="text-[#002147] text-[10px] font-bold">{smme.products.length}</Text>
-                                                    </View>
-                                                </View>
-                                                {smme.products.slice(0, 2).map((product) => (
-                                                    <View
-                                                        key={product.id}
-                                                        className="p-3 mb-2 rounded-xl bg-white border border-gray-100 shadow-sm"
-                                                    >
-                                                        <View className="flex-row items-start justify-between mb-1">
-                                                            <Text className="text-sm font-bold flex-1 text-gray-800">
-                                                                {product.name}
-                                                            </Text>
-                                                            {product.price && (
-                                                                <Text className="text-[#FF6600] text-xs font-bold ml-2">
-                                                                    {product.price}
-                                                                </Text>
-                                                            )}
-                                                        </View>
-                                                        <Text className="text-gray-500 text-xs mb-2 leading-relaxed" numberOfLines={2}>
-                                                            {product.description}
-                                                        </Text>
-                                                        <View className="bg-gray-100 self-start px-2 py-0.5 rounded-md">
-                                                            <Text className="text-gray-500 text-[10px] font-medium">{product.category}</Text>
-                                                        </View>
-                                                    </View>
-                                                ))}
-                                                {smme.products.length > 2 && (
-                                                    <Text className="text-xs text-gray-400 text-center mt-1 italic">
-                                                        +{smme.products.length - 2} more products available in full profile
-                                                    </Text>
-                                                )}
-                                            </View>
-
-                                            {/* Services Section - Preview */}
-                                            <View className="mt-5">
-                                                <View className="flex-row items-center mb-3">
-                                                    <Feather name="briefcase" size={16} color="#002147" />
-                                                    <Text className="text-sm font-bold ml-2 text-[#002147]">
-                                                        Services
-                                                    </Text>
-                                                    <View className="bg-[#002147]/10 px-2 py-0.5 rounded-full ml-2">
-                                                        <Text className="text-[#002147] text-[10px] font-bold">{smme.services.length}</Text>
-                                                    </View>
-                                                </View>
-                                                {smme.services.slice(0, 2).map((service) => (
-                                                    <View
-                                                        key={service.id}
-                                                        className="p-3 mb-2 rounded-xl bg-white border border-gray-100 shadow-sm"
-                                                    >
-                                                        <View className="flex-row items-center justify-between mb-1">
-                                                            <Text className="text-sm font-bold flex-1 text-gray-800">
-                                                                {service.name}
-                                                            </Text>
-                                                        </View>
-                                                        <Text className="text-gray-500 text-xs mb-2 leading-relaxed" numberOfLines={2}>
-                                                            {service.description}
-                                                        </Text>
-                                                        <View className="bg-gray-100 self-start px-2 py-0.5 rounded-md">
-                                                            <Text className="text-gray-500 text-[10px] font-medium">{service.category}</Text>
-                                                        </View>
-                                                    </View>
-                                                ))}
-                                                {smme.services.length > 2 && (
-                                                    <Text className="text-xs text-gray-400 text-center mt-1 italic">
-                                                        +{smme.services.length - 2} more services available in full profile
-                                                    </Text>
-                                                )}
-                                            </View>
-
-                                            {/* Action Button */}
-                                            <Pressable
-                                                className="mt-6 py-3 rounded-xl bg-[#002147] active:opacity-90 shadow-md flex-row justify-center items-center"
-                                                onPress={() => router.push({ pathname: '/tenant-detail', params: { name: smme.name, id: smme.id } })}
-                                            >
-                                                <Text className="text-white font-bold text-sm mr-2">
-                                                    View Full Profile
-                                                </Text>
-                                                <Feather name="arrow-right" size={16} color="white" />
-                                            </Pressable>
-                                        </View>
-                                    )}
-                                </View>
-                            );
-                        })}
-
-                        {/* Empty State */}
-                        {filteredSMMEs.length === 0 && (
-                            <View className="items-center py-12 mx-6 bg-white rounded-2xl border border-gray-100 border-dashed">
-                                <Feather name="search" size={48} color="#CBD5E0" />
-                                <Text className="text-gray-400 text-base mt-4 text-center font-medium">
+                        )}
+                    </>
+                }
+                ListEmptyComponent={
+                    !loading ? (
+                        <View
+                            style={{
+                                paddingHorizontal: isTablet ? 24 : 20,
+                                maxWidth: isTablet ? 1200 : '100%',
+                                alignSelf: 'center',
+                                width: '100%',
+                            }}
+                        >
+                            <View className="items-center py-12 mx-6 bg-card rounded-2xl border border-border border-dashed">
+                                <Feather name="search" size={48} color={colors.iconGray} />
+                                <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
                                     {searchQuery || selectedCategory !== 'All'
                                         ? 'No verified SMMEs found matching your search'
                                         : 'No verified SMMEs found. Be the first to post!'}
@@ -434,16 +344,14 @@ export default function VerifiedSMMEsScreen() {
                                             setSelectedCategory('All');
                                         }}
                                     >
-                                        <Text className="text-[#FF6600] text-sm font-bold">
-                                            Clear filters
-                                        </Text>
+                                        <Text className="text-accent text-sm font-bold">Clear filters</Text>
                                     </Pressable>
                                 )}
                             </View>
-                        )}
-                    </View>
-                )}
-            </ScrollView>
+                        </View>
+                    ) : null
+                }
+            />
         </View>
     );
 }

@@ -1,227 +1,222 @@
-import React, { useState } from 'react';
-import { View, TextInput, Pressable, Alert, Image } from 'react-native';
-import { VideoView, useVideoPlayer } from 'expo-video';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Pressable, Alert, Linking, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
-import { useAuthContext } from '@/hooks/use-auth-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
+import { supabase } from '@/lib/supabase';
+import { useColorScheme } from '@/hooks/use-theme-color';
+import { COLORS } from '@/theme/colors';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { validatePassword, validateConfirmPassword, MIN_PASSWORD_LENGTH } from '@/utils/validation';
+import { authBack } from '@/utils/navigation';
+import { PasswordField } from '@/components/PasswordField';
+
+const { height } = Dimensions.get('window');
+
+function getAuthParamsFromUrl(url: string): {
+    access_token?: string;
+    refresh_token?: string;
+    code?: string;
+    token_hash?: string;
+    type?: string;
+} {
+    try {
+        const [baseAndQuery, hashRaw = ''] = url.split('#');
+        const queryRaw = baseAndQuery.includes('?') ? baseAndQuery.split('?').slice(1).join('?') : '';
+        const hash = hashRaw.startsWith('?') ? hashRaw.slice(1) : hashRaw;
+
+        const hashParams = new URLSearchParams(hash);
+        const searchParams = new URLSearchParams(queryRaw);
+        const get = (key: string) => hashParams.get(key) ?? searchParams.get(key) ?? undefined;
+
+        return {
+            access_token: get('access_token'),
+            refresh_token: get('refresh_token'),
+            code: get('code'),
+            token_hash: get('token_hash'),
+            type: get('type'),
+        };
+    } catch {
+        return {};
+    }
+}
 
 export default function ChangePasswordScreen() {
-	const { profile: user } = useAuthContext();
-	const [currentPassword, setCurrentPassword] = useState('');
-	const [newPassword, setNewPassword] = useState('');
-	const [confirmPassword, setConfirmPassword] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
-	const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-	const [showNewPassword, setShowNewPassword] = useState(false);
-	const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const { colorScheme } = useColorScheme();
+    const colors = COLORS[colorScheme];
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+    const [isSettingSession, setIsSettingSession] = useState(true);
+    const [canReset, setCanReset] = useState(false);
 
-	const player = useVideoPlayer(require('../../../assets/videos/ELIDZ from above.mp4'), (player) => {
-		player.loop = true;
-		player.muted = true;
-		player.play();
-	});
+    const trySetSessionFromUrl = useCallback(async (url: string | null) => {
+        try {
+            if (!url) {
+                const { data: { session } } = await supabase.auth.getSession();
+                setCanReset(!!session);
+                setIsSettingSession(false);
+                return;
+            }
+            const { access_token, refresh_token, code, token_hash, type } = getAuthParamsFromUrl(url);
+            if (access_token && refresh_token) {
+                const { error } = await supabase.auth.setSession({
+                    access_token,
+                    refresh_token,
+                });
+                if (!error) setCanReset(true);
+            } else if (code) {
+                const { error } = await supabase.auth.exchangeCodeForSession(code);
+                if (!error) setCanReset(true);
+            } else if (token_hash && type === 'recovery') {
+                const { error } = await supabase.auth.verifyOtp({
+                    type: 'recovery',
+                    token_hash,
+                });
+                if (!error) setCanReset(true);
+            } else {
+                const { data: { session } } = await supabase.auth.getSession();
+                setCanReset(!!session);
+            }
+        } finally {
+            setIsSettingSession(false);
+        }
+    }, []);
 
-	const navigateBack = () => {
-		if (router.canGoBack()) {
-			router.back();
-		}
-	};
+    useEffect(() => {
+        Linking.getInitialURL().then(trySetSessionFromUrl);
+        const sub = Linking.addEventListener('url', ({ url }) => trySetSessionFromUrl(url));
+        return () => sub.remove();
+    }, [trySetSessionFromUrl]);
 
-	const handleChangePassword = async () => {
-		if (!currentPassword.trim()) {
-			Alert.alert('Error', 'Please enter your current password');
-			return;
-		}
+    const handleChangePassword = async () => {
+        const pwdCheck = validatePassword(newPassword, { minLength: MIN_PASSWORD_LENGTH });
+        if (!pwdCheck.valid) {
+            Alert.alert('Invalid Password', pwdCheck.message ?? `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+            return;
+        }
+        const confirmCheck = validateConfirmPassword(newPassword.trim(), confirmPassword.trim());
+        if (!confirmCheck.valid) {
+            Alert.alert('Error', confirmCheck.message ?? 'Passwords do not match');
+            return;
+        }
+        const trimmed = newPassword.trim();
 
-		if (!newPassword.trim()) {
-			Alert.alert('Error', 'Please enter a new password');
-			return;
-		}
+        setIsLoading(true);
+        try {
+            const { error } = await supabase.auth.updateUser({ password: trimmed });
+            if (error) throw error;
+            await supabase.auth.signOut();
+            Alert.alert(
+                'Password Changed',
+                'Your password has been successfully updated. You can now sign in with your new password.',
+                [{ text: 'OK', onPress: () => router.replace('/(auth)') }]
+            );
+        } catch (err: any) {
+            Alert.alert('Error', err?.message ?? 'Failed to change password. Please try again.');
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-		if (newPassword.length < 6) {
-			Alert.alert('Error', 'New password must be at least 6 characters long');
-			return;
-		}
+    const handleBackToLogin = authBack;
 
-		if (newPassword !== confirmPassword) {
-			Alert.alert('Error', 'New passwords do not match');
-			return;
-		}
+    if (isSettingSession) {
+        return (
+            <View className="flex-1 bg-background justify-center items-center">
+                <Text className="text-muted-foreground">Loading…</Text>
+            </View>
+        );
+    }
 
-		if (currentPassword === newPassword) {
-			Alert.alert('Error', 'New password must be different from current password');
-			return;
-		}
+    if (!canReset) {
+        return (
+            <View className="flex-1 bg-background justify-center items-center px-6">
+                <Text className="text-center text-muted-foreground mb-4">
+                    Invalid or expired reset link. Please request a new one from the Forgot Password screen.
+                </Text>
+                <Button onPress={handleBackToLogin} className="rounded-full">
+                    <Text className="text-white font-semibold">Back to Login</Text>
+                </Button>
+            </View>
+        );
+    }
 
-		setIsLoading(true);
+    return (
+        <View className="flex-1 bg-background">
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0 }}>
+                <LinearGradient
+                    colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+                    style={{ position: 'absolute', top: 0, left: 0, right: 0, height: height * 0.4 }}
+                    start={{ x: 0.5, y: 0 }}
+                    end={{ x: 0.5, y: 1 }}
+                />
+                <Stars />
+            </View>
+            <SafeAreaView className="flex-1" edges={['top']} style={{ zIndex: 1, position: 'relative' }}>
+                <View className="px-6 pt-2 rounded-3xl" style={{ height: height * 0.24, zIndex: 1 }}>
+                    <TouchableOpacity
+                        className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
+                        onPress={handleBackToLogin}
+                    >
+                        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+                        <Text className="text-white text-sm ml-1">Back</Text>
+                    </TouchableOpacity>
+                    <View className="items-center mt-2">
+                        <Image
+                            source={require('../../../assets/logos/blue text-idz logo.png')}
+                            style={{ width: 240, height: 100 }}
+                            resizeMode="contain"
+                        />
+                        <Text className="text-white text-3xl font-bold mt-4 mb-2">Change Password</Text>
+                        <Text className="text-white/80 text-base text-center px-4">Enter your new password below.</Text>
+                    </View>
+                </View>
 
-		try {
-			// TODO: Implement password change with Supabase
-			console.log('Changing password for user:', user?.email);
+                <ScreenKeyboardAwareScrollView contentContainerClassName="flex-grow rounded-3xl" contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1, zIndex: 2 }}>
+                    <View className="flex-1 px-6 pb-10 pt-6 rounded-3xl mt-4" style={{ backgroundColor: colors.background }}>
+                    <PasswordField
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        placeholder={`New password (min ${MIN_PASSWORD_LENGTH} characters)`}
+                        accentColor={colors.accent}
+                        placeholderColor={colors.placeholder}
+                        editable={!isLoading}
+                        autoComplete="password-new"
+                        containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border"
+                    />
+                    <PasswordField
+                        value={confirmPassword}
+                        onChangeText={setConfirmPassword}
+                        placeholder="Confirm new password"
+                        accentColor={colors.accent}
+                        placeholderColor={colors.placeholder}
+                        editable={!isLoading}
+                        autoComplete="password-new"
+                        containerClassName="flex-row items-center bg-input rounded-full mb-6 px-4 h-14 border border-border"
+                    />
 
-			await new Promise((resolve) => setTimeout(resolve, 1500));
-			Alert.alert('Success', 'Password changed successfully!', [
-				{ text: 'OK', onPress: navigateBack },
-			]);
-		} catch (error) {
-			console.error('Password change error:', error);
-			Alert.alert('Error', 'Failed to change password. Please try again.');
-		} finally {
-			setIsLoading(false);
-		}
-	};
+                    <Button
+                        className="h-14 rounded-full bg-accent justify-center items-center mb-4"
+                        onPress={handleChangePassword}
+                        disabled={isLoading}
+                    >
+                        <Text className="text-lg font-bold text-white">{isLoading ? 'Updating…' : 'Change Password'}</Text>
+                    </Button>
 
-	return (
-		<View className="flex-1 bg-transparent">
-			<VideoView
-				player={player}
-				style={{
-					position: 'absolute',
-					top: 0,
-					left: 0,
-					bottom: 0,
-					right: 0,
-					width: '100%',
-					height: '100%',
-					zIndex: 0,
-					opacity: 0.4,
-				}}
-				contentFit="cover"
-				nativeControls={false}
-				pointerEvents="none"
-			/>
-
-			<View
-				className="absolute inset-0 bg-black/70"
-				style={{ zIndex: 1 }}
-				pointerEvents="none"
-			/>
-
-			<ScreenKeyboardAwareScrollView
-				contentContainerClassName="flex-grow"
-				style={{ zIndex: 2 }}
-			>
-				<View className="flex-1 justify-center px-6 py-12">
-					<Pressable
-						className="flex-row items-center gap-2 mb-6 w-24"
-						onPress={navigateBack}
-					>
-						<Ionicons name="chevron-back" size={20} color="#ffffff" />
-						<Text className="text-white font-semibold">Back</Text>
-					</Pressable>
-
-					<View className="items-center mb-8">
-						<Image
-							source={require('../../../assets/logos/blue text-idz logo.png')}
-							style={{ width: 280, height: 120, opacity: 1 }}
-							resizeMode="contain"
-						/>
-					</View>
-
-					<View className="bg-black/30 border border-white/10 rounded-3xl p-6">
-						<Text className="text-white text-2xl font-bold text-center mb-2">
-							Change Password
-						</Text>
-						<Text className="text-white/80 text-center mb-6">
-							Update your password regularly to keep your ELIDZ-STP account secure.
-						</Text>
-
-						<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14 border border-[#D4A03B]/30">
-							<Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
-							<TextInput
-								className="flex-1 text-base text-white"
-								value={currentPassword}
-								onChangeText={setCurrentPassword}
-								placeholder="Current Password"
-								placeholderTextColor="#D4A03B"
-								secureTextEntry={!showCurrentPassword}
-								autoCapitalize="none"
-								autoComplete="password"
-							/>
-							<Pressable
-								className="p-1"
-								onPress={() => setShowCurrentPassword((prev) => !prev)}
-							>
-								<Ionicons
-									name={showCurrentPassword ? 'eye-outline' : 'eye-off-outline'}
-									size={20}
-									color="#D4A03B"
-								/>
-							</Pressable>
-						</View>
-
-						<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-4 px-4 h-14 border border-[#D4A03B]/30">
-							<Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
-							<TextInput
-								className="flex-1 text-base text-white"
-								value={newPassword}
-								onChangeText={setNewPassword}
-								placeholder="New Password"
-								placeholderTextColor="#D4A03B"
-								secureTextEntry={!showNewPassword}
-								autoCapitalize="none"
-								autoComplete="password-new"
-							/>
-							<Pressable
-								className="p-1"
-								onPress={() => setShowNewPassword((prev) => !prev)}
-							>
-								<Ionicons
-									name={showNewPassword ? 'eye-outline' : 'eye-off-outline'}
-									size={20}
-									color="#D4A03B"
-								/>
-							</Pressable>
-						</View>
-
-						<View className="flex-row items-center bg-[#D4A03B]/10 rounded-full mb-6 px-4 h-14 border border-[#D4A03B]/30">
-							<Ionicons name="lock-closed-outline" size={20} color="#D4A03B" style={{ marginRight: 12 }} />
-							<TextInput
-								className="flex-1 text-base text-white"
-								value={confirmPassword}
-								onChangeText={setConfirmPassword}
-								placeholder="Confirm New Password"
-								placeholderTextColor="#D4A03B"
-								secureTextEntry={!showConfirmPassword}
-								autoCapitalize="none"
-								autoComplete="password-new"
-							/>
-							<Pressable
-								className="p-1"
-								onPress={() => setShowConfirmPassword((prev) => !prev)}
-							>
-								<Ionicons
-									name={showConfirmPassword ? 'eye-outline' : 'eye-off-outline'}
-									size={20}
-									color="#D4A03B"
-								/>
-							</Pressable>
-						</View>
-
-						<Button
-							className="h-14 rounded-full bg-[#D4A03B] justify-center items-center mb-4 active:opacity-80 active:scale-95"
-							onPress={handleChangePassword}
-							disabled={isLoading}
-						>
-							<Text className="text-lg font-semibold text-white">
-								{isLoading ? 'Changing...' : 'Change Password'}
-							</Text>
-						</Button>
-
-						<Button
-							variant="outline"
-							className="h-14 rounded-full border-white/40 bg-transparent justify-center items-center"
-							onPress={navigateBack}
-							disabled={isLoading}
-						>
-							<Text className="text-lg font-semibold text-white">Cancel</Text>
-						</Button>
-					</View>
-				</View>
-			</ScreenKeyboardAwareScrollView>
-		</View>
-	);
+                    <View className="flex-row justify-center mt-2">
+                        <Text className="text-muted-foreground">Remember your password? </Text>
+                        <Pressable onPress={handleBackToLogin}>
+                            <Text className="text-accent font-bold">Log In</Text>
+                        </Pressable>
+                    </View>
+                    </View>
+                </ScreenKeyboardAwareScrollView>
+            </SafeAreaView>
+        </View>
+    );
 }

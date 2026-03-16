@@ -17,20 +17,15 @@ class EventServiceClass {
   async getUpcomingEvents(limit = 5): Promise<Event[]> {
     console.log('EventService.getUpcomingEvents called');
 
-    const { data, error } = await supabase
-      .from('events')
-      .select('*')
-      .gte('date', new Date().toISOString())
-      .order('date', { ascending: true })
-      .limit(limit);
+    const all = await this.getAllEvents();
+    const now = new Date().toISOString();
+    const upcoming = all
+      .filter((e) => e.date >= now)
+      .sort((a, b) => (a.date < b.date ? -1 : 1))
+      .slice(0, limit);
 
-    if (error) {
-      console.error('EventService.getUpcomingEvents error:', JSON.stringify(error, null, 2));
-      throw error;
-    }
-
-    console.log('EventService.getUpcomingEvents succeeded:', data?.length || 0, 'events');
-    return (data || []) as Event[];
+    console.log('EventService.getUpcomingEvents succeeded:', upcoming.length, 'upcoming of', all.length, 'total');
+    return upcoming;
   }
 
   async getAllEvents(): Promise<Event[]> {
@@ -47,6 +42,20 @@ class EventServiceClass {
     }
 
     return (data || []) as Event[];
+  }
+
+  async getEventById(id: string): Promise<Event | null> {
+    const { data, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('EventService.getEventById error:', error);
+      throw error;
+    }
+    return data as Event | null;
   }
 
   async createEvent(eventData: Partial<Event>): Promise<Event> {

@@ -1,175 +1,198 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
+	BarChart3,
+	Bell,
+	Briefcase,
+	Car,
+	Cpu,
+	FlaskConical,
+	LayoutDashboard,
+	PenTool,
+	Users,
+	Zap,
 } from "lucide-react"
+import { createClient } from "@/lib/supabase/client"
 
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarRail,
+	Sidebar,
+	SidebarContent,
+	SidebarFooter,
+	SidebarHeader,
+	SidebarRail,
 } from "@/components/ui/sidebar"
 
 // This is sample data.
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: GalleryVerticalEnd,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: AudioWaveform,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: Command,
-      plan: "Free",
-    },
-  ],
-  navMain: [
-    {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
-      isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
-      url: "#",
-      icon: Frame,
-    },
-    {
-      name: "Sales & Marketing",
-      url: "#",
-      icon: PieChart,
-    },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
+const ElidzLogo = ({ className }: { className?: string }) => (
+	<div className={`relative ${className}`}>
+		<Image src="/logos/elidz-icon.png" alt="ELIDZ" fill className="object-contain" />
+	</div>
+)
+
+// Icon mapping for dynamic facilities
+const iconMap: Record<string, any> = {
+    'droplet': FlaskConical,
+    'pen-tool': PenTool,
+    'monitor': Cpu,
+    'settings': Car,
+    'zap': Zap,
+    'default': Building2
 }
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} />
-      </SidebarFooter>
-      <SidebarRail />
-    </Sidebar>
-  )
+import { Building2 } from "lucide-react"
+
+const baseData = {
+	teams: [
+		{
+			name: "ELIDZ Admin",
+			logo: ElidzLogo,
+			plan: "Science & Technology Park",
+		},
+	],
+	navMain: [
+		{
+			title: "Dashboard",
+			url: "/dashboard",
+			icon: LayoutDashboard,
+			isActive: true,
+		},
+		{
+			title: "User Management",
+			url: "/dashboard/users",
+			icon: Users,
+			items: [
+				{
+					title: "All Users",
+					url: "/dashboard/users/all",
+				},
+				{
+					title: "Verified SMMEs",
+					url: "/dashboard/verified-smmes",
+				},
+				{
+					title: "User Roles",
+					url: "/dashboard/users/roles",
+				},
+			],
+		},
+		{
+			title: "Opportunities",
+			url: "/dashboard/opportunities",
+			icon: Briefcase,
+			items: [
+				{
+					title: "View Opportunities",
+					url: "/dashboard/opportunities",
+				},
+				{
+					title: "Post Opportunity",
+					url: "/dashboard/opportunities/create",
+				},
+				{
+					title: "Funding Info",
+					url: "/dashboard/opportunities/funding",
+				},
+			],
+		},
+		{
+			title: "Communication",
+			url: "/dashboard/communication",
+			icon: Bell,
+			items: [
+				{
+					title: "Send Alerts",
+					url: "/dashboard/communication/alerts",
+				},
+				{
+					title: "Message Center",
+					url: "/dashboard/communication/messages",
+				},
+			],
+		},
+		{
+			title: "Reports",
+			url: "/dashboard/reports",
+			icon: BarChart3,
+			items: [
+				{
+					title: "User Demographics",
+					url: "/dashboard/reports/demographics",
+				},
+				{
+					title: "Product Line Visits",
+					url: "/dashboard/reports/visits",
+				},
+				{
+					title: "System Usage",
+					url: "/dashboard/reports/usage",
+				},
+			],
+		}
+	],
+    // Initial empty projects, will be populated from DB
+	projects: [],
+    user: {
+		name: "Admin User",
+		email: "admin@elidz.co.za",
+		avatar: "/avatars/admin.jpg",
+	},
+}
+
+export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: { name: string; email: string; avatar: string } }) {
+    const [projects, setProjects] = React.useState<any[]>([])
+    const supabase = createClient()
+
+    React.useEffect(() => {
+        async function fetchFacilities() {
+            try {
+                const { data } = await supabase.from('facilities').select('service_id, service_name, service_icon')
+                if (data) {
+                    const seen = new Set<string>()
+                    const mappedProjects = data
+                        .filter((r: { service_id: string }) => {
+                            if (seen.has(r.service_id)) return false
+                            seen.add(r.service_id)
+                            return true
+                        })
+                        .map((r: { service_id: string; service_name: string; service_icon: string }) => ({
+                            name: r.service_name,
+                            url: `/dashboard/projects/${r.service_id}`,
+                            icon: iconMap[r.service_icon] || iconMap['default']
+                        }))
+                    setProjects(mappedProjects)
+                }
+            } catch (error) {
+                console.error("Error fetching facilities:", error)
+            }
+        }
+        fetchFacilities()
+    }, [supabase])
+
+    const sidebarData = { 
+        ...baseData, 
+        user: user || baseData.user,
+        projects: projects.length > 0 ? projects : baseData.projects
+    }
+
+	return (
+		<Sidebar collapsible="icon" {...props}>
+			<SidebarHeader>
+				<TeamSwitcher teams={sidebarData.teams} />
+			</SidebarHeader>
+			<SidebarContent>
+				<NavMain items={sidebarData.navMain} />
+				<NavProjects projects={sidebarData.projects} />
+			</SidebarContent>
+			<SidebarFooter>
+				<NavUser user={sidebarData.user} />
+			</SidebarFooter>
+			<SidebarRail />
+		</Sidebar>
+	)
 }

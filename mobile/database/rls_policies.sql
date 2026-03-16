@@ -161,17 +161,17 @@ CREATE POLICY "Users can cancel own bookings" ON public.resource_bookings
     FOR DELETE USING (requested_by = auth.uid());
 
 -- Connections policies
--- Users can view their own connections
-CREATE POLICY "Users can view own connections" ON public.connections
-    FOR SELECT USING (user_id = auth.uid() OR connected_user_id = auth.uid());
+-- Users can view connections where they are involved
+CREATE POLICY "Users can view their connections" ON public.connections
+    FOR SELECT USING (requester_id = auth.uid() OR addressee_id = auth.uid());
 
--- Users can create connections
-CREATE POLICY "Users can create connections" ON public.connections
-    FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- Users can create connection requests
+CREATE POLICY "Users can create connection requests" ON public.connections
+    FOR INSERT WITH CHECK (auth.uid() = requester_id);
 
--- Users can update their own connection requests
-CREATE POLICY "Users can update own connections" ON public.connections
-    FOR UPDATE USING (user_id = auth.uid() OR connected_user_id = auth.uid());
+-- Users can update connection requests they sent or received
+CREATE POLICY "Users can update their connection requests" ON public.connections
+    FOR UPDATE USING (requester_id = auth.uid() OR addressee_id = auth.uid());
 
 -- Messages policies
 -- Users can view messages in chats they participate in

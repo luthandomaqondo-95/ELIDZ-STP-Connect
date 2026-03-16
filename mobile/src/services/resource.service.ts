@@ -62,10 +62,25 @@ class ResourceServiceClass {
 			name: item.title,
 			description: item.description,
 			icon: getResourceIcon(item.type),
-			available: Math.floor(Math.random() * 10) + 1, // Mock availability for now
+			available: 0,
 			category: item.category || 'General',
 			targetCategory: item.category || 'General',
 		}));
+	}
+
+	async getDistinctCategories(): Promise<string[]> {
+		const { data, error } = await supabase
+			.from('resources')
+			.select('category')
+			.not('category', 'is', null);
+
+		if (error) {
+			console.error('ResourceService.getDistinctCategories error:', error);
+			return [];
+		}
+
+		const categories = [...new Set((data || []).map((r: any) => r.category?.trim()).filter(Boolean))].sort();
+		return categories;
 	}
 
 	async createResource(resourceData: Partial<Resource>): Promise<Resource> {

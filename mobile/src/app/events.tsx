@@ -1,106 +1,165 @@
-import React from 'react';
-import { View, Pressable } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Pressable, ScrollView, TextInput, Dimensions, ActivityIndicator } from 'react-native';
 import { Text } from '@/components/ui/text';
-import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { EventService, Event } from '@/services/event.service';
+import { useTheme } from '@/hooks/useTheme';
+import { TabsLayoutHeader } from '@/components/Header';
+import { ListSkeleton } from '@/components/Loading';
+
+const { width } = Dimensions.get('window');
+const isTablet = width >= 768;
+
+function formatEventDate(isoDate: string): { display: string; monthDay: string; month: string; day: string } {
+  const d = new Date(isoDate);
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const month = months[d.getMonth()];
+  const day = String(d.getDate());
+  const year = d.getFullYear();
+  const display = `${month} ${day}, ${year}`;
+  return { display, monthDay: `${month} ${day}`, month, day };
+}
+
+function getMonthName(isoDate: string): string {
+  const d = new Date(isoDate);
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  return `${months[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+function groupEventsByMonth(events: Event[]): { monthLabel: string; events: Event[] }[] {
+  const byMonth = new Map<string, Event[]>();
+  for (const e of events) {
+    const label = getMonthName(e.date);
+    if (!byMonth.has(label)) byMonth.set(label, []);
+    byMonth.get(label)!.push(e);
+  }
+  const sorted = Array.from(byMonth.entries()).sort((a, b) => {
+    const dA = new Date(a[1][0].date).getTime();
+    const dB = new Date(b[1][0].date).getTime();
+    return dA - dB;
+  });
+  return sorted.map(([monthLabel, events]) => ({ monthLabel, events }));
+}
 
 export default function EventsScreen() {
-  // Verified events from ELIDZ website (searched using Playwright MCP)
-  const events = [
-    {
-      id: '1',
-      title: 'Eastern Cape Innovation & Entrepreneurship Week (IEW) 2025',
-      date: 'Nov 24, 2025',
-      time: 'Full Day',
-      location: 'East London IDZ Science & Technology Park (Hybrid)',
-      rsvp: null,
-      attendees: null,
-      endDate: 'Nov 28, 2025',
-      theme: 'Innovate. Commercialise. Thrive.'
-    },
-  ];
+  const { colors } = useTheme();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  function getMonthEvents(monthName: string, monthEvents: typeof events) {
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const all = await EventService.getAllEvents();
+        const now = new Date().toISOString();
+        const upcoming = all.filter((e) => e.date >= now).sort((a, b) => (a.date < b.date ? -1 : 1));
+        const past = all.filter((e) => e.date < now).sort((a, b) => (a.date > b.date ? -1 : 1));
+        if (!cancelled) setEvents([...upcoming, ...past]);
+      } catch (e) {
+        if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load events');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const filtered = searchQuery.trim()
+    ? events.filter(e => e.title?.toLowerCase().includes(searchQuery.trim().toLowerCase()))
+    : events;
+  const grouped = groupEventsByMonth(filtered);
+
+  function renderMonthSection(monthLabel: string, monthEvents: Event[]) {
     return (
-      <View className="mb-6">
-        <Text className="text-xl font-semibold mb-4 text-foreground">{monthName}</Text>
-        {monthEvents.map((event) => (
-          <Pressable
-            key={event.id}
-            className="flex-row p-4 rounded-xl mb-3 bg-card active:opacity-90 shadow-sm"
-            onPress={() => router.push(`/event-detail?id=${event.id}`)}
-          >
-            <View className="w-14 h-16 rounded-lg bg-primary justify-center items-center">
-              <Text className="text-white text-xs">
-                {event.date.split(',')[0].split(' ')[1]}
-              </Text>
-              <Text className="text-white text-xl font-bold">
-                {event.date.split(' ')[1].replace(',', '')}
-              </Text>
-            </View>
-            <View className="flex-1 ml-4">
-              <Text className="text-base font-semibold text-foreground">{event.title}</Text>
-              {(event as any).endDate && (
-                <Text className="text-primary mt-1 font-semibold text-sm">
-                  {(event as any).endDate ? `${event.date.split(',')[0]} - ${(event as any).endDate.split(',')[0]}` : event.date}
-                </Text>
-              )}
-              {!(event as any).endDate && (
-                <Text className="text-primary mt-1 font-semibold text-sm">
-                  {event.date}
-                </Text>
-              )}
-              <View className="flex-row items-center mt-2">
-                <Feather name="clock" size={14} color="rgb(var(--muted-foreground))" />
-                <Text className="text-muted-foreground text-sm ml-1">
-                  {event.time}
-                </Text>
-              </View>
-              <View className="flex-row items-center mt-1">
-                <Feather name="map-pin" size={14} color="rgb(var(--muted-foreground))" />
-                <Text className="text-muted-foreground text-sm ml-1 flex-1">
-                  {event.location}
-                </Text>
-              </View>
-              {(event as any).theme && (
-                <View className="flex-row items-center mt-1">
-                  <Feather name="tag" size={14} color="rgb(var(--accent))" />
-                  <Text className="text-accent text-sm ml-1 italic">
-                    {(event as any).theme}
-                  </Text>
+      <View key={monthLabel} className="mb-6">
+        <Text className="text-xl font-semibold mb-4 text-foreground">{monthLabel}</Text>
+        {monthEvents.map((event) => {
+          const { month, day, display } = formatEventDate(event.date);
+          return (
+            <Pressable
+              key={event.id}
+              className="bg-card rounded-2xl p-4 mb-4 border border-border shadow-sm active:opacity-95"
+              onPress={() => router.push(`/event-detail?id=${event.id}`)}
+            >
+              <View className="flex-row items-start">
+                <View className="w-16 h-20 rounded-xl justify-center items-center mr-4 bg-primary">
+                  <Text className="text-white text-xs font-semibold uppercase">{month}</Text>
+                  <Text className="text-white text-2xl font-bold">{day}</Text>
                 </View>
-              )}
-              {event.attendees && (
-              <View className="flex-row items-center mt-2">
-                <Feather name="users" size={14} color="rgb(var(--primary))" />
-                <Text className="text-muted-foreground text-xs ml-1">
-                  {event.attendees} attending
-                </Text>
-                {event.rsvp ? (
-                  <View className="px-3 py-1 rounded-lg bg-green-500 ml-3">
-                    <Text className="text-white text-xs">{event.rsvp}</Text>
-                  </View>
-                ) : null}
+                <View className="flex-1">
+                  <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
+                    {event.title}
+                  </Text>
+                  <Text className="text-accent font-semibold text-sm mb-2">{display}</Text>
+                  {event.location && (
+                    <View className="flex-row items-center mt-2">
+                      <Feather name="map-pin" size={14} color={colors.textSecondary ?? '#6B7280'} />
+                      <Text className="text-muted-foreground text-sm ml-2 flex-1" numberOfLines={1}>
+                        {event.location}
+                      </Text>
+                    </View>
+                  )}
+                </View>
               </View>
-              )}
-            </View>
-          </Pressable>
-        ))}
+            </Pressable>
+          );
+        })}
       </View>
     );
   }
 
-  const novemberEvents = events.filter(e => e.date.includes('Nov'));
-
   return (
-    <ScreenScrollView>
-      <Text className="text-muted-foreground text-base mb-6">
-        Discover upcoming events, workshops, and networking opportunities at the East London IDZ
-      </Text>
+    <View className="flex-1 bg-background">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
+        <View className="bg-background">
+          <TabsLayoutHeader title="Events" variant="navy">
+            <View style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}>
+              <Text className="text-white/80 text-base mb-6">
+                Discover upcoming events, workshops, and networking opportunities
+              </Text>
 
-      {novemberEvents.length > 0 && getMonthEvents('November 2025', novemberEvents)}
-    </ScreenScrollView>
+              <View className="flex-row items-center bg-white/10 border border-white/20 h-12 rounded-full px-4">
+                <Feather name="search" size={20} color="rgba(255,255,255,0.7)" />
+                <TextInput
+                  className="flex-1 ml-3 text-base text-white"
+                  placeholder="Search events..."
+                  placeholderTextColor="rgba(255,255,255,0.5)"
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+              </View>
+            </View>
+          </TabsLayoutHeader>
+        </View>
+
+        <View className="px-6 mt-6">
+          {loading ? (
+            <ListSkeleton count={5} />
+          ) : error ? (
+            <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
+              <Feather name="alert-circle" size={48} color={colors.error ?? '#EF4444'} />
+              <Text className="text-foreground text-base mt-4 text-center font-medium">{error}</Text>
+            </View>
+          ) : grouped.length > 0 ? (
+            grouped.map(({ monthLabel, events: monthEvents }) => renderMonthSection(monthLabel, monthEvents))
+          ) : (
+            <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
+              <Feather name="calendar" size={48} color={colors.textSecondary ?? '#9CA3AF'} />
+              <Text className="text-muted-foreground text-base mt-4 text-center font-medium">
+                No upcoming events scheduled
+              </Text>
+              <Text className="text-muted-foreground text-sm mt-2 text-center">
+                Check back soon for new events and workshops
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </View>
   );
 }
-

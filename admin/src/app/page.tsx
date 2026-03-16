@@ -1,12 +1,13 @@
-import { ArrowRight, ShieldCheck, Globe, Zap, LayoutGrid } from "lucide-react";
+import { ArrowRight, ShieldCheck, Globe, Zap } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export default function LandingPage() {
     return (
         <div className="min-h-screen w-full flex flex-col lg:flex-row bg-background">
             {/* Left Side - Hero/Brand Section */}
-            <div className="relative w-full lg:w-[60%] bg-slate-900 overflow-hidden flex flex-col justify-between p-10 lg:p-16 text-white">
+            <div className="relative w-full lg:w-[60%] bg-slate-900 overflow-hidden flex flex-col justify-between p-10 pt-0 lg:p-16 text-white">
                 {/* Background Effects */}
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,_rgba(99,102,241,0.2),_transparent_60%)] pointer-events-none" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_70%,_rgba(236,72,153,0.15),_transparent_60%)] pointer-events-none" />
@@ -14,11 +15,15 @@ export default function LandingPage() {
                 <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
                 
                 {/* Header / Logo Area */}
-                <div className="relative z-10 flex items-center gap-3">
-                    <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm border border-white/10">
-                        <LayoutGrid className="w-6 h-6 text-indigo-300" />
-                    </div>
-                    <span className="text-lg font-medium tracking-wide text-indigo-100/90">ELIDZ STP</span>
+                <div className="absolute top-0 left-0 z-10 flex items-center gap-3">
+                    <Image
+                        src="/logos/white text-idz logo.png"
+                        alt="ELIDZ STP"
+                        width={200}
+                        height={60}
+                        className="h-46 w-auto object-contain"
+                        priority
+                    />
                 </div>
 
                 {/* Main Content */}

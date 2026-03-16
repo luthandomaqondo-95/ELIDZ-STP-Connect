@@ -9,25 +9,11 @@ export default function AuthLayout() {
 				animation: "slide_from_right",
 			}}
 		>
-			<Stack.Screen name="welcome"
-				options={{
-					animation: 'fade',
-					animationDuration: 300,
-				}}
-			/>
-			<Stack.Screen name="auth-choice"
-				options={{
-					animation: 'slide_from_right',
-					animationDuration: 250,
-				}}
-			/>
 			<Stack.Screen name="index"
 				options={{
-					title: "Login",
+					title: "Sign In",
 					animation: 'slide_from_right',
 					animationDuration: 250,
-					gestureEnabled: true,
-					gestureDirection: 'horizontal',
 				}}
 			/>
 			<Stack.Screen name="signup"
@@ -40,7 +26,9 @@ export default function AuthLayout() {
 				}}
 			/>
 			<Stack.Screen name="forgot-password" options={{ title: "Forgot Password" }} />
+			<Stack.Screen name="reset-password" options={{ title: "Reset Password" }} />
 			<Stack.Screen name="change-password" options={{ title: "Change Password" }} />
+			<Stack.Screen name="email-confirmed" options={{ title: "Email Confirmed" }} />
 		</Stack>
 	);
 }

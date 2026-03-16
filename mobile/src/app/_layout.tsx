@@ -1,4 +1,6 @@
-import { StatusBar } from "react-native";
+import { useEffect } from "react";
+import { StatusBar, View } from "react-native";
+import * as Linking from 'expo-linking';
 import "@/theme/global.css";
 import { NAV_THEME } from '@/theme/colors';
 import { ThemeProvider } from '@react-navigation/native';
@@ -11,13 +13,63 @@ import { useColorScheme } from "@/hooks/use-theme-color";
 import { store } from "@/state";
 import * as Sentry from '@sentry/react-native';
 import ProtectedAppRoutes from "@/components/ProtectedAppRoutes";
-import AuthProvider from '@/providers/auth-provider'
-import { useState } from "react";
-import { SplashScreen } from "@/components/SplashScreenController";
+import AuthProvider from '@/providers/auth-provider';
 import * as ExpoSplashScreen from 'expo-splash-screen';
+import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase';
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
 ExpoSplashScreen.preventAutoHideAsync();
+
+/** Extracts auth tokens from Supabase redirect URL (hash or query) and sets the session. */
+async function createSessionFromUrl(url: string) {
+	try {
+		const [baseAndQuery, hashRaw = ''] = url.split('#');
+		const queryRaw = baseAndQuery.includes('?') ? baseAndQuery.split('?').slice(1).join('?') : '';
+		const hash = hashRaw.startsWith('?') ? hashRaw.slice(1) : hashRaw;
+
+		const hashParams = new URLSearchParams(hash);
+		const searchParams = new URLSearchParams(queryRaw);
+		const get = (key: string) => hashParams.get(key) ?? searchParams.get(key) ?? null;
+
+		const access_token = get('access_token');
+		const refresh_token = get('refresh_token');
+		const code = get('code');
+		const token_hash = get('token_hash');
+		const type = get('type');
+
+		if (access_token && refresh_token) {
+			const { error } = await supabase.auth.setSession({
+				access_token,
+				refresh_token,
+			});
+			if (error) throw error;
+			return;
+		}
+		if (code) {
+			const { error } = await supabase.auth.exchangeCodeForSession(code);
+			if (error) throw error;
+			return;
+		}
+		if (token_hash && type === 'recovery') {
+			const { error } = await supabase.auth.verifyOtp({
+				type: 'recovery',
+				token_hash,
+			});
+			if (error) throw error;
+			return;
+		}
+		if (token_hash && (type === 'signup' || type === 'email')) {
+			const { error } = await supabase.auth.verifyOtp({
+				type: type as 'signup' | 'email',
+				token_hash,
+			});
+			if (error) throw error;
+			return;
+		}
+	} catch (err) {
+		console.error('Error creating session from URL:', err);
+	}
+}
 
 export {
 	// Catch any errors thrown by the Layout component.
@@ -52,7 +104,26 @@ Sentry.init({
 function RootLayout() {
 	const { colorScheme, isDarkColorScheme } = useColorScheme();
 	const queryClient = new QueryClient();
-	const [showSplash, setShowSplash] = useState(true);
+	const url = Linking.useURL();
+
+	useEffect(() => {
+		ExpoSplashScreen.hideAsync();
+	}, []);
+
+	// Handle password reset deep link: extract tokens from URL and set session before auth check
+	useEffect(() => {
+		if (url) {
+			createSessionFromUrl(url);
+		}
+	}, [url]);
+
+	useEffect(() => {
+		Linking.getInitialURL().then((initialUrl) => {
+			if (initialUrl) {
+				createSessionFromUrl(initialUrl);
+			}
+		});
+	}, []);
 
 	return (
 		<>
@@ -64,24 +135,21 @@ function RootLayout() {
 			/>
 			<SafeAreaProvider>
 				<GestureHandlerRootView style={{ flex: 1 }}>
-					<QueryClientProvider client={queryClient}>
-						<Provider store={store}>
-							<ThemeProvider value={NAV_THEME[colorScheme]}>
-								<BottomSheetModalProvider>
-									<AuthProvider>
-										{
-											showSplash ?
-												<SplashScreen onComplete={() => setShowSplash(false)} />
-												:
-												<ProtectedAppRoutes />
-										}
-									</AuthProvider>
-								</BottomSheetModalProvider>
-							</ThemeProvider>
-						</Provider>
-					</QueryClientProvider>
+					<View className={cn('flex-1', isDarkColorScheme && 'dark')} style={{ flex: 1 }}>
+						<QueryClientProvider client={queryClient}>
+							<Provider store={store}>
+								<ThemeProvider value={NAV_THEME[colorScheme]}>
+									<BottomSheetModalProvider>
+										<AuthProvider>
+											<ProtectedAppRoutes />
+										</AuthProvider>
+									</BottomSheetModalProvider>
+								</ThemeProvider>
+							</Provider>
+						</QueryClientProvider>
+					</View>
 				</GestureHandlerRootView>
-			</SafeAreaProvider >
+			</SafeAreaProvider>
 		</>
 	);
 }

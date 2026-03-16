@@ -1,11 +1,15 @@
 export interface Profile {
+  avatar_url: string | undefined;
   id: string;
   name: string;
   email: string;
-  role: 'Entrepreneur' | 'Researcher' | 'SME' | 'Student' | 'Investor' | 'Tenant';
+  role: 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
+  address?: string;
   organization?: string;
   bio?: string;
   avatar?: string;
+  isPremium?: boolean;
+  verification_status?: 'verified' | 'pending' | 'rejected' | 'unverified';
   created_at: string;
 }
 
@@ -16,15 +20,30 @@ export interface Tenant {
   industry?: string;
   logo_url?: string;
   website?: string;
+  contact_email?: string;
+  contact_phone?: string;
   location?: string;
+  facility_id?: string | null;
+  building?: string;
+  address?: string;
+  services?: string;
+  capabilities?: string;
+  social_media_links?: string;
+  application_url?: string;
+  opening_hours?: string;
+  additional_contact_email?: string;
+  key_personnel?: string;
+  partners?: string;
   created_by?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 export interface Opportunity {
   id: string;
   title: string;
   description: string;
-  type: 'Job' | 'Partnership' | 'Funding' | 'Mentorship' | 'Event' | 'Other' | 'Tenders' | 'Employment' | 'Training' | 'Internships' | 'Bursaries' | 'Incubation';
+  type: 'Job' | 'Partnership' | 'Funding' | 'Grant' | 'Mentorship' | 'Event' | 'Other' | 'Tenders' | 'Employment' | 'Training' | 'Internships' | 'Bursaries' | 'Incubation';
   category?: string;
   requirements?: string;
   deadline?: string;
@@ -53,7 +72,10 @@ export interface Opportunity {
   tenderDocumentsUrl?: string;
   
   // Helper for UI
-  org?: string; 
+  org?: string;
+
+  // Joined tenant data (from tenant_id)
+  tenant?: { name: string; logo_url?: string | null } | null;
 }
 
 export interface Resource {
@@ -66,4 +88,3 @@ export interface Resource {
   uploaded_by?: string;
   status?: string; // For UI
 }
-

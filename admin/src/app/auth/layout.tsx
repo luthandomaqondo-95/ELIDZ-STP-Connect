@@ -1,4 +1,5 @@
-import { Globe, LayoutGrid, Zap } from "lucide-react";
+import { Globe, Zap } from "lucide-react";
+import Image from "next/image";
 
 export default function AuthLayout({
     children,
@@ -16,11 +17,15 @@ export default function AuthLayout({
                 <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
                 
                 {/* Header / Logo Area */}
-                <div className="relative z-10 flex items-center gap-3">
-                    <div className="bg-white/10 p-2 rounded-lg backdrop-blur-sm border border-white/10">
-                        <LayoutGrid className="w-6 h-6 text-indigo-300" />
-                    </div>
-                    <span className="text-lg font-medium tracking-wide text-indigo-100/90">ELIDZ STP</span>
+                <div className="absolute top-0 left-0 z-10 flex items-center gap-3">
+                    <Image
+                        src="/logos/white text-idz logo.png"
+                        alt="ELIDZ STP"
+                        width={200}
+                        height={60}
+                        className="h-46 w-auto object-contain"
+                        priority
+                    />
                 </div>
 
                 {/* Main Content */}

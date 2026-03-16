@@ -22,6 +22,8 @@
       "predictiveBackGestureEnabled": false,
       "permissions": [
         "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
       "package": "com.elidzstp.app"
@@ -45,12 +47,6 @@
         }
       ],
       [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.265041215914-dnhqe8pqbt9n32evuaubqlmls16c6fiu"
-        }
-      ],
-      [
         "@sentry/react-native/expo",
         {
           "url": "https://sentry.io/",
@@ -66,19 +62,26 @@
         }
       ],
       "expo-audio",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
     },
     "extra": {
-      "supabaseUrl": "https://kxyievpdwggcglokjwgy.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt4eWlldnBkd2dnY2dsb2tqd2d5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM4MDgzNzIsImV4cCI6MjA3OTM4NDM3Mn0.76XSrs2RgqVGGCE83tbeUzaazM6vtcJJjMCCEq58yZA",
+      "supabaseUrl": "https://msngrgkyoozqysxtggfw.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbmdyZ2t5b296cXlzeHRnZ2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTk4MjYsImV4cCI6MjA3OTM3NTgyNn0.epIGq-VP_ULklXjG5zWy3KjOGZa52Z_vcRein_ewaZc",
       "router": {},
       "eas": {
         "projectId": "dc718464-724f-4f89-9098-d94149a275ff"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/dc718464-724f-4f89-9098-d94149a275ff"
     }
   }
 }
