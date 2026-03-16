@@ -137,23 +137,22 @@ class ChatService {
 			unreadCountByChat.set(msg.chat_id, count + 1);
 		});
 
-		// Build chat details efficiently
-		const chatsWithDetails: ChatWithDetails[] = (chats || []).map((chat) => {
-			const chatParticipants = participantsByChat.get(chat.id) || [];
+		let chatsWithDetails: ChatWithDetails[] = (chats || []).map((chat) => {
+			const participants = participantsByChat.get(chat.id) || [];
 			const lastMessage = lastMessageByChat.get(chat.id);
 			const unreadCount = unreadCountByChat.get(chat.id) || 0;
 
+			// For direct chats, find the other user (not current user)
 			let otherUser: Profile | undefined;
-			if (chat.type === 'direct' && chatParticipants.length > 0) {
-				const otherParticipant = chatParticipants.find((p: any) => p.user_id !== userId);
-				if (otherParticipant?.user) {
-					otherUser = otherParticipant.user as Profile;
-				}
+			if (chat.type === 'direct' && participants.length >= 2) {
+				otherUser = participants.find((p: any) => p.user_id !== userId)?.user as Profile;
+			} else if (chat.type === 'direct' && participants.length === 1) {
+				otherUser = participants[0]?.user as Profile;
 			}
 
 			return {
 				...chat,
-				participants: chatParticipants,
+				participants,
 				lastMessage,
 				unreadCount,
 				otherUser,
@@ -163,12 +162,9 @@ class ChatService {
 		if (search) {
 			const lowerSearch = search.toLowerCase();
 			chatsWithDetails = chatsWithDetails.filter(chat => {
-				// Search by other user name (direct chat)
-				if (chat.otherUser?.name.toLowerCase().includes(lowerSearch)) return true;
-				// Search by chat name (group chat)
+				if (chat.otherUser?.name?.toLowerCase().includes(lowerSearch)) return true;
 				if (chat.name?.toLowerCase().includes(lowerSearch)) return true;
-				// Search by last message content
-				if (chat.lastMessage?.content.toLowerCase().includes(lowerSearch)) return true;
+				if (chat.lastMessage?.content?.toLowerCase().includes(lowerSearch)) return true;
 				return false;
 			});
 		}
@@ -203,16 +199,24 @@ class ChatService {
 
 		if (attachment) {
 			try {
-				// 1. Upload file
+				// 1. Upload file (Expo / React Native-safe: use ArrayBuffer instead of Blob)
 				const response = await fetch(attachment.uri);
-				const blob = await response.blob();
+				const arrayBuffer = await response.arrayBuffer();
 				const fileExt = attachment.name?.split('.').pop() || 'jpg';
 				const fileName = `${chatId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+				const contentType =
+					attachment.type === 'image'
+						? 'image/jpeg'
+						: attachment.type === 'video'
+						? 'video/mp4'
+						: attachment.type === 'audio'
+						? 'audio/mpeg'
+						: 'application/octet-stream';
 
 				const { data: uploadData, error: uploadError } = await supabase.storage
 					.from('chat-attachments')
-					.upload(fileName, blob, {
-						contentType: attachment.type === 'image' ? 'image/jpeg' : undefined, // Add other types as needed
+					.upload(fileName, arrayBuffer, {
+						contentType,
 					});
 
 				if (uploadError) {
@@ -238,9 +242,9 @@ class ChatService {
 			.insert({
 				chat_id: chatId,
 				sender_id: senderId,
-				content: content.trim(),
-				attachment_url: attachmentUrl,
-				attachment_type: attachment?.type,
+				content: (content || '').trim(),
+				attachment_url: attachmentUrl || null,
+				attachment_type: attachment?.type || null,
 			})
 			.select('*, sender:profiles(*)')
 			.single();
@@ -262,60 +266,34 @@ class ChatService {
 	async createDirectChat(userId1: string, userId2: string): Promise<Chat> {
 		console.log('ChatService.createDirectChat called for users:', userId1, userId2);
 
-		const { data: existingChats, error: checkError } = await supabase
-			.from('chats')
-			.select('*, participants:chat_participants(*)')
-			.eq('type', 'direct');
+		const { data: rpcResult, error: rpcError } = await supabase.rpc('create_direct_chat', {
+			p_user_id_1: userId1,
+			p_user_id_2: userId2,
+		});
 
-		if (checkError) {
-			console.error('ChatService.createDirectChat check error:', checkError);
+		if (rpcError) {
+			console.error('ChatService.createDirectChat RPC error:', JSON.stringify(rpcError, null, 2));
+			throw rpcError;
 		}
 
-		if (existingChats) {
-			for (const chat of existingChats) {
-				const { data: participants } = await supabase
-					.from('chat_participants')
-					.select('user_id')
-					.eq('chat_id', chat.id);
-
-				if (participants && participants.length === 2) {
-					const userIds = participants.map(p => p.user_id);
-					if (userIds.includes(userId1) && userIds.includes(userId2)) {
-						console.log('ChatService.createDirectChat: Existing chat found');
-						return chat as Chat;
-					}
-				}
-			}
+		const chatId = rpcResult?.id;
+		if (!chatId) {
+			throw new Error('create_direct_chat returned no chat id');
 		}
 
-		const { data: newChat, error: chatError } = await supabase
+		const { data: chat, error: fetchError } = await supabase
 			.from('chats')
-			.insert({
-				type: 'direct',
-				created_by: userId1,
-			})
-			.select()
+			.select('*')
+			.eq('id', chatId)
 			.single();
 
-		if (chatError) {
-			console.error('ChatService.createDirectChat chat error:', JSON.stringify(chatError, null, 2));
-			throw chatError;
+		if (fetchError || !chat) {
+			console.error('ChatService.createDirectChat fetch error:', fetchError);
+			throw fetchError || new Error('Failed to fetch created chat');
 		}
 
-		const { error: participantsError } = await supabase
-			.from('chat_participants')
-			.insert([
-				{ chat_id: newChat.id, user_id: userId1 },
-				{ chat_id: newChat.id, user_id: userId2 },
-			]);
-
-		if (participantsError) {
-			console.error('ChatService.createDirectChat participants error:', JSON.stringify(participantsError, null, 2));
-			throw participantsError;
-		}
-
-		console.log('ChatService.createDirectChat succeeded:', newChat);
-		return newChat as Chat;
+		console.log('ChatService.createDirectChat succeeded:', chat);
+		return chat as Chat;
 	}
 
 	async markMessagesAsRead(chatId: string, userId: string): Promise<void> {

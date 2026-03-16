@@ -50,7 +50,7 @@ function NewsDetailScreen() {
         <View className="bg-background">
           <TabsLayoutHeader title="News" variant="navy">
             <Text className="text-white/80 text-base">
-              Article details.
+             Story overview.
             </Text>
           </TabsLayoutHeader>
         </View>
@@ -70,7 +70,7 @@ function NewsDetailScreen() {
         <View className="bg-background">
           <TabsLayoutHeader title="News" variant="navy">
             <Text className="text-white/80 text-base">
-              Article details.
+              Story overview.
             </Text>
           </TabsLayoutHeader>
         </View>
@@ -147,7 +147,7 @@ function NewsDetailScreen() {
       <View className="bg-background">
         <TabsLayoutHeader title="News" variant="navy">
           <Text className="text-white/80 text-base">
-            Article details.
+              Story overview.
           </Text>
         </TabsLayoutHeader>
       </View>

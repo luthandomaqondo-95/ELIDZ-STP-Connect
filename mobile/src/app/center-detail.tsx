@@ -49,7 +49,6 @@ function CenterDetailScreen() {
 
   const getImageSource = (): { uri: string } | number | null => {
     if (!facility?.image_url) return null;
-    if (facility.image_url.startsWith('http')) return { uri: facility.image_url };
     return facilitiesService.getFacilityCardImage(facility.image_url) ?? null;
   };
 
@@ -116,6 +115,7 @@ function CenterDetailScreen() {
           </View>
         )}
 
+        {/* Services & capabilities */}
         <View className="mb-5">
           <Text className="text-lg font-bold text-foreground mb-3">Services & Capabilities</Text>
           {sections.length > 0 ? (
@@ -134,7 +134,7 @@ function CenterDetailScreen() {
                   <View className="ml-7 mt-1">
                     {section.details.map((d, i) => (
                       <View key={i} className="flex-row items-start mb-1">
-                        <Feather name="minus" size={14} color={colors.mutedForeground} />
+                        <Feather name="minus" size={14} color={colors.textSecondary} />
                         <Text className="text-base text-foreground ml-2 flex-1">{d}</Text>
                       </View>
                     ))}
@@ -147,18 +147,82 @@ function CenterDetailScreen() {
           )}
         </View>
 
+        {/* Usage & safety guidance */}
+        <View className="p-5 rounded-xl mb-5 bg-card shadow-sm border border-border">
+          <Text className="text-lg font-bold text-foreground mb-2">Usage & Safety Guidance</Text>
+          <Text className="text-sm text-muted-foreground mb-2">
+            Before using this facility, please ensure that you:
+          </Text>
+          <View className="mt-1">
+            <View className="flex-row items-start mb-1.5">
+              <Feather name="check-circle" size={14} color={colors.secondary} />
+              <Text className="text-xs text-foreground ml-2 flex-1">
+                Have completed the required safety or induction briefing for this centre.
+              </Text>
+            </View>
+            <View className="flex-row items-start mb-1.5">
+              <Feather name="check-circle" size={14} color={colors.secondary} />
+              <Text className="text-xs text-foreground ml-2 flex-1">
+                Understand the operating procedures for equipment and labs you intend to use.
+              </Text>
+            </View>
+            <View className="flex-row items-start mb-1.5">
+              <Feather name="check-circle" size={14} color={colors.secondary} />
+              <Text className="text-xs text-foreground ml-2 flex-1">
+                Use the correct PPE and follow all signage and staff instructions while on site.
+              </Text>
+            </View>
+            <View className="flex-row items-start">
+              <Feather name="alert-triangle" size={14} color={colors.warning} />
+              <Text className="text-xs text-foreground ml-2 flex-1">
+                Report any safety concerns, damaged equipment, or access issues immediately using the
+                issue reporting option below.
+              </Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Contact & issue reporting */}
         <View className="p-5 rounded-xl mb-5 bg-primary shadow-sm">
           <Text className="text-lg font-bold text-white mb-2">Get in Touch</Text>
           <Text className="text-sm text-white/90 mb-3">
-            Contact us to learn more about how this center can support your innovation
+            Contact us to learn more about how this center can support your innovation, or report any
+            issues you encounter.
           </Text>
-          <Pressable
-            className="flex-row items-center justify-center py-2.5 px-3 rounded-lg bg-white active:opacity-80"
-            onPress={() => router.push('/enquiry-form')}
-          >
-            <Feather name="mail" size={18} color={colors.primary} />
-            <Text className="text-base text-primary ml-2 font-semibold">Send Enquiry</Text>
-          </Pressable>
+          <View className="flex-row gap-3">
+            <Pressable
+              className="flex-1 flex-row items-center justify-center py-2.5 px-3 rounded-lg bg-white active:opacity-80"
+              onPress={() =>
+                router.push({
+                  pathname: '/enquiry-form',
+                  params: {
+                    type: 'Facility',
+                    facilityId: facility.id,
+                    subject: `Facility Enquiry: ${displayName}`,
+                  },
+                })
+              }
+            >
+              <Feather name="mail" size={18} color={colors.primary} />
+              <Text className="text-base text-primary ml-2 font-semibold">Send Enquiry</Text>
+            </Pressable>
+            <Pressable
+              className="flex-1 flex-row items-center justify-center py-2.5 px-3 rounded-lg bg-black/10 border border-white/40 active:opacity-80"
+              onPress={() =>
+                router.push({
+                  pathname: '/enquiry-form',
+                  params: {
+                    type: 'Facility',
+                    facilityId: facility.id,
+                    subject: `Facility Issue: ${displayName}`,
+                  },
+                })
+              }
+            >
+              <Feather name="alert-triangle" size={18} color="white" />
+              <Text className="text-base text-white ml-2 font-semibold">Report Issue</Text>
+            </Pressable>
+          </View>
         </View>
       </ScrollView>
     </View>

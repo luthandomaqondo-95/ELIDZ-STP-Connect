@@ -11,6 +11,7 @@ import { TabsLayoutHeader } from '@/components/Header';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { DEFAULT_AVATAR } from '@/constants/avatars';
 
 function SettingsScreen() {
   const { profile: user, logout } = useAuthContext();
@@ -20,14 +21,7 @@ function SettingsScreen() {
   const { colorScheme } = useColorScheme();
   const colors = COLORS[colorScheme];
 
-  const getAvatarSource = (avatar?: string) => {
-    switch (avatar) {
-      case 'blue': return require('../../assets/avatars/avatar-blue.png');
-      case 'green': return require('../../assets/avatars/avatar-green.png');
-      case 'orange': return require('../../assets/avatars/avatar-orange.png');
-      default: return require('../../assets/avatars/avatar-blue.png');
-    }
-  };
+  const avatarSource = avatarUri ? { uri: avatarUri } : DEFAULT_AVATAR;
 
   async function handleLogout() {
     Alert.alert('Logout', 'Are you sure you want to logout?', [
@@ -146,7 +140,7 @@ function SettingsScreen() {
           <View className="flex-row items-center p-5">
             <View className="w-14 h-14 rounded-full bg-muted overflow-hidden border border-border" style={{ minWidth: 56, minHeight: 56 }}>
               <Image
-                source={avatarUri ? { uri: avatarUri } : getAvatarSource(user?.avatar)}
+                source={avatarSource}
                 style={{ width: 56, height: 56 }}
                 contentFit="cover"
               />

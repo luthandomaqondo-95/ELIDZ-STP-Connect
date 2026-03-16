@@ -29,36 +29,44 @@ export default function FacilityPage() {
         async function fetchData() {
             setLoading(true)
             try {
-                // Fetch facility details
-                const { data: facilityData } = await supabase
+                // Fetch from facilities (centralized table)
+                const { data: rows } = await supabase
                     .from('facilities')
                     .select('*')
-                    .eq('id', id)
-                    .single()
+                    .eq('service_id', id)
+                    .order('display_order', { ascending: true })
 
-                if (facilityData) {
-                    setFacility(facilityData)
-                    
-                    // Fetch VR scenes
-                    const { data: scenes } = await supabase
-                        .from('vr_scenes')
-                        .select('*')
-                        .eq('facility_id', id)
-                    
-                    if (scenes) {
-                        setVrScenes(scenes)
-                        const initial = scenes.find((s: any) => s.is_initial_scene) || scenes[0]
-                        setActiveScene(initial)
-                    }
-
-                    // Fetch VR sections/services
-                    const { data: sections } = await supabase
-                        .from('vr_sections')
-                        .select('*')
-                        .eq('facility_id', id)
-                        .order('display_order', { ascending: true })
-                    
-                    if (sections) setVrSections(sections)
+                if (rows && rows.length > 0) {
+                    const first = rows[0]
+                    setFacility({
+                        id: first.service_id,
+                        name: first.service_name,
+                        description: first.service_description,
+                        location: first.service_name,
+                        type: 'Facility',
+                        color: first.service_color,
+                        icon: first.service_icon,
+                        image_url: first.service_image_url,
+                    })
+                    setVrScenes(rows.map((r: any) => ({
+                        id: r.id,
+                        title: r.title,
+                        image_url: r.thumbnail_url,
+                        is_initial_scene: r.is_initial,
+                    })))
+                    const initial = rows.find((s: any) => s.is_initial) || rows[0]
+                    setActiveScene({
+                        id: initial.id,
+                        title: initial.title,
+                        image_url: initial.thumbnail_url,
+                        is_initial_scene: initial.is_initial,
+                    })
+                    setVrSections(rows.map((r: any) => ({
+                        id: r.id,
+                        title: r.title,
+                        description: r.section_description || '',
+                        details: Array.isArray(r.details) ? r.details : [],
+                    })))
                 }
             } catch (error) {
                 console.error("Error fetching facility data:", error)

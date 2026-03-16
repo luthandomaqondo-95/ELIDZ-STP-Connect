@@ -1,294 +1,433 @@
 import { supabase } from '@/lib/supabase';
+import type { Hotspot, Scene } from '@/lib/scenes';
 
 export interface Facility {
-    id: string;
-    name: string;
-    type: string;
-    location: string;
-    description: string;
-    image_url: string | null;
-    icon: string;
-    color: string;
-    created_at: string;
-    updated_at: string;
+  id: string;
+  name: string;
+  type: string;
+  location: string;
+  description: string;
+  image_url: string | null;
+  icon: string;
+  color: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface VRScene {
-    id: string;
-    facility_id: string;
-    title: string;
-    image_url: string;
-    is_initial_scene: boolean;
-    regions?: VRRegion[];
-    hotspots?: VRHotspot[];
-    created_at: string;
-    updated_at: string;
+  id: string;
+  facility_id: string;
+  title: string;
+  image_url: string;
+  is_initial_scene: boolean;
+  regions?: VRRegion[];
+  hotspots?: VRHotspot[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface VRSection {
-    id: string;
-    facility_id: string;
-    title: string;
-    description: string;
-    details: string[]; // Parsed from JSONB
-    has_vr: boolean;
-    vr_scene_id: string | null;
-    display_order: number;
-    created_at: string;
-    updated_at: string;
+  id: string;
+  facility_id: string;
+  title: string;
+  description: string;
+  details: string[];
+  has_vr: boolean;
+  vr_scene_id: string | null;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface VRRegion {
-    id: string;
-    scene_id: string;
-    name: string;
-    angle: number;
-    width: number;
-    created_at: string;
+  id: string;
+  scene_id: string;
+  name: string;
+  angle: number;
+  width: number;
+  created_at: string;
 }
 
 export interface VRHotspot {
-    id: string;
-    scene_id: string;
-    text: string;
-    position: {
-        x: number;
-        y: number;
-        z: number;
-    };
-    target_scene_id: string;
-    created_at: string;
+  id: string;
+  scene_id: string;
+  text: string;
+  position: { x: number; y: number; z: number };
+  target_scene_id: string;
+  created_at: string;
 }
 
 export interface FacilityWithTour extends Facility {
-    scenes: VRScene[];
-    sections: VRSection[];
-    initialSceneId?: string;
+  scenes: VRScene[];
+  sections: VRSection[];
+  initialSceneId?: string;
 }
 
+interface ServiceVideoRow {
+  id: string;
+  service_id: string;
+  service_name: string;
+  service_description: string;
+  service_icon: string;
+  service_color: string;
+  service_image_url: string | null;
+  title: string;
+  section_description: string | null;
+  details: unknown;
+  video_url: string | null;
+  thumbnail_url: string;
+  is_initial: boolean;
+  display_order: number;
+  hotspots: unknown;
+  created_at: string;
+  updated_at: string;
+}
+
+const TOUR_CACHE_TTL_MS = 2 * 60 * 1000; // 2 minutes
+
 class FacilitiesService {
-    private normalizeAssetKey(assetPath?: string | null): string {
-        if (!assetPath) return '';
-        const withoutQuery = assetPath.split('?')[0];
-        const fileName = withoutQuery.split('/').pop() || withoutQuery;
-        return fileName.trim().toLowerCase();
-    }
-    /**
-     * Get all facilities
-     */
-    async getAllFacilities(): Promise<Facility[]> {
-        const { data, error } = await supabase
-            .from('facilities')
-            .select('*')
-            .order('name', { ascending: true });
+  private tourCache = new Map<
+    string,
+    { data: { facility: FacilityWithTour; scenes: Scene[] }; expires: number }
+  >();
 
-        if (error) {
-            console.error('FacilitiesService.getAllFacilities error:', error);
-            throw error;
-        }
+  private rowToFacility(row: ServiceVideoRow): Facility {
+    return {
+      id: row.service_id,
+      name: row.service_name,
+      type: 'Facility',
+      location: row.service_name,
+      description: row.service_description,
+      image_url: row.service_image_url,
+      icon: row.service_icon,
+      color: row.service_color,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  }
 
-        return data as Facility[];
-    }
+  private rowToVRScene(row: ServiceVideoRow): VRScene {
+    const hotspots = Array.isArray(row.hotspots) ? row.hotspots : [];
+    return {
+      id: row.id,
+      facility_id: row.service_id,
+      title: row.title,
+      image_url: row.thumbnail_url,
+      is_initial_scene: row.is_initial,
+      regions: [],
+      hotspots: hotspots.map((h: { id?: number; text?: string; targetSceneId?: string }) => ({
+        id: String(h?.id ?? ''),
+        scene_id: row.id,
+        text: h?.text ?? '',
+        position: { x: 0, y: 0, z: 0 },
+        target_scene_id: h?.targetSceneId ?? '',
+        created_at: row.created_at,
+      })),
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  }
 
-    /**
-     * Get facility by ID
-     */
-    async getFacilityById(id: string): Promise<Facility | null> {
-        const { data, error } = await supabase
-            .from('facilities')
-            .select('*')
-            .eq('id', id)
-            .single();
+  private rowToScene(row: ServiceVideoRow): Scene {
+    const hotspotsRaw = Array.isArray(row.hotspots) ? row.hotspots : [];
+    const hotspots: Hotspot[] = hotspotsRaw.map((h: Record<string, unknown>) => ({
+      id: Number(h?.id ?? 0),
+      yaw: Number(h?.yaw ?? 0),
+      pitch: Number(h?.pitch ?? 0),
+      type: (h?.type as 'info' | 'navigation') ?? 'info',
+      text: String(h?.text ?? ''),
+      targetSceneId: h?.targetSceneId ? String(h.targetSceneId) : undefined,
+      icon: h?.icon ? String(h.icon) : undefined,
+    }));
+    return {
+      id: row.id,
+      title: row.title,
+      subtitle: `ELIDZ STP — ${row.service_name}`,
+      videoUrl: row.video_url ?? '',
+      thumbnailColor: row.service_color || '#0B1220',
+      hotspots,
+      serviceId: row.service_id,
+    };
+  }
 
-        if (error) {
-            if (error.code === 'PGRST116') return null; // Not found
-            console.error('FacilitiesService.getFacilityById error:', error);
-            throw error;
-        }
+  private rowToVRSection(row: ServiceVideoRow): VRSection {
+    const details = Array.isArray(row.details) ? row.details : [];
+    return {
+      id: row.id,
+      facility_id: row.service_id,
+      title: row.title,
+      description: row.section_description ?? '',
+      details: details as string[],
+      has_vr: true,
+      vr_scene_id: row.id,
+      display_order: row.display_order,
+      created_at: row.created_at,
+      updated_at: row.updated_at,
+    };
+  }
 
-        return data as Facility;
-    }
+  /**
+   * Get all facilities (services) - one row per service from facilities
+   */
+  async getAllFacilities(): Promise<Facility[]> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .order('service_id', { ascending: true })
+      .order('display_order', { ascending: true });
 
-    /**
-     * Get all VR scenes for a facility
-     */
-    async getScenesByFacilityId(facilityId: string): Promise<VRScene[]> {
-        const { data, error } = await supabase
-            .from('vr_scenes')
-            .select('*')
-            .eq('facility_id', facilityId);
-
-        if (error) {
-            console.error('FacilitiesService.getScenesByFacilityId error:', error);
-            throw error;
-        }
-
-        // Fetch regions and hotspots for each scene
-        const scenes = data as VRScene[];
-        const scenesWithDetails = await Promise.all(
-            scenes.map(async (scene) => {
-                const [regions, hotspots] = await Promise.all([
-                    this.getRegionsBySceneId(scene.id),
-                    this.getHotspotsBySceneId(scene.id)
-                ]);
-
-                return {
-                    ...scene,
-                    regions,
-                    hotspots: hotspots.map(h => ({
-                        ...h,
-                        position: {
-                            x: Number(h.position.x),
-                            y: Number(h.position.y),
-                            z: Number(h.position.z)
-                        }
-                    }))
-                };
-            })
-        );
-
-        return scenesWithDetails;
-    }
-
-    /**
-     * Get all sections (services) for a facility
-     */
-    async getSectionsByFacilityId(facilityId: string): Promise<VRSection[]> {
-        const { data, error } = await supabase
-            .from('vr_sections')
-            .select('*')
-            .eq('facility_id', facilityId)
-            .order('display_order', { ascending: true });
-
-        if (error) {
-            console.error('FacilitiesService.getSectionsByFacilityId error:', error);
-            throw error;
-        }
-
-        return (data as any[]).map(section => ({
-            ...section,
-            details: Array.isArray(section.details) ? section.details : []
-        })) as VRSection[];
+    if (error) {
+      console.error('FacilitiesService.getAllFacilities error:', error);
+      throw error;
     }
 
-    /**
-     * Get regions for a scene
-     */
-    async getRegionsBySceneId(sceneId: string): Promise<VRRegion[]> {
-        const { data, error } = await supabase
-            .from('vr_regions')
-            .select('*')
-            .eq('scene_id', sceneId);
+    const rows = (data ?? []) as ServiceVideoRow[];
+    const seen = new Set<string>();
+    const facilities: Facility[] = [];
+    for (const row of rows) {
+      if (!seen.has(row.service_id)) {
+        seen.add(row.service_id);
+        facilities.push(this.rowToFacility(row));
+      }
+    }
+    return facilities.sort((a, b) => a.name.localeCompare(b.name));
+  }
 
-        if (error) {
-            console.error('FacilitiesService.getRegionsBySceneId error:', error);
-            return [];
-        }
+  /**
+   * Get facility by ID
+   */
+  async getFacilityById(id: string): Promise<Facility | null> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('service_id', id)
+      .limit(1)
+      .single();
 
-        return data as VRRegion[];
+    if (error) {
+      if (error.code === 'PGRST116') return null;
+      console.error('FacilitiesService.getFacilityById error:', error);
+      throw error;
     }
 
-    /**
-     * Get hotspots for a scene
-     */
-    async getHotspotsBySceneId(sceneId: string): Promise<VRHotspot[]> {
-        const { data, error } = await supabase
-            .from('vr_hotspots')
-            .select('*')
-            .eq('scene_id', sceneId);
+    return this.rowToFacility(data as ServiceVideoRow);
+  }
 
-        if (error) {
-            console.error('FacilitiesService.getHotspotsBySceneId error:', error);
-            return [];
-        }
+  /**
+   * Get all VR scenes (videos) for a facility
+   */
+  async getScenesByFacilityId(facilityId: string): Promise<VRScene[]> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('service_id', facilityId)
+      .order('display_order', { ascending: true });
 
-        return (data as any[]).map(hotspot => ({
-            ...hotspot,
-            position: {
-                x: hotspot.position_x,
-                y: hotspot.position_y,
-                z: hotspot.position_z
-            }
-        })) as VRHotspot[];
+    if (error) {
+      console.error('FacilitiesService.getScenesByFacilityId error:', error);
+      throw error;
     }
 
-    /**
-     * Get complete facility with VR tour data
-     */
-    async getFacilityWithTour(facilityId: string): Promise<FacilityWithTour | null> {
-        const facility = await this.getFacilityById(facilityId);
-        if (!facility) return null;
+    return ((data ?? []) as ServiceVideoRow[]).map((r) => this.rowToVRScene(r));
+  }
 
-        const [scenes, sections] = await Promise.all([
-            this.getScenesByFacilityId(facilityId),
-            this.getSectionsByFacilityId(facilityId)
-        ]);
+  /**
+   * Get all sections (services) for a facility
+   */
+  async getSectionsByFacilityId(facilityId: string): Promise<VRSection[]> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('service_id', facilityId)
+      .order('display_order', { ascending: true });
 
-        const initialScene = scenes.find(s => s.is_initial_scene);
-
-        return {
-            ...facility,
-            scenes,
-            sections,
-            initialSceneId: initialScene?.id
-        };
+    if (error) {
+      console.error('FacilitiesService.getSectionsByFacilityId error:', error);
+      throw error;
     }
 
-    /**
-     * Get image URL for a 360 tour image
-     * Static mapping required for React Native bundler
-     */
-    getImageUrl(imageFileName: string, facilityId: string): any {
-        const key = this.normalizeAssetKey(imageFileName);
-        // Static mapping of all 360 images (required by Metro bundler)
-        const imageMap: Record<string, any> = {
-            // Analytical Laboratory - asset may be missing; vr-tour uses fallback URL when null
-            'analyticlaboratory.jpeg': null,
-            
-            // Design Centre
-            'cadand3dprinting.jpeg': require('../../assets/videos/360-tours/design-centre/cadand3dprinting.jpeg'),
-            'cncmilling.jpeg': require('../../assets/videos/360-tours/design-centre/cncmilling.jpeg'),
-            
-            // Digital Hub - Auditorium
-            'auditorium.jpeg': require('../../assets/videos/360-tours/digital-hub/auditorium/auditorium.jpeg'),
-            
-            // Digital Hub - Broadcasting
-            'broadcastingandvideography.jpeg': require('../../assets/videos/360-tours/digital-hub/broadcasting-studio/broadcastingandvideography.jpeg'),
-            
-            // Digital Hub - Digital Units
-            'digitalunits.jpeg': require('../../assets/videos/360-tours/digital-hub/digital-units/digitalunits.jpeg'),
-            
-            // Automotive Incubator
-            'sharedancilary.jpeg': require('../../assets/videos/360-tours/automotive-incubator/shared-ancillary-services/sharedancilary.jpeg'),
-            
-            // Renewable Energy
-            'renewableenergy.jpeg': require('../../assets/videos/360-tours/renewable-energy/renewableenergy.jpeg'),
-        };
+    return ((data ?? []) as ServiceVideoRow[]).map((r) => this.rowToVRSection(r));
+  }
 
-        if (!(key in imageMap)) {
-            console.error(`Image not found in static map: ${imageFileName}`);
-            return null;
-        }
-        return imageMap[key];
+  /**
+   * Get a 360° scene by ID (for Viewer360). Returns null if not found or missing video_url.
+   */
+  async getSceneById(sceneId: string): Promise<Scene | null> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('id', sceneId)
+      .single();
+
+    if (error || !data) {
+      if (error?.code === 'PGRST116') return null;
+      console.error('FacilitiesService.getSceneById error:', error);
+      return null;
     }
 
-    /**
-     * Get local facility thumbnail image used by the VR tours list.
-     */
-    getFacilityCardImage(imageFileName?: string | null): any {
-        const key = this.normalizeAssetKey(imageFileName);
-        if (!key) return null;
+    const row = data as ServiceVideoRow;
+    if (!row.video_url) return null;
+    return this.rowToScene(row);
+  }
 
-        const facilityImageMap: Record<string, any> = {
-            'connect-solve.png': require('../../assets/images/connect-solve.png'),
-            'design-centre.png': require('../../assets/images/design-centre.png'),
-            'innospace.png': require('../../assets/images/innospace.png'),
-            'renewable-energy.png': require('../../assets/images/renewable-energy.png'),
-        };
+  /**
+   * Get all explorable 360° scenes for a facility (scene picker).
+   * Only returns scenes for the given facility so the picker stays scoped.
+   */
+  async getScenesForFacilityViewer(facilityId: string): Promise<Scene[]> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .eq('service_id', facilityId)
+      .not('video_url', 'is', null)
+      .order('display_order', { ascending: true });
 
-        return facilityImageMap[key] ?? null;
+    if (error) {
+      console.error('FacilitiesService.getScenesForFacilityViewer error:', error);
+      return [];
     }
+
+    return ((data ?? []) as ServiceVideoRow[]).map((r) => this.rowToScene(r));
+  }
+
+  /**
+   * Get all explorable 360° scenes (any facility with video_url).
+   * Used by standalone viewer when no facility context.
+   */
+  async getScenesForViewer(): Promise<Scene[]> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('*')
+      .not('video_url', 'is', null)
+      .order('service_id', { ascending: true })
+      .order('display_order', { ascending: true });
+
+    if (error) {
+      console.error('FacilitiesService.getScenesForViewer error:', error);
+      return [];
+    }
+
+    return ((data ?? []) as ServiceVideoRow[]).map((r) => this.rowToScene(r));
+  }
+
+  /**
+   * Get initial scene ID for a facility. Fetches from facilities where
+   * service_id = facilityId and is_initial = true.
+   */
+  async getInitialSceneIdForFacility(facilityId: string): Promise<string | null> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('id')
+      .eq('service_id', facilityId)
+      .eq('is_initial', true)
+      .not('video_url', 'is', null)
+      .order('display_order', { ascending: true })
+      .limit(1)
+      .maybeSingle();
+
+    if (error || !data) return null;
+    return (data as { id: string }).id;
+  }
+
+  /**
+   * Get complete facility with VR tour data in a single query.
+   * Optimized to minimize round trips for faster loading.
+   */
+  async getFacilityWithTour(facilityId: string): Promise<FacilityWithTour | null> {
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('id, service_id, service_name, service_description, service_icon, service_color, service_image_url, title, section_description, details, video_url, thumbnail_url, is_initial, display_order, hotspots, created_at, updated_at')
+      .eq('service_id', facilityId)
+      .order('display_order', { ascending: true });
+
+    if (error || !data?.length) {
+      if (error) console.error('FacilitiesService.getFacilityWithTour error:', error);
+      return null;
+    }
+
+    const rows = data as ServiceVideoRow[];
+    const first = rows[0];
+    const facility = this.rowToFacility(first);
+    const scenes = rows.map((r) => this.rowToVRScene(r));
+    const sections = rows.map((r) => this.rowToVRSection(r));
+    const initialScene = scenes.find((s) => s.is_initial_scene);
+
+    return {
+      ...facility,
+      scenes,
+      sections,
+      initialSceneId: initialScene?.id,
+    };
+  }
+
+  /**
+   * Get facility tour data with Scene[] for the viewer in one query.
+   * Cached for 2 min to speed up back-navigation.
+   */
+  async getFacilityTourWithScenes(facilityId: string): Promise<{
+    facility: FacilityWithTour | null;
+    scenes: Scene[];
+  }> {
+    const cached = this.tourCache.get(facilityId);
+    if (cached && Date.now() < cached.expires) {
+      return cached.data;
+    }
+
+    const { data, error } = await supabase
+      .from('facilities')
+      .select('id, service_id, service_name, service_description, service_icon, service_color, service_image_url, title, section_description, details, video_url, thumbnail_url, is_initial, display_order, hotspots, created_at, updated_at')
+      .eq('service_id', facilityId)
+      .order('display_order', { ascending: true });
+
+    if (error || !data?.length) {
+      if (error) console.error('FacilitiesService.getFacilityTourWithScenes error:', error);
+      return { facility: null, scenes: [] };
+    }
+
+    const rows = data as ServiceVideoRow[];
+    const first = rows[0];
+    const facility = this.rowToFacility(first);
+    const scenes = rows.map((r) => this.rowToVRScene(r));
+    const sections = rows.map((r) => this.rowToVRSection(r));
+    const initialScene = scenes.find((s) => s.is_initial_scene);
+    const facilityWithTour: FacilityWithTour = {
+      ...facility,
+      scenes,
+      sections,
+      initialSceneId: initialScene?.id,
+    };
+    const viewerScenes = rows
+      .filter((r) => r.video_url)
+      .map((r) => this.rowToScene(r));
+
+    const result = { facility: facilityWithTour, scenes: viewerScenes };
+    if (facilityWithTour) {
+      this.tourCache.set(facilityId, {
+        data: result,
+        expires: Date.now() + TOUR_CACHE_TTL_MS,
+      });
+    }
+    return result;
+  }
+
+  /**
+   * Resolve facility card image. Uses DB URL when available, or local assets.
+   */
+  getFacilityCardImage(imageUrl?: string | null): { uri: string } | number | null {
+    if (!imageUrl?.trim()) return null;
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+      return { uri: imageUrl };
+    }
+    const key = imageUrl.split('/').pop()?.toLowerCase() ?? '';
+    const localMap: Record<string, number> = {
+      'design-centre.png': require('../../assets/images/design-centre.png'),
+      'innospace.png': require('../../assets/images/innospace.png'),
+      'analytical-lab.png': require('../../assets/images/tenants/analytical-lab.png'),
+      'renewable-energy.png': require('../../assets/images/renewable-energy.png'),
+      'connect-solve.png': require('../../assets/images/connect-solve.png'),
+    };
+    return localMap[key] ?? null;
+  }
 }
 
 export const facilitiesService = new FacilitiesService();
-

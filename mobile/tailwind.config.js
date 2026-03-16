@@ -42,6 +42,13 @@ module.exports = {
 					DEFAULT: withOpacity('card'),
 					foreground: withOpacity('card-foreground'),
 				},
+				viewer: {
+					cyan: 'rgb(var(--viewer-cyan))',
+					warning: 'rgb(var(--viewer-warning))',
+					success: 'rgb(var(--viewer-success))',
+					muted: 'rgb(var(--viewer-muted))',
+					bg: 'rgb(var(--viewer-bg))',
+				},
 			},
 			borderWidth: {
 				hairline: hairlineWidth(),

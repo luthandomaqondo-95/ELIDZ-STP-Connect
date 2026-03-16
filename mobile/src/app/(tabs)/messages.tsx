@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { View, TextInput, Pressable, ScrollView, Alert, Dimensions } from 'react-native';
+import { View, TextInput, Pressable, ScrollView, Alert, Dimensions, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { useAuthContext } from '../../hooks/use-auth-context';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { chatService, ChatWithDetails } from '@/services/chat.service';
 import { connectionService, ContactWithConnection, ConnectionRequest } from '@/services/connection.service';
@@ -15,8 +15,23 @@ import { supabase } from '@/lib/supabase';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
+import { ListSkeleton } from '@/components/Loading';
+import { useAvatarUri } from '@/hooks/use-avatar-uri';
+import { DEFAULT_AVATAR } from '@/constants/avatars';
 
 const { width } = Dimensions.get('window');
+
+function ContactAvatar({ avatar, size = 48 }: { avatar?: string; size?: number }) {
+    const { uri } = useAvatarUri(avatar);
+    const source = uri ? { uri } : DEFAULT_AVATAR;
+    return (
+        <Image
+            source={source as any}
+            style={{ width: size, height: size, borderRadius: size / 2 }}
+            resizeMode="cover"
+        />
+    );
+}
 const isTablet = width >= 768;
 
 type UserRole = 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
@@ -24,12 +39,17 @@ type UserRole = 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' 
 type TabType = 'messages' | 'requests' | 'discover';
 
 function MessagesScreen() {
+    const params = useLocalSearchParams<{ tab?: string }>();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme ?? 'light'];
+    const isDarkMode = colorScheme === 'dark';
     const { profile, isLoggedIn } = useAuthContext();
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedRole, setSelectedRole] = useState<UserRole | 'All'>('All');
-    const [activeTab, setActiveTab] = useState<TabType>('messages');
+    const initialTabParam = (params.tab as TabType | undefined) ?? 'messages';
+    const [activeTab, setActiveTab] = useState<TabType>(
+        initialTabParam === 'requests' || initialTabParam === 'discover' ? initialTabParam : 'messages'
+    );
     const queryClient = useQueryClient();
 
     const debouncedSearch = useDebounce(searchQuery, 300);
@@ -43,35 +63,55 @@ function MessagesScreen() {
         if (!profile?.id) return;
 
         // Subscribe to new messages to update the list in real-time
-        // Use a debounced invalidation to avoid too many refreshes
         let invalidationTimeout: ReturnType<typeof setTimeout>;
-        
+        let connectionsTimeout: ReturnType<typeof setTimeout>;
+
         const channel = supabase
-            .channel('public:messages')
+            .channel('public:messages-and-connections')
+            .on(
+                'postgres_changes',
+                { event: 'INSERT', schema: 'public', table: 'messages' },
+                () => {
+                    // Invalidate on any new message (sent or received) so last message preview and unread badge update immediately
+                    clearTimeout(invalidationTimeout);
+                    invalidationTimeout = setTimeout(() => {
+                        queryClient.invalidateQueries({ queryKey: ['contacts'] });
+                        queryClient.invalidateQueries({ queryKey: ['chats'] });
+                    }, 300);
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'UPDATE', schema: 'public', table: 'messages' },
+                () => {
+                    // When messages are marked read (read_at updated), refresh to clear unread badge
+                    clearTimeout(invalidationTimeout);
+                    invalidationTimeout = setTimeout(() => {
+                        queryClient.invalidateQueries({ queryKey: ['contacts'] });
+                        queryClient.invalidateQueries({ queryKey: ['chats'] });
+                    }, 300);
+                }
+            )
             .on(
                 'postgres_changes',
                 {
-                    event: 'INSERT',
+                    event: '*',
                     schema: 'public',
-                    table: 'messages',
+                    table: 'connections',
                 },
-                (payload: any) => {
-                    const newMessage = payload.new;
-                    // Only invalidate if message is not from current user (to avoid unnecessary refreshes)
-                    if (newMessage.sender_id !== profile.id) {
-                        // Debounce invalidations to avoid rapid-fire refreshes
-                        clearTimeout(invalidationTimeout);
-                        invalidationTimeout = setTimeout(() => {
-                            queryClient.invalidateQueries({ queryKey: ['contacts'] });
-                            queryClient.invalidateQueries({ queryKey: ['chats'] });
-                        }, 500); // Wait 500ms for potential batch of messages
-                    }
+                () => {
+                    // Connection created, updated, or deleted - refetch contacts to stay in sync with Supabase
+                    clearTimeout(connectionsTimeout);
+                    connectionsTimeout = setTimeout(() => {
+                        queryClient.refetchQueries({ queryKey: ['contacts'] });
+                    }, 300);
                 }
             )
             .subscribe();
 
         return () => {
             clearTimeout(invalidationTimeout);
+            clearTimeout(connectionsTimeout);
             supabase.removeChannel(channel);
         };
     }, [profile?.id, queryClient]);
@@ -104,14 +144,14 @@ function MessagesScreen() {
 
     function getRoleColor(role: UserRole): string {
         const roleColors: Record<UserRole, string> = {
-            Entrepreneur: '#28A745', // Green
-            Researcher: '#002147',   // Navy Blue
-            SMME: '#F38C1E',          // Orange
-            Student: '#6F42C1',      // Purple
-            Investor: '#E83E8C',     // Pink
-            Tenant: '#17A2B8',       // Teal
+            Entrepreneur: colors.constructive,
+            Researcher: colors.primary,
+            SMME: colors.accent,
+            Student: colors.purple,
+            Investor: colors.pink,
+            Tenant: colors.teal,
         };
-        return roleColors[role] || '#002147';
+        return roleColors[role] || colors.primary;
     }
 
     function getRoleIcon(role: UserRole): string {
@@ -141,11 +181,49 @@ function MessagesScreen() {
         }
     }
 
-    async function handleAcceptConnection(connectionId: string, userName: string) {
+    async function handleAcceptConnection(contact: ContactWithConnection) {
+        if (!profile?.id || !contact.connectionId) {
+            Alert.alert('Error', 'Unable to accept this connection right now.');
+            return;
+        }
+
         try {
-            await connectionService.acceptConnectionRequest(connectionId);
-            Alert.alert('Success', `You are now connected with ${userName}!`);
-            queryClient.invalidateQueries({ queryKey: ['contacts'] });
+            await connectionService.acceptConnectionRequest(contact.connectionId);
+
+            // Create (or reuse) a direct chat so the conversation
+            // immediately appears in the Messages tab.
+            try {
+                const chat = await chatService.createDirectChat(profile.id, contact.id);
+
+                // Switch to Messages tab and refresh lists so the new chat is visible
+                setActiveTab('messages');
+                queryClient.invalidateQueries({ queryKey: ['contacts', profile.id] });
+                queryClient.invalidateQueries({ queryKey: ['chats', profile.id] });
+
+                Alert.alert(
+                    'Success',
+                    `You are now connected with ${contact.name}! A conversation has been created in Messages.`,
+                    [
+                        {
+                            text: 'Open Chat',
+                            onPress: () => {
+                                router.push(`/message?chatId=${chat.id}&userName=${encodeURIComponent(contact.name)}`);
+                            },
+                        },
+                        { text: 'OK' },
+                    ]
+                );
+            } catch (chatError: any) {
+                console.error('Error creating chat after accepting connection:', chatError);
+                // Even if chat creation fails, keep the connection accepted
+                setActiveTab('messages');
+                queryClient.invalidateQueries({ queryKey: ['contacts', profile.id] });
+                queryClient.invalidateQueries({ queryKey: ['chats', profile.id] });
+                Alert.alert(
+                    'Connection Accepted',
+                    `You are now connected with ${contact.name}, but we could not start a conversation automatically. You can start one from the Messages tab.`
+                );
+            }
         } catch (error: any) {
             console.error('Error accepting connection:', error);
             Alert.alert('Error', error.message || 'Failed to accept connection request.');
@@ -166,12 +244,15 @@ function MessagesScreen() {
     async function handleCancelRequest(connectionId: string, userName: string) {
         const userId = profile?.id;
         try {
+            // 1. Delete from Supabase (source of truth)
             await connectionService.cancelConnectionRequest(connectionId);
+
+            // 2. Optimistically update cache - move contact from pending_sent to available
             if (userId) {
                 queryClient.setQueriesData(
-                    { queryKey: ['contacts', userId], exact: false },
+                    { queryKey: ['contacts'] },
                     (old: ContactWithConnection[] | undefined) => {
-                        if (!old) return old;
+                        if (!Array.isArray(old)) return old;
                         return old.map((c) =>
                             c.connectionId === connectionId
                                 ? { ...c, connectionStatus: 'available' as const, connectionId: undefined }
@@ -180,8 +261,23 @@ function MessagesScreen() {
                     }
                 );
             }
-            await queryClient.refetchQueries({ queryKey: ['contacts'] });
-            setTimeout(() => Alert.alert('Request Cancelled', `Connection request to ${userName} has been cancelled.`), 0);
+            // 3. Switch to Discover tab immediately so user sees the updated list
+            setActiveTab('discover');
+
+            // 4. Show alert - refetch ONLY when user dismisses, so we don't overwrite optimistic update with stale data
+            Alert.alert(
+                'Request Cancelled',
+                `Connection request to ${userName} has been cancelled.`,
+                [
+                    {
+                        text: 'OK',
+                        onPress: async () => {
+                            setActiveTab('discover');
+                            await queryClient.refetchQueries({ queryKey: ['contacts'] });
+                        },
+                    },
+                ]
+            );
         } catch (error: any) {
             console.error('Error cancelling connection request:', error);
             Alert.alert('Error', error.message || 'Failed to cancel connection request.');
@@ -206,13 +302,6 @@ function MessagesScreen() {
         const displayName = chat.type === 'direct' && chat.otherUser
             ? chat.otherUser.name
             : chat.name || 'Group Chat';
-
-        const initials = displayName
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .substring(0, 2);
 
         const role = chat.type === 'direct' && chat.otherUser
             ? chat.otherUser.role as UserRole
@@ -244,16 +333,12 @@ function MessagesScreen() {
             >
                 <View className="flex-row items-center p-4">
                     <View className="relative">
-                        <View
-                            className="w-12 h-12 rounded-full justify-center items-center"
-                            style={{ backgroundColor: getRoleColor(role) + '20' }}
-                        >
-                            <Text className="text-base font-bold" style={{ color: getRoleColor(role) }}>
-                                {initials}
-                            </Text>
+                        <View className="w-12 h-12 rounded-full overflow-hidden justify-center items-center">
+                            <ContactAvatar avatar={chat.type === 'direct' ? chat.otherUser?.avatar : undefined} size={48} />
                         </View>
-                        {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
-                            <View className="absolute -top-1 -right-1 w-5 h-5 bg-[#F38C1E] rounded-full justify-center items-center">
+                        {chat.unreadCount !== undefined && chat.unreadCount > 0 &&
+                         chat.lastMessage?.sender_id !== profile?.id && (
+                            <View className="absolute -top-1 -right-1 w-5 h-5 bg-accent rounded-full justify-center items-center">
                                 <Text className="text-white text-xs font-bold">{chat.unreadCount}</Text>
                             </View>
                         )}
@@ -274,10 +359,19 @@ function MessagesScreen() {
                         <View className="flex-row items-center mb-1.5">
                             <View
                                 className="flex-row items-center px-2 py-0.5 rounded-md"
-                                style={{ backgroundColor: getRoleColor(role) + '10' }}
+                                style={{
+                                    backgroundColor: isDarkMode ? getRoleColor(role) : getRoleColor(role) + '10',
+                                }}
                             >
-                                <Feather name={getRoleIcon(role) as any} size={10} color={getRoleColor(role)} />
-                                <Text className="text-[10px] font-medium ml-1" style={{ color: getRoleColor(role) }}>
+                                <Feather
+                                    name={getRoleIcon(role) as any}
+                                    size={10}
+                                    color={isDarkMode ? colors.white : getRoleColor(role)}
+                                />
+                                <Text
+                                    className="text-[10px] font-medium ml-1"
+                                    style={{ color: isDarkMode ? colors.white : getRoleColor(role) }}
+                                >
                                     {chat.type === 'direct' ? role : 'Group'}
                                 </Text>
                             </View>
@@ -289,8 +383,26 @@ function MessagesScreen() {
                         </View>
 
                         {chat.lastMessage ? (
-                            <Text className={`text-sm ${chat.unreadCount && chat.unreadCount > 0 ? 'text-foreground font-semibold' : 'text-muted-foreground'}`} numberOfLines={1}>
-                                {chat.lastMessage.content}
+                            <Text
+                                className={`text-sm ${
+                                    chat.lastMessage.sender_id === profile?.id
+                                        ? 'text-muted-foreground'
+                                        : chat.unreadCount && chat.unreadCount > 0
+                                            ? 'text-foreground font-semibold'
+                                            : 'text-muted-foreground'
+                                }`}
+                                numberOfLines={1}
+                            >
+                                {chat.lastMessage.content
+                                    || (chat.lastMessage.attachment_url
+                                        ? (chat.lastMessage.attachment_type === 'image'
+                                            ? 'Photo'
+                                            : chat.lastMessage.attachment_type === 'video'
+                                                ? 'Video'
+                                                : chat.lastMessage.attachment_type === 'audio'
+                                                    ? 'Audio'
+                                                    : 'Document')
+                                        : '')}
                             </Text>
                         ) : (
                             <Text className="text-xs text-muted-foreground italic">
@@ -299,8 +411,9 @@ function MessagesScreen() {
                         )}
                     </View>
 
-                    {chat.unreadCount !== undefined && chat.unreadCount > 0 && (
-                        <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2" />
+                    {chat.unreadCount !== undefined && chat.unreadCount > 0 &&
+                     chat.lastMessage?.sender_id !== profile?.id && (
+                        <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2" />
                     )}
                 </View>
             </Pressable>
@@ -309,13 +422,6 @@ function MessagesScreen() {
 
 
     function renderContact(contact: ContactWithConnection) {
-        const initials = contact.name
-            .split(' ')
-            .map(n => n[0])
-            .join('')
-            .toUpperCase()
-            .substring(0, 2);
-
         return (
             <Pressable
                 key={contact.id}
@@ -331,21 +437,29 @@ function MessagesScreen() {
             >
                 <View className="flex-row items-center p-4">
                     <View className="relative">
-                        <View
-                            className="w-12 h-12 rounded-full justify-center items-center"
-                            style={{ backgroundColor: getRoleColor(contact.role as UserRole) + '20' }}
-                        >
-                            <Text className="text-base font-bold" style={{ color: getRoleColor(contact.role as UserRole) }}>
-                                {initials}
-                            </Text>
+                        <View className="w-12 h-12 rounded-full overflow-hidden">
+                            <ContactAvatar avatar={contact.avatar} size={48} />
                         </View>
                     </View>
 
                     <View className="flex-1 ml-3">
-                        <View className="flex-row items-center justify-between mb-1">
+                        <View className="flex-row items-center mb-1">
                             <Text className="text-base font-bold text-foreground flex-1" numberOfLines={1}>
                                 {contact.name}
                             </Text>
+                            {contact.connectionStatus === 'pending_sent' && (
+                                <Pressable
+                                    className="ml-2 w-9 h-9 rounded-full justify-center items-center"
+                                    style={{ backgroundColor: colors.destructive }}
+                                    onPress={(e) => {
+                                        e.stopPropagation();
+                                        if (contact.connectionId) handleCancelRequest(contact.connectionId, contact.name);
+                                    }}
+                                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                                >
+                                    <Feather name="x" size={18} color="white" />
+                                </Pressable>
+                            )}
                             {contact.lastMessageTime && (
                                 <Text className="text-xs text-muted-foreground ml-2">
                                     {contact.lastMessageTime}
@@ -356,77 +470,47 @@ function MessagesScreen() {
                         <View className="flex-row items-center mb-1.5">
                             <View
                                 className="flex-row items-center px-2 py-0.5 rounded-md"
-                                style={{ backgroundColor: getRoleColor(contact.role as UserRole) + '10' }}
+                                style={{
+                                    backgroundColor: isDarkMode
+                                        ? getRoleColor(contact.role as UserRole)
+                                        : getRoleColor(contact.role as UserRole) + '10',
+                                }}
                             >
-                                <Feather name={getRoleIcon(contact.role as UserRole) as any} size={10} color={getRoleColor(contact.role as UserRole)} />
-                                <Text className="text-[10px] font-medium ml-1" style={{ color: getRoleColor(contact.role as UserRole) }}>
+                                <Feather
+                                    name={getRoleIcon(contact.role as UserRole) as any}
+                                    size={10}
+                                    color={isDarkMode ? colors.white : getRoleColor(contact.role as UserRole)}
+                                />
+                                <Text
+                                    className="text-[10px] font-medium ml-1"
+                                    style={{ color: isDarkMode ? colors.white : getRoleColor(contact.role as UserRole) }}
+                                >
                                     {contact.role}
                                 </Text>
                             </View>
-                            <Text className="text-muted-foreground text-xs ml-2" numberOfLines={1}>
-                                • {contact.organization || 'No organization'}
-                            </Text>
                         </View>
+
+                        <Text className="text-muted-foreground text-xs" numberOfLines={1}>
+                            {contact.organization || 'No organization'}
+                        </Text>
 
                         {contact.lastMessage ? (
                             <Text className={`text-sm ${contact.hasUnreadMessages ? 'text-foreground font-semibold' : 'text-muted-foreground'}`} numberOfLines={1}>
                                 {contact.lastMessage}
                             </Text>
                         ) : (
-                            <Text className="text-xs text-muted-foreground italic">
-                                {contact.connectionStatus === 'connected' ? 'Tap to message' :
-                                 contact.connectionStatus === 'available' ? 'Tap to connect' :
-                                 contact.connectionStatus === 'pending_sent' ? 'Request sent' :
-                                 'Pending approval'}
-                            </Text>
+                            <Text className="text-xs text-muted-foreground italic"></Text>
                         )}
                     </View>
 
                     {contact.hasUnreadMessages && (
-                        <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2" />
-                    )}
-
-                    {contact.connectionStatus === 'pending_received' && (
-                        <View className="flex-row ml-2">
-                            <Pressable
-                                className="w-10 h-10 rounded-full bg-green-500 justify-center items-center mr-2"
-                                onPress={() => handleAcceptConnection(contact.connectionId!, contact.name)}
-                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                                <Feather name="check" size={18} color="white" />
-                            </Pressable>
-                            <Pressable
-                                className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
-                                onPress={() => handleDeclineConnection(contact.connectionId!, contact.name)}
-                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                                <Feather name="x" size={18} color="white" />
-                            </Pressable>
-                        </View>
-                    )}
-
-                    {contact.connectionStatus === 'pending_sent' && (
-                        <View className="flex-row items-center ml-2">
-                            <View className="flex-row items-center bg-muted px-3 py-1.5 rounded-full mr-2">
-                                <Feather name="clock" size={14} color={colors.iconGrayDark} style={{ marginRight: 6 }} />
-                                <Text className="text-xs font-medium text-muted-foreground">Requested</Text>
-                            </View>
-                            <Pressable
-                                className="w-10 h-10 rounded-full bg-red-500 justify-center items-center"
-                                onPress={(e) => {
-                                    e.stopPropagation();
-                                    if (contact.connectionId) handleCancelRequest(contact.connectionId, contact.name);
-                                }}
-                                hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                            >
-                                <Feather name="x" size={18} color="white" />
-                            </Pressable>
-                        </View>
+                        <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2" />
                     )}
 
                     {contact.connectionStatus === 'available' && (
                         <Pressable
-                            className="ml-2 bg-[#002147] px-4 py-2 rounded-full flex-row items-center active:opacity-90"
+                            className="ml-2 px-4 py-2 rounded-full flex-row items-center active:opacity-90"
+                            style={{ backgroundColor: colors.primary }}
                             onPress={() => handleConnect(contact)}
                         >
                             <Feather name="user-plus" size={14} color="white" style={{ marginRight: 6 }} />
@@ -435,11 +519,34 @@ function MessagesScreen() {
                     )}
 
                     {contact.connectionStatus === 'connected' && (
-                        <View className="ml-2 bg-[#002147]/10 p-2 rounded-full">
+                        <View className="ml-2 p-2 rounded-full" style={{ backgroundColor: colors.primary + '20' }}>
                             <Feather name="message-circle" size={20} color={colors.primary} />
                         </View>
                     )}
                 </View>
+
+                {/* Pending actions in a separate row to avoid overlapping text */}
+                        {contact.connectionStatus === 'pending_received' && (
+                    <View className="flex-row justify-end items-center px-4 pb-3 pt-0">
+                        <Pressable
+                            className="w-10 h-10 rounded-full justify-center items-center mr-2"
+                            style={{ backgroundColor: colors.constructive }}
+                            onPress={() => handleAcceptConnection(contact)}
+                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        >
+                            <Feather name="check" size={18} color="white" />
+                        </Pressable>
+                        <Pressable
+                            className="w-10 h-10 rounded-full justify-center items-center"
+                            style={{ backgroundColor: colors.destructive }}
+                            onPress={() => handleDeclineConnection(contact.connectionId!, contact.name)}
+                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                        >
+                            <Feather name="x" size={18} color="white" />
+                        </Pressable>
+                    </View>
+                )}
+
             </Pressable>
         );
     }
@@ -471,7 +578,7 @@ function MessagesScreen() {
                         Create an account to connect with all users, send messages, and build your professional network.
                     </Text>
                     <Pressable
-                        className="bg-[#002147] py-3 px-4 rounded-xl items-center active:opacity-90"
+                        className="bg-primary py-3 px-4 rounded-xl items-center active:opacity-90"
                         onPress={() => router.push('/(auth)/signup')}
                     >
                         <Text className="text-white font-bold text-sm">
@@ -525,15 +632,15 @@ function MessagesScreen() {
                 >
                     <View className="flex-row bg-card rounded-xl p-1 border border-border shadow-sm">
                         <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'messages' ? 'bg-[#002147]' : ''}`}
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'messages' ? 'bg-primary' : ''}`}
                             onPress={() => setActiveTab('messages')}
                         >
-                            <Feather name="message-circle" size={18} color={activeTab === 'messages' ? '#FFFFFF' : '#6C757D'} />
+                            <Feather name="message-circle" size={18} color={activeTab === 'messages' ? colors.white : colors.iconGrayDark} />
                             <Text className={`text-xs font-semibold mt-1 ${activeTab === 'messages' ? 'text-white' : 'text-foreground'}`}>
                                 Messages
                             </Text>
                             {chats && chats.some(c => (c.unreadCount || 0) > 0) && (
-                                <View className="absolute -top-1 -right-1 bg-[#F38C1E] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                <View className="absolute -top-1 -right-1 bg-accent rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
                                     <Text className="text-white text-[10px] font-bold">
                                         {chats.filter(c => (c.unreadCount || 0) > 0).length}
                                     </Text>
@@ -541,24 +648,24 @@ function MessagesScreen() {
                             )}
                         </Pressable>
                         <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'requests' ? 'bg-[#002147]' : ''}`}
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'requests' ? 'bg-primary' : ''}`}
                             onPress={() => setActiveTab('requests')}
                         >
-                            <Feather name="user-check" size={18} color={activeTab === 'requests' ? '#FFFFFF' : '#6C757D'} />
+                            <Feather name="user-check" size={18} color={activeTab === 'requests' ? colors.white : colors.iconGrayDark} />
                             <Text className={`text-xs font-semibold mt-1 ${activeTab === 'requests' ? 'text-white' : 'text-foreground'}`}>
                                 Requests
                             </Text>
                             {(pendingReceivedContacts.length + pendingSentContacts.length) > 0 && (
-                                <View className="absolute -top-1 -right-1 bg-[#F38C1E] rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                <View className="absolute -top-1 -right-1 bg-accent rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
                                     <Text className="text-white text-[10px] font-bold">{pendingReceivedContacts.length + pendingSentContacts.length}</Text>
                                 </View>
                             )}
                         </Pressable>
                         <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'discover' ? 'bg-[#002147]' : ''}`}
+                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'discover' ? 'bg-primary' : ''}`}
                             onPress={() => setActiveTab('discover')}
                         >
-                            <Feather name="users" size={18} color={activeTab === 'discover' ? '#FFFFFF' : '#6C757D'} />
+                            <Feather name="users" size={18} color={activeTab === 'discover' ? colors.white : colors.iconGrayDark} />
                             <Text className={`text-xs font-semibold mt-1 ${activeTab === 'discover' ? 'text-white' : 'text-foreground'}`}>
                                 Discover
                             </Text>
@@ -579,13 +686,13 @@ function MessagesScreen() {
                                 <Pressable
                                     key={role}
                                     className={`px-4 py-2 rounded-full border mr-2 shadow-sm ${selectedRole === role
-                                        ? 'bg-primary border-primary'
+                                        ? 'border-primary'
                                         : 'bg-card border-border'
                                         }`}
+                                    style={selectedRole === role ? { backgroundColor: colors.primary } : {}}
                                     onPress={() => setSelectedRole(role)}
                                 >
-                                    <Text className={`text-xs font-semibold ${selectedRole === role ? 'text-primary-foreground' : 'text-foreground'
-                                        }`}>
+                                    <Text className="text-xs font-semibold" style={{ color: selectedRole === role ? colors.white : colors.foreground }}>
                                         {role}
                                     </Text>
                                 </Pressable>
@@ -599,17 +706,7 @@ function MessagesScreen() {
                     {/* Loading State */}
                     {loading && (
                         <View className="mx-5">
-                            {Array.from({ length: 3 }).map((_, index) => (
-                                <View key={`loading-${index}`} className="bg-card mb-3 rounded-2xl border border-border shadow-sm p-4">
-                                    <View className="flex-row items-center">
-                                        <View className="w-12 h-12 rounded-full bg-muted animate-pulse" />
-                                        <View className="flex-1 ml-3">
-                                            <View className="h-4 bg-muted rounded mb-2 w-3/4 animate-pulse" />
-                                            <View className="h-3 bg-muted rounded w-1/2 animate-pulse" />
-                                        </View>
-                                    </View>
-                                </View>
-                            ))}
+                            <ListSkeleton count={3} />
                         </View>
                     )}
 

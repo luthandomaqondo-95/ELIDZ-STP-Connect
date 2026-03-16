@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useAuthContext } from '@/hooks/use-auth-context';
 import { notificationService, Notification, NotificationType } from '@/services/notification.service';
 import { TabsLayoutHeader } from '@/components/Header';
+import { ListSkeleton } from '@/components/Loading';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
@@ -139,6 +140,18 @@ export default function NotificationsScreen() {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
+    const handleNotificationPress = async (notification: Notification) => {
+        await handleMarkAsRead(notification);
+
+        // Deep-link into related entities where possible
+        if (notification.related_entity_type === 'enquiry' && notification.related_entity_id) {
+            router.push({ pathname: '/enquiry-detail', params: { id: notification.related_entity_id } });
+            return;
+        }
+
+        // Fallback: no deep-link available, just keep it marked as read
+    };
+
     const renderNotification = (notification: Notification) => {
         const isUnread = !notification.read_at;
         const icon = notificationService.getNotificationIcon(notification.type);
@@ -147,8 +160,8 @@ export default function NotificationsScreen() {
         return (
             <Pressable
                 key={notification.id}
-                onPress={() => handleMarkAsRead(notification)}
-                className={`bg-card mb-3 rounded-2xl border ${isUnread ? 'border-[#F38C1E]/50 border-l-4' : 'border-border'} shadow-sm overflow-hidden active:opacity-95`}
+                onPress={() => handleNotificationPress(notification)}
+                className={`bg-card mb-3 rounded-2xl border ${isUnread ? 'border-accent/50 border-l-4' : 'border-border'} shadow-sm overflow-hidden active:opacity-95`}
             >
                 <View className="p-4">
                     <View className="flex-row items-start">
@@ -164,7 +177,7 @@ export default function NotificationsScreen() {
                                     {notification.title}
                                 </Text>
                                 {isUnread && (
-                                    <View className="w-2.5 h-2.5 rounded-full bg-[#F38C1E] ml-2 mt-1" />
+                                    <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2 mt-1" />
                                 )}
                             </View>
                             <Text className={`text-sm mb-2 ${isUnread ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -205,7 +218,7 @@ export default function NotificationsScreen() {
                 </View>
                 <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
-                        <View className="bg-[#F38C1E]/10 p-2 rounded-full mr-3">
+                        <View className="bg-accent/10 p-2 rounded-full mr-3">
                             <Feather name="lock" size={18} color={colors.accent} />
                         </View>
                         <Text className="text-foreground text-lg font-bold">
@@ -216,7 +229,7 @@ export default function NotificationsScreen() {
                         Please sign in to view your notifications.
                     </Text>
                     <Pressable
-                        className="bg-[#002147] py-3 px-4 rounded-xl items-center active:opacity-90"
+                        className="bg-primary py-3 px-4 rounded-xl items-center active:opacity-90"
                         onPress={() => router.push('/(auth)')}
                     >
                         <Text className="text-white font-bold text-sm">
@@ -278,9 +291,7 @@ export default function NotificationsScreen() {
                   }}
                 >
                     {loading ? (
-                        <View className="items-center py-12">
-                            <Text className="text-muted-foreground">Loading notifications...</Text>
-                        </View>
+                        <ListSkeleton count={4} />
                     ) : notifications.length === 0 ? (
                         <View className="items-center py-12 bg-card rounded-2xl border border-border border-dashed">
                             <Feather name="bell-off" size={48} color={colors.iconGray} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Pressable, ScrollView, Alert, Linking, Image } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
@@ -12,6 +12,51 @@ import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
+import { DEFAULT_AVATAR } from '@/constants/avatars';
+
+interface MenuItemProps {
+    icon: string;
+    title: string;
+    subtitle: string;
+    onPress: () => void;
+    isDestructive?: boolean;
+    disabled?: boolean;
+    premium?: boolean;
+    colors: any;
+}
+
+const ProfileMenuItem = React.memo(
+    ({ icon, title, subtitle, onPress, isDestructive = false, disabled = false, premium = false, colors }: MenuItemProps) => (
+        <Pressable
+            onPress={disabled ? undefined : onPress}
+            className={`flex-row items-center py-4 border-b border-border active:opacity-70 ${disabled ? 'opacity-50' : ''}`}
+        >
+            <View
+                className={`w-10 h-10 rounded-full justify-center items-center mr-4 ${
+                    isDestructive ? 'bg-destructive/10' : 'bg-accent/10'
+                }`}
+            >
+                <Feather name={icon as any} size={20} color={isDestructive ? colors.destructive : colors.accent} />
+            </View>
+            <View className="flex-1">
+                <View className="flex-row items-center">
+                    <Text className={`text-base font-semibold ${isDestructive ? 'text-destructive' : 'text-foreground'}`}>
+                        {title}
+                    </Text>
+                    {premium && (
+                        <View className="ml-2 px-2 py-0.5 bg-accent/10 rounded-md">
+                            <Text className="text-accent text-[10px] font-bold uppercase">PRO</Text>
+                        </View>
+                    )}
+                </View>
+                {subtitle && <Text className="text-muted-foreground text-xs mt-0.5">{subtitle}</Text>}
+            </View>
+            <Feather name="chevron-right" size={20} color={colors.text} />
+        </Pressable>
+    )
+);
+
+ProfileMenuItem.displayName = 'ProfileMenuItem';
 
 function ProfileScreen() {
     const { profile, isLoggedIn, isLoading, logout } = useAuthContext();
@@ -147,29 +192,28 @@ function ProfileScreen() {
         }
     };
 
-    const renderMenuItem = (icon: string, title: string, subtitle: string, onPress: () => void, isDestructive = false, disabled = false, premium = false) => (
-        <Pressable
-            onPress={disabled ? undefined : onPress}
-            className={`flex-row items-center py-4 border-b border-border active:opacity-70 ${disabled ? 'opacity-50' : ''}`}
-        >
-            <View className={`w-10 h-10 rounded-full justify-center items-center mr-4 ${isDestructive ? 'bg-destructive/10' : 'bg-accent/10'}`}>
-                <Feather name={icon as any} size={20} color={isDestructive ? colors.destructive : colors.accent} />
-            </View>
-            <View className="flex-1">
-                <View className="flex-row items-center">
-                    <Text className={`text-base font-semibold ${isDestructive ? 'text-destructive' : 'text-foreground'}`}>
-                        {title}
-                    </Text>
-                    {premium && (
-                        <View className="ml-2 px-2 py-0.5 bg-accent/10 rounded-md">
-                            <Text className="text-accent text-[10px] font-bold uppercase">PRO</Text>
-                        </View>
-                    )}
-                </View>
-                {subtitle && <Text className="text-muted-foreground text-xs mt-0.5">{subtitle}</Text>}
-            </View>
-            <Feather name="chevron-right" size={20} color={colors.text} />
-        </Pressable>
+    const renderMenuItem = useCallback(
+        (
+            icon: string,
+            title: string,
+            subtitle: string,
+            onPress: () => void,
+            isDestructive = false,
+            disabled = false,
+            premium = false
+        ) => (
+            <ProfileMenuItem
+                icon={icon}
+                title={title}
+                subtitle={subtitle}
+                onPress={onPress}
+                isDestructive={isDestructive}
+                disabled={disabled}
+                premium={premium}
+                colors={colors}
+            />
+        ),
+        [colors]
     );
 
     return (
@@ -206,14 +250,16 @@ function ProfileScreen() {
                                         resizeMode="cover"
                                     />
                                 ) : (
-                                    <Text className="text-foreground text-4xl font-bold">
-                                        {profile?.name?.charAt(0).toUpperCase() || 'G'}
-                                    </Text>
+                                    <Image 
+                                        source={DEFAULT_AVATAR} 
+                                        style={{ width: '100%', height: '100%' }}
+                                        resizeMode="cover"
+                                    />
                                 )}
                             </View>
                             {/* Premium Badge on Avatar */}
                             {profile?.isPremium && (
-                                <View className="absolute bottom-0 right-0 bg-[#FFD700] w-6 h-6 rounded-full items-center justify-center border-2 border-white">
+                                <View className="absolute bottom-0 right-0 bg-secondary w-6 h-6 rounded-full items-center justify-center border-2 border-white">
                                     <Feather name="star" size={12} color="white" />
                                 </View>
                             )}
@@ -290,38 +336,6 @@ function ProfileScreen() {
                                 </Text>
                             </View>
 
-                            <View className="flex-row items-center justify-between mb-4">
-                                <Text className="text-muted-foreground text-sm">
-                                    Business Verification
-                                </Text>
-                                <Text className="text-foreground text-sm font-semibold">
-                                    {effectiveStatus ? getVerificationStatusText(effectiveStatus) : 'Not Submitted'}
-                                </Text>
-                            </View>
-
-                            {effectiveStatus === 'rejected' && verificationStatus?.rejection_reason && (
-                                <View className="bg-destructive/10 border border-destructive/30 rounded-lg p-3 mb-3">
-                                    <Text className="text-destructive text-xs font-medium mb-1">Rejection Reason:</Text>
-                                    <Text style={{ color: colors.destructive, opacity: 0.9 }} className="text-xs">{verificationStatus.rejection_reason}</Text>
-                                </View>
-                            )}
-
-                            {effectiveStatus === 'pending' && (
-                                <View style={{ backgroundColor: `${colors.accent}20`, borderColor: `${colors.accent}50`, borderWidth: 1 }} className="rounded-lg p-3 mb-3">
-                                    <Text style={{ color: colors.text }} className="text-xs">
-                                        Your documents are under review. This process usually takes 24-48 hours.
-                                    </Text>
-                                </View>
-                            )}
-
-                            {effectiveStatus === 'verified' && (
-                                <View className="bg-constructive/10 border border-constructive/30 rounded-lg p-3 mb-3">
-                                    <Text style={{ color: colors.constructive }} className="text-xs">
-                                        Your business has been verified! You now have access to exclusive SMME benefits.
-                                    </Text>
-                                </View>
-                            )}
-
                             <Pressable
                                 onPress={() => router.push('/smme-verification')}
                                 className="bg-accent py-3 rounded-xl items-center active:opacity-90"
@@ -393,6 +407,7 @@ function ProfileScreen() {
                         <View className="bg-card rounded-2xl px-4 shadow-sm">
                             {renderMenuItem('user', 'Personal Information', 'Manage your profile details', () => router.push('/edit-profile'), false, !isLoggedIn)}
                             {renderMenuItem('bell', 'Notifications', 'View admin communications', () => router.push('/(tabs)/notifications'), false, !isLoggedIn)}
+                            {renderMenuItem('mail', 'My Enquiries', 'View and track your enquiries', () => router.push('/my-enquiries'), false, !isLoggedIn)}
                             {renderMenuItem('settings', 'Settings', 'Notifications, privacy & more', () => router.push('/settings'), false, !isLoggedIn)}
                             {/* Premium Features (disabled) */}
                             {/* {renderMenuItem('star', 'Premium Features', 'Manage subscription', () => router.push('/(modals)/premium-upgrade'), false, !isLoggedIn, true)} */}

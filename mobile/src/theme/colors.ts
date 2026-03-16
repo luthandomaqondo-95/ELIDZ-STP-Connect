@@ -132,6 +132,7 @@ const SYSTEM_COLORS = {
         card: '#FFFFFF',
         input: '#FFFFFF',
         shadow: 'rgba(0, 0, 0, 0.1)',
+        muted: ELIDZ_BRAND_COLORS.gray100,
 
         // Gradient colors
         gradientStart: ELIDZ_BRAND_COLORS.gradientStart,
@@ -242,6 +243,7 @@ const SYSTEM_COLORS = {
         card: '#2A2A2A',
         input: '#333333',
         shadow: 'rgba(0, 0, 0, 0.3)',
+        muted: '#1F2937',
 
         // Gradient colors (darker blue for auth)
         gradientStart: '#050d18',

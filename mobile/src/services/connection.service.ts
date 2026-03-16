@@ -114,8 +114,8 @@ class ConnectionService {
 	async getAvailableUsers(userId: string, limit = 20, search?: string): Promise<Profile[]> {
 		console.log('ConnectionService.getAvailableUsers called for userId:', userId, 'search:', search);
 
-		// Run both exclusion queries in parallel
-		const [connectionsResult, pendingResult] = await Promise.all([
+		// Run exclusion queries in parallel (accepted, pending, blocked)
+		const [connectionsResult, pendingResult, blockedResult] = await Promise.all([
 			supabase
 				.from('connections')
 				.select('requester_id:user_id, addressee_id:connected_user_id')
@@ -126,10 +126,16 @@ class ConnectionService {
 				.select('requester_id:user_id, addressee_id:connected_user_id')
 				.or(`user_id.eq.${userId},connected_user_id.eq.${userId}`)
 				.eq('status', 'pending'),
+			supabase
+				.from('connections')
+				.select('requester_id:user_id, addressee_id:connected_user_id')
+				.or(`user_id.eq.${userId},connected_user_id.eq.${userId}`)
+				.eq('status', 'blocked'),
 		]);
 
 		const { data: connections, error: connectionsError } = connectionsResult;
 		const { data: pendingConnections, error: pendingError } = pendingResult;
+		const { data: blockedConnections, error: blockedError } = blockedResult;
 
 		if (connectionsError) {
 			console.error('ConnectionService.getAvailableUsers connections error:', connectionsError);
@@ -139,26 +145,25 @@ class ConnectionService {
 			console.error('ConnectionService.getAvailableUsers pending error:', pendingError);
 		}
 
+		if (blockedError) {
+			console.error('ConnectionService.getAvailableUsers blocked error:', blockedError);
+		}
+
 		const excludedUserIds = new Set<string>();
 		excludedUserIds.add(userId); // Exclude self
 
-		// Exclude connected users
-		(connections || []).forEach((conn: any) => {
+		const addOtherUserId = (conn: any) => {
 			if (conn.requester_id === userId) {
 				excludedUserIds.add(conn.addressee_id);
 			} else {
 				excludedUserIds.add(conn.requester_id);
 			}
-		});
+		};
 
-		// Exclude users with pending requests (can't send another request)
-		(pendingConnections || []).forEach((conn: any) => {
-			if (conn.requester_id === userId) {
-				excludedUserIds.add(conn.addressee_id);
-			} else {
-				excludedUserIds.add(conn.requester_id);
-			}
-		});
+		// Exclude connected, pending, and blocked users
+		(connections || []).forEach(addOtherUserId);
+		(pendingConnections || []).forEach(addOtherUserId);
+		(blockedConnections || []).forEach(addOtherUserId);
 
 		let query = supabase
 			.from('profiles')
@@ -304,6 +309,56 @@ class ConnectionService {
 		}
 
 		console.log('ConnectionService.cancelConnectionRequest succeeded');
+	}
+
+	/** Cancel a pending connection request between two users (works for both sent and received requests) */
+	async cancelConnectionRequestByUsers(userId1: string, userId2: string): Promise<boolean> {
+		const { data, error } = await supabase
+			.from('connections')
+			.delete()
+			.eq('status', 'pending')
+			.or(`and(user_id.eq.${userId1},connected_user_id.eq.${userId2}),and(user_id.eq.${userId2},connected_user_id.eq.${userId1})`)
+			.select('id');
+
+		if (error) {
+			console.error('ConnectionService.cancelConnectionRequestByUsers error:', error);
+			throw error;
+		}
+		return (data?.length ?? 0) > 0;
+	}
+
+	/** Block a user - updates existing connection to blocked, or creates a blocked connection if none exists */
+	async blockUser(blockerId: string, blockedUserId: string): Promise<void> {
+		const { data: existing } = await supabase
+			.from('connections')
+			.select('id')
+			.or(`and(user_id.eq.${blockerId},connected_user_id.eq.${blockedUserId}),and(user_id.eq.${blockedUserId},connected_user_id.eq.${blockerId})`)
+			.maybeSingle();
+
+		if (existing) {
+			const { error } = await supabase
+				.from('connections')
+				.update({ status: 'blocked', updated_at: new Date().toISOString() })
+				.eq('id', existing.id);
+
+			if (error) {
+				console.error('ConnectionService.blockUser update error:', error);
+				throw error;
+			}
+		} else {
+			const { error } = await supabase
+				.from('connections')
+				.insert({
+					user_id: blockerId,
+					connected_user_id: blockedUserId,
+					status: 'blocked',
+				});
+
+			if (error) {
+				console.error('ConnectionService.blockUser insert error:', error);
+				throw error;
+			}
+		}
 	}
 
 	async acceptConnection(connectionId: string): Promise<Connection> {

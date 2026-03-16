@@ -9,7 +9,7 @@ export interface ErrorAlertProps {
   title: string;
   message: string;
   onDismiss: () => void;
-  severity?: 'error' | 'warning' | 'info';
+  severity?: 'error' | 'warning' | 'info' | 'success';
   autoDismissMs?: number;
 }
 
@@ -69,6 +69,13 @@ export function ErrorAlert({
 
   const getSeverityStyles = () => {
     switch (severity) {
+      case 'success':
+        return {
+          backgroundColor: '#D1FAE5',
+          borderColor: '#6EE7B7',
+          iconColor: '#059669',
+          textColor: '#065F46',
+        };
       case 'warning':
         return {
           backgroundColor: '#FEF3C7',
@@ -98,6 +105,8 @@ export function ErrorAlert({
 
   const getIconName = () => {
     switch (severity) {
+      case 'success':
+        return 'check-circle';
       case 'warning':
         return 'alert-circle';
       case 'info':

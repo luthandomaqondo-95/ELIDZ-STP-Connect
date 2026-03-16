@@ -30,6 +30,7 @@ export default function LoginScreen() {
     const [hasCheckedVerification, setHasCheckedVerification] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [showVerificationAlert, setShowVerificationAlert] = useState(false);
+    const [isResending, setIsResending] = useState(false);
 
     // Show success message when redirected from signup (email confirmation required)
     const hasShownSignupSuccess = useRef(false);
@@ -83,6 +84,10 @@ export default function LoginScreen() {
             setError('Please enter both email and password', 'Missing fields');
             return;
         }
+        if (!acceptedTerms) {
+            setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
+            return;
+        }
         if (cooldownSeconds > 0) {
             setError(`Too many attempts. Try again in ${cooldownSeconds}s.`, 'Rate limited');
             return;
@@ -93,15 +98,20 @@ export default function LoginScreen() {
             return;
         }
 
+        const normalizedEmail = email.trim().toLowerCase();
+        console.log('LoginScreen: starting login', { email: normalizedEmail });
+
         await execute(
-            () => login(email.trim().toLowerCase(), password),
+            () => login(normalizedEmail, password),
             {
                 onSuccess: () => {
+                    console.log('LoginScreen: login success, navigating to /(tabs)');
                     clearError();
                     router.replace('/(tabs)');
                 },
                 onError: (error: any) => {
                     const message = error?.message ?? '';
+                    console.log('LoginScreen: login failed', { message, error });
                     if (/too many|rate limit|over_email_send_rate_limit|over_request_rate_limit|429/i.test(message)) {
                         setCooldownSeconds(60);
                     }
@@ -132,7 +142,7 @@ export default function LoginScreen() {
                         className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
                         onPress={() => router.back()}
                     >
-                        <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+                        <Ionicons name="chevron-back" size={24} color={colors.white} />
                         <Text className="text-white text-sm ml-1">Back</Text>
                     </TouchableOpacity>
                     <View className="items-center mt-2">
@@ -244,7 +254,8 @@ export default function LoginScreen() {
                 message={error ?? ''}
                 onDismiss={clearError}
                 severity={
-                    error?.includes('Rate limited') ? 'warning'
+                    error?.includes('Rate limited') || error?.includes('Too many') ? 'warning'
+                        : error?.includes('Confirmation email sent') ? 'success'
                         : error?.includes('Account created!') || error?.includes('confirm your account') ? 'info'
                         : error?.includes('Email') ? 'info'
                         : 'error'
@@ -257,18 +268,37 @@ export default function LoginScreen() {
                 <View className="absolute top-28 left-4 right-4 z-40">
                     <Pressable
                         onPress={async () => {
+                            if (cooldownSeconds > 0 || isResending) return;
+                            setIsResending(true);
                             try {
-                                await resendSignupConfirmation(email);
+                                await resendSignupConfirmation(email.trim().toLowerCase());
                                 clearError();
-                                setError('Confirmation email sent. Check your inbox (and spam folder).', 'Email Sent');
+                                setCooldownSeconds(60);
+                                setError(
+                                    'Confirmation email sent. Check your inbox and spam folder.',
+                                    'Email Sent'
+                                );
                             } catch (e: any) {
-                                setError(e?.message ?? 'Failed to resend', 'Error');
+                                const msg = e?.message ?? 'Failed to resend';
+                                if (/rate limit|over_email_send_rate_limit/i.test(msg)) {
+                                    setCooldownSeconds(60);
+                                    setError('Too many requests. Please wait a minute and try again.', 'Rate Limited');
+                                } else {
+                                    setError(msg, 'Error');
+                                }
+                            } finally {
+                                setIsResending(false);
                             }
                         }}
+                        disabled={cooldownSeconds > 0 || isResending}
                         className="py-2 px-4 bg-primary/10 rounded-lg border border-primary/30"
                     >
                         <Text className="text-primary text-sm font-medium text-center">
-                            Resend confirmation email
+                            {isResending
+                                ? 'Sending…'
+                                : cooldownSeconds > 0
+                                    ? `Resend in ${cooldownSeconds}s`
+                                    : 'Resend confirmation email'}
                         </Text>
                     </Pressable>
                 </View>

@@ -80,13 +80,6 @@ export default function TabLayout() {
                     href: null,
                 }}
             />
-            <Tabs.Screen
-                name="vr-tours"
-                options={{
-                    title: 'Virtual Tours',
-                    href: null,
-                }}
-            />
         </Tabs>
     );
 }

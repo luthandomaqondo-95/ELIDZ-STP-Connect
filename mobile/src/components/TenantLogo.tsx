@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Image, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { Text } from '@/components/ui/text';
+import { DEFAULT_AVATAR } from '@/constants/avatars';
+import { useAvatarUri } from '@/hooks/use-avatar-uri';
 
 // Map tenant names to local logo files
 // Using exact name matching first, then fuzzy matching as fallback
@@ -168,8 +170,9 @@ interface TenantLogoProps {
 export function TenantLogo({ logoUrl, name, size = 20, className = "w-full h-full" }: TenantLogoProps) {
     const [imageError, setImageError] = useState(false);
     const localLogo = getTenantLogo(name);
+    const { uri } = useAvatarUri(logoUrl);
 
-    if (localLogo) {
+    if (localLogo && !imageError) {
         return (
             <Image
                 source={localLogo}
@@ -180,15 +183,10 @@ export function TenantLogo({ logoUrl, name, size = 20, className = "w-full h-ful
         );
     }
 
-    const isValidUrl = logoUrl &&
-                       logoUrl.trim() !== '' &&
-                       !logoUrl.includes('example.com') &&
-                       !imageError;
-
-    if (isValidUrl) {
+    if (uri && !imageError) {
         return (
             <Image
-                source={{ uri: logoUrl! }}
+                source={{ uri }}
                 className={className}
                 resizeMode="contain"
                 onError={() => setImageError(true)}
@@ -196,30 +194,13 @@ export function TenantLogo({ logoUrl, name, size = 20, className = "w-full h-ful
         );
     }
 
-    // Placeholder with initials
-    const getInitials = (name: string): string => {
-        const words = name.trim().split(/\s+/);
-        if (words.length >= 2) {
-            return (words[0][0] + words[words.length - 1][0]).toUpperCase();
-        }
-        return name.substring(0, 2).toUpperCase();
-    };
-
-    const initials = getInitials(name);
-    const placeholderSize = size * 2.5; // Make placeholder larger than icon
-
+    // Default placeholder - use blank-profile when no logo available or loading fails
     return (
-        <View 
-            className={`${className} bg-[#3B6E8F]/10 border border-[#3B6E8F]/20 rounded-full justify-center items-center`}
-            style={{ minWidth: placeholderSize, minHeight: placeholderSize }}
-        >
-            <Text 
-                className="text-[#3B6E8F] font-bold"
-                style={{ fontSize: size * 0.6 }}
-            >
-                {initials}
-            </Text>
-        </View>
+        <Image
+            source={DEFAULT_AVATAR}
+            className={className}
+            resizeMode="cover"
+        />
     );
 }
 

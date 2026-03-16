@@ -9,9 +9,9 @@ class ProfileService {
    */
   async uploadProfilePicture(localUri: string, userId: string): Promise<string> {
     try {
-      // Fetch the file data from the local URI (Expo / React Native)
+      // Fetch the file data from the local URI as ArrayBuffer (React Native / Expo-safe)
       const response = await fetch(localUri);
-      const blob = await response.blob();
+      const arrayBuffer = await response.arrayBuffer();
 
       // Try to infer a file extension from the URI; default to jpg
       const uriParts = localUri.split('?')[0].split('.');
@@ -21,8 +21,8 @@ class ProfileService {
 
       const { error } = await supabase.storage
         .from('profile-avatars')
-        .upload(filePath, blob, {
-          contentType: blob.type || 'image/jpeg',
+        .upload(filePath, arrayBuffer, {
+          contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
           upsert: true,
         });
 

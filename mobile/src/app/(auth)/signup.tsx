@@ -240,7 +240,7 @@ export default function SignupScreen() {
 						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
 						onPress={() => router.back()}
 					>
-						<Ionicons name="chevron-back" size={24} color="#FFFFFF" />
+						<Ionicons name="chevron-back" size={24} color={colors.white} />
 						<Text className="text-white text-sm ml-1">Back</Text>
 					</TouchableOpacity>
 					<View className="items-center mt-2">
@@ -411,7 +411,7 @@ export default function SignupScreen() {
 					{/* Postal Code: Picker from API (no manual entry) or manual only for "Other" */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
 						<View className="mr-3">
-							<Ionicons name="location-outline" size={20} color="#F38C1E" />
+							<Ionicons name="location-outline" size={20} color={colors.accent} />
 						</View>
 						{!city ? (
 							<View className="flex-1 flex-row items-center min-h-0">

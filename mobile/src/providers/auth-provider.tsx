@@ -4,6 +4,15 @@ import type { Session } from '@supabase/supabase-js'
 import { PropsWithChildren, useEffect, useState } from 'react'
 import { Profile } from '@/types'
 import * as Sentry from '@sentry/react-native';
+import * as ExpoLinking from 'expo-linking';
+import Constants from 'expo-constants';
+
+/** Redirect URL for email confirmation. Route groups like (auth) are omitted from paths. */
+function getEmailConfirmationRedirectUrl(): string {
+	return Constants.appOwnership === 'expo'
+		? ExpoLinking.createURL('email-confirmed')
+		: 'elidzstp://email-confirmed';
+}
 
 export default function AuthProvider({ children }: PropsWithChildren) {
 	const [session, setSession] = useState<Session | undefined | null>()
@@ -42,7 +51,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		// Normalize email to lowercase to match signup behavior
 		const normalizedEmail = email.trim().toLowerCase();
 		
-		console.log('Attempting login with email:', normalizedEmail);
+		console.log('AuthProvider.login: Attempting login with email:', normalizedEmail);
 		
 		const { data, error } = await supabase.auth.signInWithPassword({
 			email: normalizedEmail,
@@ -50,7 +59,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		});
 
 		if (error) {
-			if (__DEV__) console.warn('Login error:', error?.message ?? error);
+			console.warn('AuthProvider.login: Login error:', error?.message ?? error);
 			const msg = typeof error.message === 'string' ? error.message : '';
 			const code = typeof (error as { code?: string }).code === 'string' ? (error as { code?: string }).code : '';
 			// Email not confirmed (AuthApiError / email_not_confirmed)
@@ -64,7 +73,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			throw new Error(msg || 'Something went wrong. Please try again.');
 		}
 
-		console.log('Login successful, user:', data?.user?.email);
+		console.log('AuthProvider.login: Login successful, user:', data?.user?.email);
 		
 		if (data?.user) {
 			await loadProfile(data.user.id);
@@ -80,7 +89,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			email: normalizedEmail,
 			password,
 			options: {
-				emailRedirectTo: 'elidzstp://(auth)/email-confirmed',
+				emailRedirectTo: getEmailConfirmationRedirectUrl(),
 				data: {
 					name: trimmedName,
 					role,
@@ -190,7 +199,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			type: 'signup',
 			email: normalizedEmail,
 			options: {
-				emailRedirectTo: 'elidzstp://(auth)/email-confirmed',
+				emailRedirectTo: getEmailConfirmationRedirectUrl(),
 			},
 		});
 

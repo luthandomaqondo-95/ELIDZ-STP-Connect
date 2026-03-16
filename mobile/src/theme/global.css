@@ -49,6 +49,13 @@
         --pending: 255 193 7;
         --unread: 220 53 69;
 
+        /* 360 Viewer (light/dark) */
+        --viewer-cyan: 6 182 212;
+        --viewer-warning: 255 193 7;
+        --viewer-success: 40 167 69;
+        --viewer-muted: 148 163 184;
+        --viewer-bg: 10 14 26;
+
         /* Android light overrides */
         --android-background: 255 255 255;
         --android-foreground: 33 37 41;
@@ -112,6 +119,13 @@
         --android-border: 40 65 95;
         --android-input: 22 42 70;
         --android-ring: 30 58 95;
+
+        /* 360 Viewer dark mode (same as light - immersive dark theme) */
+        --viewer-cyan: 6 182 212;
+        --viewer-warning: 255 193 7;
+        --viewer-success: 40 167 69;
+        --viewer-muted: 148 163 184;
+        --viewer-bg: 10 14 26;
     }
 
     /* System preference fallback (e.g. web) */
@@ -156,6 +170,12 @@
             --android-border: 40 65 95;
             --android-input: 22 42 70;
             --android-ring: 30 58 95;
+
+            --viewer-cyan: 6 182 212;
+            --viewer-warning: 255 193 7;
+            --viewer-success: 40 167 69;
+            --viewer-muted: 148 163 184;
+            --viewer-bg: 10 14 26;
         }
     }
 }

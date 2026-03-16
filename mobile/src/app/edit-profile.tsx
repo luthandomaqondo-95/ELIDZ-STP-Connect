@@ -13,6 +13,7 @@ import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
+import { DEFAULT_AVATAR } from '@/constants/avatars';
 
 function EditProfileScreen() {
     const { profile: user, updateProfile } = useAuthContext();
@@ -165,9 +166,12 @@ function EditProfileScreen() {
                                             resizeMode="cover"
                                         />
                                     ) : (
-                                        <Text className="text-[#002147] text-4xl font-bold">
-                                            {user?.name?.charAt(0).toUpperCase() || 'G'}
-                                        </Text>
+                                        <Image 
+                                            source={DEFAULT_AVATAR} 
+                                            className="w-full h-full"
+                                            style={{ width: '100%', height: '100%' }}
+                                            resizeMode="cover"
+                                        />
                                     )}
                                 </View>
                             </View>

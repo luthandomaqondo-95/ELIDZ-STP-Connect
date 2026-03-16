@@ -23,6 +23,7 @@ export default function ProtectedAppRoutes() {
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 
+            <Stack.Screen name="change-password" options={{ title: 'Change Password', headerShown: false }} />
 
             <Stack.Protected guard={!isLoggedIn} >
                 <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -40,8 +41,8 @@ export default function ProtectedAppRoutes() {
             <Stack.Screen name="tenant-detail" options={{ title: 'Tenant Details', headerShown: false }} />
             <Stack.Screen name="news-detail" options={{ title: 'News Article', headerShown: false }} />
             <Stack.Screen name="event-detail" options={{ title: 'Event Details', headerShown: false }} />
-            <Stack.Screen name="vr-tours" options={{ title: 'VR Tours', headerShown: false }} />
             <Stack.Screen name="vr-tour" options={{ title: 'VR Tour', headerShown: false }} />
+            <Stack.Screen name="viewer" options={{ title: '360° Viewer', headerShown: false }} />
             <Stack.Screen name="chat" options={{ title: 'Chat', headerShown: false }} />
             <Stack.Screen name="message" options={{ title: 'Messages', headerShown: false }} />
             <Stack.Screen name="opportunities-chat" options={{ title: 'Opportunities Chat', headerShown: false }} />
