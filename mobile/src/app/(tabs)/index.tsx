@@ -297,8 +297,13 @@ export default function DashboardScreen() {
                             className={`flex-row items-center p-4 mb-3 rounded-2xl bg-card active:opacity-95 border border-border/40 shadow-sm ${index === 2 ? 'mb-0' : ''}`}
                             onPress={() => router.push({ pathname: '/opportunity-detail', params: { id: opp.id } })}
                         >
-                            <View className={`w-10 h-10 rounded-full justify-center items-center mr-3 border border-border/40 ${colorScheme === 'dark' ? 'bg-secondary/10' : 'bg-primary/10'}`}>
-                                <Feather name="briefcase" size={20} color={colorScheme === 'dark' ? colors.secondary : colors.primary} />
+                            <View className="w-10 h-10 rounded-xl mr-3 overflow-hidden border border-border/40 bg-card">
+                                <TenantLogo
+                                    logoUrl={opp.tenant?.logo_url ?? undefined}
+                                    name={opp.tenant?.name ?? opp.org ?? 'ELIDZ-STP'}
+                                    size={20}
+                                    className="w-10 h-10"
+                                />
                             </View>
                             <View className="flex-1">
                                 <Text className="text-sm font-bold text-foreground mb-0.5" numberOfLines={1}>{opp.title}</Text>

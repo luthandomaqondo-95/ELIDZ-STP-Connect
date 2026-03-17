@@ -15,7 +15,6 @@ import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { validateEmail } from '@/utils/validation';
 import { authBack } from '@/utils/navigation';
-import { ErrorAlert } from '@/components/Error';
 
 const { height } = Dimensions.get('window');
 
@@ -114,19 +113,26 @@ export default function ForgotPasswordScreen() {
                     {!isEmailSent ? (
                         <>
                             {/* Email Input */}
-                            <View className="flex-row items-center bg-input rounded-full mb-6 px-4 h-14 border border-border">
-                                <Ionicons name="mail-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
-                                <TextInput
-                                    className="flex-1 text-base text-foreground h-full"
-                                    value={email}
-                                    onChangeText={setEmail}
-                                    placeholder="Your email address"
-                                    placeholderTextColor={colors.placeholder}
-                                    keyboardType="email-address"
-                                    autoCapitalize="none"
-                                    autoComplete="email"
-                                    editable={!isLoading}
-                                />
+                            <View className="mb-6">
+                                <View className="flex-row items-center bg-input rounded-full px-4 h-14 border border-border">
+                                    <Ionicons name="mail-outline" size={20} color={colors.accent} style={{ marginRight: 12 }} />
+                                    <TextInput
+                                        className="flex-1 text-base text-foreground h-full"
+                                        value={email}
+                                        onChangeText={(t) => { setEmail(t); setError(null); }}
+                                        placeholder="Your email address"
+                                        placeholderTextColor={colors.placeholder}
+                                        keyboardType="email-address"
+                                        autoCapitalize="none"
+                                        autoComplete="email"
+                                        editable={!isLoading}
+                                    />
+                                </View>
+                                {error && (
+                                    <View className="mt-2 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
+                                        <Text className="text-destructive text-sm">{error}</Text>
+                                    </View>
+                                )}
                             </View>
 
                             {/* Reset Button */}
@@ -185,14 +191,7 @@ export default function ForgotPasswordScreen() {
 				</ScreenKeyboardAwareScrollView>
 			</SafeAreaView>
 
-			<ErrorAlert
-				visible={!!error}
-				title={errorTitle}
-				message={error ?? ''}
-				onDismiss={() => setError(null)}
-				severity={errorTitle === 'Rate Limited' ? 'warning' : 'error'}
-				autoDismissMs={6000}
-			/>
+			{/* Errors shown inline below email field */}
 		</View>
     );
 }

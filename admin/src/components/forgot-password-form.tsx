@@ -67,11 +67,6 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="grid gap-4">
-                            {error && (
-                                <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-600 dark:text-red-400 border border-red-500/20">
-                                    {error}
-                                </div>
-                            )}
                             <div className="grid gap-2">
                                 <Label htmlFor="email" className="text-zinc-300">Email</Label>
                                 <Input
@@ -80,10 +75,15 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                                     placeholder="m@example.com"
                                     required
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => { setEmail(e.target.value); setError(null); }}
                                     disabled={isLoading}
                                     className="bg-zinc-950/50 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500/50 placeholder:text-zinc-600 focus-visible:border-indigo-500/50 rounded-3xl h-12"
                                 />
+                                {error && (
+                                    <div className="mt-2 rounded-2xl bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-600 dark:text-red-400 border border-red-500/20">
+                                        {error}
+                                    </div>
+                                )}
                             </div>
 
                             <Button type="submit" disabled={isLoading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white border-0 rounded-3xl h-12 mt-2">

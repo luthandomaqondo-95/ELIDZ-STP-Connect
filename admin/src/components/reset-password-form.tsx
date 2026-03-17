@@ -113,11 +113,6 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
             </div>
 
             <form onSubmit={handleSubmit} className="grid gap-6">
-                {error && (
-                    <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-600 dark:text-red-400 border border-red-500/20">
-                        {error}
-                    </div>
-                )}
                 <div className="grid gap-2">
                     <Label htmlFor="password">New Password</Label>
                     <Input
@@ -126,7 +121,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
                         required
                         minLength={6}
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => { setPassword(e.target.value); setError(null); }}
                         disabled={isLoading}
                         className="bg-zinc-950/50 border-zinc-800 text-zinc-100 rounded-3xl h-12"
                     />
@@ -140,10 +135,15 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
                         required
                         minLength={6}
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }}
                         disabled={isLoading}
                         className="bg-zinc-950/50 border-zinc-800 text-zinc-100 rounded-3xl h-12"
                     />
+                    {error && (
+                        <div className="mt-2 rounded-2xl bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-600 dark:text-red-400 border border-red-500/20">
+                            {error}
+                        </div>
+                    )}
                 </div>
 
                 <Button type="submit" disabled={isLoading} className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-3xl h-12">

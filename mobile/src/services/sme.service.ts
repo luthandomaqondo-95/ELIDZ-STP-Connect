@@ -3,7 +3,7 @@ import { Profile } from '@/types';
 
 export interface SMMEServiceProduct {
 	id: string;
-	sme_id: string; // Database column name - keep as sme_id for backward compatibility
+	smme_id: string; // Database column name - keep as smme_id for backward compatibility
 	type: 'Service' | 'Product';
 	name: string;
 	description: string;
@@ -28,12 +28,12 @@ class SMMEService {
 		console.log('SMMEService.getServicesProducts called with smmmeId:', smmmeId);
 
 		let query = supabase
-			.from('sme_services_products')
+			.from('smme_services_products')
 			.select('*')
 			.eq('status', 'active');
 
 		if (smmmeId) {
-			query = query.eq('sme_id', smmmeId); // Database column is still sme_id
+			query = query.eq('smme_id', smmmeId); // Database column is still smme_id
 		}
 
 		const { data, error } = await query.order('created_at', { ascending: false });
@@ -71,9 +71,9 @@ class SMMEService {
 		console.log('SMMEService.createServiceProduct called for smmmeId:', smmmeId, 'with data:', data);
 
 		const { data: result, error } = await supabase
-			.from('sme_services_products')
+			.from('smme_services_products')
 			.insert({
-				sme_id: smmmeId, // Database column is still sme_id
+				smme_id: smmmeId, // Database column is still smme_id
 				...data,
 				status: 'active',
 			})
@@ -116,9 +116,9 @@ class SMMEService {
 
 		const smmmeIds = profiles.map(p => p.id);
 		const { data: servicesProducts, error: spError } = await supabase
-			.from('sme_services_products')
+			.from('smme_services_products')
 			.select('*')
-			.in('sme_id', smmmeIds) // Database column is still sme_id
+			.in('smme_id', smmmeIds) // Database column is still smme_id
 			.eq('status', 'active');
 
 		if (spError) {
@@ -129,10 +129,10 @@ class SMMEService {
 		const smmmeMap = new Map<string, { services: SMMEServiceProduct[]; products: SMMEServiceProduct[] }>();
 
 		(servicesProducts || []).forEach((item: SMMEServiceProduct) => {
-			if (!smmmeMap.has(item.sme_id)) {
-				smmmeMap.set(item.sme_id, { services: [], products: [] });
+			if (!smmmeMap.has(item.smme_id)) {
+				smmmeMap.set(item.smme_id, { services: [], products: [] });
 			}
-			const smmmeData = smmmeMap.get(item.sme_id)!;
+			const smmmeData = smmmeMap.get(item.smme_id)!;
 			if (item.type === 'Service') {
 				smmmeData.services.push(item);
 			} else {

@@ -50,6 +50,7 @@ export default function ChangePasswordScreen() {
     const colors = COLORS[colorScheme];
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isSettingSession, setIsSettingSession] = useState(true);
     const [canReset, setCanReset] = useState(false);
@@ -94,22 +95,23 @@ export default function ChangePasswordScreen() {
     }, [trySetSessionFromUrl]);
 
     const handleChangePassword = async () => {
+        setError(null);
         const pwdCheck = validatePassword(newPassword, { minLength: MIN_PASSWORD_LENGTH });
         if (!pwdCheck.valid) {
-            Alert.alert('Invalid Password', pwdCheck.message ?? `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+            setError(pwdCheck.message ?? `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
             return;
         }
         const confirmCheck = validateConfirmPassword(newPassword.trim(), confirmPassword.trim());
         if (!confirmCheck.valid) {
-            Alert.alert('Error', confirmCheck.message ?? 'Passwords do not match');
+            setError(confirmCheck.message ?? 'Passwords do not match');
             return;
         }
         const trimmed = newPassword.trim();
 
         setIsLoading(true);
         try {
-            const { error } = await supabase.auth.updateUser({ password: trimmed });
-            if (error) throw error;
+            const { error: updateError } = await supabase.auth.updateUser({ password: trimmed });
+            if (updateError) throw updateError;
             await supabase.auth.signOut();
             Alert.alert(
                 'Password Changed',
@@ -117,7 +119,7 @@ export default function ChangePasswordScreen() {
                 [{ text: 'OK', onPress: () => router.replace('/(auth)') }]
             );
         } catch (err: any) {
-            Alert.alert('Error', err?.message ?? 'Failed to change password. Please try again.');
+            setError(err?.message ?? 'Failed to change password. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -179,26 +181,35 @@ export default function ChangePasswordScreen() {
 
                 <ScreenKeyboardAwareScrollView contentContainerClassName="flex-grow rounded-3xl" contentContainerStyle={{ flexGrow: 1 }} style={{ flex: 1, zIndex: 2 }}>
                     <View className="flex-1 px-6 pb-10 pt-6 rounded-3xl mt-4" style={{ backgroundColor: colors.background }}>
-                    <PasswordField
-                        value={newPassword}
-                        onChangeText={setNewPassword}
-                        placeholder={`New password (min ${MIN_PASSWORD_LENGTH} characters)`}
-                        accentColor={colors.accent}
-                        placeholderColor={colors.placeholder}
-                        editable={!isLoading}
-                        autoComplete="password-new"
-                        containerClassName="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border"
-                    />
-                    <PasswordField
-                        value={confirmPassword}
-                        onChangeText={setConfirmPassword}
-                        placeholder="Confirm new password"
-                        accentColor={colors.accent}
-                        placeholderColor={colors.placeholder}
-                        editable={!isLoading}
-                        autoComplete="password-new"
-                        containerClassName="flex-row items-center bg-input rounded-full mb-6 px-4 h-14 border border-border"
-                    />
+                    <View className="mb-4">
+                        <PasswordField
+                            value={newPassword}
+                            onChangeText={(t) => { setNewPassword(t); setError(null); }}
+                            placeholder={`New password (min ${MIN_PASSWORD_LENGTH} characters)`}
+                            accentColor={colors.accent}
+                            placeholderColor={colors.placeholder}
+                            editable={!isLoading}
+                            autoComplete="password-new"
+                            containerClassName="flex-row items-center bg-input rounded-full px-4 h-14 border border-border"
+                        />
+                    </View>
+                    <View className="mb-6">
+                        <PasswordField
+                            value={confirmPassword}
+                            onChangeText={(t) => { setConfirmPassword(t); setError(null); }}
+                            placeholder="Confirm new password"
+                            accentColor={colors.accent}
+                            placeholderColor={colors.placeholder}
+                            editable={!isLoading}
+                            autoComplete="password-new"
+                            containerClassName="flex-row items-center bg-input rounded-full px-4 h-14 border border-border"
+                        />
+                        {error && (
+                            <View className="mt-2 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
+                                <Text className="text-destructive text-sm">{error}</Text>
+                            </View>
+                        )}
+                    </View>
 
                     <Button
                         className="h-14 rounded-full bg-accent justify-center items-center mb-4"
