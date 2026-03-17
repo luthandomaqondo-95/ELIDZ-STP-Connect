@@ -1,13 +1,9 @@
 /**
  * ViroReact 360° video viewer.
  *
- * Gyroscope is AUTOMATIC — ViroVRSceneNavigator uses the device's native
- * rotation-vector sensor. No expo-sensors, no DeviceOrientationEvent, no
- * manual quaternion math required.
- *
- * vrModeEnabled={false} = "magic window" mode: single-screen, phone acts
- * as a window into the 360° world. The scene rotates as you physically
- * move the device.
+ * Gyroscope/head tracking requires vrModeEnabled={true}. When false (mono mode),
+ * the gyroscope is disabled and only touch controls apply. With vrModeEnabled=true,
+ * the device's rotation-vector sensor drives the view as you physically move it.
  */
 import React, { useEffect, useRef } from 'react';
 import { NativeSyntheticEvent, StyleSheet } from 'react-native';
@@ -130,7 +126,7 @@ export default function ViroViewer360({
 }: ViroViewer360Props) {
   return (
     <ViroVRSceneNavigator
-      vrModeEnabled={false}
+      vrModeEnabled={true}
       initialScene={{ scene: Scene360 as () => React.JSX.Element }}
       viroAppProps={{
         videoUrl: scene.videoUrl,
