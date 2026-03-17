@@ -36,6 +36,16 @@ Email confirmation and password reset require redirect URLs to be whitelisted in
    - `elidzstp://oauth-callback` (Google/Apple sign-in)
 3. For Expo Go development, also add the URL shown when running `npx expo start` (e.g. `exp://192.168.x.x:8081/--/email-confirmed`)
 
+### Email confirmation with Mailtrap / custom SMTP
+
+If you use **Mailtrap sandbox** or custom SMTP and confirmation links open a blank or non-existent page:
+
+1. **Use a web URL for the redirect** (recommended): Deploy the app for web (`npx expo export --platform web`), host it (e.g. Vercel/Netlify), then set `appWebUrl` in `app.json` → `extra` to your deployed URL (e.g. `https://elidz-stp.vercel.app`). Add that URL + `/email-confirmed` to Supabase **Redirect URLs**. This makes links work in desktop browsers and avoids deep-link issues.
+
+2. **Disable Mailtrap link tracking**: Mailtrap rewrites links by default, which can break auth flows. In Mailtrap → your domain → **Link tracking** → disable it, or exclude the Supabase domain from tracking.
+
+3. **Supabase Site URL**: Ensure **Site URL** in Supabase Auth URL config points to a valid, reachable URL (e.g. your web app URL). Avoid placeholder URLs like `http://localhost`.
+
 ## Get a fresh project
 
 When you're ready, run:
