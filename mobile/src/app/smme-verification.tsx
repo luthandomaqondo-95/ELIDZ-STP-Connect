@@ -178,7 +178,7 @@ export default function SMMEVerificationScreen() {
                         try {
                             const { supabase } = await import('@/lib/supabase');
                             const { error } = await supabase
-                                .from('sme_services_products')
+                                .from('smme_services_products')
                                 .update({ status: 'inactive' })
                                 .eq('id', item.id);
 
@@ -213,7 +213,7 @@ export default function SMMEVerificationScreen() {
                 // Update existing item
                 const { supabase } = await import('@/lib/supabase');
                 const { error } = await supabase
-                    .from('sme_services_products')
+                    .from('smme_services_products')
                     .update({
                         type: formType,
                         name: formName.trim(),

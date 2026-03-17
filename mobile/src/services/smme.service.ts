@@ -3,7 +3,7 @@ import { Profile } from '@/types';
 
 export interface SMMEServiceProduct {
 	id: string;
-	sme_id: string; // Database column name - keep as sme_id for backward compatibility
+	smme_id: string;
 	type: 'Service' | 'Product';
 	name: string;
 	description: string;
@@ -26,7 +26,7 @@ export interface SMMEWithServicesProducts extends Profile {
 class SMMEService {
 	async getDistinctCategories(): Promise<string[]> {
 		const { data, error } = await supabase
-			.from('sme_services_products')
+			.from('smme_services_products')
 			.select('category')
 			.not('category', 'is', null);
 
@@ -43,12 +43,12 @@ class SMMEService {
 		console.log('SMMEService.getServicesProducts called with smmmeId:', smmmeId);
 
 		let query = supabase
-			.from('sme_services_products')
+			.from('smme_services_products')
 			.select('*')
 			.eq('status', 'active');
 
 		if (smmmeId) {
-			query = query.eq('sme_id', smmmeId); // Database column is still sme_id
+			query = query.eq('smme_id', smmmeId);
 		}
 
 		const { data, error } = await query.order('created_at', { ascending: false });
@@ -86,9 +86,9 @@ class SMMEService {
 		console.log('SMMEService.createServiceProduct called for smmmeId:', smmmeId, 'with data:', data);
 
 		const { data: result, error } = await supabase
-			.from('sme_services_products')
+			.from('smme_services_products')
 			.insert({
-				sme_id: smmmeId, // Database column is still sme_id
+				smme_id: smmmeId,
 				...data,
 				status: 'active',
 			})
@@ -114,14 +114,14 @@ class SMMEService {
 			.eq('role', 'SMME')
 			.order('name', { ascending: true });
 
-        // Check for verified status in profiles OR existence in sme_verifications
+        // Check for verified status in profiles OR existence in smme_verifications
         // Since Supabase doesn't support complex OR across joined tables easily in one go for this specific logic without views,
         // we'll fetch all SMMEs and filter in memory or fetch verified IDs first.
-        // Better approach: Get profiles that are EITHER verified in profiles table OR have a verified record in sme_verifications.
+        // Better approach: Get profiles that are EITHER verified in profiles table OR have a verified record in smme_verifications.
         
-        // 1. Get IDs from sme_verifications
+        // 1. Get IDs from smme_verifications
 		const { data: verifications } = await supabase
-			.from('sme_verifications')
+			.from('smme_verifications')
 			.select('user_id')
 			.eq('status', 'verified');
         
@@ -150,9 +150,9 @@ class SMMEService {
 
 		const smmmeIds = verifiedProfiles.map(p => p.id);
 		const { data: servicesProducts, error: spError } = await supabase
-			.from('sme_services_products')
+			.from('smme_services_products')
 			.select('*')
-			.in('sme_id', smmmeIds) // Database column is still sme_id
+			.in('smme_id', smmmeIds)
 			.eq('status', 'active');
 
 		if (spError) {
@@ -163,10 +163,10 @@ class SMMEService {
 		const smmmeMap = new Map<string, { services: SMMEServiceProduct[]; products: SMMEServiceProduct[] }>();
 
 		(servicesProducts || []).forEach((item: SMMEServiceProduct) => {
-			if (!smmmeMap.has(item.sme_id)) {
-				smmmeMap.set(item.sme_id, { services: [], products: [] });
+			if (!smmmeMap.has(item.smme_id)) {
+				smmmeMap.set(item.smme_id, { services: [], products: [] });
 			}
-			const smmmeData = smmmeMap.get(item.sme_id)!;
+			const smmmeData = smmmeMap.get(item.smme_id)!;
 			if (item.type === 'Service') {
 				smmmeData.services.push(item);
 			} else {
