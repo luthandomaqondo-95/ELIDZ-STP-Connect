@@ -1,9 +1,8 @@
 /**
  * ViroReact 360° video viewer.
  *
- * Gyroscope/head tracking requires vrModeEnabled={true}. When false (mono mode),
- * the gyroscope is disabled and only touch controls apply. With vrModeEnabled=true,
- * the device's rotation-vector sensor drives the view as you physically move it.
+ * vrModeEnabled={false} = mono mode: single view only (no split-screen).
+ * Touch-drag to pan; gyroscope is disabled in this mode.
  */
 import React, { useEffect, useRef } from 'react';
 import { NativeSyntheticEvent, StyleSheet } from 'react-native';
@@ -11,38 +10,8 @@ import {
   ViroVRSceneNavigator,
   ViroScene,
   Viro360Video,
-  ViroNode,
-  ViroSphere,
-  ViroMaterials,
 } from '@reactvision/react-viro';
 import type { Hotspot, Scene } from '@/lib/scenes';
-
-// Register hotspot sphere materials once at module load time.
-ViroMaterials.createMaterials({
-  navHotspot: {
-    lightingModel: 'Constant',
-    diffuseColor: 'rgba(6,182,212,0.9)',
-  },
-  infoHotspot: {
-    lightingModel: 'Constant',
-    diffuseColor: 'rgba(139,92,246,0.9)',
-  },
-});
-
-/** Converts spherical yaw/pitch angles to a Cartesian position in Viro space. */
-function yawPitchToPosition(
-  yaw: number,
-  pitch: number,
-  radius = 3.5
-): [number, number, number] {
-  const y = (yaw * Math.PI) / 180;
-  const p = (pitch * Math.PI) / 180;
-  return [
-    radius * Math.cos(p) * Math.sin(y),
-    radius * Math.sin(p),
-    -radius * Math.cos(p) * Math.cos(y),
-  ];
-}
 
 interface AppProps {
   videoUrl: string;
@@ -64,7 +33,7 @@ function Scene360({
 }: {
   sceneNavigator: { viroAppProps: AppProps };
 }) {
-  const { videoUrl, hotspots, onHotspotTap, onReady, onLoading, onError } =
+  const { videoUrl, onReady, onLoading, onError } =
     sceneNavigator.viroAppProps;
 
   const readyCalled = useRef(false);
@@ -92,19 +61,6 @@ function Scene360({
           onError(e?.nativeEvent?.error?.message ?? 'Failed to load 360° video')
         }
       />
-
-      {hotspots.map((h) => (
-        <ViroNode
-          key={h.id}
-          position={yawPitchToPosition(h.yaw, h.pitch)}
-          onClick={() => onHotspotTap(h)}
-        >
-          <ViroSphere
-            radius={0.12}
-            materials={[h.type === 'navigation' ? 'navHotspot' : 'infoHotspot']}
-          />
-        </ViroNode>
-      ))}
     </ViroScene>
   );
 }
@@ -126,7 +82,7 @@ export default function ViroViewer360({
 }: ViroViewer360Props) {
   return (
     <ViroVRSceneNavigator
-      vrModeEnabled={true}
+      vrModeEnabled={false}
       initialScene={{ scene: Scene360 as () => React.JSX.Element }}
       viroAppProps={{
         videoUrl: scene.videoUrl,
