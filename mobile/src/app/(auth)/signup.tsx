@@ -648,12 +648,21 @@ export default function SignupScreen() {
 					<Pressable
 						className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
 						onPress={async () => {
-							try {
-								await signInWithGoogle();
-							} catch (error: any) {
-								setError(error?.message || 'Failed to sign in with Google', 'Error');
+							if (!acceptedTerms) {
+								setError('Please accept the Terms & Conditions before continuing.', 'Terms Required');
+								return;
 							}
+							await execute(() => signInWithGoogle(), {
+								onSuccess: () => {
+									clearError();
+									router.replace('/(tabs)');
+								},
+								onError: (err) => {
+									setError(err?.message || 'Failed to sign in with Google', 'Error');
+								},
+							});
 						}}
+						disabled={isLoading}
 					>
 						<Image
 							source={require('../../../assets/logos/search.png')}
@@ -661,7 +670,7 @@ export default function SignupScreen() {
 							resizeMode="contain"
 						/>
 						<Text className="text-base font-semibold text-foreground">
-							Continue with Google
+							{isLoading ? 'Signing in...' : 'Continue with Google'}
 						</Text>
 					</Pressable>
 
@@ -669,12 +678,21 @@ export default function SignupScreen() {
 						<Pressable
 							className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
 							onPress={async () => {
-								try {
-									await signInWithApple();
-								} catch (error: any) {
-									setError(error?.message || 'Failed to sign in with Apple', 'Error');
+								if (!acceptedTerms) {
+									setError('Please accept the Terms & Conditions before continuing.', 'Terms Required');
+									return;
 								}
+								await execute(() => signInWithApple(), {
+									onSuccess: () => {
+										clearError();
+										router.replace('/(tabs)');
+									},
+									onError: (err) => {
+										setError(err?.message || 'Failed to sign in with Apple', 'Error');
+									},
+								});
 							}}
+							disabled={isLoading}
 						>
 							<Image
 								source={require('../../../assets/logos/apple-logo.png')}
@@ -682,7 +700,7 @@ export default function SignupScreen() {
 								resizeMode="contain"
 							/>
 							<Text className="text-base font-semibold text-foreground">
-								Continue with Apple
+								{isLoading ? 'Signing in...' : 'Continue with Apple'}
 							</Text>
 						</Pressable>
 					)}

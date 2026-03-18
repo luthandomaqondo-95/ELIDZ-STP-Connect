@@ -219,29 +219,53 @@ export default function LoginScreen() {
                         <Pressable
                             className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
                             onPress={async () => {
-                                await execute(() => signInWithGoogle());
+                                if (!acceptedTerms) {
+                                    setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
+                                    return;
+                                }
+                                await execute(() => signInWithGoogle(), {
+                                    onSuccess: () => {
+                                        clearError();
+                                        router.replace('/(tabs)');
+                                    },
+                                });
                             }}
+                            disabled={isLoading}
                         >
                             <Image
                                 source={require('../../../assets/logos/search.png')}
                                 className="w-[22px] h-[22px] mr-3"
                                 resizeMode="contain"
                             />
-                            <Text className="text-base font-semibold text-foreground">Continue with Google</Text>
+                            <Text className="text-base font-semibold text-foreground">
+                                {isLoading ? 'Signing in...' : 'Continue with Google'}
+                            </Text>
                         </Pressable>
                         {Platform.OS === 'ios' && (
                             <Pressable
                                 className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
                                 onPress={async () => {
-                                    await execute(() => signInWithApple());
+                                    if (!acceptedTerms) {
+                                        setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
+                                        return;
+                                    }
+                                    await execute(() => signInWithApple(), {
+                                        onSuccess: () => {
+                                            clearError();
+                                            router.replace('/(tabs)');
+                                        },
+                                    });
                                 }}
+                                disabled={isLoading}
                             >
                                 <Image
                                     source={require('../../../assets/logos/apple-logo.png')}
                                     className="w-[22px] h-[22px] mr-3"
                                     resizeMode="contain"
                                 />
-                                <Text className="text-base font-semibold text-foreground">Continue with Apple</Text>
+                                <Text className="text-base font-semibold text-foreground">
+                                    {isLoading ? 'Signing in...' : 'Continue with Apple'}
+                                </Text>
                             </Pressable>
                         )}
                         <View className="flex-row justify-center items-center">

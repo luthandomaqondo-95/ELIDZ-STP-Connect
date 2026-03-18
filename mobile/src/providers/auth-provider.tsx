@@ -7,6 +7,21 @@ import * as Sentry from '@sentry/react-native';
 import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
 
+/** Parse auth params from OAuth callback URL (handles both hash and query params). */
+function getAuthParamsFromUrl(url: string): { code?: string; access_token?: string; refresh_token?: string } {
+	const [baseAndQuery, hashRaw = ''] = url.split('#');
+	const queryRaw = baseAndQuery.includes('?') ? baseAndQuery.split('?').slice(1).join('?') : '';
+	const hash = hashRaw.startsWith('?') ? hashRaw.slice(1) : hashRaw;
+	const hashParams = new URLSearchParams(hash);
+	const searchParams = new URLSearchParams(queryRaw);
+	const get = (key: string) => hashParams.get(key) ?? searchParams.get(key) ?? null;
+	return {
+		code: get('code') ?? undefined,
+		access_token: get('access_token') ?? undefined,
+		refresh_token: get('refresh_token') ?? undefined,
+	};
+}
+
 /** Redirect URL for email confirmation. Route groups like (auth) are omitted from paths.
  * Prefer web URL when set (app.json extra.appWebUrl) so links work in desktop browsers and Mailtrap.
  * Deep links (elidzstp://) only work when the app is installed; web URL works everywhere. */
@@ -266,23 +281,31 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				);
 
 				if (result.type === 'success' && result.url) {
-					// Parse the callback URL
-					const url = new URL(result.url);
-					const code = url.searchParams.get('code');
-					
+					const { code, access_token, refresh_token } = getAuthParamsFromUrl(result.url);
+
 					if (code) {
-						// Exchange code for session
+						// PKCE flow: exchange code for session
 						const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-						
 						if (sessionError) {
 							throw new Error(sessionError.message);
 						}
-
+						if (sessionData?.session?.user) {
+							await loadProfile(sessionData.session.user.id);
+						}
+					} else if (access_token && refresh_token) {
+						// Implicit flow fallback: set session directly
+						const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+							access_token,
+							refresh_token,
+						});
+						if (sessionError) {
+							throw new Error(sessionError.message);
+						}
 						if (sessionData?.session?.user) {
 							await loadProfile(sessionData.session.user.id);
 						}
 					} else {
-						throw new Error('No authorization code received from Google');
+						throw new Error('No authorization code or tokens received from Google');
 					}
 				} else if (result.type === 'cancel') {
 					throw new Error('Google sign-in was cancelled');
@@ -329,21 +352,29 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				);
 
 				if (result.type === 'success' && result.url) {
-					const url = new URL(result.url);
-					const code = url.searchParams.get('code');
+					const { code, access_token, refresh_token } = getAuthParamsFromUrl(result.url);
 
 					if (code) {
 						const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-
 						if (sessionError) {
 							throw new Error(sessionError.message);
 						}
-
+						if (sessionData?.session?.user) {
+							await loadProfile(sessionData.session.user.id);
+						}
+					} else if (access_token && refresh_token) {
+						const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+							access_token,
+							refresh_token,
+						});
+						if (sessionError) {
+							throw new Error(sessionError.message);
+						}
 						if (sessionData?.session?.user) {
 							await loadProfile(sessionData.session.user.id);
 						}
 					} else {
-						throw new Error('No authorization code received from Apple');
+						throw new Error('No authorization code or tokens received from Apple');
 					}
 				} else if (result.type === 'cancel') {
 					throw new Error('Apple sign-in was cancelled');
