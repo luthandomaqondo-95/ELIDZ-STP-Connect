@@ -4,25 +4,26 @@
     "slug": "elidz-stp",
     "version": "1.0.0",
     "orientation": "default",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/logos/ios-light.png",
     "scheme": "elidzstp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "icon": {
+        "light": "./assets/logos/ios-light.png",
+        "dark": "./assets/logos/ios-dark.png",
+        "tinted": "./assets/logos/ios-tinted.png"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/logos/Adaptive Icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
@@ -33,6 +34,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@reactvision/react-viro",
       "expo-router",
       [
         "expo-splash-screen",
@@ -42,7 +44,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#121212"
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#ffffff"
           }
         }
       ],
@@ -74,14 +77,12 @@
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbmdyZ2t5b296cXlzeHRnZ2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTk4MjYsImV4cCI6MjA3OTM3NTgyNn0.epIGq-VP_ULklXjG5zWy3KjOGZa52Z_vcRein_ewaZc",
       "router": {},
       "eas": {
-        "projectId": "dc718464-724f-4f89-9098-d94149a275ff"
+        "projectId": "2f2d62da-f95d-45bb-ba14-d6ecf4f346c3"
       }
     },
+    "owner": "tebogo.l",
     "runtimeVersion": {
       "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/dc718464-724f-4f89-9098-d94149a275ff"
     }
   }
 }

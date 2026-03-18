@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, TouchableOpacity, Image } from 'react-native';
+import { View, TextInput, Pressable, TouchableOpacity, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -217,7 +217,7 @@ export default function LoginScreen() {
                             <View className="flex-1 h-px bg-border" />
                         </View>
                         <Pressable
-                            className="min-h-[48px] py-3.5 px-6 rounded-xl bg-card border border-border flex-row items-center justify-center mb-4 active:opacity-80"
+                            className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
                             onPress={async () => {
                                 await execute(() => signInWithGoogle());
                             }}
@@ -229,19 +229,21 @@ export default function LoginScreen() {
                             />
                             <Text className="text-base font-semibold text-foreground">Continue with Google</Text>
                         </Pressable>
-                        <Pressable
-                            className="min-h-[48px] py-3.5 px-6 rounded-xl bg-card border border-border flex-row items-center justify-center mb-6 active:opacity-80"
-                            onPress={async () => {
-                                await execute(() => signInWithApple());
-                            }}
-                        >
-                            <Image
-                                source={require('../../../assets/logos/apple-logo.png')}
-                                className="w-[22px] h-[22px] mr-3"
-                                resizeMode="contain"
-                            />
-                            <Text className="text-base font-semibold text-foreground">Continue with Apple</Text>
-                        </Pressable>
+                        {Platform.OS === 'ios' && (
+                            <Pressable
+                                className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+                                onPress={async () => {
+                                    await execute(() => signInWithApple());
+                                }}
+                            >
+                                <Image
+                                    source={require('../../../assets/logos/apple-logo.png')}
+                                    className="w-[22px] h-[22px] mr-3"
+                                    resizeMode="contain"
+                                />
+                                <Text className="text-base font-semibold text-foreground">Continue with Apple</Text>
+                            </Pressable>
+                        )}
                         <View className="flex-row justify-center items-center">
                             <Text className="text-sm text-muted-foreground">Don&apos;t have an account? </Text>
                             <Pressable onPress={() => router.push('/(auth)/signup')}>

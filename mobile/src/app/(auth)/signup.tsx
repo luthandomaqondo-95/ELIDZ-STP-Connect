@@ -646,7 +646,7 @@ export default function SignupScreen() {
 
 					{/* Google Sign In Button */}
 					<Pressable
-						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-4 active:opacity-80 active:scale-95"
+						className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
 						onPress={async () => {
 							try {
 								await signInWithGoogle();
@@ -665,26 +665,27 @@ export default function SignupScreen() {
 						</Text>
 					</Pressable>
 
-					{/* Apple Sign In Button */}
-					<Pressable
-						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
-						onPress={async () => {
-							try {
-								await signInWithApple();
-							} catch (error: any) {
-								setError(error?.message || 'Failed to sign in with Apple', 'Error');
-							}
-						}}
-					>
-						<Image
-							source={require('../../../assets/logos/apple-logo.png')}
-							className="w-[22px] h-[22px] mr-3"
-							resizeMode="contain"
-						/>
-						<Text className="text-base font-semibold text-foreground">
-							Continue with Apple
-						</Text>
-					</Pressable>
+					{Platform.OS === 'ios' && (
+						<Pressable
+							className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+							onPress={async () => {
+								try {
+									await signInWithApple();
+								} catch (error: any) {
+									setError(error?.message || 'Failed to sign in with Apple', 'Error');
+								}
+							}}
+						>
+							<Image
+								source={require('../../../assets/logos/apple-logo.png')}
+								className="w-[22px] h-[22px] mr-3"
+								resizeMode="contain"
+							/>
+							<Text className="text-base font-semibold text-foreground">
+								Continue with Apple
+							</Text>
+						</Pressable>
+					)}
 
 					{/* Login Link */}
 					<View className="flex-row justify-center items-center">
