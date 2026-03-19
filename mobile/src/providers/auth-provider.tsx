@@ -6,6 +6,7 @@ import { Profile } from '@/types'
 import * as Sentry from '@sentry/react-native';
 import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
 /** Parse auth params from OAuth callback URL (handles both hash and query params). */
 function getAuthParamsFromUrl(url: string): { code?: string; access_token?: string; refresh_token?: string } {
@@ -246,78 +247,82 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 	async function signInWithGoogle() {
 		try {
+			// Native Google Sign-In: no browser, no redirect URLs, no proxy. Uses native SDK
+			// and Supabase signInWithIdToken. Works on iOS and Android.
+			if (Platform.OS === 'ios' || Platform.OS === 'android') {
+				const { GoogleSignin, statusCodes } = require('@react-native-google-signin/google-signin');
+				const webClientId = Constants.expoConfig?.extra?.googleAuth?.webClientId as string | undefined;
+				if (!webClientId) {
+					throw new Error(
+						'Google Web Client ID is not configured. Add webClientId to app.json → extra.googleAuth. ' +
+						'Create a Web application OAuth client in Google Cloud Console and use that Client ID.'
+					);
+				}
+				GoogleSignin.configure({ webClientId });
+
+				await GoogleSignin.hasPlayServices()
+					.catch(() => { throw new Error('Google Play Services not available.'); });
+
+				// Sign out first to force the account picker to show (otherwise cached account may be used silently)
+				await GoogleSignin.signOut();
+
+				const response = await GoogleSignin.signIn();
+				const isSuccessResponse = (r: typeof response): r is { data: { idToken: string } } =>
+					r?.data?.idToken != null;
+
+				if (!isSuccessResponse(response)) {
+					if (response?.data?.user?.email) {
+						// User cancelled account picker
+						throw new Error('Google sign-in was cancelled');
+					}
+					throw new Error('No ID token received from Google');
+				}
+
+				const { data, error } = await supabase.auth.signInWithIdToken({
+					provider: 'google',
+					token: response.data.idToken,
+				});
+
+				if (error) {
+					if (/provider is not enabled|unsupported provider/i.test(error.message)) {
+						throw new Error(
+							'Google sign-in is not enabled in Supabase. Enable Google under Authentication > Providers > Google, then try again.'
+						);
+					}
+					throw new Error(error.message);
+				}
+
+				if (data?.session?.user) {
+					await loadProfile(data.session.user.id);
+				}
+				return data;
+			}
+
+			// Web platform: fall back to OAuth flow
 			const { data, error } = await supabase.auth.signInWithOAuth({
 				provider: 'google',
 				options: {
-					// Keep a stable deep link even if the screen is removed.
-					redirectTo: 'elidzstp://oauth-callback',
-					queryParams: {
-						access_type: 'offline',
-						prompt: 'consent',
-					},
+					redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/oauth-callback` : undefined,
 				},
 			});
-
-			if (error) {
-				const message = error.message ?? '';
-				if (/provider is not enabled|unsupported provider/i.test(message)) {
-					throw new Error(
-						'Google sign-in is not enabled in Supabase. Enable Google under Authentication > Providers > Google, then try again.'
-					);
-				}
-				throw new Error(error.message);
-			}
-
-			// For React Native/Expo, open the OAuth URL in a browser
-			if (data?.url) {
-				const WebBrowser = require('expo-web-browser');
-				
-				// Keep the browser session open for OAuth flow
-				WebBrowser.maybeCompleteAuthSession();
-				
-				const result = await WebBrowser.openAuthSessionAsync(
-					data.url,
-					'elidzstp://oauth-callback'
-				);
-
-				if (result.type === 'success' && result.url) {
-					const { code, access_token, refresh_token } = getAuthParamsFromUrl(result.url);
-
-					if (code) {
-						// PKCE flow: exchange code for session
-						const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-						if (sessionError) {
-							throw new Error(sessionError.message);
-						}
-						if (sessionData?.session?.user) {
-							await loadProfile(sessionData.session.user.id);
-						}
-					} else if (access_token && refresh_token) {
-						// Implicit flow fallback: set session directly
-						const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-							access_token,
-							refresh_token,
-						});
-						if (sessionError) {
-							throw new Error(sessionError.message);
-						}
-						if (sessionData?.session?.user) {
-							await loadProfile(sessionData.session.user.id);
-						}
-					} else {
-						throw new Error('No authorization code or tokens received from Google');
-					}
-				} else if (result.type === 'cancel') {
-					throw new Error('Google sign-in was cancelled');
-				} else {
-					throw new Error('Failed to complete Google sign-in');
-				}
+			if (error) throw new Error(error.message);
+			if (data?.url && typeof window !== 'undefined') {
+				window.location.href = data.url;
 			} else {
 				throw new Error('No OAuth URL received');
 			}
-
-			return data;
 		} catch (error: any) {
+			if (Platform.OS === 'ios' || Platform.OS === 'android') {
+				try {
+					const { statusCodes } = require('@react-native-google-signin/google-signin');
+					if (error?.code === statusCodes?.IN_PROGRESS) {
+						throw new Error('Sign-in already in progress');
+					}
+					if (error?.code === statusCodes?.PLAY_SERVICES_NOT_AVAILABLE) {
+						throw new Error('Google Play Services not available or outdated');
+					}
+				} catch (_) { /* statusCodes not available */ }
+			}
 			console.error('Google sign-in error:', error);
 			throw error;
 		}

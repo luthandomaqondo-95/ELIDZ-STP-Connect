@@ -94,6 +94,7 @@
         "projectId": "2f2d62da-f95d-45bb-ba14-d6ecf4f346c3"
       },
       "googleAuth": {
+        "webClientId": "1054716405677-b07skgocod1bkhjn0681oesqjl75jqjr.apps.googleusercontent.com",
         "androidClientId": "1054716405677-dihkrlvbnh432l3p82m2i4p7m823nr3c.apps.googleusercontent.com",
         "iosUrlScheme": "com.googleusercontent.apps.1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3"
       }
