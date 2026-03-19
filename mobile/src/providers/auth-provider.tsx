@@ -7,6 +7,7 @@ import * as Sentry from '@sentry/react-native';
 import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import { router } from 'expo-router';
 
 /** Parse auth params from OAuth callback URL (handles both hash and query params). */
 function getAuthParamsFromUrl(url: string): { code?: string; access_token?: string; refresh_token?: string } {
@@ -23,14 +24,11 @@ function getAuthParamsFromUrl(url: string): { code?: string; access_token?: stri
 	};
 }
 
-/** Redirect URL for email confirmation. Route groups like (auth) are omitted from paths.
- * Prefer web URL when set (app.json extra.appWebUrl) so links work in desktop browsers and Mailtrap.
- * Deep links (elidzstp://) only work when the app is installed; web URL works everywhere. */
+/** Redirect URL for email confirmation. Use web URL when set so links work when opened in Gmail/browser. */
 function getEmailConfirmationRedirectUrl(): string {
 	const appWebUrl = Constants.expoConfig?.extra?.appWebUrl as string | undefined;
-	if (appWebUrl) {
-		const base = appWebUrl.replace(/\/$/, '');
-		return `${base}/email-confirmed`;
+	if (appWebUrl?.trim()) {
+		return `${appWebUrl.replace(/\/$/, '')}/auth/email-confirmed`;
 	}
 	return Constants.appOwnership === 'expo'
 		? ExpoLinking.createURL('email-confirmed')
@@ -449,9 +447,13 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange(async (_event, session) => {
-			console.log('Auth state changed:', { event: _event, session })
+		} = supabase.auth.onAuthStateChange(async (event, session) => {
+			console.log('Auth state changed:', { event, session })
 			setSession(session)
+			if (event === 'PASSWORD_RECOVERY') {
+				router.replace('/(auth)/change-password');
+				return;
+			}
 			if (session?.user) {
 				// Check if profile exists, if not create it (for OAuth users).
 				// IMPORTANT: Never treat a SELECT error (e.g. RLS) as "missing", otherwise we

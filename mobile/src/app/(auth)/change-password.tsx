@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Pressable, Alert, Linking, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { View, Pressable, Alert, Linking, Dimensions, TouchableOpacity, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -89,7 +89,15 @@ export default function ChangePasswordScreen() {
     }, []);
 
     useEffect(() => {
-        Linking.getInitialURL().then(trySetSessionFromUrl);
+        Linking.getInitialURL().then((url) => {
+            if (url) {
+                trySetSessionFromUrl(url);
+            } else if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.href) {
+                trySetSessionFromUrl(window.location.href);
+            } else {
+                trySetSessionFromUrl(null);
+            }
+        });
         const sub = Linking.addEventListener('url', ({ url }) => trySetSessionFromUrl(url));
         return () => sub.remove();
     }, [trySetSessionFromUrl]);
