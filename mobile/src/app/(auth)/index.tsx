@@ -84,10 +84,6 @@ export default function LoginScreen() {
             setError('Please enter both email and password', 'Missing fields');
             return;
         }
-        if (!acceptedTerms) {
-            setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
-            return;
-        }
         if (cooldownSeconds > 0) {
             setError(`Too many attempts. Try again in ${cooldownSeconds}s.`, 'Rate limited');
             return;
@@ -194,8 +190,10 @@ export default function LoginScreen() {
                             </Pressable>
                         </View>
                         <TermsAndPrivacyNotice
-                            accepted={acceptedTerms}
-                            onToggle={() => setAcceptedTerms(!acceptedTerms)}
+                            accepted={true}
+                            onToggle={() => {}}
+                            showCheckbox={false}
+                            context="signin"
                         />
                         {error && !error?.includes('Account created!') && !error?.includes('Confirmation email sent') && (
                             <View className="mb-4 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
@@ -219,10 +217,6 @@ export default function LoginScreen() {
                         <Pressable
                             className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
                             onPress={async () => {
-                                if (!acceptedTerms) {
-                                    setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
-                                    return;
-                                }
                                 await execute(() => signInWithGoogle(), {
                                     onSuccess: () => {
                                         clearError();
@@ -245,10 +239,6 @@ export default function LoginScreen() {
                             <Pressable
                                 className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
                                 onPress={async () => {
-                                    if (!acceptedTerms) {
-                                        setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
-                                        return;
-                                    }
                                     await execute(() => signInWithApple(), {
                                         onSuccess: () => {
                                             clearError();
