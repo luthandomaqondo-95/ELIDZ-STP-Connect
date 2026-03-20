@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "elidz-stp",
-    "slug": "elidz-stp",
+    "slug": "elidz-stp-connect",
     "version": "1.0.0",
     "orientation": "default",
     "icon": "./assets/logos/ios-light.png",
@@ -15,6 +15,13 @@
         "light": "./assets/logos/ios-light.png",
         "dark": "./assets/logos/ios-dark.png",
         "tinted": "./assets/logos/ios-tinted.png"
+      },
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
+        "NSPhotoLibraryAddUsageDescription": "Allow $(PRODUCT_NAME) to save photos",
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to use your camera",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use your microphone",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -44,7 +51,6 @@
       ],
       "expo-router",
       [
-        
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
@@ -91,7 +97,7 @@
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbmdyZ2t5b296cXlzeHRnZ2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTk4MjYsImV4cCI6MjA3OTM3NTgyNn0.epIGq-VP_ULklXjG5zWy3KjOGZa52Z_vcRein_ewaZc",
       "router": {},
       "eas": {
-        "projectId": "2f2d62da-f95d-45bb-ba14-d6ecf4f346c3"
+        "projectId": "ce8a343f-b27d-4f97-a742-7c5e5cc8c57d"
       },
       "googleAuth": {
         "webClientId": "1054716405677-b07skgocod1bkhjn0681oesqjl75jqjr.apps.googleusercontent.com",
@@ -99,7 +105,7 @@
         "iosUrlScheme": "com.googleusercontent.apps.1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3"
       }
     },
-    "owner": "tebogo.l",
+    "owner": "appimate",
     "runtimeVersion": {
       "policy": "appVersion"
     }
