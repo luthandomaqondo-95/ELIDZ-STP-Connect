@@ -40,8 +40,10 @@ export default function ForgotPasswordScreen() {
         setError(null);
 
         try {
-            const redirectTo =
-                Constants.appOwnership === 'expo'
+            const appWebUrl = Constants.expoConfig?.extra?.appWebUrl as string | undefined;
+            const redirectTo = appWebUrl?.trim()
+                ? `${appWebUrl.replace(/\/$/, '')}/auth/reset-password`
+                : Constants.appOwnership === 'expo'
                     ? ExpoLinking.createURL('change-password')
                     : 'elidzstp://change-password';
 

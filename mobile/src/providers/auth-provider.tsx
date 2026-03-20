@@ -6,15 +6,29 @@ import { Profile } from '@/types'
 import * as Sentry from '@sentry/react-native';
 import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
+import { router } from 'expo-router';
 
-/** Redirect URL for email confirmation. Route groups like (auth) are omitted from paths.
- * Prefer web URL when set (app.json extra.appWebUrl) so links work in desktop browsers and Mailtrap.
- * Deep links (elidzstp://) only work when the app is installed; web URL works everywhere. */
+/** Parse auth params from OAuth callback URL (handles both hash and query params). */
+function getAuthParamsFromUrl(url: string): { code?: string; access_token?: string; refresh_token?: string } {
+	const [baseAndQuery, hashRaw = ''] = url.split('#');
+	const queryRaw = baseAndQuery.includes('?') ? baseAndQuery.split('?').slice(1).join('?') : '';
+	const hash = hashRaw.startsWith('?') ? hashRaw.slice(1) : hashRaw;
+	const hashParams = new URLSearchParams(hash);
+	const searchParams = new URLSearchParams(queryRaw);
+	const get = (key: string) => hashParams.get(key) ?? searchParams.get(key) ?? null;
+	return {
+		code: get('code') ?? undefined,
+		access_token: get('access_token') ?? undefined,
+		refresh_token: get('refresh_token') ?? undefined,
+	};
+}
+
+/** Redirect URL for email confirmation. Use web URL when set so links work when opened in Gmail/browser. */
 function getEmailConfirmationRedirectUrl(): string {
 	const appWebUrl = Constants.expoConfig?.extra?.appWebUrl as string | undefined;
-	if (appWebUrl) {
-		const base = appWebUrl.replace(/\/$/, '');
-		return `${base}/email-confirmed`;
+	if (appWebUrl?.trim()) {
+		return `${appWebUrl.replace(/\/$/, '')}/auth/email-confirmed`;
 	}
 	return Constants.appOwnership === 'expo'
 		? ExpoLinking.createURL('email-confirmed')
@@ -231,70 +245,82 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 	async function signInWithGoogle() {
 		try {
+			// Native Google Sign-In: no browser, no redirect URLs, no proxy. Uses native SDK
+			// and Supabase signInWithIdToken. Works on iOS and Android.
+			if (Platform.OS === 'ios' || Platform.OS === 'android') {
+				const { GoogleSignin, statusCodes } = require('@react-native-google-signin/google-signin');
+				const webClientId = Constants.expoConfig?.extra?.googleAuth?.webClientId as string | undefined;
+				if (!webClientId) {
+					throw new Error(
+						'Google Web Client ID is not configured. Add webClientId to app.json → extra.googleAuth. ' +
+						'Create a Web application OAuth client in Google Cloud Console and use that Client ID.'
+					);
+				}
+				GoogleSignin.configure({ webClientId });
+
+				await GoogleSignin.hasPlayServices()
+					.catch(() => { throw new Error('Google Play Services not available.'); });
+
+				// Sign out first to force the account picker to show (otherwise cached account may be used silently)
+				await GoogleSignin.signOut();
+
+				const response = await GoogleSignin.signIn();
+				const isSuccessResponse = (r: typeof response): r is { data: { idToken: string } } =>
+					r?.data?.idToken != null;
+
+				if (!isSuccessResponse(response)) {
+					if (response?.data?.user?.email) {
+						// User cancelled account picker
+						throw new Error('Google sign-in was cancelled');
+					}
+					throw new Error('No ID token received from Google');
+				}
+
+				const { data, error } = await supabase.auth.signInWithIdToken({
+					provider: 'google',
+					token: response.data.idToken,
+				});
+
+				if (error) {
+					if (/provider is not enabled|unsupported provider/i.test(error.message)) {
+						throw new Error(
+							'Google sign-in is not enabled in Supabase. Enable Google under Authentication > Providers > Google, then try again.'
+						);
+					}
+					throw new Error(error.message);
+				}
+
+				if (data?.session?.user) {
+					await loadProfile(data.session.user.id);
+				}
+				return data;
+			}
+
+			// Web platform: fall back to OAuth flow
 			const { data, error } = await supabase.auth.signInWithOAuth({
 				provider: 'google',
 				options: {
-					// Keep a stable deep link even if the screen is removed.
-					redirectTo: 'elidzstp://oauth-callback',
-					queryParams: {
-						access_type: 'offline',
-						prompt: 'consent',
-					},
+					redirectTo: typeof window !== 'undefined' ? `${window.location.origin}/oauth-callback` : undefined,
 				},
 			});
-
-			if (error) {
-				const message = error.message ?? '';
-				if (/provider is not enabled|unsupported provider/i.test(message)) {
-					throw new Error(
-						'Google sign-in is not enabled in Supabase. Enable Google under Authentication > Providers > Google, then try again.'
-					);
-				}
-				throw new Error(error.message);
-			}
-
-			// For React Native/Expo, open the OAuth URL in a browser
-			if (data?.url) {
-				const WebBrowser = require('expo-web-browser');
-				
-				// Keep the browser session open for OAuth flow
-				WebBrowser.maybeCompleteAuthSession();
-				
-				const result = await WebBrowser.openAuthSessionAsync(
-					data.url,
-					'elidzstp://oauth-callback'
-				);
-
-				if (result.type === 'success' && result.url) {
-					// Parse the callback URL
-					const url = new URL(result.url);
-					const code = url.searchParams.get('code');
-					
-					if (code) {
-						// Exchange code for session
-						const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-						
-						if (sessionError) {
-							throw new Error(sessionError.message);
-						}
-
-						if (sessionData?.session?.user) {
-							await loadProfile(sessionData.session.user.id);
-						}
-					} else {
-						throw new Error('No authorization code received from Google');
-					}
-				} else if (result.type === 'cancel') {
-					throw new Error('Google sign-in was cancelled');
-				} else {
-					throw new Error('Failed to complete Google sign-in');
-				}
+			if (error) throw new Error(error.message);
+			if (data?.url && typeof window !== 'undefined') {
+				window.location.href = data.url;
 			} else {
 				throw new Error('No OAuth URL received');
 			}
-
-			return data;
 		} catch (error: any) {
+			if (Platform.OS === 'ios' || Platform.OS === 'android') {
+				try {
+					const { statusCodes } = require('@react-native-google-signin/google-signin');
+					if (error?.code === statusCodes?.IN_PROGRESS) {
+						throw new Error('Sign-in already in progress');
+					}
+					if (error?.code === statusCodes?.PLAY_SERVICES_NOT_AVAILABLE) {
+						throw new Error('Google Play Services not available or outdated');
+					}
+				} catch (_) { /* statusCodes not available */ }
+			}
 			console.error('Google sign-in error:', error);
 			throw error;
 		}
@@ -329,21 +355,29 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				);
 
 				if (result.type === 'success' && result.url) {
-					const url = new URL(result.url);
-					const code = url.searchParams.get('code');
+					const { code, access_token, refresh_token } = getAuthParamsFromUrl(result.url);
 
 					if (code) {
 						const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-
 						if (sessionError) {
 							throw new Error(sessionError.message);
 						}
-
+						if (sessionData?.session?.user) {
+							await loadProfile(sessionData.session.user.id);
+						}
+					} else if (access_token && refresh_token) {
+						const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
+							access_token,
+							refresh_token,
+						});
+						if (sessionError) {
+							throw new Error(sessionError.message);
+						}
 						if (sessionData?.session?.user) {
 							await loadProfile(sessionData.session.user.id);
 						}
 					} else {
-						throw new Error('No authorization code received from Apple');
+						throw new Error('No authorization code or tokens received from Apple');
 					}
 				} else if (result.type === 'cancel') {
 					throw new Error('Apple sign-in was cancelled');
@@ -413,9 +447,13 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange(async (_event, session) => {
-			console.log('Auth state changed:', { event: _event, session })
+		} = supabase.auth.onAuthStateChange(async (event, session) => {
+			console.log('Auth state changed:', { event, session })
 			setSession(session)
+			if (event === 'PASSWORD_RECOVERY') {
+				router.replace('/(auth)/change-password');
+				return;
+			}
 			if (session?.user) {
 				// Check if profile exists, if not create it (for OAuth users).
 				// IMPORTANT: Never treat a SELECT error (e.g. RLS) as "missing", otherwise we

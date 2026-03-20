@@ -10,6 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.elidzstp.app",
       "icon": {
         "light": "./assets/logos/ios-light.png",
         "dark": "./assets/logos/ios-dark.png",
@@ -35,8 +36,15 @@
     },
     "plugins": [
       "@reactvision/react-viro",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3"
+        }
+      ],
       "expo-router",
       [
+        
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
@@ -66,7 +74,13 @@
       ],
       "expo-audio",
       "expo-secure-store",
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-web-browser",
+        {
+          "experimentalLauncherActivity": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -78,6 +92,11 @@
       "router": {},
       "eas": {
         "projectId": "2f2d62da-f95d-45bb-ba14-d6ecf4f346c3"
+      },
+      "googleAuth": {
+        "webClientId": "1054716405677-b07skgocod1bkhjn0681oesqjl75jqjr.apps.googleusercontent.com",
+        "androidClientId": "1054716405677-dihkrlvbnh432l3p82m2i4p7m823nr3c.apps.googleusercontent.com",
+        "iosUrlScheme": "com.googleusercontent.apps.1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3"
       }
     },
     "owner": "tebogo.l",
