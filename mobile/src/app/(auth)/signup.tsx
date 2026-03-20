@@ -612,6 +612,7 @@ export default function SignupScreen() {
 					<TermsAndPrivacyNotice
 						accepted={acceptedTerms}
 						onToggle={() => setAcceptedTerms(!acceptedTerms)}
+						context="signup"
 					/>
 
 					{error && (
