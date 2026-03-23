@@ -81,6 +81,7 @@
       ],
       "expo-audio",
       "expo-secure-store",
+      "expo-apple-authentication",
       "expo-asset",
       [
         "expo-web-browser",
@@ -103,6 +104,7 @@
       "googleAuth": {
         "webClientId": "1054716405677-b07skgocod1bkhjn0681oesqjl75jqjr.apps.googleusercontent.com",
         "androidClientId": "1054716405677-dihkrlvbnh432l3p82m2i4p7m823nr3c.apps.googleusercontent.com",
+        "iosClientId": "1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3.apps.googleusercontent.com",
         "iosUrlScheme": "com.googleusercontent.apps.1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3"
       }
     },

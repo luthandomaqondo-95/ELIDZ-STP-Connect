@@ -249,14 +249,28 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			// and Supabase signInWithIdToken. Works on iOS and Android.
 			if (Platform.OS === 'ios' || Platform.OS === 'android') {
 				const { GoogleSignin, statusCodes } = require('@react-native-google-signin/google-signin');
-				const webClientId = Constants.expoConfig?.extra?.googleAuth?.webClientId as string | undefined;
+				const googleAuth = Constants.expoConfig?.extra?.googleAuth as
+					| { webClientId?: string; iosClientId?: string }
+					| undefined;
+				const webClientId = googleAuth?.webClientId;
 				if (!webClientId) {
 					throw new Error(
 						'Google Web Client ID is not configured. Add webClientId to app.json → extra.googleAuth. ' +
 						'Create a Web application OAuth client in Google Cloud Console and use that Client ID.'
 					);
 				}
-				GoogleSignin.configure({ webClientId });
+				const iosClientId = googleAuth?.iosClientId;
+				if (Platform.OS === 'ios') {
+					if (!iosClientId) {
+						throw new Error(
+							'Google iOS Client ID is not configured. Add iosClientId to app.json → extra.googleAuth ' +
+							'(OAuth client type iOS in Google Cloud Console, bundle ID com.elidzstp.app), then rebuild.'
+						);
+					}
+					GoogleSignin.configure({ webClientId, iosClientId });
+				} else {
+					GoogleSignin.configure({ webClientId });
+				}
 
 				await GoogleSignin.hasPlayServices()
 					.catch(() => { throw new Error('Google Play Services not available.'); });
@@ -328,10 +342,55 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 	async function signInWithApple() {
 		try {
+			// Native Sign in with Apple + Supabase id_token (same pattern as Google). The web OAuth +
+			// openAuthSessionAsync flow is fragile on iOS with PKCE and custom URL schemes.
+			if (Platform.OS === 'ios') {
+				const AppleAuthentication = require('expo-apple-authentication');
+				const isAvailable = await AppleAuthentication.isAvailableAsync();
+				if (!isAvailable) {
+					throw new Error('Sign in with Apple is not available on this device.');
+				}
+
+				const credential = await AppleAuthentication.signInAsync({
+					requestedScopes: [
+						AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+						AppleAuthentication.AppleAuthenticationScope.EMAIL,
+					],
+				});
+
+				if (!credential.identityToken) {
+					throw new Error('Apple did not return an identity token. Try again.');
+				}
+
+				const { data, error } = await supabase.auth.signInWithIdToken({
+					provider: 'apple',
+					token: credential.identityToken,
+				});
+
+				if (error) {
+					const message = error.message ?? '';
+					if (/provider is not enabled|unsupported provider/i.test(message)) {
+						throw new Error(
+							'Apple sign-in is not enabled in Supabase. Enable Apple under Authentication > Providers > Apple, then try again.'
+						);
+					}
+					throw new Error(message);
+				}
+
+				if (data?.session?.user) {
+					await loadProfile(data.session.user.id);
+				}
+				return data;
+			}
+
+			// Non-iOS: web OAuth (e.g. Expo web); mobile Android UI does not expose Apple in this app.
 			const { data, error } = await supabase.auth.signInWithOAuth({
 				provider: 'apple',
 				options: {
-					redirectTo: 'elidzstp://oauth-callback',
+					redirectTo:
+						typeof window !== 'undefined'
+							? `${window.location.origin}/oauth-callback`
+							: 'elidzstp://oauth-callback',
 				},
 			});
 
@@ -345,51 +404,18 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				throw new Error(error.message);
 			}
 
-			if (data?.url) {
-				const WebBrowser = require('expo-web-browser');
-				WebBrowser.maybeCompleteAuthSession();
-
-				const result = await WebBrowser.openAuthSessionAsync(
-					data.url,
-					'elidzstp://oauth-callback'
-				);
-
-				if (result.type === 'success' && result.url) {
-					const { code, access_token, refresh_token } = getAuthParamsFromUrl(result.url);
-
-					if (code) {
-						const { data: sessionData, error: sessionError } = await supabase.auth.exchangeCodeForSession(code);
-						if (sessionError) {
-							throw new Error(sessionError.message);
-						}
-						if (sessionData?.session?.user) {
-							await loadProfile(sessionData.session.user.id);
-						}
-					} else if (access_token && refresh_token) {
-						const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-							access_token,
-							refresh_token,
-						});
-						if (sessionError) {
-							throw new Error(sessionError.message);
-						}
-						if (sessionData?.session?.user) {
-							await loadProfile(sessionData.session.user.id);
-						}
-					} else {
-						throw new Error('No authorization code or tokens received from Apple');
-					}
-				} else if (result.type === 'cancel') {
-					throw new Error('Apple sign-in was cancelled');
-				} else {
-					throw new Error('Failed to complete Apple sign-in');
-				}
+			if (data?.url && typeof window !== 'undefined') {
+				window.location.href = data.url;
 			} else {
-				throw new Error('No OAuth URL received');
+				throw new Error('Apple sign-in is only supported on iOS in this app.');
 			}
 
 			return data;
 		} catch (error: any) {
+			const code = error?.code as string | undefined;
+			if (code === 'ERR_REQUEST_CANCELED' || code === 'ERR_CANCELED') {
+				throw new Error('Apple sign-in was cancelled');
+			}
 			console.error('Apple sign-in error:', error);
 			throw error;
 		}
