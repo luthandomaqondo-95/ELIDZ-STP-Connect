@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.elidzstp.app",
+      "usesAppleSignIn": true,
       "icon": {
         "light": "./assets/logos/ios-light.png",
         "dark": "./assets/logos/ios-dark.png",
