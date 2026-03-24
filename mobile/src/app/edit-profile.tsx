@@ -120,19 +120,7 @@ function EditProfileScreen() {
         <View className="flex-1 bg-background">
             <ScreenKeyboardAwareScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
                 <View className="bg-background">
-                    <TabsLayoutHeader
-                        title="Edit Profile"
-                        variant="navy"
-                        showActions={false}
-                        left={
-                            <Pressable
-                                onPress={() => router.back()}
-                                className="p-2 bg-white/10 rounded-full"
-                            >
-                                <Feather name="arrow-left" size={20} color="white" />
-                            </Pressable>
-                        }
-                    >
+                    <TabsLayoutHeader title="Edit Profile" variant="navy" showActions={false} showBackButton>
                         <Text className="text-white/80 text-base">
                             Update your personal information and profile picture.
                         </Text>

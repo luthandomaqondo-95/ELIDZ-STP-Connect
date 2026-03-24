@@ -17,6 +17,7 @@ import { TabsLayoutHeader } from '@/components/Header';
 import { Button } from '@/components/ui/button';
 import { verificationService } from '@/services/verification.service';
 import { useFocusEffect } from '@react-navigation/native';
+import { formatOpportunityDisplayTitle } from '@/utils/opportunity-display';
 
 const { width } = Dimensions.get('window');
 
@@ -236,7 +237,9 @@ export default function DashboardScreen() {
                     ) : (
                         <>
                             <Text className="text-white text-2xl font-bold mb-3 leading-tight">
-                                {featuredOpportunity?.title || 'Innovation Opportunities Await'}
+                                {featuredOpportunity
+                                    ? formatOpportunityDisplayTitle(featuredOpportunity.title, featuredOpportunity.org)
+                                    : 'Innovation Opportunities Await'}
                             </Text>
                             <Text className="text-white/90 text-sm mb-6 leading-relaxed" numberOfLines={2}>
                                 {featuredOpportunity?.description || 'Discover funding, incubation, and partnership opportunities at ELIDZ-STP.'}
@@ -286,7 +289,11 @@ export default function DashboardScreen() {
             <View className="mb-8">
                 <View className="flex-row justify-between items-center mx-5 mb-4">
                     <Text className="text-xl font-bold text-foreground tracking-tight">Latest Opportunities</Text>
-                    <Pressable onPress={() => router.push('/opportunities')}>
+                    <Pressable
+                        onPress={() =>
+                            router.push({ pathname: '/opportunities', params: { filter: 'All' } })
+                        }
+                    >
                         <Text className="text-accent text-sm font-semibold">View All</Text>
                     </Pressable>
                 </View>
@@ -306,7 +313,9 @@ export default function DashboardScreen() {
                                 />
                             </View>
                             <View className="flex-1">
-                                <Text className="text-sm font-bold text-foreground mb-0.5" numberOfLines={1}>{opp.title}</Text>
+                                <Text className="text-sm font-bold text-foreground mb-0.5" numberOfLines={1}>
+                                    {formatOpportunityDisplayTitle(opp.title, opp.org)}
+                                </Text>
                                 <Text className="text-muted-foreground text-xs">
                                     {opp.org} • {opp.deadline ? new Date(opp.deadline).toLocaleDateString() : 'No deadline'}
                                 </Text>

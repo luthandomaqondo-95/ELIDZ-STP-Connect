@@ -74,18 +74,7 @@ export default function EnquiryDetailScreen() {
     return (
       <View className="flex-1 bg-background">
         <View className="bg-background">
-          <TabsLayoutHeader
-            title="Enquiry Detail"
-            variant="navy"
-            left={
-              <Feather
-                name="arrow-left"
-                size={20}
-                color="white"
-                onPress={() => router.back()}
-              />
-            }
-          />
+          <TabsLayoutHeader title="Enquiry Detail" variant="navy" showBackButton />
         </View>
         <View className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={colors.accent} />
@@ -104,20 +93,7 @@ export default function EnquiryDetailScreen() {
   return (
     <View className="flex-1 bg-background">
       <View className="bg-background">
-        <TabsLayoutHeader
-          title="Enquiry Detail"
-          variant="navy"
-          left={
-            <View className="p-2 bg-white/10 rounded-full">
-              <Feather
-                name="arrow-left"
-                size={20}
-                color="white"
-                onPress={() => router.back()}
-              />
-            </View>
-          }
-        >
+        <TabsLayoutHeader title="Enquiry Detail" variant="navy" showBackButton>
           <Text className="text-white/80 text-base" numberOfLines={2}>
             Full conversation and status for this enquiry.
           </Text>

@@ -2,7 +2,6 @@ import React from 'react';
 import { View, ScrollView, Pressable, Linking } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
@@ -28,19 +27,7 @@ export default function AboutScreen() {
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View className="bg-background">
-          <TabsLayoutHeader
-            title="About"
-            variant="navy"
-            showActions={false}
-            left={
-              <Pressable
-                onPress={() => router.back()}
-                className="p-2 bg-white/10 rounded-full"
-              >
-                <Feather name="arrow-left" size={20} color="white" />
-              </Pressable>
-            }
-          >
+          <TabsLayoutHeader title="About" variant="navy" showActions={false} showBackButton>
             <View className="items-center mt-4">
               <View className="w-24 h-24 rounded-3xl justify-center items-center shadow-lg mb-4" style={{ backgroundColor: cardBackground }}>
                 <Text className="font-bold text-center text-xs px-2" style={{ color: colors.primary }}>

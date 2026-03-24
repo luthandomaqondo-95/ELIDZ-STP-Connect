@@ -11,7 +11,7 @@ import { Stars } from '@/components/Stars';
 import { verificationService } from '@/services/verification.service';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { validateEmail } from '@/utils/validation';
 import { PasswordField } from '@/components/PasswordField';
 import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
@@ -19,6 +19,7 @@ import { ErrorAlert } from '@/components/Error';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 
 export default function LoginScreen() {
+    const insets = useSafeAreaInsets();
     const { login, signInWithGoogle, signInWithApple, resendSignupConfirmation, profile } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme ?? 'light'];
@@ -131,15 +132,17 @@ export default function LoginScreen() {
                 />
                 <Stars />
             </View>
-            <SafeAreaView className="flex-1 z-10 relative" edges={['top']}>
-                {/* Header stays on top when scrolling (z-20 above scroll content z-0) */}
-                <View className="px-6 pt-2 rounded-3xl h-1/4 z-20">
+            <SafeAreaView className="flex-1 z-10 relative" edges={['top', 'bottom', 'left', 'right']}>
+                {/* Header: padding-driven height so short/tall phones and iOS/Android align; no fixed h-1/4 */}
+                <View className="px-6 pt-1 pb-3 rounded-3xl z-20">
                     <TouchableOpacity
-                        className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
+                        className="flex-row items-center self-start mt-1 py-2 pr-3 pl-0 active:opacity-80"
                         onPress={() => router.back()}
+                        accessibilityRole="button"
+                        accessibilityLabel="Go back"
                     >
                         <Ionicons name="chevron-back" size={24} color={colors.white} />
-                        <Text className="text-white text-sm ml-1">Back</Text>
+                        <Text className="text-white text-sm ml-0.5">Back</Text>
                     </TouchableOpacity>
                     <View className="items-center mt-2">
                         <Image
@@ -149,17 +152,17 @@ export default function LoginScreen() {
                         />
                         <Text className="text-white text-3xl font-bold mt-4 mb-2">Sign In</Text>
                         <Text className="text-white/80 text-base mb-2">Welcome to ELIDZ-STP</Text>
-                        <Text className="text-white/70 text-xs text-center mt-1 px-4">
-                            New user? Confirm your email after signing up before you can sign in.
-                        </Text>
+                      
                     </View>
                 </View>
 
                 <ScreenKeyboardAwareScrollView
                     contentContainerClassName="flex-grow rounded-3xl"
                     className="flex-1 z-0"
+                    insetTop={false}
+                    insetBottom={false}
                 >
-                    <View className="w-full px-6 pb-10 pt-6 rounded-3xl mt-4 bg-background flex flex-col">
+                    <View className="w-full px-6 pt-5 pb-8 rounded-3xl mt-2 bg-background flex flex-col">
                         <View className="flex-row items-center bg-input rounded-xl mb-4 px-4 h-14 border border-border overflow-hidden">
                             <View className="mr-3">
                                 <Ionicons name="mail-outline" size={20} color={colors.accent} />
@@ -215,7 +218,7 @@ export default function LoginScreen() {
                             <View className="flex-1 h-px bg-border" />
                         </View>
                         <Pressable
-                            className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
+                            className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
                             onPress={async () => {
                                 await execute(() => signInWithGoogle(), {
                                     onSuccess: () => {
@@ -237,7 +240,7 @@ export default function LoginScreen() {
                         </Pressable>
                         {Platform.OS === 'ios' && (
                             <Pressable
-                                className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+                                className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
                                 onPress={async () => {
                                     await execute(() => signInWithApple(), {
                                         onSuccess: () => {
@@ -258,7 +261,7 @@ export default function LoginScreen() {
                                 </Text>
                             </Pressable>
                         )}
-                        <View className="flex-row justify-center items-center">
+                        <View className="flex-row justify-center items-center mt-1">
                             <Text className="text-sm text-muted-foreground">Don&apos;t have an account? </Text>
                             <Pressable onPress={() => router.push('/(auth)/signup')}>
                                 <Text className="text-sm font-semibold text-accent">Sign Up</Text>
@@ -284,7 +287,10 @@ export default function LoginScreen() {
 
             {/* Resend confirmation: show after signup ("Account created!") or when login fails due to unconfirmed email */}
             {error?.includes('confirm your account') && email && (
-                <View className="absolute top-28 left-4 right-4 z-40">
+                <View
+                    className="absolute left-4 right-4 z-40"
+                    style={{ top: insets.top + 52 }}
+                >
                     <Pressable
                         onPress={async () => {
                             if (cooldownSeconds > 0 || isResending) return;

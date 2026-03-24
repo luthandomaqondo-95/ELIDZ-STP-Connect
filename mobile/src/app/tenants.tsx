@@ -67,7 +67,7 @@ export default function TenantsScreen() {
         <View className="flex-1">
             {/* Header */}
             <View className="bg-background">
-                <TabsLayoutHeader title="Tenants" variant="navy">
+                <TabsLayoutHeader title="Tenants" variant="navy" showBackButton>
                     <View className={`w-full self-center ${isTablet ? 'max-w-[1200px]' : 'max-w-full'}`}>
                         <Text className="text-white/80 text-base mb-6">
                             Discover our innovative partners and residents.

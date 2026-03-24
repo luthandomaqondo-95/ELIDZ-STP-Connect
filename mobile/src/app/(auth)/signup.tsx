@@ -240,31 +240,36 @@ export default function SignupScreen() {
 				/>
 				<Stars />
 			</View>
-			<SafeAreaView className="flex-1 z-10 relative" edges={['top']}>
-				<View className="px-6 pt-2 rounded-3xl h-1/4 z-10">
+			<SafeAreaView className="flex-1 z-10 relative" edges={['top', 'bottom', 'left', 'right']}>
+				{/* Fixed above scroll so "Register" / subtitle never sit under the white form card (z-20 > scroll z-0) */}
+				<View className="px-6 pt-1 pb-3 rounded-3xl z-20">
 					<TouchableOpacity
-						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
+						className="flex-row items-center self-start mt-1 py-2 pr-3 pl-0 active:opacity-80"
 						onPress={() => router.back()}
+						accessibilityRole="button"
+						accessibilityLabel="Go back"
 					>
 						<Ionicons name="chevron-back" size={24} color={colors.white} />
-						<Text className="text-white text-sm ml-1">Back</Text>
+						<Text className="text-white text-sm ml-0.5">Back</Text>
 					</TouchableOpacity>
-					<View className="items-center mt-2">
+					<View className="items-center mt-1">
 						<Image
 							source={require('../../../assets/logos/blue text-idz logo.png')}
 							className="w-60 h-[100px]"
 							resizeMode="contain"
 						/>
-						<Text className="text-white text-3xl font-bold mt-4 mb-2">Register</Text>
-						<Text className="text-white/80 text-base mb-2">Create a new account</Text>
+						<Text className="text-white text-3xl font-bold mt-3 mb-1">Register</Text>
+						<Text className="text-white/80 text-base mb-1">Create a new account</Text>
 					</View>
 				</View>
 
 				<ScreenKeyboardAwareScrollView
 					contentContainerClassName="flex-grow rounded-3xl"
-					className="flex-1 z-10"
+					className="flex-1 z-0"
+					insetTop={false}
+					insetBottom={false}
 				>
-					<View className="w-full px-6 pb-10 pt-6 rounded-3xl mt-4 bg-background flex flex-col">
+					<View className="w-full px-6 pt-5 pb-8 rounded-3xl mt-2 bg-background flex flex-col">
 					{/* Full Name Input */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
 						<View className="mr-3">

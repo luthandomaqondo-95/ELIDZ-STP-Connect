@@ -12,6 +12,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useColorScheme } from "@/hooks/use-theme-color";
 import { store } from "@/state";
 import * as Sentry from '@sentry/react-native';
+import { initSentry } from '@/lib/sentry-init';
 import ProtectedAppRoutes from "@/components/ProtectedAppRoutes";
 import AuthProvider from '@/providers/auth-provider';
 import * as ExpoSplashScreen from 'expo-splash-screen';
@@ -78,27 +79,7 @@ export {
 
 
 
-Sentry.init({
-	dsn: 'https://091563b9a05c0524f9a8f88c750e3b55@o4509637349277697.ingest.us.sentry.io/4510425767936000',
-
-	// Adds more context data to events (IP address, cookies, user, etc.)
-	// For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
-	sendDefaultPii: true,
-
-	// Enable Logs
-	enableLogs: true,
-
-	// Configure Session Replay
-	replaysSessionSampleRate: 0.1,
-	replaysOnErrorSampleRate: 1,
-	integrations: [
-		// Sentry.mobileReplayIntegration(), 
-		// Sentry.feedbackIntegration()
-	],
-
-	// uncomment the line below to enable Spotlight (https://spotlightjs.com)
-	// spotlight: __DEV__,
-})
+initSentry();
 
 
 function RootLayout() {
