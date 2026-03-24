@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Pressable, Alert, Switch, Linking } from 'react-native';
+import React from 'react';
+import { View, Pressable, Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '../components/ScreenScrollView';
@@ -15,8 +15,6 @@ import { DEFAULT_AVATAR } from '@/constants/avatars';
 
 function SettingsScreen() {
   const { profile: user, logout } = useAuthContext();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [emailUpdates, setEmailUpdates] = useState(true);
   const { uri: avatarUri } = useAvatarUri(user?.avatar);
   const { colorScheme } = useColorScheme();
   const colors = COLORS[colorScheme];
@@ -176,41 +174,6 @@ function SettingsScreen() {
           </View>
         </Pressable>
 
-        {/* Preferences */}
-        <View className="mt-8">
-          <Text className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">Preferences</Text>
-
-          <View className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-            <SettingRow
-              icon="bell"
-              title="Push Notifications"
-              subtitle="Alerts for messages and updates"
-              isFirst
-              right={
-                <Switch
-                  value={notificationsEnabled}
-                  onValueChange={setNotificationsEnabled}
-                  trackColor={{ false: colors.gray200, true: colors.accent }}
-                  thumbColor={colors.white}
-                />
-              }
-            />
-            <SettingRow
-              icon="mail"
-              title="Email Updates"
-              subtitle="News and important announcements"
-              right={
-                <Switch
-                  value={emailUpdates}
-                  onValueChange={setEmailUpdates}
-                  trackColor={{ false: colors.gray200, true: colors.accent }}
-                  thumbColor={colors.white}
-                />
-              }
-            />
-          </View>
-        </View>
-
         {/* Support */}
         <View className="mt-8">
           <Text className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">Support</Text>
@@ -267,4 +230,3 @@ function SettingsScreen() {
 }
 
 export default withAuthGuard(SettingsScreen);
-

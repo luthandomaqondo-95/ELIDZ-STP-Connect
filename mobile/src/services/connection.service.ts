@@ -397,7 +397,7 @@ class ConnectionService {
 
 		const searchLower = search?.toLowerCase() || '';
 
-		const connectedContacts: ContactWithConnection[] = await Promise.all(
+		const connectedContacts = await Promise.all(
 			connections.map(async (conn) => {
 				const otherUserId = conn.requester_id === userId ? conn.addressee_id : conn.requester_id;
 				const otherUser = conn.requester_id === userId
@@ -421,33 +421,39 @@ class ConnectionService {
 					if (!nameMatch && !messageMatch) return null;
 				}
 
-				return {
+				const row: ContactWithConnection = {
 					...otherUser,
-					connectionStatus: 'connected' as const,
+					connectionStatus: 'connected',
 					connectionId: conn.id,
 					lastMessage: chat?.lastMessage?.content,
 					lastMessageTime: chat?.lastMessage?.created_at ? this.formatTimeAgo(chat.lastMessage.created_at) : undefined,
 					hasUnreadMessages: (chat?.unreadCount || 0) > 0,
-				} as ContactWithConnection;
+				};
+				return row;
 			})
 		);
 
-		const validConnectedContacts = connectedContacts.filter(c => c !== null) as ContactWithConnection[];
+		const validConnectedContacts = connectedContacts.filter(
+			(c): c is ContactWithConnection => c !== null
+		);
 
 		// Process connection requests (pending sent/received)
-		const pendingContacts: ContactWithConnection[] = connectionRequests.map((request) => {
-			const user = request.user;
-			if (search) {
-				const match = user.name.toLowerCase().includes(searchLower) ||
-					user.organization?.toLowerCase().includes(searchLower);
-				if (!match) return null;
-			}
-			return {
-				...user,
-				connectionStatus: request.isIncoming ? 'pending_received' : 'pending_sent' as const,
-				connectionId: request.id,
-			} as ContactWithConnection;
-		}).filter(c => c !== null) as ContactWithConnection[];
+		const pendingContacts = connectionRequests
+			.map((request) => {
+				const user = request.user;
+				if (search) {
+					const match = user.name.toLowerCase().includes(searchLower) ||
+						user.organization?.toLowerCase().includes(searchLower);
+					if (!match) return null;
+				}
+				const row: ContactWithConnection = {
+					...user,
+					connectionStatus: request.isIncoming ? 'pending_received' : 'pending_sent',
+					connectionId: request.id,
+				};
+				return row;
+			})
+			.filter((c): c is ContactWithConnection => c !== null);
 
 		// Get IDs of users who are already in pending or connected lists
 		const excludedUserIds = new Set<string>();
@@ -457,10 +463,12 @@ class ConnectionService {
 		// Available users - exclude those already in pending/connected
 		const availableContacts: ContactWithConnection[] = available
 			.filter(user => !excludedUserIds.has(user.id))
-			.map((user) => ({
-				...user,
-				connectionStatus: 'available' as const,
-			} as ContactWithConnection));
+			.map(
+				(user): ContactWithConnection => ({
+					...user,
+					connectionStatus: 'available',
+				})
+			);
 
 		// Combine all contacts - pending/connected take priority over available
 		const allContacts = [...validConnectedContacts, ...pendingContacts, ...availableContacts];
@@ -490,28 +498,6 @@ class ConnectionService {
 		}
 
 		return data as Profile;
-	}
-
-	/**
-	 * Calculate compatibility score between two users
-	 */
-	async calculateCompatibility(userId1: string, userId2: string): Promise<{
-		score: number;
-		reasons: string[];
-		level: 'high' | 'medium' | 'low';
-	} | null> {
-		const { recommendationService } = await import('./recommendation.service');
-		
-		const [user1, user2] = await Promise.all([
-			this.getProfileById(userId1),
-			this.getProfileById(userId2),
-		]);
-
-		if (!user1 || !user2) {
-			return null;
-		}
-
-		return recommendationService.calculateCompatibility(user1, user2);
 	}
 
 	private formatTimeAgo(dateString: string): string {
