@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, TouchableOpacity, Image } from 'react-native';
+import { View, TextInput, Pressable, TouchableOpacity, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -82,10 +82,6 @@ export default function LoginScreen() {
     async function handleLogin() {
         if (!email || !password) {
             setError('Please enter both email and password', 'Missing fields');
-            return;
-        }
-        if (!acceptedTerms) {
-            setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
             return;
         }
         if (cooldownSeconds > 0) {
@@ -171,7 +167,7 @@ export default function LoginScreen() {
                             <TextInput
                                 className="flex-1 min-h-0 py-0 text-base text-foreground"
                                 value={email}
-                                onChangeText={setEmail}
+                                onChangeText={(t) => { setEmail(t); clearError(); }}
                                 placeholder="Email"
                                 placeholderTextColor={colors.placeholder}
                                 keyboardType="email-address"
@@ -181,22 +177,29 @@ export default function LoginScreen() {
                         </View>
                         <PasswordField
                             value={password}
-                            onChangeText={setPassword}
+                            onChangeText={(t) => { setPassword(t); clearError(); }}
                             placeholder="Password"
                             accentColor={colors.accent}
                             placeholderColor={colors.placeholder}
                             editable={!isLoading}
                             containerClassName="flex-row items-center bg-input rounded-xl mb-2 px-4 h-14 border border-border overflow-hidden"
                         />
-                        <View className="flex-row justify-end mb-6">
+                        <View className="flex-row justify-end mb-4">
                             <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
                                 <Text className="text-accent text-sm">Forgot Password?</Text>
                             </Pressable>
                         </View>
                         <TermsAndPrivacyNotice
-                            accepted={acceptedTerms}
-                            onToggle={() => setAcceptedTerms(!acceptedTerms)}
+                            accepted={true}
+                            onToggle={() => {}}
+                            showCheckbox={false}
+                            context="signin"
                         />
+                        {error && !error?.includes('Account created!') && !error?.includes('Confirmation email sent') && (
+                            <View className="mb-4 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
+                                <Text className="text-destructive text-sm">{error}</Text>
+                            </View>
+                        )}
                         <Button
                             className="rounded-xl bg-secondary justify-center rounded-full items-center mb-6 py-3.5 px-6 min-h-[48px]"
                             onPress={handleLogin}
@@ -212,31 +215,49 @@ export default function LoginScreen() {
                             <View className="flex-1 h-px bg-border" />
                         </View>
                         <Pressable
-                            className="min-h-[48px] py-3.5 px-6 rounded-xl bg-card border border-border flex-row items-center justify-center mb-4 active:opacity-80"
+                            className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
                             onPress={async () => {
-                                await execute(() => signInWithGoogle());
+                                await execute(() => signInWithGoogle(), {
+                                    onSuccess: () => {
+                                        clearError();
+                                        router.replace('/(tabs)');
+                                    },
+                                });
                             }}
+                            disabled={isLoading}
                         >
                             <Image
                                 source={require('../../../assets/logos/search.png')}
                                 className="w-[22px] h-[22px] mr-3"
                                 resizeMode="contain"
                             />
-                            <Text className="text-base font-semibold text-foreground">Continue with Google</Text>
+                            <Text className="text-base font-semibold text-foreground">
+                                {isLoading ? 'Signing in...' : 'Continue with Google'}
+                            </Text>
                         </Pressable>
-                        <Pressable
-                            className="min-h-[48px] py-3.5 px-6 rounded-xl bg-card border border-border flex-row items-center justify-center mb-6 active:opacity-80"
-                            onPress={async () => {
-                                await execute(() => signInWithApple());
-                            }}
-                        >
-                            <Image
-                                source={require('../../../assets/logos/apple-logo.png')}
-                                className="w-[22px] h-[22px] mr-3"
-                                resizeMode="contain"
-                            />
-                            <Text className="text-base font-semibold text-foreground">Continue with Apple</Text>
-                        </Pressable>
+                        {Platform.OS === 'ios' && (
+                            <Pressable
+                                className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+                                onPress={async () => {
+                                    await execute(() => signInWithApple(), {
+                                        onSuccess: () => {
+                                            clearError();
+                                            router.replace('/(tabs)');
+                                        },
+                                    });
+                                }}
+                                disabled={isLoading}
+                            >
+                                <Image
+                                    source={require('../../../assets/logos/apple-logo.png')}
+                                    className="w-[22px] h-[22px] mr-3"
+                                    resizeMode="contain"
+                                />
+                                <Text className="text-base font-semibold text-foreground">
+                                    {isLoading ? 'Signing in...' : 'Continue with Apple'}
+                                </Text>
+                            </Pressable>
+                        )}
                         <View className="flex-row justify-center items-center">
                             <Text className="text-sm text-muted-foreground">Don&apos;t have an account? </Text>
                             <Pressable onPress={() => router.push('/(auth)/signup')}>
@@ -247,24 +268,22 @@ export default function LoginScreen() {
                 </ScreenKeyboardAwareScrollView>
             </SafeAreaView>
 
-            {/* Error Alert */}
+            {/* Error Alert - only for success/info messages (Account created, Confirmation email sent) */}
             <ErrorAlert
-                visible={!!error}
+                visible={!!error && (error?.includes('Account created!') || error?.includes('Confirmation email sent'))}
                 title={errorTitle}
                 message={error ?? ''}
                 onDismiss={clearError}
                 severity={
-                    error?.includes('Rate limited') || error?.includes('Too many') ? 'warning'
-                        : error?.includes('Confirmation email sent') ? 'success'
+                    error?.includes('Confirmation email sent') ? 'success'
                         : error?.includes('Account created!') || error?.includes('confirm your account') ? 'info'
-                        : error?.includes('Email') ? 'info'
                         : 'error'
                 }
                 autoDismissMs={error?.includes('Account created!') ? 5000 : 6000}
             />
 
-            {/* Resend confirmation link when login fails due to unconfirmed email */}
-            {error?.includes('confirm your account') && !error?.includes('Account created!') && email && (
+            {/* Resend confirmation: show after signup ("Account created!") or when login fails due to unconfirmed email */}
+            {error?.includes('confirm your account') && email && (
                 <View className="absolute top-28 left-4 right-4 z-40">
                     <Pressable
                         onPress={async () => {

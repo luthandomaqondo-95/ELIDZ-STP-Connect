@@ -419,4 +419,3 @@ function Viewer360WithSwitch(
     </View>
   );
 }
-

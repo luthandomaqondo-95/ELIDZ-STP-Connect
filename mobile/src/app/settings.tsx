@@ -21,6 +21,11 @@ function SettingsScreen() {
   const { colorScheme } = useColorScheme();
   const colors = COLORS[colorScheme];
 
+  // Play Console requires a link users can use to request deletion of their account/data.
+  // We route users to the public contact page and also offer an email template.
+  const ACCOUNT_DELETION_REQUEST_URL = 'https://www.elidz.co.za/contact-us/';
+  const PRIVACY_SUPPORT_EMAIL = 'info@elidz.co.za';
+
   const avatarSource = avatarUri ? { uri: avatarUri } : DEFAULT_AVATAR;
 
   async function handleLogout() {
@@ -37,29 +42,34 @@ function SettingsScreen() {
   }
 
   function handleDeleteAccount() {
-    Alert.alert('Delete Account', 'Are you absolutely sure? This action cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          Alert.alert(
-            'Confirm Delete',
-            'This will permanently delete your account and all associated data.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Delete Forever',
-                style: 'destructive',
-                onPress: async () => {
-                  await logout();
-                },
-              },
-            ],
-          );
+    Alert.alert(
+      'Request Account Deletion',
+      'Deleting your account/data requires a request to our support team. This button will open the request options.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Open Request Form',
+          onPress: () => openUrl(ACCOUNT_DELETION_REQUEST_URL),
         },
-      },
-    ]);
+        {
+          text: 'Email Support',
+          style: 'destructive',
+          onPress: () => {
+            const subject = encodeURIComponent('Account/data deletion request');
+            const body = encodeURIComponent(
+              `Hello,\n\nPlease help me with a data deletion request for ELIDZ-STP-Connect.\n\n` +
+              `I am requesting:\n` +
+              `- Full account deletion (account + associated data), OR\n` +
+              `- Partial data deletion without closing my account (if applicable).\n\n` +
+              `Account email: ${user?.email ?? '(unknown)'}\n` +
+              `User ID: ${user?.id ?? '(unknown)'}\n\n` +
+              `Please confirm once the request is processed.\n\nThanks,`
+            );
+            openUrl(`mailto:${PRIVACY_SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
+          },
+        },
+      ]
+    );
   }
 
   async function openUrl(url: string) {
@@ -230,16 +240,22 @@ function SettingsScreen() {
           <Text className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">Account</Text>
           <View className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <SettingRow
+              icon="lock"
+              title="Change Password"
+              subtitle="Update your password"
+              isFirst
+              onPress={() => router.push('/(auth)/change-password')}
+            />
+            <SettingRow
               icon="log-out"
               title="Logout"
               destructive
-              isFirst
               onPress={handleLogout}
             />
             <SettingRow
               icon="trash-2"
               title="Delete Account"
-              subtitle="This cannot be undone"
+                subtitle="Request deletion of your account/data"
               destructive
               onPress={handleDeleteAccount}
             />

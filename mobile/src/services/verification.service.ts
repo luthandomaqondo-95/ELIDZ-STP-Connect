@@ -24,7 +24,7 @@ class VerificationService {
     // Get all verification documents for a user
     async getAllVerifications(userId: string): Promise<SMMEVerification[]> {
         const { data, error } = await supabase
-            .from('sme_verifications')
+            .from('smme_verifications')
             .select('*')
             .eq('user_id', userId)
             .order('created_at', { ascending: false });
@@ -90,7 +90,7 @@ class VerificationService {
     async submitVerification(userId: string, documentUrl: string, documentType: DocumentType): Promise<SMMEVerification> {
         // Upsert to replace existing document of the same type
         const { data, error } = await supabase
-            .from('sme_verifications')
+            .from('smme_verifications')
             .upsert({
                 user_id: userId,
                 document_url: documentUrl,
