@@ -134,7 +134,7 @@ function SettingsScreen() {
   return (
     <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="bg-background">
-        <TabsLayoutHeader title="Settings" variant="navy" showActions={false}>
+        <TabsLayoutHeader title="Settings" variant="navy" showActions={false} showBackButton>
           <Text className="text-white/80 text-base">
             Manage your account and preferences.
           </Text>

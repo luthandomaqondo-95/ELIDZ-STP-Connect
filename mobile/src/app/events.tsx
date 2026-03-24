@@ -117,7 +117,7 @@ export default function EventsScreen() {
     <View className="flex-1 bg-background">
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader title="Events" variant="navy">
+          <TabsLayoutHeader title="Events" variant="navy" showBackButton>
             <View style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}>
               <Text className="text-white/80 text-base mb-6">
                 Discover upcoming events, workshops, and networking opportunities

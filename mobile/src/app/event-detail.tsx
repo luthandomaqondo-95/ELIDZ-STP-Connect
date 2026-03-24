@@ -43,7 +43,7 @@ function EventDetailScreen() {
     return (
       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader title="Events" variant="navy">
+          <TabsLayoutHeader title="Events" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
               Event details.
             </Text>
@@ -61,7 +61,7 @@ function EventDetailScreen() {
     return (
       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader title="Events" variant="navy">
+          <TabsLayoutHeader title="Events" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
               Event details.
             </Text>
@@ -92,7 +92,7 @@ function EventDetailScreen() {
   return (
     <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="bg-background">
-        <TabsLayoutHeader title="Events" variant="navy">
+        <TabsLayoutHeader title="Events" variant="navy" showBackButton>
           <Text className="text-white/80 text-base">
             Event details.
           </Text>

@@ -101,7 +101,7 @@ function DocumentSaverScreen() {
 	return (
 		<ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
 			<View className="bg-background">
-				<TabsLayoutHeader title="Documents" variant="navy">
+				<TabsLayoutHeader title="Documents" variant="navy" showBackButton>
 					<Text className="text-white/80 text-base">
 						Save important documents for offline access.
 					</Text>

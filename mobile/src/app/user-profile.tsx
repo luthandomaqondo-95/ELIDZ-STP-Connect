@@ -377,8 +377,13 @@ function UserProfileScreen() {
                                                     </Text>
                                                 </View>
                                                 <View className="items-end">
-                                                    <View className="bg-primary/10 px-2 py-1 rounded-lg">
-                                                        <Text className="text-xs font-bold text-primary">{item.category}</Text>
+                                                    <View
+                                                        className="px-2 py-1 rounded-lg"
+                                                        style={{ backgroundColor: colors.whiteOpacity15 }}
+                                                    >
+                                                        <Text className="text-xs font-bold" style={{ color: colors.accent }}>
+                                                            {item.category}
+                                                        </Text>
                                                     </View>
                                                     <Text className="text-foreground font-extrabold mt-2 text-sm">
                                                         {item.price || 'Contact'}
@@ -389,12 +394,16 @@ function UserProfileScreen() {
                                                 <View className="flex-row flex-wrap mt-3">
                                                     {item.contact_email ? (
                                                         <Pressable onPress={() => Linking.openURL(`mailto:${item.contact_email}`)} className="mr-3 mt-1">
-                                                            <Text className="text-xs text-primary font-semibold">{item.contact_email}</Text>
+                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                                                                {item.contact_email}
+                                                            </Text>
                                                         </Pressable>
                                                     ) : null}
                                                     {item.contact_phone ? (
                                                         <Pressable onPress={() => Linking.openURL(`tel:${item.contact_phone}`)} className="mt-1">
-                                                            <Text className="text-xs text-primary font-semibold">{item.contact_phone}</Text>
+                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                                                                {item.contact_phone}
+                                                            </Text>
                                                         </Pressable>
                                                     ) : null}
                                                 </View>
@@ -423,8 +432,13 @@ function UserProfileScreen() {
                                                     </Text>
                                                 </View>
                                                 <View className="items-end">
-                                                    <View className="bg-primary/10 px-2 py-1 rounded-lg">
-                                                        <Text className="text-xs font-bold text-primary">{item.category}</Text>
+                                                    <View
+                                                        className="px-2 py-1 rounded-lg"
+                                                        style={{ backgroundColor: colors.whiteOpacity15 }}
+                                                    >
+                                                        <Text className="text-xs font-bold" style={{ color: colors.accent }}>
+                                                            {item.category}
+                                                        </Text>
                                                     </View>
                                                 </View>
                                             </View>
@@ -432,12 +446,16 @@ function UserProfileScreen() {
                                                 <View className="flex-row flex-wrap mt-3">
                                                     {item.contact_email ? (
                                                         <Pressable onPress={() => Linking.openURL(`mailto:${item.contact_email}`)} className="mr-3 mt-1">
-                                                            <Text className="text-xs text-primary font-semibold">{item.contact_email}</Text>
+                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                                                                {item.contact_email}
+                                                            </Text>
                                                         </Pressable>
                                                     ) : null}
                                                     {item.contact_phone ? (
                                                         <Pressable onPress={() => Linking.openURL(`tel:${item.contact_phone}`)} className="mt-1">
-                                                            <Text className="text-xs text-primary font-semibold">{item.contact_phone}</Text>
+                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                                                                {item.contact_phone}
+                                                            </Text>
                                                         </Pressable>
                                                     ) : null}
                                                 </View>

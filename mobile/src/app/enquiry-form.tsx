@@ -105,15 +105,7 @@ function EnquiryFormScreen() {
     <View className="flex-1 bg-background">
       <ScreenKeyboardAwareScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader
-            title="Submit Enquiry"
-            variant="navy"
-            left={
-              <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full">
-                <Feather name="arrow-left" size={20} color="white" />
-              </Pressable>
-            }
-          >
+          <TabsLayoutHeader title="Submit Enquiry" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
               Send us your questions or requests.
             </Text>

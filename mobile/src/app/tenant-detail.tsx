@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Pressable, ScrollView, Linking, Alert, Dimensions } from 'react-native';
-import { useLocalSearchParams, router } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { useTheme } from '../hooks/useTheme';
 import { Feather } from '@expo/vector-icons';
@@ -94,19 +94,7 @@ function TenantDetailScreen() {
     <View className="flex-1 bg-background">
       {/* Header */}
       <View className="bg-background">
-        <TabsLayoutHeader
-          title={name}
-          variant="navy"
-          left={
-            <Pressable
-              onPress={() => router.back()}
-              className="p-2 bg-white/10 rounded-full"
-              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-            >
-              <Feather name="arrow-left" size={20} color="white" />
-            </Pressable>
-          }
-        >
+        <TabsLayoutHeader title={name} variant="navy" showBackButton>
           <Text className="text-white/80 text-base" numberOfLines={1}>
             {industry} • {location}
           </Text>

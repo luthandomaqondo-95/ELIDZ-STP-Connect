@@ -156,7 +156,7 @@ export default function MyEnquiriesScreen() {
     return (
       <View className="flex-1 bg-background">
         <View className="bg-background">
-          <TabsLayoutHeader title="My Enquiries" variant="navy">
+          <TabsLayoutHeader title="My Enquiries" variant="navy" showBackButton>
             <View
               style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
             >
@@ -201,7 +201,7 @@ export default function MyEnquiriesScreen() {
         }
       >
         <View className="bg-background">
-          <TabsLayoutHeader title="My Enquiries" variant="navy">
+          <TabsLayoutHeader title="My Enquiries" variant="navy" showBackButton>
             <View
               style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
             >

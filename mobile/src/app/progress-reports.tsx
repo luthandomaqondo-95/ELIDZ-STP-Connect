@@ -171,15 +171,7 @@ function ProgressReportsScreen() {
     return (
       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader
-            title="Progress Reports"
-            variant="navy"
-            left={
-              <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full">
-                <Feather name="arrow-left" size={20} color="white" />
-              </Pressable>
-            }
-          >
+          <TabsLayoutHeader title="Progress Reports" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
               Upload and track your progress reports.
             </Text>
@@ -196,15 +188,7 @@ function ProgressReportsScreen() {
   return (
     <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="bg-background">
-        <TabsLayoutHeader
-          title="Progress Reports"
-          variant="navy"
-          left={
-            <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full">
-              <Feather name="arrow-left" size={20} color="white" />
-            </Pressable>
-          }
-        >
+        <TabsLayoutHeader title="Progress Reports" variant="navy" showBackButton>
           <Text className="text-white/80 text-base">
             Upload and track your progress reports.
           </Text>

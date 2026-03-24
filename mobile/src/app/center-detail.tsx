@@ -75,19 +75,7 @@ function CenterDetailScreen() {
   return (
     <View className="flex-1 bg-background">
       <View className="bg-background">
-        <TabsLayoutHeader
-          title={displayName}
-          variant="navy"
-          showActions={false}
-          left={
-            <Pressable
-              onPress={() => router.back()}
-              className="p-2 bg-white/10 rounded-full"
-            >
-              <Feather name="arrow-left" size={20} color="white" />
-            </Pressable>
-          }
-        >
+        <TabsLayoutHeader title={displayName} variant="navy" showActions={false} showBackButton>
           <Text className="text-white/80 text-base">
             Services, equipment, and contact information.
           </Text>

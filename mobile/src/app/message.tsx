@@ -29,7 +29,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
-import { TabsLayoutHeader } from '@/components/Header';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
