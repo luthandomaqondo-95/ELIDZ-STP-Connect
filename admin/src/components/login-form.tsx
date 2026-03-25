@@ -74,7 +74,7 @@ export function LoginForm({
 	return (
 		<div className={cn("flex flex-col gap-6", className)} {...props}>
 			<Card className="relative rounded-3xl overflow-hidden shadow-[0_0_40px_rgba(251,146,60,0.55)] ring-2 ring-orange-300/45 before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl before:shadow-[0_0_55px_rgba(251,146,60,0.45)]">
-				<CardHeader className="text-center pb-5 md:pb-8">
+				<CardHeader className="text-center pb-3 md:pb-5 min-[850px]:pb-7 lg:pb-6">
 					<div className="flex items-center justify-center gap-2 mb-2">
 						<Image
 							src="/logos/elidz-icon.png"
@@ -95,11 +95,11 @@ export function LoginForm({
 				<CardContent className="pt-0">
 					<form onSubmit={handleSubmit}>
 						{error && (
-							<div className="mb-4 rounded-2xl border border-red-500/20 bg-red-50 p-3 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
+							<div className="mb-3 rounded-2xl border border-red-500/20 bg-red-50 p-3 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
 								{error}
 							</div>
 						)}
-						<FieldGroup className="gap-4">
+						<FieldGroup className="gap-3 min-[850px]:gap-5 lg:gap-5">
 							<Field>
 								<FloatingLabelInput
 									id="email"
@@ -110,7 +110,7 @@ export function LoginForm({
 									value={formData.email}
 									onChange={(e) => { setFormData({ ...formData, email: e.target.value }); setError(null); }}
 									disabled={isLoading}
-									className="h-11 rounded-3xl border-transparent bg-gray-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-transparent"
+									className="h-11 min-[850px]:h-[60px] lg:h-11 rounded-3xl border-transparent bg-gray-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-transparent"
 								/>
 							</Field>
 							<Field>
@@ -123,7 +123,7 @@ export function LoginForm({
 									onChange={(e) => { setFormData({ ...formData, password: e.target.value }); setError(null); }}
 									disabled={isLoading}
 									setShowPassword={setShowPassword}
-									className="h-11 rounded-3xl border-transparent bg-gray-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-transparent pr-10"
+									className="h-11 min-[850px]:h-[60px] lg:h-11 rounded-3xl border-transparent bg-gray-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-transparent pr-10"
 								/>
 								<div className="mt-2 text-right">
 									<Link
@@ -133,9 +133,9 @@ export function LoginForm({
 										Forgot your password?
 									</Link>
 								</div>
-								<div className="mt-3 h-px w-full bg-zinc-400/40 md:hidden" />
+								<div className="mt-2 h-px w-full bg-zinc-400/40 md:hidden" />
 							</Field>
-							<Field className="pt-2">
+							<Field className="pt-1">
 								<div className="flex justify-center">
 									<AnimatedDashboardButton
 										type="submit"
@@ -143,10 +143,10 @@ export function LoginForm({
 										isLoading={isLoading}
 										variant={isSuccess ? "green" : "blue"}
 										label={isLoading ? "Signing in..." : isSuccess ? "Signed in" : "Sign in"}
-										className="w-full !h-11"
+										className="w-full !h-11 min-[850px]:!h-[60px] lg:!h-11"
 									/>
 								</div>
-								<p className="mt-3 text-center text-xs text-zinc-500">
+								<p className="mt-2 text-center text-xs text-zinc-500">
 									By signing in, you agree to the{" "}
 									<Link href="/terms" className="text-indigo-400 hover:text-indigo-300 hover:underline">
 										Terms &amp; Conditions
@@ -156,7 +156,7 @@ export function LoginForm({
 										Privacy Policy
 									</Link>.
 								</p>
-								<FieldDescription className="text-center mt-4 text-zinc-500">
+								<FieldDescription className="text-center mt-3 text-zinc-500">
 									Don&apos;t have an account?{" "}
 									<Link href="/auth/signup" className="text-indigo-400 hover:text-indigo-300 hover:underline">
 										Sign up

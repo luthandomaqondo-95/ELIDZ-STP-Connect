@@ -1,3 +1,5 @@
+ "use client";
+import { usePathname } from "next/navigation";
 import { ArrowLeft, Copyright } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,6 +10,9 @@ export default function AuthLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const pathname = usePathname();
+    const isLoginRoute = pathname === "/auth/login";
+
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-slate-900 bg-[url('/planet2.png')] bg-cover bg-center bg-no-repeat text-white">
             <NextTopLoader color="#1e3a8a" showSpinner={false} />
@@ -22,8 +27,8 @@ export default function AuthLayout({
                 </Link>
 
                 {/* Main Content */}
-                <div className="relative z-10 flex w-full flex-1 items-center justify-center md:mt-24 md:items-start md:justify-start lg:mt-16">
-                    <div className="mx-auto w-full max-w-sm md:mx-0 md:ml-12">
+                <div className={`relative z-10 flex w-full flex-1 items-center justify-center md:mt-0 md:items-center md:justify-center lg:mt-0 lg:items-center lg:justify-center xl:mt-16 xl:items-start xl:justify-start ${isLoginRoute ? "auth-login-main" : ""}`}>
+                    <div className={`mx-auto w-full max-w-sm md:mx-auto min-[850px]:max-w-md lg:max-w-md xl:mx-0 xl:ml-12 xl:max-w-sm ${isLoginRoute ? "auth-login-panel" : ""}`}>
                         <div className="mb-4 flex justify-center">
                     <Image
                                 src="/logos/blue text-idz logo.png"
