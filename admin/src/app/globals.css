@@ -208,3 +208,168 @@
     padding-bottom: 2.75rem !important;
   }
 }
+
+/* Nest Hub Max: ensure login fits without scrolling (1280x800 + 800x1280) */
+@media (orientation: landscape) and (min-width: 1200px) and (max-width: 1320px) and (min-height: 760px) and (max-height: 840px) {
+  .auth-login-main {
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+  .auth-login-panel {
+    margin-left: 0.75rem !important;
+    margin-right: auto !important;
+    --tw-translate-y: 4px !important;
+    transform: translateY(4px) !important;
+    max-width: 380px !important;
+  }
+  .auth-login-panel [data-slot="card"] {
+    min-height: auto !important;
+    padding-top: 1.25rem !important;
+    padding-bottom: 1.25rem !important;
+  }
+  .auth-login-panel [data-slot="card-header"] {
+    padding-top: 1rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .auth-login-panel [data-slot="card-content"] {
+    padding-top: 0 !important;
+    padding-bottom: 1.0rem !important;
+  }
+  .auth-login-panel input {
+    height: 42px !important;
+  }
+  .auth-login-panel button {
+    height: 42px !important;
+  }
+  .auth-login-shell {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  .auth-login-footer {
+    margin-top: 0.5rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+}
+
+@media (orientation: portrait) and (min-width: 760px) and (max-width: 840px) and (min-height: 1200px) and (max-height: 1320px) {
+  .auth-login-main {
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+  .auth-login-panel {
+    margin-left: 0.35rem !important;
+    margin-right: auto !important;
+    --tw-translate-y: 4px !important;
+    transform: translateY(4px) !important;
+    max-width: 360px !important;
+  }
+  .auth-login-panel [data-slot="card"] {
+    min-height: auto !important;
+    padding-top: 1.2rem !important;
+    padding-bottom: 1.2rem !important;
+  }
+  .auth-login-panel [data-slot="card-header"] {
+    padding-top: 1rem !important;
+    padding-bottom: 0.5rem !important;
+  }
+  .auth-login-panel [data-slot="card-content"] {
+    padding-top: 0 !important;
+    padding-bottom: 1.0rem !important;
+  }
+  .auth-login-panel input {
+    height: 41px !important;
+  }
+  .auth-login-panel button {
+    height: 41px !important;
+  }
+  .auth-login-shell {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  .auth-login-footer {
+    margin-top: 0.5rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+}
+
+/* Nest Hub (1st gen/2nd gen family): 1024x600 and close variants */
+@media (orientation: landscape) and (min-width: 980px) and (max-width: 1080px) and (min-height: 560px) and (max-height: 640px) {
+  .auth-login-main {
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+  .auth-login-panel {
+    margin-left: 0.25rem !important;
+    margin-right: auto !important;
+    --tw-translate-y: 0 !important;
+    transform: translateY(0) !important;
+    max-width: 340px !important;
+  }
+  .auth-login-shell {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .auth-login-panel [data-slot="card"] {
+    min-height: auto !important;
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+    border-radius: 1.25rem !important;
+  }
+  .auth-login-panel [data-slot="card-header"] {
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.35rem !important;
+  }
+  .auth-login-panel [data-slot="card-content"] {
+    padding-top: 0 !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .auth-login-panel h3 {
+    font-size: 1.3rem !important;
+    line-height: 1.6rem !important;
+  }
+  .auth-login-panel [data-slot="field-group"] {
+    gap: 0.5rem !important;
+  }
+  .auth-login-panel input,
+  .auth-login-panel button {
+    height: 36px !important;
+  }
+  .auth-login-panel .text-sm {
+    font-size: 0.8125rem !important;
+    line-height: 1rem !important;
+  }
+  .auth-login-panel .text-xs {
+    font-size: 0.6875rem !important;
+    line-height: 0.95rem !important;
+  }
+  .auth-login-footer {
+    margin-top: 0.35rem !important;
+    font-size: 0.6875rem !important;
+    line-height: 0.95rem !important;
+  }
+}
+
+/* Nest Hub Max OTP panel positioning only */
+@media (orientation: landscape) and (min-width: 1200px) and (max-width: 1320px) and (min-height: 760px) and (max-height: 840px) {
+  .auth-otp-main {
+    justify-content: flex-start !important;
+  }
+  .auth-otp-panel {
+    margin-left: 1.25rem !important;
+    margin-right: auto !important;
+    transform: translateY(10px) !important;
+  }
+}
+
+@media (orientation: portrait) and (min-width: 760px) and (max-width: 840px) and (min-height: 1200px) and (max-height: 1320px) {
+  .auth-otp-main {
+    justify-content: flex-start !important;
+  }
+  .auth-otp-panel {
+    margin-left: 0.75rem !important;
+    margin-right: auto !important;
+    transform: translateY(10px) !important;
+  }
+}
