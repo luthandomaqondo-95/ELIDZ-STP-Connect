@@ -13,12 +13,17 @@ export default function AuthLayout({
     const pathname = usePathname();
     const isLoginRoute = pathname === "/auth/login";
     const isForgotPasswordRoute = pathname === "/auth/forgot-password";
+    const isOtpRoute = pathname === "/auth/otp";
 
     return (
         <div className="relative min-h-screen w-full overflow-hidden bg-gray-900 bg-[url('/planet2.png')] bg-cover bg-center bg-no-repeat text-white">
             <NextTopLoader color="#1e3a8a" showSpinner={false} />
             <div className="absolute inset-0 bg-orange-200/30 mix-blend-soft-light pointer-events-none" />
-            <div className="relative z-10 flex min-h-screen w-full flex-col px-4 py-6 md:justify-between md:px-6 md:py-8 lg:px-10 lg:py-10">
+            <div
+                className={`relative z-10 flex min-h-screen w-full flex-col px-4 py-6 md:justify-between md:px-6 md:py-8 lg:px-10 lg:py-10 ${
+                    isLoginRoute || isForgotPasswordRoute ? "auth-login-shell" : ""
+                }`}
+            >
                 <Link
                     href="/"
                     className="absolute top-6 left-6 z-20 inline-flex h-10 w-10 items-center justify-center rounded-3xl border border-white/20 bg-gray-900/70 text-white shadow-sm transition-colors hover:bg-gray-800/80"
@@ -33,7 +38,7 @@ export default function AuthLayout({
                         isLoginRoute || isForgotPasswordRoute
                             ? "lg:justify-start xl:mt-0 xl:items-center xl:justify-start"
                             : ""
-                    } ${isLoginRoute || isForgotPasswordRoute ? "auth-login-main" : ""}`}
+                    } ${isLoginRoute || isForgotPasswordRoute ? "auth-login-main" : ""} ${isOtpRoute ? "auth-otp-main" : ""}`}
                 >
                     <div
                     className={`mx-auto w-full max-w-sm md:mx-auto min-[850px]:max-w-md lg:max-w-md xl:mx-0 xl:ml-16 xl:max-w-sm ${
@@ -44,7 +49,7 @@ export default function AuthLayout({
                             isForgotPasswordRoute
                                 ? "lg:mx-0 lg:ml-32 lg:mt-0 lg:translate-y-32 xl:ml-32 xl:mt-0 xl:translate-y-32"
                                 : ""
-                        } ${isLoginRoute || isForgotPasswordRoute ? "auth-login-panel" : ""}`}
+                        } ${isLoginRoute || isForgotPasswordRoute ? "auth-login-panel" : ""} ${isOtpRoute ? "auth-otp-panel" : ""}`}
                     >
                         <div className="mb-4 flex justify-center">
                     <Image
@@ -61,7 +66,11 @@ export default function AuthLayout({
                 </div>
 
                 {/* Footer */}
-                <div className="mt-6 flex items-center justify-center gap-2 text-sm text-slate-400 md:mt-0 md:absolute md:bottom-4 md:left-0 md:right-0">
+                <div
+                    className={`mt-6 flex items-center justify-center gap-2 text-sm text-slate-400 md:mt-0 md:absolute md:bottom-4 md:left-0 md:right-0 ${
+                        isLoginRoute || isForgotPasswordRoute ? "auth-login-footer" : ""
+                    }`}
+                >
                     <Copyright className="h-4 w-4" />
                     <span>{new Date().getFullYear()} ELIDZ Science & Technology Park.</span>
                 </div>
