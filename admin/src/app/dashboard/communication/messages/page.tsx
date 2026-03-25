@@ -7,9 +7,8 @@ import {
   CardHeader,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Send, Loader2 } from "lucide-react"
+import { Search, Loader2 } from "lucide-react"
 import { useChat } from "@/hooks/use-chat"
 import { cn } from "@/lib/utils"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
@@ -100,7 +99,7 @@ export default function MessageCenterPage() {
 
     return (
         <div className="flex flex-1 flex-col gap-4 pt-0 h-[calc(100vh-2rem)]">
-            <DashboardPageHeader title="Message Center" backHref="/dashboard/communication" />
+            <DashboardPageHeader title="Message Center" />
             <p className="max-w-3xl text-sm italic text-muted-foreground">
                 Connect with tenants, investors, and team members through one streamlined conversation hub with real-time updates.
             </p>

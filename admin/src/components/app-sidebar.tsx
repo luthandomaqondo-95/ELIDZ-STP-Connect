@@ -13,6 +13,7 @@ import {
 	PenTool,
 	Users,
 	Zap,
+	type LucideIcon,
 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
@@ -37,7 +38,19 @@ const ElidzLogo = ({ className }: { className?: string }) => (
 )
 
 // Icon mapping for dynamic facilities
-const iconMap: Record<string, any> = {
+type SidebarProject = {
+	name: string
+	url: string
+	icon: LucideIcon
+}
+
+type FacilityRecord = {
+	service_id: string
+	service_name: string
+	service_icon: string | null
+}
+
+const iconMap: Record<string, LucideIcon> = {
     'droplet': FlaskConical,
     'pen-tool': PenTool,
     'monitor': Cpu,
@@ -103,12 +116,16 @@ const baseData = {
 		},
 		{
 			title: "Communication",
-			url: "/dashboard/communication",
+			url: "/dashboard/communication/news",
 			icon: Bell,
 			items: [
 				{
 					title: "Send Alerts",
 					url: "/dashboard/communication/alerts",
+				},
+				{
+					title: "Publish News",
+					url: "/dashboard/communication/news",
 				},
 				{
 					title: "Message Center",
@@ -142,7 +159,7 @@ const baseData = {
 }
 
 export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: { name: string; email: string; avatar: string } }) {
-    const [projects, setProjects] = React.useState<any[]>([])
+    const [projects, setProjects] = React.useState<SidebarProject[]>([])
     const supabase = createClient()
 
     React.useEffect(() => {
@@ -152,15 +169,15 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
                 if (data) {
                     const seen = new Set<string>()
                     const mappedProjects = data
-                        .filter((r: { service_id: string }) => {
+                        .filter((r: FacilityRecord) => {
                             if (seen.has(r.service_id)) return false
                             seen.add(r.service_id)
                             return true
                         })
-                        .map((r: { service_id: string; service_name: string; service_icon: string }) => ({
+                        .map((r: FacilityRecord) => ({
                             name: r.service_name,
                             url: `/dashboard/projects/${r.service_id}`,
-                            icon: iconMap[r.service_icon] || iconMap['default']
+                            icon: (r.service_icon && iconMap[r.service_icon]) || iconMap.default
                         }))
                     setProjects(mappedProjects)
                 }
