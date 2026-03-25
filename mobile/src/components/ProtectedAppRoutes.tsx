@@ -1,14 +1,24 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Stack } from "expo-router";
 import { useAuthContext } from '@/hooks/use-auth-context'
 import { View, ActivityIndicator } from "react-native";
 import { useColorScheme } from "@/hooks/use-theme-color";
 import { NAV_THEME } from "@/theme/index";
+import * as Updates from 'expo-updates';
 
 export default function ProtectedAppRoutes() {
     const { isLoggedIn, isLoading } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const theme = NAV_THEME[colorScheme];
+    const { isUpdatePending } = Updates.useUpdates();
+
+    useEffect(() => {
+        if (isUpdatePending) {
+            Updates.reloadAsync().catch((error) => {
+                console.warn('Failed to reload app after OTA update download:', error);
+            });
+        }
+    }, [isUpdatePending]);
 
     // Show loading indicator while checking auth state
     if (isLoading) {
