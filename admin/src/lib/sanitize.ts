@@ -74,4 +74,3 @@ export function sanitizeEmail(input: unknown): string {
 
   return email;
 }
-
