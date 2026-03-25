@@ -171,7 +171,7 @@ function EditProfileScreen() {
                                 )}
                             </View>
                         </Pressable>
-                        <Text className="text-[#002147] text-sm font-medium mt-3">
+                        <Text className="text-foreground text-sm font-medium mt-3">
                             {isUploadingImage ? 'Uploading...' : 'Change Profile Picture'}
                         </Text>
                     </View>

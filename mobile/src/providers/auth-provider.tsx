@@ -1,6 +1,6 @@
 import { AuthContext } from '@/hooks/use-auth-context';
 import { supabase } from '@/lib/supabase'
-import type { Session, User } from '@supabase/supabase-js'
+import type { Session } from '@supabase/supabase-js'
 import { PropsWithChildren, useEffect, useState } from 'react'
 import { Profile } from '@/types'
 import * as Sentry from '@sentry/react-native';
@@ -35,61 +35,6 @@ function getEmailConfirmationRedirectUrl(): string {
 		: 'elidzstp://email-confirmed';
 }
 
-/**
- * Apple only returns full name in the native credential, and typically only on the first
- * authorization — it is not present in the identity token / user_metadata by default.
- */
-function displayNameFromAppleFullName(
-	fullName:
-		| {
-				givenName?: string | null;
-				familyName?: string | null;
-				nickname?: string | null;
-		  }
-		| null
-		| undefined
-): string | null {
-	if (!fullName) return null;
-	const given = (fullName.givenName ?? '').trim();
-	const family = (fullName.familyName ?? '').trim();
-	const nick = (fullName.nickname ?? '').trim();
-	const combined = [given, family].filter(Boolean).join(' ').trim();
-	if (combined) return combined;
-	if (nick) return nick;
-	return null;
-}
-
-/** Display name for new OAuth profiles; avoid using Hide My Email local-part as a "name". */
-function oauthProfileDisplayName(user: User): string {
-	const meta = user.user_metadata || {};
-	const fromMeta = meta.name ?? meta.full_name;
-	if (typeof fromMeta === 'string' && fromMeta.trim()) return fromMeta.trim();
-	const email = (user.email ?? '').trim().toLowerCase();
-	if (email.endsWith('@privaterelay.appleid.com')) {
-		return 'User';
-	}
-	const local = email.includes('@') ? email.split('@')[0] : email;
-	return local || 'User';
-}
-
-async function applyDisplayNameToProfile(userId: string, displayName: string) {
-	const maxAttempts = 10;
-	const delayMs = 80;
-	for (let i = 0; i < maxAttempts; i++) {
-		const { data, error } = await supabase
-			.from('profiles')
-			.update({ name: displayName })
-			.eq('id', userId)
-			.select('id');
-		if (error) {
-			console.warn('applyDisplayNameToProfile: update failed', error);
-			return;
-		}
-		if (data && data.length > 0) return;
-		await new Promise((r) => setTimeout(r, delayMs));
-	}
-}
-
 export default function AuthProvider({ children }: PropsWithChildren) {
 	const [session, setSession] = useState<Session | undefined | null>()
 	const [profile, setProfile] = useState<Profile | null>()
@@ -105,17 +50,12 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 			if (error) {
 				if (error.code === 'PGRST116') {
-					Sentry.captureMessage('Profile not found for user (yet).', {
-						level: 'info',
-						tags: { issue_class: 'expected', domain: 'auth' },
-					});
+					Sentry.captureMessage('Profile not found for user (yet).');
 					setProfile(null);
 					return;
 				}
 				setProfile(null);
-				Sentry.captureException(error, {
-					tags: { domain: 'auth', source: 'load_profile' },
-				});
+				Sentry.captureException(error);
 				return;
 			}
 
@@ -123,9 +63,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				setProfile(data as Profile);
 			}
 		} catch (error) {
-			Sentry.captureException(error, {
-				tags: { domain: 'auth', source: 'load_profile' },
-			});
+			Sentry.captureException(error);
 			setProfile(null);
 		}
 	}
@@ -440,21 +378,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				}
 
 				if (data?.session?.user) {
-					const userId = data.session.user.id;
-					const appleDisplayName = displayNameFromAppleFullName(credential.fullName);
-					if (appleDisplayName) {
-						const { error: metaError } = await supabase.auth.updateUser({
-							data: {
-								name: appleDisplayName,
-								full_name: appleDisplayName,
-							},
-						});
-						if (metaError) {
-							console.warn('Apple sign-in: could not save name to user metadata', metaError);
-						}
-						await applyDisplayNameToProfile(userId, appleDisplayName);
-					}
-					await loadProfile(userId);
+					await loadProfile(data.session.user.id);
 				}
 				return data;
 			}
@@ -500,10 +424,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 	async function logout() {
 		const { error } = await supabase.auth.signOut();
 		if (error) {
-			Sentry.captureException(error, {
-				level: 'warning',
-				tags: { issue_class: 'expected_auth', domain: 'auth', source: 'logout' },
-			});
+			Sentry.captureException(error);
 		}
 		setProfile(null);
 		setSession(null);
@@ -575,13 +496,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 						code: existingProfileError.code,
 						message: existingProfileError.message,
 					});
-					Sentry.captureException(existingProfileError, {
-						level: 'warning',
-						tags: {
-							domain: 'auth',
-							source: 'profile_existence_check',
-						},
-					});
+					Sentry.captureException(existingProfileError);
 					await loadProfile(session.user.id);
 					return;
 				}
@@ -590,7 +505,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					// Create profile for OAuth user
 					const userMetadata = session.user.user_metadata || {};
 					const email = session.user.email || '';
-					const name = oauthProfileDisplayName(session.user);
+					const name = userMetadata.name || userMetadata.full_name || email.split('@')[0] || 'User';
 
 					// Ensure role is one of the allowed values
 					const allowedRoles = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'];

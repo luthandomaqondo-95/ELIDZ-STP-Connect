@@ -22,6 +22,7 @@ function SettingsScreen() {
   // Play Console requires a link users can use to request deletion of their account/data.
   // We route users to the public contact page and also offer an email template.
   const ACCOUNT_DELETION_REQUEST_URL = 'https://www.elidz.co.za/contact-us/';
+  const PRIVACY_POLICY_URL = 'https://tenderportal.elidz.co.za/Privacy';
   const PRIVACY_SUPPORT_EMAIL = 'info@elidz.co.za';
 
   const avatarSource = avatarUri ? { uri: avatarUri } : DEFAULT_AVATAR;
@@ -188,7 +189,7 @@ function SettingsScreen() {
             <SettingRow
               icon="shield"
               title="Privacy Policy"
-              onPress={() => openUrl('https://www.elidz.co.za/privacy-policy/')}
+              onPress={() => openUrl(PRIVACY_POLICY_URL)}
             />
             <SettingRow
               icon="file-text"

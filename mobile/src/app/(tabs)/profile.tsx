@@ -408,7 +408,7 @@ function ProfileScreen() {
                             {renderMenuItem('user', 'Personal Information', 'Manage your profile details', () => router.push('/edit-profile'), false, !isLoggedIn)}
                             {renderMenuItem('bell', 'Notifications', 'View admin communications', () => router.push('/(tabs)/notifications'), false, !isLoggedIn)}
                             {renderMenuItem('mail', 'My Enquiries', 'View and track your enquiries', () => router.push('/my-enquiries'), false, !isLoggedIn)}
-                            {renderMenuItem('settings', 'Settings', 'Notifications, privacy & more', () => router.push('/settings'), false, !isLoggedIn)}
+                            {renderMenuItem('settings', 'Settings', 'Notifications, account & more', () => router.push('/settings'), false, !isLoggedIn)}
                             {/* Premium Features (disabled) */}
                             {/* {renderMenuItem('star', 'Premium Features', 'Manage subscription', () => router.push('/(modals)/premium-upgrade'), false, !isLoggedIn, true)} */}
                         </View>
@@ -421,7 +421,6 @@ function ProfileScreen() {
                         </Text>
                         <View className="bg-card rounded-2xl px-4 shadow-sm">
                             {renderMenuItem('help-circle', 'Help & Support', 'FAQ and contact us', handleHelpPress, false, false)}
-                            {renderMenuItem('info', 'About ELIDZ-STP', 'Version 1.0.0', () => router.push('/about'), false, false)}
                         </View>
                     </View>
 
