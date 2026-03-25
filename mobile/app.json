@@ -8,6 +8,12 @@
     "scheme": "elidzstp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ce8a343f-b27d-4f97-a742-7c5e5cc8c57d"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.elidzstp.app",
@@ -109,9 +115,6 @@
         "iosUrlScheme": "com.googleusercontent.apps.1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3"
       }
     },
-    "owner": "appimate",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    }
+    "owner": "appimate"
   }
 }
