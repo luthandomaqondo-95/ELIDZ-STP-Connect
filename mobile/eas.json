@@ -32,6 +32,7 @@
         "buildType": "app-bundle"
       },
       "environment": "production",
+      "channel": "production",
       "env": {
         "EAS_BUILD_DISABLE_NPM_CACHE": "1"
       }
@@ -41,6 +42,7 @@
       "android": {
         "buildType": "apk"
       },
+      "channel": "production-huawei",
       "env": {
         "EAS_BUILD_DISABLE_NPM_CACHE": "1"
       }

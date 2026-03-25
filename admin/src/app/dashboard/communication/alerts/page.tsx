@@ -22,7 +22,7 @@ import {
 export default function SendAlertsPage() {
     return (
         <div className="flex flex-1 flex-col gap-4 pt-0">
-            <DashboardPageHeader title="Send Alerts" backHref="/dashboard/communication" />
+            <DashboardPageHeader title="Send Alerts" />
             <p className="max-w-3xl text-sm italic text-muted-foreground">
                 Broadcast important ELIDZ announcements, maintenance notices, and urgent operational updates to the right audience in real time.
             </p>
