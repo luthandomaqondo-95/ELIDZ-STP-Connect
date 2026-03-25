@@ -98,12 +98,12 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                                 )}
                             </div>
 
-                            <div className="flex justify-center pt-2">
+                                <div className="flex justify-center pt-2">
                                 <AnimatedDashboardButton
                                     type="submit"
                                     disabled={isLoading}
                                     label={isLoading ? "Sending..." : "Send Reset Link"}
-                                    className="w-full"
+                                        className="w-full"
                                 />
                             </div>
 

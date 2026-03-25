@@ -99,7 +99,7 @@ export default function MessageCenterPage() {
 
     return (
         <div className="flex flex-1 flex-col gap-4 pt-0 h-[calc(100vh-2rem)]">
-            <DashboardPageHeader title="Message Center" />
+            <DashboardPageHeader title="Message Center" backHref="/dashboard/communication" />
             <p className="max-w-3xl text-sm italic text-muted-foreground">
                 Connect with tenants, investors, and team members through one streamlined conversation hub with real-time updates.
             </p>
