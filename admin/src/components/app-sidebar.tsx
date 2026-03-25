@@ -163,6 +163,10 @@ const baseData = {
 					url: "/dashboard/communication/news",
 				},
 				{
+					title: "Publish Events",
+					url: "/dashboard/communication/events",
+				},
+				{
 					title: "Message Center",
 					url: "/dashboard/communication/messages",
 				},

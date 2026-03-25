@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Pressable, ScrollView, TextInput, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Pressable, ScrollView, TextInput, Dimensions } from 'react-native';
 import { Text } from '@/components/ui/text';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -34,12 +34,11 @@ function groupEventsByMonth(events: Event[]): { monthLabel: string; events: Even
     if (!byMonth.has(label)) byMonth.set(label, []);
     byMonth.get(label)!.push(e);
   }
-  const sorted = Array.from(byMonth.entries()).sort((a, b) => {
-    const dA = new Date(a[1][0].date).getTime();
-    const dB = new Date(b[1][0].date).getTime();
-    return dA - dB;
-  });
-  return sorted.map(([monthLabel, events]) => ({ monthLabel, events }));
+  // Keep insertion order based on the already publish-sorted events list.
+  return Array.from(byMonth.entries()).map(([monthLabel, monthEvents]) => ({
+    monthLabel,
+    events: monthEvents,
+  }));
 }
 
 export default function EventsScreen() {
@@ -56,10 +55,12 @@ export default function EventsScreen() {
         setLoading(true);
         setError(null);
         const all = await EventService.getAllEvents();
-        const now = new Date().toISOString();
-        const upcoming = all.filter((e) => e.date >= now).sort((a, b) => (a.date < b.date ? -1 : 1));
-        const past = all.filter((e) => e.date < now).sort((a, b) => (a.date > b.date ? -1 : 1));
-        if (!cancelled) setEvents([...upcoming, ...past]);
+        const sortedByRecentPublish = [...all].sort((a, b) => {
+          const aTime = new Date(a.created_at || a.updated_at || a.date).getTime();
+          const bTime = new Date(b.created_at || b.updated_at || b.date).getTime();
+          return bTime - aTime;
+        });
+        if (!cancelled) setEvents(sortedByRecentPublish);
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Failed to load events');
       } finally {
