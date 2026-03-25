@@ -50,7 +50,7 @@ export default function LandingPage() {
                 />
             </div>
                 
-            <div className="relative z-10 flex min-h-screen w-full flex-col justify-between px-3 py-8 pt-64 sm:px-6 sm:py-10 sm:pt-72 md:px-8">
+            <div className="relative z-10 flex min-h-screen w-full flex-col justify-between px-3 py-8 pt-64 sm:px-6 sm:py-10 sm:pt-72 md:px-8 md:justify-center md:pt-24 md:pb-20 xl:justify-between xl:pt-72 xl:pb-0">
                 {/* Main Content */}
                 <div className="mx-auto w-full max-w-2xl text-center">
                     <div className="mb-6 inline-flex items-center justify-center">
@@ -87,7 +87,7 @@ export default function LandingPage() {
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-center gap-2 text-sm text-slate-400">
+                <div className="flex items-center justify-center gap-2 text-sm text-slate-400 md:absolute md:bottom-6 md:left-0 md:right-0 md:mx-auto xl:static xl:bottom-auto">
                     <Copyright className="h-4 w-4" />
                     <span>{new Date().getFullYear()} ELIDZ Science & Technology Park.</span>
                 </div>
