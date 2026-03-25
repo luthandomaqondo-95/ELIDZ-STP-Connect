@@ -44,6 +44,8 @@
 }
 
 :root {
+  --font-geist-sans: "Inter", "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-geist-mono: "SFMono-Regular", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --radius: 0.625rem;
   --background: #FFFFFF;
   --foreground: #212529;
@@ -120,3 +122,46 @@
     @apply bg-background text-foreground;
   }
 }
+
+@keyframes table-row-waterfall {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+    filter: blur(2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+.table-row-waterfall {
+  opacity: 0;
+  animation: table-row-waterfall 0.45s ease-out forwards;
+  animation-delay: var(--row-delay, 0s);
+}
+
+.table-row-waterfall-row > td {
+  opacity: 0;
+  animation: table-row-waterfall 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation-delay: var(--row-delay, 0s);
+}
+
+/* Waterfall feel: each cell appears after the previous one */
+.table-row-waterfall-row > td:nth-child(1) { animation-delay: calc(var(--row-delay, 0s) + 0ms); }
+.table-row-waterfall-row > td:nth-child(2) { animation-delay: calc(var(--row-delay, 0s) + 35ms); }
+.table-row-waterfall-row > td:nth-child(3) { animation-delay: calc(var(--row-delay, 0s) + 70ms); }
+.table-row-waterfall-row > td:nth-child(4) { animation-delay: calc(var(--row-delay, 0s) + 105ms); }
+.table-row-waterfall-row > td:nth-child(5) { animation-delay: calc(var(--row-delay, 0s) + 140ms); }
+.table-row-waterfall-row > td:nth-child(6) { animation-delay: calc(var(--row-delay, 0s) + 175ms); }
+.table-row-waterfall-row > td:nth-child(7) { animation-delay: calc(var(--row-delay, 0s) + 210ms); }
+.table-row-waterfall-row > td:nth-child(8) { animation-delay: calc(var(--row-delay, 0s) + 245ms); }
+.table-row-waterfall-row > td:nth-child(9) { animation-delay: calc(var(--row-delay, 0s) + 280ms); }
+.table-row-waterfall-row > td:nth-child(10) { animation-delay: calc(var(--row-delay, 0s) + 315ms); }
+.table-row-waterfall-row > td:nth-child(11) { animation-delay: calc(var(--row-delay, 0s) + 350ms); }
+.table-row-waterfall-row > td:nth-child(12) { animation-delay: calc(var(--row-delay, 0s) + 385ms); }
+.table-row-waterfall-row > td:nth-child(13) { animation-delay: calc(var(--row-delay, 0s) + 420ms); }
+.table-row-waterfall-row > td:nth-child(14) { animation-delay: calc(var(--row-delay, 0s) + 455ms); }
+.table-row-waterfall-row > td:nth-child(15) { animation-delay: calc(var(--row-delay, 0s) + 490ms); }
+.table-row-waterfall-row > td:nth-child(16) { animation-delay: calc(var(--row-delay, 0s) + 525ms); }

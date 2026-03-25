@@ -12,6 +12,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Search, Send, Loader2 } from "lucide-react"
 import { useChat } from "@/hooks/use-chat"
 import { cn } from "@/lib/utils"
+import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 
 export default function MessageCenterPage() {
     const { 
@@ -97,20 +99,21 @@ export default function MessageCenterPage() {
     };
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0 h-[calc(100vh-2rem)]">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight">Message Center</h1>
-            </div>
+        <div className="flex flex-1 flex-col gap-4 pt-0 h-[calc(100vh-2rem)]">
+            <DashboardPageHeader title="Message Center" backHref="/dashboard/communication" />
+            <p className="max-w-3xl text-sm italic text-muted-foreground">
+                Connect with tenants, investors, and team members through one streamlined conversation hub with real-time updates.
+            </p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
                 {/* Sidebar / List */}
-                <Card className="col-span-1 h-full flex flex-col">
+                <Card className="col-span-1 h-full flex flex-col rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)] overflow-hidden">
                     <CardHeader className="pb-3 border-b">
                         <div className="relative">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input 
                                 placeholder="Search messages..." 
-                                className="pl-8" 
+                                className="h-10 rounded-3xl border-0 bg-orange-100/80 pl-8 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100" 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -136,9 +139,10 @@ export default function MessageCenterPage() {
                                         <div 
                                             key={chat.id} 
                                             className={cn(
-                                                "flex gap-3 p-4 border-b cursor-pointer hover:bg-muted/50 transition-colors",
-                                                isSelected && "bg-muted",
-                                                chat.unreadCount && chat.unreadCount > 0 && "bg-blue-50/50 dark:bg-blue-900/10"
+                                                "flex gap-3 p-4 border-b cursor-pointer transition-all",
+                                                isSelected && "bg-orange-100/70 dark:bg-orange-900/25",
+                                                !isSelected && "hover:bg-slate-100/70 dark:hover:bg-slate-800/60",
+                                                chat.unreadCount && chat.unreadCount > 0 && !isSelected && "bg-blue-50/50 dark:bg-blue-900/10"
                                             )}
                                             onClick={() => setSelectedChat(chat)}
                                         >
@@ -168,7 +172,7 @@ export default function MessageCenterPage() {
                                                         {chat.lastMessage?.content || "No messages yet"}
                                                     </p>
                                                     {(chat.unreadCount || 0) > 0 && (
-                                                        <div className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-blue-600 text-[10px] font-bold text-white">
+                                                        <div className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-orange-500 text-[10px] font-bold text-white">
                                                             {chat.unreadCount}
                                                         </div>
                                                     )}
@@ -183,7 +187,7 @@ export default function MessageCenterPage() {
                 </Card>
 
                 {/* Message View */}
-                <Card className="col-span-1 md:col-span-2 h-full flex flex-col overflow-hidden">
+                <Card className="col-span-1 md:col-span-2 h-full flex flex-col overflow-hidden rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                     {selectedChat ? (
                         <>
                             <div className="p-4 border-b flex items-center gap-3 bg-card">
@@ -258,12 +262,14 @@ export default function MessageCenterPage() {
                                         value={newMessage}
                                         onChange={(e) => setNewMessage(e.target.value)}
                                         onKeyDown={handleKeyPress}
-                                        className="flex-1"
+                                        className="flex-1 h-10 rounded-3xl border-0 bg-orange-100/80 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
                                     />
-                                    <Button onClick={handleSend} size="icon" disabled={!newMessage.trim()}>
-                                        <Send className="h-4 w-4" />
-                                        <span className="sr-only">Send</span>
-                                    </Button>
+                                    <AnimatedDashboardButton
+                                        label="Send"
+                                        className="h-10 rounded-3xl px-4"
+                                        onClick={handleSend}
+                                        disabled={!newMessage.trim()}
+                                    />
                                 </div>
                             </div>
                         </>

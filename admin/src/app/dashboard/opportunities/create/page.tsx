@@ -9,90 +9,94 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+    FloatingLabelInput,
+    FloatingLabelTextarea,
+    FloatingLabelSelect,
+    SelectItem,
+} from "@/components/floating-input"
 
 export default function CreateOpportunityPage() {
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight">Post New Opportunity</h1>
-            </div>
-            <div className="grid gap-4 lg:grid-cols-3">
-                <div className="lg:col-span-2">
-                    <Card>
+        <div className="flex flex-1 flex-col gap-4 pt-0">
+            <DashboardPageHeader title="Post New Opportunity" backHref="/dashboard/opportunities" />
+            <p className="max-w-3xl text-sm italic text-muted-foreground">
+                Create and publish a new ELIDZ opportunity for tenants, partners, and stakeholders with clear requirements, timelines, and application details.
+            </p>
+            <div>
+                <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)] w-full min-h-[calc(100vh-8rem)]">
                         <CardHeader>
-                            <CardTitle>Opportunity Details</CardTitle>
-                            <CardDescription>
+                            <CardTitle className="text-xl">Opportunity Details</CardTitle>
+                            <CardDescription className="text-sm">
                                 Fill in the details for the new opportunity.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="title">Title</Label>
-                                <Input id="title" placeholder="e.g. Innovation Challenge 2024" />
+                        <CardContent className="space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FloatingLabelInput
+                                    id="title"
+                                    label="Title"
+                                    placeholder="e.g. Innovation Challenge 2024"
+                                    className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+                                />
+                                <FloatingLabelSelect
+                                    label="Type"
+                                    placeholder="Select type"
+                                    className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+                                >
+                                    <SelectItem value="tender">Tender</SelectItem>
+                                    <SelectItem value="challenge">Challenge</SelectItem>
+                                    <SelectItem value="funding">Funding</SelectItem>
+                                    <SelectItem value="program">Program</SelectItem>
+                                </FloatingLabelSelect>
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="type">Type</Label>
-                                    <Select>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="tender">Tender</SelectItem>
-                                            <SelectItem value="challenge">Challenge</SelectItem>
-                                            <SelectItem value="funding">Funding</SelectItem>
-                                            <SelectItem value="program">Program</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FloatingLabelInput
+                                    id="location"
+                                    label="Location"
+                                    placeholder="e.g. East London IDZ"
+                                    className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+                                />
+                                <FloatingLabelInput
+                                    id="deadline"
+                                    label="Deadline"
+                                    type="date"
+                                    className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+                                />
+                            </div>
+                            <div>
+                                <FloatingLabelTextarea
+                                    id="description"
+                                    label="Description"
+                                    placeholder="Describe the opportunity..."
+                                    className="min-h-[150px] rounded-3xl border-transparent bg-orange-100/80 px-4 py-3 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+                                />
+                            </div>
+
+                            {/* Tips section inside the main card, at the bottom */}
+                            <div className="pt-4">
+                                <div className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                    Tips
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="deadline">Deadline</Label>
-                                    <Input id="deadline" type="date" />
+                                <div className="text-sm space-y-2 rounded-2xl bg-gradient-to-br from-orange-100 via-amber-100 to-rose-100 p-4 text-orange-900 ring-1 ring-orange-200/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:from-orange-900/30 dark:via-amber-900/25 dark:to-rose-900/25 dark:text-orange-100 dark:ring-orange-800/40">
+                                    <p>• Be specific about the requirements and eligibility criteria.</p>
+                                    <p>• Provide clear instructions on how to apply.</p>
+                                    <p>• Set a realistic deadline to allow applicants enough time.</p>
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea id="description" placeholder="Describe the opportunity..." className="min-h-[150px]" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="location">Location</Label>
-                                <Input id="location" placeholder="e.g. East London IDZ" />
                             </div>
                         </CardContent>
-                        <CardFooter className="justify-end gap-2">
-                            <Button variant="ghost">Cancel</Button>
-                            <Button>Post Opportunity</Button>
+                        <CardFooter className="justify-center gap-2">
+                            <Button
+                                variant="outline"
+                                className="h-10 rounded-3xl border-0 bg-red-600 px-5 font-semibold text-white shadow-sm hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                            >
+                                Cancel
+                            </Button>
+                            <AnimatedDashboardButton label="Post Opportunity" className="h-10 rounded-3xl px-5" />
                         </CardFooter>
                     </Card>
-                </div>
-                <div>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Tips</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-sm text-muted-foreground space-y-2">
-                            <p>
-                                • Be specific about the requirements and eligibility criteria.
-                            </p>
-                            <p>
-                                • Provide clear instructions on how to apply.
-                            </p>
-                            <p>
-                                • Set a realistic deadline to allow applicants enough time.
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
             </div>
         </div>
     );
