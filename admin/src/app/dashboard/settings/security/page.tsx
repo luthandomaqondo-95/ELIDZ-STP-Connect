@@ -12,11 +12,12 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { DashboardPageHeader } from "@/components/dashboard-page-header"
 
 export default function SecuritySettingsPage() {
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <h1 className="text-2xl font-bold tracking-tight">Security Settings</h1>
+        <div className="flex flex-1 flex-col gap-4 pt-0">
+            <DashboardPageHeader title="Security Settings" backHref="/dashboard/settings" />
             
             <Card>
                 <CardHeader>

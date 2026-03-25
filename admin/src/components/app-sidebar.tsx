@@ -26,6 +26,7 @@ import {
 	SidebarFooter,
 	SidebarHeader,
 	SidebarRail,
+	SidebarSeparator,
 } from "@/components/ui/sidebar"
 
 // This is sample data.
@@ -128,10 +129,6 @@ const baseData = {
 					title: "Product Line Visits",
 					url: "/dashboard/reports/visits",
 				},
-				{
-					title: "System Usage",
-					url: "/dashboard/reports/usage",
-				},
 			],
 		}
 	],
@@ -182,7 +179,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
-			<SidebarHeader>
+			<SidebarHeader className="border-b">
 				<TeamSwitcher teams={sidebarData.teams} />
 			</SidebarHeader>
 			<SidebarContent>
@@ -190,6 +187,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
 				<NavProjects projects={sidebarData.projects} />
 			</SidebarContent>
 			<SidebarFooter>
+				<SidebarSeparator className="ml-0 mr-4" />
 				<NavUser user={sidebarData.user} />
 			</SidebarFooter>
 			<SidebarRail />

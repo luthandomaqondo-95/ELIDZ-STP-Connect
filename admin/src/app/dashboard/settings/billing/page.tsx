@@ -9,11 +9,12 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { DashboardPageHeader } from "@/components/dashboard-page-header"
 
 export default function BillingSettingsPage() {
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <h1 className="text-2xl font-bold tracking-tight">Billing & Model</h1>
+        <div className="flex flex-1 flex-col gap-4 pt-0">
+            <DashboardPageHeader title="Billing & Model" backHref="/dashboard/settings" />
             
             <Card>
                 <CardHeader>
