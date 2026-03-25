@@ -14,6 +14,7 @@ import Image from "next/image"
 import { Loader2 } from "lucide-react"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
+import { UploadButton } from "@/components/upload-button"
 
 type Facility = {
   id: string
@@ -38,8 +39,66 @@ export default function CenterFacilityPage({
   const [vrSections, setVrSections] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeScene, setActiveScene] = useState<any | null>(null)
+  const [uploading, setUploading] = useState(false)
+  const [videos, setVideos] = useState<any[]>([])
 
   const supabase = createClient()
+
+  const handleVideoUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !facility) return
+
+    setUploading(true)
+    const file = files[0]
+    
+    try {
+      // Upload to Supabase storage bucket 'videos'
+      const fileName = `${facility.id}/${Date.now()}-${file.name}`
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('videos')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (uploadError) {
+        console.error('Upload error:', uploadError)
+        return
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('videos')
+        .getPublicUrl(fileName)
+
+      // Update database with video URL
+      const { error: updateError } = await supabase
+        .from('facilities')
+        .update({ video_url: publicUrl })
+        .eq('service_id', facility.id)
+
+      if (updateError) {
+        console.error('Database update error:', updateError)
+        return
+      }
+
+      console.log('Video uploaded successfully:', publicUrl)
+      
+      // Refresh videos list
+      const { data: refreshedVideoData } = await supabase
+        .from("facilities")
+        .select("id, video_url, title")
+        .eq("service_id", facility.id)
+        .not("video_url", "is", null)
+        .order("updated_at", { ascending: false })
+      
+      setVideos(refreshedVideoData || [])
+      
+    } catch (error) {
+      console.error('Upload failed:', error)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   useEffect(() => {
     async function fetchData() {
@@ -107,6 +166,16 @@ export default function CenterFacilityPage({
               details: Array.isArray(r.details) ? r.details : [],
             }))
           )
+
+          // Fetch videos for this facility
+          const { data: videoData } = await supabase
+            .from("facilities")
+            .select("id, video_url, title")
+            .eq("service_id", first.service_id)
+            .not("video_url", "is", null)
+            .order("updated_at", { ascending: false })
+
+          setVideos(videoData || [])
         } else {
           setFacility(null)
           setVrScenes([])
@@ -147,7 +216,17 @@ export default function CenterFacilityPage({
       <DashboardPageHeader
         title={facility.name}
         backHref="/dashboard"
-        action={<AnimatedDashboardButton label="Manage Facility" />}
+        action={
+          <div className="flex gap-2">
+            <UploadButton 
+              onFileSelect={handleVideoUpload}
+              isLoading={uploading}
+              variant="blue"
+            >
+              Upload Video
+            </UploadButton>
+          </div>
+        }
       />
 
       <p className="max-w-3xl text-sm italic text-muted-foreground">
@@ -234,35 +313,67 @@ export default function CenterFacilityPage({
       </Tabs>
 
       {/* Panoramic View Section */}
-      {activeScene && (
+      {(activeScene || videos.length > 0) && (
         <Card className="overflow-hidden border-zinc-800">
           <div className="relative aspect-video w-full bg-black">
-            <Image
-              src={`/assets/360-tours/${activeScene.image_url}`}
-              alt={activeScene.title}
-              fill
-              className="object-cover opacity-90 hover:opacity-100 transition-opacity duration-500"
-            />
+            {/* Check if we have videos for this facility */}
+            {videos.length > 0 ? (
+              <video
+                src={videos[0].video_url}
+                controls
+                autoPlay
+                muted
+                loop
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Image
+                src={`/assets/360-tours/${activeScene.image_url}`}
+                alt={activeScene.title}
+                fill
+                className="object-cover opacity-90 hover:opacity-100 transition-opacity duration-500"
+              />
+            )}
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
               <h3 className="text-xl font-bold text-white mb-1">
-                {activeScene.title}
+                {videos.length > 0 ? videos[0].title : activeScene.title}
               </h3>
-              <p className="text-sm text-zinc-300">Interactive 360° View</p>
+              <p className="text-sm text-zinc-300">
+                {videos.length > 0 ? "Video View" : "Interactive 360° View"}
+              </p>
 
-              {/* Scene switcher if multiple scenes exist */}
-              {vrScenes.length > 1 && (
+              {/* Scene/Video switcher */}
+              {(vrScenes.length > 1 || videos.length > 0) && (
                 <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                  {/* Show VR scenes if no videos or mixed */}
                   {vrScenes.map((scene) => (
                     <button
                       key={scene.id}
                       onClick={() => setActiveScene(scene)}
                       className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
-                        activeScene.id === scene.id
-                          ? "bg-white text-black"
-                          : "bg-black/50 text-white hover:bg-black/70"
+                        activeScene?.id === scene.id && videos.length === 0
+                          ? 'bg-white text-black' 
+                          : 'bg-black/50 text-white hover:bg-black/70'
                       }`}
                     >
                       {scene.title}
+                    </button>
+                  ))}
+                  {/* Show videos if available */}
+                  {videos.map((video, idx) => (
+                    <button
+                      key={video.id}
+                      onClick={() => {
+                        // Switch to video view
+                        setActiveScene(null)
+                      }}
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                        videos.length > 0 && !activeScene
+                          ? 'bg-white text-black' 
+                          : 'bg-black/50 text-white hover:bg-black/70'
+                      }`}
+                    >
+                      {video.title || `Video ${idx + 1}`}
                     </button>
                   ))}
                 </div>
