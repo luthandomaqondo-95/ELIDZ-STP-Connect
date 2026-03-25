@@ -169,22 +169,42 @@
 /* Nest Hub Max portrait: move auth/login panel left (without affecting normal `lg` landscape) */
 @media (orientation: portrait) and (min-width: 780px) and (max-width: 820px) and (min-height: 1200px) and (max-height: 1400px) {
   .auth-login-main {
-    justify-content: flex-start;
+    justify-content: center !important;
   }
   .auth-login-panel {
-    margin-left: 2rem;
-    margin-right: 0;
-    max-width: 420px;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    transform: none !important;
   }
 }
 
 /* Fallback for portrait “large tablet” sizes if exact resolution differs slightly */
 @media (orientation: portrait) and (min-width: 760px) and (max-width: 900px) and (min-height: 1000px) {
   .auth-login-main {
-    justify-content: flex-start;
+    justify-content: center !important;
   }
   .auth-login-panel {
-    margin-left: 2rem;
-    margin-right: 0;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    transform: none !important;
+  }
+}
+
+/* iPad Pro portrait (e.g. 1024x1366-ish) */
+@media (orientation: portrait) and (min-width: 900px) and (max-width: 1100px) and (min-height: 1000px) {
+  .auth-login-main {
+    justify-content: center !important;
+  }
+  .auth-login-panel {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    transform: none !important;
+    max-width: 640px !important;
+  }
+  /* Shared Card container used by login/forgot-password */
+  .auth-login-panel [data-slot="card"] {
+    min-height: 620px !important;
+    padding-top: 2.75rem !important;
+    padding-bottom: 2.75rem !important;
   }
 }

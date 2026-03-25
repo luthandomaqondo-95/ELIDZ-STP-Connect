@@ -10,7 +10,7 @@ import { ShieldCheck, Lock } from "lucide-react";
 export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <Card className="shadow-2xl rounded-3xl overflow-hidden">
+            <Card className="bg-gray-900 text-white shadow-2xl rounded-3xl overflow-hidden">
                 <CardHeader className="text-center pb-8">
                     <div className="flex items-center justify-center gap-2 mb-2">
                         <ShieldCheck className="h-6 w-6 text-indigo-400" />
