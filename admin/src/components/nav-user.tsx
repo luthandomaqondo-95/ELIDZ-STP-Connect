@@ -116,7 +116,10 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
+              <DropdownMenuItem
+                onClick={handleSignOut}
+                className="rounded-3xl bg-red-200 text-red-900 px-3 py-2 hover:bg-red-300 focus:bg-red-200 focus:text-red-900 dark:bg-red-900/35 dark:text-red-200 dark:hover:bg-red-900/50 dark:focus:bg-red-900/45 [&_svg]:!text-red-900 dark:[&_svg]:!text-red-200 justify-center text-center w-full"
+              >
               <LogOut />
               Log out
             </DropdownMenuItem>
