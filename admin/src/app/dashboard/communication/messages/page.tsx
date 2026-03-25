@@ -7,9 +7,8 @@ import {
   CardHeader,
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Send, Loader2 } from "lucide-react"
+import { Search, Loader2 } from "lucide-react"
 import { useChat } from "@/hooks/use-chat"
 import { cn } from "@/lib/utils"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
