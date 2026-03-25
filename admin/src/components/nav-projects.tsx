@@ -25,6 +25,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { usePathname } from "next/navigation"
 
 export function NavProjects({
   projects,
@@ -36,16 +37,19 @@ export function NavProjects({
   }[]
 }) {
   const { isMobile } = useSidebar()
+  const pathname = usePathname()
 
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
+      <SidebarGroupLabel className="text-orange-600 dark:text-orange-300">Projects</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
+        {projects.map((item) => {
+          const active = pathname === item.url || pathname.startsWith(`${item.url}/`)
+          return (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
+            <SidebarMenuButton asChild isActive={active}>
               <Link href={item.url}>
-                <item.icon />
+                <item.icon className="text-sky-400" />
                 <span>{item.name}</span>
               </Link>
             </SidebarMenuButton>
@@ -77,7 +81,7 @@ export function NavProjects({
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarMenuItem>
-        ))}
+        )})}
         <SidebarMenuItem>
           <SidebarMenuButton className="text-sidebar-foreground/70">
             <MoreHorizontal className="text-sidebar-foreground/70" />

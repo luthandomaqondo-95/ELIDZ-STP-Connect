@@ -1,5 +1,4 @@
 "use client"
-
 import {
   Card,
   CardContent,
@@ -11,17 +10,24 @@ import {
     Bar, 
     BarChart, 
     CartesianGrid, 
+    Label,
     XAxis, 
     YAxis,
-    Tooltip, 
-    ResponsiveContainer,
     PieChart,
     Pie,
-    Cell,
     Legend
 } from "recharts"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart"
+import { ChartPieDonutText } from "@/components/chart-pie-donut-text"
+import { ChartBarLabelCustom } from "@/components/chart-bar-label-custom"
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8', '#82ca9d'];
+const growthChartConfig = {
+    users: {
+        label: "Users",
+        color: "#16a34a",
+    },
+} satisfies ChartConfig
 
 interface DemographicsChartsProps {
     roleData: { name: string; count: number }[]
@@ -32,80 +38,55 @@ interface DemographicsChartsProps {
 
 export function UserDemographicsCharts({ roleData, locationData, growthData, totalUsers }: DemographicsChartsProps) {
     return (
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
             {/* User Growth Chart */}
-            <Card className="col-span-2 md:col-span-1">
-                <CardHeader>
+            <Card className="col-span-2 md:col-span-1 rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                <CardHeader className="pb-1 md:pb-2">
                     <CardTitle>User Growth</CardTitle>
                     <CardDescription>New user registrations over time (Total: {totalUsers})</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
+                <CardContent className="h-[220px] md:h-[300px]">
+                    <ChartContainer config={growthChartConfig} className="h-full w-full">
                         <BarChart data={growthData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false} />
                             <XAxis dataKey="name" tickLine={false} axisLine={false} />
                             <YAxis tickLine={false} axisLine={false} />
-                            <Tooltip 
-                                contentStyle={{ backgroundColor: 'var(--background)', borderRadius: '8px' }}
-                                itemStyle={{ color: 'var(--foreground)' }}
-                            />
-                            <Bar dataKey="users" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                            <ChartTooltip content={<ChartTooltipContent indicator="dot" />} />
+                            <Bar dataKey="users" fill="var(--color-users)" radius={[8, 8, 0, 0]} />
                         </BarChart>
-                    </ResponsiveContainer>
+                    </ChartContainer>
                 </CardContent>
             </Card>
             
             {/* User Roles Distribution */}
-            <Card className="col-span-2 md:col-span-1">
-                <CardHeader>
-                    <CardTitle>User Roles</CardTitle>
-                    <CardDescription>Distribution of user roles</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <Pie
-                                data={roleData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
-                                paddingAngle={5}
-                                dataKey="count"
-                            >
-                                {roleData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Pie>
-                            <Tooltip />
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
+            <ChartPieDonutText
+                title="User Roles"
+                description="Distribution of user roles"
+                totalLabel="Users"
+                data={roleData.map(r => ({ name: r.name, value: r.count }))}
+                innerRadius={68}
+                outerRadius={98}
+                cardClassName="col-span-2 md:col-span-1 rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]"
+            />
 
             {/* Geographic Distribution */}
-            <Card className="col-span-2">
-                <CardHeader>
-                    <CardTitle>Geographic Distribution</CardTitle>
-                    <CardDescription>Top user locations (Provinces/Cities)</CardDescription>
-                </CardHeader>
-                <CardContent className="h-[300px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={locationData} layout="vertical" margin={{ left: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                            <XAxis type="number" hide />
-                            <YAxis dataKey="name" type="category" width={100} tickLine={false} axisLine={false} />
-                            <Tooltip />
-                            <Bar dataKey="count" fill="#82ca9d" radius={[0, 4, 4, 0]} barSize={20}>
-                                {locationData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
-                </CardContent>
-            </Card>
+            <ChartBarLabelCustom
+                title="Geographic Distribution"
+                description="Top user locations (Provinces/Cities)"
+                data={locationData}
+                categoryKey="name"
+                valueKey="count"
+                tooltipIndicator="dot"
+                cardClassName="col-span-2 rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]"
+                containerClassName="h-[220px] md:h-[300px] w-full"
+                getBarFill={(entry, index) =>
+                    /north.*cape/i.test(String(entry.name))
+                        ? "#f97316"
+                        : /eastern.*cape/i.test(String(entry.name))
+                            ? "#16a34a"
+                            : COLORS[index % COLORS.length]
+                }
+            />
         </div>
     )
 }

@@ -26,14 +26,14 @@ interface AnalyticsChartsProps {
 
 export function AnalyticsCharts({ visitsByType, topEntities }: AnalyticsChartsProps) {
     return (
-        <div className="grid gap-4 md:grid-cols-2 mt-4">
+        <div className="mt-4 grid gap-4 grid-cols-1 md:grid-cols-2">
             {/* Visits by Type (Service vs Product) */}
-            <Card className="col-span-2 md:col-span-1">
-                <CardHeader>
+            <Card className="col-span-2 rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm md:col-span-1 dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                <CardHeader className="pb-1 md:pb-2">
                     <CardTitle>Visits by Type</CardTitle>
-                    <CardDescription>Comparison of Facilities vs Labs</CardDescription>
+                    <CardDescription>Distribution of visits across entity categories.</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[220px] md:h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -57,12 +57,12 @@ export function AnalyticsCharts({ visitsByType, topEntities }: AnalyticsChartsPr
             </Card>
 
             {/* Top Visited Entities */}
-            <Card className="col-span-2 md:col-span-1">
-                <CardHeader>
+            <Card className="col-span-2 rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm md:col-span-1 dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                <CardHeader className="pb-1 md:pb-2">
                     <CardTitle>Top Visited Items</CardTitle>
                     <CardDescription>Most popular services and products</CardDescription>
                 </CardHeader>
-                <CardContent className="h-[300px]">
+                <CardContent className="h-[220px] md:h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie

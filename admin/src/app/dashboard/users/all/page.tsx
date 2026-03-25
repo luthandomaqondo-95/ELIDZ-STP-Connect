@@ -1,6 +1,8 @@
 import { createClient } from "@/lib/supabase/server"
 import { UsersTable, User } from "./users-table"
 import { InviteUserDialog } from "./invite-user-dialog"
+import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { Users } from "lucide-react"
 
 export default async function AllUsersPage() {
     const supabase = await createClient()
@@ -18,11 +20,12 @@ export default async function AllUsersPage() {
     }))
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-bold tracking-tight">All Users</h1>
-                <InviteUserDialog />
-            </div>
+        <div className="flex flex-1 flex-col gap-4 px-0 md:px-0 py-0 pt-0">
+            <DashboardPageHeader
+                title="All Users"
+                icon={<Users className="h-5 w-5" />}
+                action={<InviteUserDialog />}
+            />
             <UsersTable users={users} />
         </div>
     );

@@ -2,11 +2,17 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
+  const isDummyAuth = request.cookies.get('dummy_auth')?.value === '1'
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
+
+  // Allow dummy login immediately for dashboard routes.
+  if (request.nextUrl.pathname.startsWith('/dashboard') && isDummyAuth) {
+    return response
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
