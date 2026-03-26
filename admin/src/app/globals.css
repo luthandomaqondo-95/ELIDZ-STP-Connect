@@ -209,6 +209,88 @@
   }
 }
 
+/* Laptop-only login positioning/sizing */
+@media (hover: hover) and (pointer: fine) and (orientation: landscape) and (min-width: 1024px) and (max-width: 1536px) and (min-height: 560px) and (max-height: 950px) {
+  .auth-login-main {
+    align-items: center !important;
+    justify-content: flex-start !important;
+  }
+  .auth-login-panel {
+    margin-left: 3.75rem !important;
+    margin-right: auto !important;
+    --tw-translate-y: 0.25rem !important;
+    transform: translateY(0.25rem) !important;
+    max-width: 350px !important;
+  }
+  .auth-login-shell {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .auth-login-panel [data-slot="card"] {
+    min-height: auto !important;
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+  }
+  .auth-login-panel [data-slot="card-header"] {
+    padding-top: 0.9rem !important;
+    padding-bottom: 0.45rem !important;
+  }
+  .auth-login-panel [data-slot="card-content"] {
+    padding-top: 0 !important;
+    padding-bottom: 0.9rem !important;
+  }
+  .auth-login-panel input,
+  .auth-login-panel button {
+    height: 40px !important;
+  }
+  .auth-login-footer {
+    margin-top: 0.4rem !important;
+    font-size: 0.75rem !important;
+    line-height: 1rem !important;
+  }
+}
+
+/* Desktop and larger: reset login to centered responsive layout */
+@media (hover: hover) and (pointer: fine) and (orientation: landscape) and (min-width: 1537px) {
+  .auth-login-main {
+    align-items: center !important;
+    justify-content: center !important;
+  }
+  .auth-login-panel {
+    margin-left: auto !important;
+    margin-right: auto !important;
+    --tw-translate-y: 0 !important;
+    transform: none !important;
+    max-width: 32rem !important;
+  }
+  .auth-login-shell {
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+  .auth-login-panel [data-slot="card"] {
+    min-height: 560px !important;
+    padding-top: 2.5rem !important;
+    padding-bottom: 2.5rem !important;
+  }
+  .auth-login-panel [data-slot="card-header"] {
+    padding-top: 1.5rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .auth-login-panel [data-slot="card-content"] {
+    padding-top: 0 !important;
+    padding-bottom: 1.5rem !important;
+  }
+  .auth-login-panel input,
+  .auth-login-panel button {
+    height: 44px !important;
+  }
+  .auth-login-footer {
+    margin-top: 1rem !important;
+    font-size: 0.875rem !important;
+    line-height: 1.25rem !important;
+  }
+}
+
 /* Nest Hub Max: ensure login fits without scrolling (1280x800 + 800x1280) */
 @media (orientation: landscape) and (min-width: 1200px) and (max-width: 1320px) and (min-height: 760px) and (max-height: 840px) {
   .auth-login-main {
