@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Card,
   CardContent,
@@ -8,60 +8,38 @@ import {
 } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Search, Loader2 } from "lucide-react"
-import { useChat } from "@/hooks/use-chat"
+import { Search, Loader2, RefreshCcw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 
+type EnquiryStatus = "new" | "in_progress" | "resolved" | "closed"
+
+type EnquiryRow = {
+    id: string
+    user_id: string | null
+    enquiry_type: string
+    subject: string
+    message: string
+    related_facility_id?: string | null
+    status: EnquiryStatus
+    response?: string | null
+    responded_by?: string | null
+    responded_at?: string | null
+    created_at: string
+    updated_at: string
+    user?: { id: string; name: string; email: string; avatar?: string | null; role?: string | null } | null
+    responder?: { id: string; name: string; email: string } | null
+}
+
 export default function MessageCenterPage() {
-    const { 
-        chats, 
-        messages, 
-        loading, 
-        currentUser, 
-        selectedChat, 
-        setSelectedChat, 
-        sendMessage,
-        markAsRead
-    } = useChat();
-    
     const [searchQuery, setSearchQuery] = useState("");
-    const [newMessage, setNewMessage] = useState("");
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-
-    // Mark as read when selecting a chat
-    useEffect(() => {
-        if (selectedChat) {
-            markAsRead(selectedChat.id);
-        }
-    }, [selectedChat, markAsRead]);
-
-    // Scroll to bottom when messages change
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, [messages]);
-
-    const filteredChats = chats.filter(chat => {
-        const otherName = chat.otherUser?.name || chat.name || "Unknown";
-        const lastMsg = chat.lastMessage?.content || "";
-        return otherName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-               lastMsg.toLowerCase().includes(searchQuery.toLowerCase());
-    });
-
-    const handleSend = async () => {
-        if (!newMessage.trim()) return;
-        const msg = newMessage;
-        setNewMessage(""); // Clear immediately
-        await sendMessage(msg);
-    };
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            handleSend();
-        }
-    };
+    const [loading, setLoading] = useState(true)
+    const [enquiries, setEnquiries] = useState<EnquiryRow[]>([])
+    const [selectedEnquiryId, setSelectedEnquiryId] = useState<string | null>(null)
+    const [draftResponse, setDraftResponse] = useState("")
+    const [saving, setSaving] = useState(false)
+    const [error, setError] = useState<string | null>(null)
 
     const formatDate = (dateString: string) => {
         if (!dateString) return "";
@@ -97,25 +75,121 @@ export default function MessageCenterPage() {
             .slice(0, 2);
     };
 
+    const selectedEnquiry = useMemo(() => {
+        return enquiries.find((e) => e.id === selectedEnquiryId) || null
+    }, [enquiries, selectedEnquiryId])
+
+    const filteredEnquiries = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase()
+        if (!q) return enquiries
+        return enquiries.filter((e) => {
+            const name = e.user?.name || e.user?.email || ""
+            return (
+                name.toLowerCase().includes(q) ||
+                (e.subject || "").toLowerCase().includes(q) ||
+                (e.message || "").toLowerCase().includes(q) ||
+                (e.related_facility_id || "").toLowerCase().includes(q)
+            )
+        })
+    }, [enquiries, searchQuery])
+
+    const loadEnquiries = async () => {
+        setError(null)
+        setLoading(true)
+        try {
+            const res = await fetch(`/api/admin/facility-enquiries?q=${encodeURIComponent(searchQuery)}`, {
+                method: "GET",
+                headers: { "content-type": "application/json" },
+            })
+            const json = await res.json().catch(() => null)
+            if (!res.ok) {
+                throw new Error(json?.error || "Failed to load enquiries")
+            }
+            const rows = (json?.enquiries || []) as EnquiryRow[]
+            setEnquiries(rows)
+            if (rows.length > 0 && !selectedEnquiryId) {
+                setSelectedEnquiryId(rows[0].id)
+            } else if (selectedEnquiryId && !rows.some((r) => r.id === selectedEnquiryId)) {
+                setSelectedEnquiryId(rows[0]?.id ?? null)
+            }
+        } catch (e: any) {
+            setError(e?.message || "Failed to load enquiries")
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    useEffect(() => {
+        loadEnquiries()
+        const id = window.setInterval(() => {
+            // Light polling keeps it simple + reliable (no realtime config needed)
+            loadEnquiries()
+        }, 6000)
+        return () => window.clearInterval(id)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
+
+    useEffect(() => {
+        if (!selectedEnquiry) {
+            setDraftResponse("")
+            return
+        }
+        setDraftResponse(selectedEnquiry.response || "")
+    }, [selectedEnquiryId])
+
+    const saveResponse = async (status: EnquiryStatus) => {
+        if (!selectedEnquiry) return
+        setSaving(true)
+        setError(null)
+        try {
+            const res = await fetch(`/api/admin/facility-enquiries`, {
+                method: "PATCH",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ id: selectedEnquiry.id, response: draftResponse, status }),
+            })
+            const json = await res.json().catch(() => null)
+            if (!res.ok) {
+                throw new Error(json?.error || "Failed to save response")
+            }
+            const updated = json?.enquiry as EnquiryRow
+            setEnquiries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+        } catch (e: any) {
+            setError(e?.message || "Failed to save response")
+        } finally {
+            setSaving(false)
+        }
+    }
+
     return (
         <div className="flex flex-1 flex-col gap-4 pt-0 h-[calc(100vh-2rem)]">
-            <DashboardPageHeader title="Message Center" backHref="/dashboard/communication" />
+            <DashboardPageHeader title="Facility Enquiries" backHref="/dashboard/communication" />
             <p className="max-w-3xl text-sm italic text-muted-foreground">
-                Connect with tenants, investors, and team members through one streamlined conversation hub with real-time updates.
+                View and respond to facility booking enquiries submitted from the mobile Services page.
             </p>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 h-full">
                 {/* Sidebar / List */}
                 <Card className="col-span-1 h-full flex flex-col rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)] overflow-hidden">
                     <CardHeader className="pb-3 border-b">
-                        <div className="relative">
+                        <div className="flex gap-2 items-center">
+                          <div className="relative flex-1">
                             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                             <Input 
-                                placeholder="Search messages..." 
+                                placeholder="Search enquiries..." 
                                 className="h-10 rounded-3xl border-0 bg-orange-100/80 pl-8 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100" 
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
+                          </div>
+                          <button
+                            type="button"
+                            className="h-10 w-10 rounded-3xl grid place-items-center bg-orange-100/80 text-zinc-900 shadow-sm hover:bg-orange-100 dark:bg-slate-800/80 dark:text-slate-100 dark:hover:bg-slate-800"
+                            onClick={loadEnquiries}
+                            aria-label="Refresh"
+                            title="Refresh"
+                          >
+                            <RefreshCcw className={cn("h-4 w-4", loading && "animate-spin")} />
+                          </button>
                         </div>
                     </CardHeader>
                     <CardContent className="flex-1 overflow-auto p-0">
@@ -123,58 +197,60 @@ export default function MessageCenterPage() {
                             <div className="flex justify-center items-center h-full p-4">
                                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                             </div>
-                        ) : filteredChats.length === 0 ? (
+                        ) : filteredEnquiries.length === 0 ? (
                             <div className="p-4 text-center text-muted-foreground">
-                                No conversations found
+                                No facility enquiries found
                             </div>
                         ) : (
                             <div className="flex flex-col">
-                                {filteredChats.map((chat) => {
-                                    const otherUser = chat.otherUser;
-                                    const name = otherUser?.name || chat.name || "Unknown User";
-                                    const isSelected = selectedChat?.id === chat.id;
+                                {filteredEnquiries.map((enquiry) => {
+                                    const name = enquiry.user?.name || enquiry.user?.email || "Unknown User";
+                                    const isSelected = selectedEnquiryId === enquiry.id;
                                     
                                     return (
                                         <div 
-                                            key={chat.id} 
+                                            key={enquiry.id} 
                                             className={cn(
                                                 "flex gap-3 p-4 border-b cursor-pointer transition-all",
                                                 isSelected && "bg-orange-100/70 dark:bg-orange-900/25",
-                                                !isSelected && "hover:bg-slate-100/70 dark:hover:bg-slate-800/60",
-                                                chat.unreadCount && chat.unreadCount > 0 && !isSelected && "bg-blue-50/50 dark:bg-blue-900/10"
+                                                !isSelected && "hover:bg-slate-100/70 dark:hover:bg-slate-800/60"
                                             )}
-                                            onClick={() => setSelectedChat(chat)}
+                                            onClick={() => setSelectedEnquiryId(enquiry.id)}
                                         >
                                             <Avatar>
-                                                <AvatarImage src={otherUser?.avatar} />
+                                                <AvatarImage src={enquiry.user?.avatar || undefined} />
                                                 <AvatarFallback>{getInitials(name)}</AvatarFallback>
                                             </Avatar>
                                             <div className="flex-1 overflow-hidden">
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className={cn(
                                                         "text-sm truncate pr-2",
-                                                        (chat.unreadCount || 0) > 0 ? "font-bold" : "font-medium"
+                                                        "font-medium"
                                                     )}>
                                                         {name}
                                                     </span>
-                                                    {chat.updated_at && (
+                                                    {enquiry.created_at && (
                                                         <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                                            {formatDate(chat.updated_at)}
+                                                            {formatDate(enquiry.created_at)}
                                                         </span>
                                                     )}
                                                 </div>
                                                 <div className="flex justify-between items-center">
                                                     <p className={cn(
                                                         "text-xs truncate max-w-[180px]",
-                                                        (chat.unreadCount || 0) > 0 ? "text-foreground font-medium" : "text-muted-foreground"
+                                                        "text-muted-foreground"
                                                     )}>
-                                                        {chat.lastMessage?.content || "No messages yet"}
+                                                        {enquiry.subject || "No subject"}
                                                     </p>
-                                                    {(chat.unreadCount || 0) > 0 && (
-                                                        <div className="flex items-center justify-center min-w-[1.25rem] h-5 px-1.5 rounded-full bg-orange-500 text-[10px] font-bold text-white">
-                                                            {chat.unreadCount}
-                                                        </div>
-                                                    )}
+                                                    <div className={cn(
+                                                        "text-[10px] font-bold px-2 py-1 rounded-full",
+                                                        enquiry.status === "new" && "bg-blue-500 text-white",
+                                                        enquiry.status === "in_progress" && "bg-amber-500 text-white",
+                                                        enquiry.status === "resolved" && "bg-emerald-600 text-white",
+                                                        enquiry.status === "closed" && "bg-slate-500 text-white"
+                                                    )}>
+                                                        {enquiry.status.replace("_", " ")}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -185,90 +261,87 @@ export default function MessageCenterPage() {
                     </CardContent>
                 </Card>
 
-                {/* Message View */}
+                {/* Enquiry View */}
                 <Card className="col-span-1 md:col-span-2 h-full flex flex-col overflow-hidden rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
-                    {selectedChat ? (
+                    {selectedEnquiry ? (
                         <>
                             <div className="p-4 border-b flex items-center gap-3 bg-card">
                                 <Avatar className="h-10 w-10">
-                                    <AvatarImage src={selectedChat.otherUser?.avatar} />
+                                    <AvatarImage src={selectedEnquiry.user?.avatar || undefined} />
                                     <AvatarFallback>
-                                        {getInitials(selectedChat.otherUser?.name || selectedChat.name || "U")}
+                                        {getInitials(selectedEnquiry.user?.name || selectedEnquiry.user?.email || "U")}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
                                     <h3 className="font-semibold">
-                                        {selectedChat.otherUser?.name || selectedChat.name || "Unknown User"}
+                                        {selectedEnquiry.user?.name || selectedEnquiry.user?.email || "Unknown User"}
                                     </h3>
-                                    {selectedChat.otherUser?.role && (
+                                    {!!selectedEnquiry.user?.email && (
                                         <p className="text-xs text-muted-foreground">
-                                            {selectedChat.otherUser.role}
+                                            {selectedEnquiry.user.email}
                                         </p>
                                     )}
                                 </div>
                             </div>
                             
                             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-muted/20">
-                                {messages.map((msg, index) => {
-                                    const isMe = msg.sender_id === currentUser?.id;
-                                    const showAvatar = !isMe && (index === 0 || messages[index - 1].sender_id !== msg.sender_id);
-                                    
-                                    return (
-                                        <div 
-                                            key={msg.id} 
-                                            className={cn(
-                                                "flex gap-2 max-w-[80%]",
-                                                isMe ? "ml-auto flex-row-reverse" : ""
-                                            )}
-                                        >
-                                            {!isMe && (
-                                                <div className="w-8 flex-shrink-0">
-                                                    {showAvatar && (
-                                                        <Avatar className="h-8 w-8">
-                                                            <AvatarImage src={msg.sender?.avatar} />
-                                                            <AvatarFallback className="text-xs">
-                                                                {getInitials(msg.sender?.name || "U")}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                    )}
-                                                </div>
-                                            )}
-                                            
-                                            <div className={cn(
-                                                "rounded-lg p-3 text-sm",
-                                                isMe 
-                                                    ? "bg-primary text-primary-foreground" 
-                                                    : "bg-background border shadow-sm"
-                                            )}>
-                                                {msg.content}
-                                                <div className={cn(
-                                                    "text-[10px] mt-1 text-right opacity-70",
-                                                    isMe ? "text-primary-foreground" : "text-muted-foreground"
-                                                )}>
-                                                    {formatDate(msg.created_at)}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                                <div ref={messagesEndRef} />
-                            </div>
+                                {error && (
+                                    <div className="rounded-2xl border border-red-500/20 bg-red-50 p-3 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
+                                        {error}
+                                    </div>
+                                )}
 
-                            <div className="p-4 border-t bg-card">
-                                <div className="flex gap-2">
-                                    <Input 
-                                        placeholder="Type a message..." 
-                                        value={newMessage}
-                                        onChange={(e) => setNewMessage(e.target.value)}
-                                        onKeyDown={handleKeyPress}
-                                        className="flex-1 h-10 rounded-3xl border-0 bg-orange-100/80 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+                                <div className="rounded-2xl bg-background border shadow-sm p-4">
+                                    <div className="flex flex-wrap gap-2 items-center justify-between mb-2">
+                                        <div className="text-sm font-semibold">
+                                            {selectedEnquiry.subject || "(No subject)"}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {formatDate(selectedEnquiry.created_at)}
+                                        </div>
+                                    </div>
+                                    <div className="text-xs text-muted-foreground mb-3">
+                                        Facility ID: {selectedEnquiry.related_facility_id || "—"} • Type: {selectedEnquiry.enquiry_type}
+                                    </div>
+                                    <pre className="whitespace-pre-wrap text-sm leading-relaxed text-foreground">
+                                        {selectedEnquiry.message}
+                                    </pre>
+                                </div>
+
+                                <div className="rounded-2xl bg-background border shadow-sm p-4">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <div className="text-sm font-semibold">Response</div>
+                                        <div className="text-xs text-muted-foreground">
+                                            {selectedEnquiry.responded_at ? `Last responded: ${formatDate(selectedEnquiry.responded_at)}` : "Not responded yet"}
+                                        </div>
+                                    </div>
+                                    <textarea
+                                        value={draftResponse}
+                                        onChange={(e) => setDraftResponse(e.target.value)}
+                                        className="w-full min-h-[140px] rounded-2xl border border-input bg-background p-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                        placeholder="Type your response to the user..."
+                                        disabled={saving}
                                     />
-                                    <AnimatedDashboardButton
-                                        label="Send"
-                                        className="h-10 rounded-3xl px-4"
-                                        onClick={handleSend}
-                                        disabled={!newMessage.trim()}
-                                    />
+                                    <div className="mt-3 flex flex-wrap gap-2 justify-end">
+                                        <AnimatedDashboardButton
+                                            label={saving ? "Saving..." : "Mark In Progress"}
+                                            className="h-10 rounded-3xl px-4"
+                                            onClick={() => saveResponse("in_progress")}
+                                            disabled={saving}
+                                        />
+                                        <AnimatedDashboardButton
+                                            label={saving ? "Saving..." : "Resolve"}
+                                            className="h-10 rounded-3xl px-4"
+                                            onClick={() => saveResponse("resolved")}
+                                            disabled={saving}
+                                        />
+                                        <AnimatedDashboardButton
+                                            label={saving ? "Saving..." : "Close"}
+                                            className="h-10 rounded-3xl px-4"
+                                            onClick={() => saveResponse("closed")}
+                                            disabled={saving}
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </>
@@ -277,9 +350,9 @@ export default function MessageCenterPage() {
                             <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
                                 <Search className="h-8 w-8 opacity-50" />
                             </div>
-                            <h3 className="text-lg font-medium mb-2">No Chat Selected</h3>
+                            <h3 className="text-lg font-medium mb-2">No Enquiry Selected</h3>
                             <p className="max-w-xs mx-auto">
-                                Select a conversation from the list to view messages or start a new one.
+                                Select a facility enquiry from the list to view details and respond.
                             </p>
                         </div>
                     )}

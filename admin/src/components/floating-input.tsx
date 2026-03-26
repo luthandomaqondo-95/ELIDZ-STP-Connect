@@ -24,6 +24,14 @@ const FloatingLabelInput = React.forwardRef<HTMLInputElement, FloatingInputProps
             (value !== undefined) ? (String(value) !== "") : (defaultValue !== undefined) ? String(defaultValue) !== "" : false,
         )
         const inputRef = React.useRef<HTMLInputElement | null>(null)
+        const shouldFloatLabel =
+            isFocused ||
+            isFilled ||
+            type === "date" ||
+            type === "datetime-local" ||
+            type === "month" ||
+            type === "time" ||
+            type === "week"
 
         const handleRef = (instance: HTMLInputElement | null) => {
             inputRef.current = instance
@@ -80,7 +88,15 @@ const FloatingLabelInput = React.forwardRef<HTMLInputElement, FloatingInputProps
                             onChange={handleChange}
                             value={value}
                             defaultValue={defaultValue}
-                            placeholder={(isFilled) ? "" : (isFocused ? (props.placeholder || label) : "")}
+                            placeholder={
+                                type === "date" ||
+                                type === "datetime-local" ||
+                                type === "month" ||
+                                type === "time" ||
+                                type === "week"
+                                    ? ""
+                                    : (isFilled ? "" : (isFocused ? (props.placeholder || label) : ""))
+                            }
                         />
                         {setShowPassword && (
                             <Button
@@ -97,7 +113,7 @@ const FloatingLabelInput = React.forwardRef<HTMLInputElement, FloatingInputProps
                     <label
                         className={cn(
                             "absolute left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
-                            isFocused || isFilled
+                            shouldFloatLabel
                                 ? "text-xs bg-background top-0 -translate-y-1/2"
                                 : "text-base text-muted-foreground top-1/2 -translate-y-1/2",
                             isFocused && !props.error && "text-primary",
@@ -261,7 +277,7 @@ const FloatingLabelSelect = React.forwardRef<HTMLButtonElement, FloatingSelectPr
                             className,
                         )}
                     >
-                        <SelectPrimitive.Value placeholder={placeholder || ""} />
+                        <SelectPrimitive.Value placeholder={isOpen ? (placeholder || "") : ""} />
                         <SelectPrimitive.Icon asChild>
                             <ChevronDownIcon className="h-4 w-4 opacity-50" />
                         </SelectPrimitive.Icon>

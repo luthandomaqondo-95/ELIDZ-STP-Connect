@@ -20,8 +20,6 @@ export function LoginForm({
 	className,
 	...props
 }: React.ComponentProps<"div">) {
-	const DUMMY_EMAIL = "manelisi.mehlo@appimate.com"
-	const DUMMY_PASSWORD = "123456"
 	const router = useRouter()
     const supabase = createClient()
 	const [showPassword, setShowPassword] = useState(false)
@@ -41,13 +39,6 @@ export function LoginForm({
 
 		try {
 			const trimmedEmail = formData.email.trim().toLowerCase()
-			if (trimmedEmail === DUMMY_EMAIL && formData.password === DUMMY_PASSWORD) {
-				document.cookie = "dummy_auth=1; Path=/; Max-Age=86400; SameSite=Lax"
-				setIsSuccess(true)
-				setTimeout(() => window.location.assign("/dashboard"), 350)
-				return
-			}
-
 			const { error } = await supabase.auth.signInWithPassword({
 				email: trimmedEmail,
 				password: formData.password,
