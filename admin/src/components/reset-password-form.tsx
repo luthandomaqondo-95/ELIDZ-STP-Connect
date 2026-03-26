@@ -10,6 +10,8 @@ import { ShieldCheck, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
+const MOBILE_CHANGE_PASSWORD_URL = "elidzstp://change-password";
+
 function getParamsFromHash(hash: string): { access_token?: string; refresh_token?: string } {
     const params = new URLSearchParams(hash.replace(/^#/, ""));
     return {
@@ -91,6 +93,9 @@ export function ResetPasswordForm() {
         return (
             <div className={cn("flex flex-col gap-6", '')}>
                 <p className="text-zinc-400">Invalid or expired reset link. Request a new one.</p>
+                <a href={MOBILE_CHANGE_PASSWORD_URL} className="text-indigo-400 hover:underline">
+                    Open in Mobile App
+                </a>
                 <Link href="/auth/forgot-password" className="text-indigo-400 hover:underline">Request reset link</Link>
                 <Link href="/auth/login" className="inline-flex items-center text-indigo-400 hover:underline font-medium">
                     <ArrowLeft className="w-4 h-4 mr-1" />
@@ -110,6 +115,9 @@ export function ResetPasswordForm() {
                 <p className="text-muted-foreground text-sm text-balance">
                     Enter your new password below.
                 </p>
+                <a href={MOBILE_CHANGE_PASSWORD_URL} className="text-indigo-400 hover:underline text-sm">
+                    Prefer mobile? Open in app
+                </a>
             </div>
 
             <form onSubmit={handleSubmit} className="grid gap-6">

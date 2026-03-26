@@ -39,6 +39,24 @@ Email confirmation and password reset require redirect URLs to be whitelisted in
    - In **Supabase** → Authentication → Providers → Google: Add the Web Client ID (first), Android Client ID, and iOS Client ID. Enable **Skip nonce check** for iOS.
 4. For Expo Go development, also add the URL shown when running `npx expo start` (e.g. `exp://192.168.x.x:8081/--/email-confirmed`)
 
+### Production deep linking (recommended)
+
+Use verified `https` links in production and keep custom scheme links as fallback.
+
+- **Domain**: `https://elidzconnect.vercel.app`
+- **Android App Links**:
+  - `mobile/app.json` includes `android.intentFilters` with `autoVerify: true` for `/auth/*`
+  - `admin/public/.well-known/assetlinks.json` is added
+  - Replace `REPLACE_WITH_ANDROID_SHA256_CERT_FINGERPRINT` with your real release SHA-256 certificate fingerprint
+- **iOS Universal Links**:
+  - `mobile/app.json` includes `ios.associatedDomains` = `applinks:elidzconnect.vercel.app`
+  - `admin/public/.well-known/apple-app-site-association` is added
+  - Replace `REPLACE_WITH_APPLE_TEAM_ID` with your Apple Team ID
+- **Supabase Redirect URLs** should include:
+  - `https://elidzconnect.vercel.app/auth/reset-password`
+  - `https://elidzconnect.vercel.app/auth/email-confirmed`
+  - plus existing scheme fallbacks (`elidzstp://...`)
+
 ### Password reset / email confirmation links open a blank page
 
 **On mobile (app installed):** The deep link `elidzstp://change-password` should open the app directly. Ensure:
@@ -46,8 +64,8 @@ Email confirmation and password reset require redirect URLs to be whitelisted in
 - AuthProvider handles `PASSWORD_RECOVERY` and navigates to change-password
 
 **If you get about:blank:** Gmail opens links in a browser, which can't handle `elidzstp://`. The app now uses the admin URL for redirects. Ensure:
-1. `appWebUrl` in `app.json` → `extra` is your deployed admin URL (e.g. `https://elidz-stp-admin.vercel.app`)
-2. Add to Supabase **Redirect URLs**: `https://your-admin-url.com/auth/reset-password` and `https://your-admin-url.com/auth/email-confirmed`
+1. `appWebUrl` in `app.json` → `extra` is your deployed admin URL (`https://elidzconnect.vercel.app`)
+2. Add to Supabase **Redirect URLs**: `https://elidzconnect.vercel.app/auth/reset-password` and `https://elidzconnect.vercel.app/auth/email-confirmed`
 
 ## Get a fresh project
 

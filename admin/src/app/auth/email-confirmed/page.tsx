@@ -5,6 +5,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { CheckCircle, ArrowRight } from "lucide-react";
 
+const MOBILE_EMAIL_CONFIRMED_URL = "elidzstp://email-confirmed";
+
 function getParamsFromUrl(): { access_token?: string; refresh_token?: string; code?: string; token_hash?: string; type?: string } {
     if (typeof window === "undefined") return {};
     const hash = window.location.hash?.replace(/^#/, "") || "";
@@ -86,6 +88,12 @@ export default function EmailConfirmedPage() {
                 <h1 className="text-2xl font-bold">Email confirmed</h1>
                 <p className="text-zinc-400 mt-2">You can now log in to the ELIDZ-STP Connect app with your account.</p>
             </div>
+            <a
+                href={MOBILE_EMAIL_CONFIRMED_URL}
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+            >
+                Open Mobile App
+            </a>
             <Link
                 href="/auth/login"
                 className="inline-flex items-center gap-2 text-indigo-400 hover:underline font-medium"
