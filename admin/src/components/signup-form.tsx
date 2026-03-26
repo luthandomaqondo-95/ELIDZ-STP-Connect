@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ShieldCheck, Lock } from "lucide-react";
 
-export function SignupForm({ className, ...props }: React.ComponentProps<"div">) {
+export function SignupForm() {
     return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <div className={cn("flex flex-col gap-6", '')}>
             <Card className="bg-gray-900 text-white shadow-2xl rounded-3xl overflow-hidden">
                 <CardHeader className="text-center pb-8">
                     <div className="flex items-center justify-center gap-2 mb-2">

@@ -9,11 +9,11 @@ import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import { AnimatedSeparator } from "@/components/animated-separator";
 import Image from "next/image";
 
-export function OTPForm({ className, ...props }: React.ComponentProps<"div">) {
+export function OTPForm() {
     const [otp, setOtp] = useState("");
 
     return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <div className={cn("flex flex-col gap-6", '')}>
             <Card className="relative rounded-3xl overflow-hidden bg-gray-900 text-white shadow-[0_0_40px_rgba(251,146,60,0.55)] ring-2 ring-orange-300/45 before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl before:shadow-[0_0_55px_rgba(251,146,60,0.45)]">
                 <CardHeader className="pb-8 text-center">
                     <div className="mb-2 flex items-center justify-center gap-2">

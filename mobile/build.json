@@ -1,0 +1,53 @@
+{
+  "id": "15665f5b-b962-41bd-b5a4-7b0df2e8719b",
+  "status": "ERRORED",
+  "platform": "ANDROID",
+  "error": {
+    "errorCode": "EAS_BUILD_UNKNOWN_GRADLE_ERROR",
+    "message": "Gradle build failed with unknown error. See logs for the \"Run gradlew\" phase for more information."
+  },
+  "artifacts": {},
+  "fingerprint": {
+    "id": "019d2aa8-58ca-702c-8876-73c154c7a57a",
+    "hash": "bcea64702efbc7d3054c2ac7616daeaaec205d56"
+  },
+  "initiatingActor": {
+    "id": "49f33dbd-0f32-470f-bcd2-11efd0b1fac0",
+    "displayName": "tebogo.l"
+  },
+  "logFiles": [
+    "https://job-logs.eascdn.net/production/15665f5b-b962-41bd-b5a4-7b0df2e8719b/1774537169415-2106f1d3-8ef0-40e5-ae9c-f376fca4a044.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260326%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260326T152057Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=2f90d963c4af3245f49908306622041dfca1d14062718112950d185af6c60b1a01e4f5cd157d45efea9e72ae543869554e427f6f4ea9779405d398c12862c3ecccbbd9123576907472b3717e2438665ff589bf3e54894672d590d209a1598cdac960daffd10b5220c58c382156ae6e90ef10cda5999e5fe614a1251261d3be02e289b2e4cdc812dcf3590e977cbc87ff028eed29ef25ab6d65dd09a80e4506dd69cf8e4a5285ab5ff473c3613ea535ffae8c2b4bdc5d6409d4c62591f80dc7fd2847329c4dd10b47ae21aea095c455a1c628a8556a5ecba549f3d8d4def3587134b7835a04875f0445297cd47eae8c20f97ca5ed9a015533bd1bab3434231108",
+    "https://job-logs.eascdn.net/production/15665f5b-b962-41bd-b5a4-7b0df2e8719b/1774537178204-a51ddac1-5bc7-421d-9c78-dc78740c60cc.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260326%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260326T152057Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=2659b76cfdebaca28bee6da7d461e46b53fe59844aa2b667416f57251b12a0d915362f9cb3059963c37615cb898335382e9a506f58419f34019d9128c515f02a37ff449aad1a82c29787285bb55bfaa244e0d9680c7d411d2632a66f942544ade27d0141addd9847c7562180d2691046355d8eee9b30539620b33cb117a746399de9b7f1960d309fd02c3305e1853c919111f3cdd91aabe494eca45217b39b4e89c4de1dee63fe4dd12bc78aaeff9457ba7fc9d4ad3de7fd9d049cd520874c926f95e2e7c65b0730d452184b19628c1e7b2945ee6bc6de71dba998c07deb41864e906bd947e6da4eb1726658c8a511d0b17a738835285f9a33a7af69774b7aa0",
+    "https://job-logs.eascdn.net/production/15665f5b-b962-41bd-b5a4-7b0df2e8719b/1774537178436-6a1a2d6c-ee96-4303-bf63-894bded26b7e.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260326%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260326T152057Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=94e8f87ca4bfac7f1c2132a04cb3ad446d4247ec23dfd67b2b4d81d41307fecf727c9c5b081993e081cee7ffd67f60b066307046b4e25b2b9cd4fc34c0c02579ecf1ac0ddce6c4eabd6d621d5ceed34fc6b0b65f51317a58e418c23ae52de2d0c081d6deada68fd0a9125e999950cf2c9b66246348fbe5b6bba85914d42198a73ac7fb0decbc7523b72355609dc3fb61e230aac3e49784695a26e72f71b04a6d9b3f8dd32dc07961bfd166cd5bd6637c9a03383a2160760300b2e6d22037a3fb8aaf48e934f489c216b415f7e2e45c0e96d65cc9e5defd918f3c5201c459137839c7586f755a59bd7a83aacd9bd751fd65c5847b641db784942ebbd886fc860a",
+    "https://job-logs.eascdn.net/production/15665f5b-b962-41bd-b5a4-7b0df2e8719b/1774537178651-a7a55c53-9594-4f69-b3c9-afec95dfec23.txt?X-Goog-Algorithm=GOOG4-RSA-SHA256&X-Goog-Credential=www-production%40exponentjs.iam.gserviceaccount.com%2F20260326%2Fauto%2Fstorage%2Fgoog4_request&X-Goog-Date=20260326T152057Z&X-Goog-Expires=900&X-Goog-SignedHeaders=host&X-Goog-Signature=33e544d7389180fb28ab5e38fc945a125e11384905abc067df172ef3e6358c83645589978667aeef9f4bc750764255652acca5107f0ff3bb1e429485b92964ec95dd4b4e96d0d5f6587c2e2d8fc9bb9de087c1d12560d675f6b66010a87b0646e75bdc189fad7dc4550a3621eaa5b4e6a01bea9c968f46ab02434a767da688042b401d70704401d65f967deeadf3a0a1323358e5941ef6079bf874b92d52b861fec3645636abb0b8c8994f2576f7cca768c17a9da2fc8d88c4cb5dd34dd2f14e6d44a1284a2826ea5cc6f8679d07a0f4bd5b84a3bffc7056ecad5c7b2bb79800091d8f7d3f01907b32f297d06d3f6fb6a1b08c34267393c87b353738770014f8"
+  ],
+  "project": {
+    "id": "ce8a343f-b27d-4f97-a742-7c5e5cc8c57d",
+    "name": "Elidz-Stp Connect",
+    "slug": "elidz-stp-connect",
+    "ownerAccount": {
+      "id": "781e3747-6630-4afd-843e-a0e31bb7483c",
+      "name": "appimate"
+    }
+  },
+  "channel": "production",
+  "distribution": "STORE",
+  "buildProfile": "production",
+  "sdkVersion": "54.0.0",
+  "appVersion": "1.0.0",
+  "appBuildVersion": "4",
+  "runtimeVersion": "1.0.0",
+  "gitCommitHash": "3b1cb17479fee3b177fd343ff490def30816f0cf",
+  "gitCommitMessage": "changes",
+  "priority": "HIGH",
+  "createdAt": "2026-03-26T14:59:28.998Z",
+  "updatedAt": "2026-03-26T15:06:00.197Z",
+  "completedAt": "2026-03-26T15:05:55.381Z",
+  "expirationDate": "2026-04-25T14:59:29.085Z",
+  "isForIosSimulator": false,
+  "metrics": {
+    "buildWaitTime": 318,
+    "buildQueueTime": 50415,
+    "buildDuration": 335222
+  }
+}

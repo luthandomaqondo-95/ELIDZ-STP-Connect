@@ -18,7 +18,7 @@ function getParamsFromHash(hash: string): { access_token?: string; refresh_token
     };
 }
 
-export function ResetPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
+export function ResetPasswordForm() {
     const router = useRouter();
     const supabase = createClient();
     const [password, setPassword] = useState("");
@@ -81,7 +81,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 
     if (hasSession === null) {
         return (
-            <div className={cn("flex flex-col gap-6", className)} {...props}>
+            <div className={cn("flex flex-col gap-6", '')}>
                 <p className="text-zinc-400">Loading…</p>
             </div>
         );
@@ -89,7 +89,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
 
     if (!hasSession) {
         return (
-            <div className={cn("flex flex-col gap-6", className)} {...props}>
+            <div className={cn("flex flex-col gap-6", '')}>
                 <p className="text-zinc-400">Invalid or expired reset link. Request a new one.</p>
                 <Link href="/auth/forgot-password" className="text-indigo-400 hover:underline">Request reset link</Link>
                 <Link href="/auth/login" className="inline-flex items-center text-indigo-400 hover:underline font-medium">
@@ -101,7 +101,7 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
     }
 
     return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <div className={cn("flex flex-col gap-6", '')}>
             <div className="flex flex-col items-center gap-2 text-center">
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 mb-2">
                     <ShieldCheck className="h-6 w-6" />

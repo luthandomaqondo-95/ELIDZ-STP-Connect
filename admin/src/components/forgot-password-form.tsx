@@ -11,7 +11,7 @@ import { FloatingLabelInput } from "@/components/floating-input";
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
 import { AnimatedSeparator } from "@/components/animated-separator";
 
-export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
+export function ForgotPasswordForm() {
     const [email, setEmail] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [isSent, setIsSent] = useState(false);
@@ -41,7 +41,7 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
     };
 
     return (
-        <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <div className={cn("flex flex-col gap-6", '')}>
             <Card className="relative rounded-3xl overflow-hidden bg-gray-900 text-white shadow-[0_0_40px_rgba(251,146,60,0.55)] ring-2 ring-orange-300/45 before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl before:shadow-[0_0_55px_rgba(251,146,60,0.45)]">
                 <CardHeader className="text-center pb-8">
                     <div className="flex items-center justify-center gap-2 mb-2">

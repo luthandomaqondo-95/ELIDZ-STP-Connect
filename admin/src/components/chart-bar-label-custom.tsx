@@ -1,5 +1,6 @@
 "use client"
 
+import { createElement } from "react"
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, XAxis, YAxis } from "recharts"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -73,8 +74,10 @@ export function ChartBarLabelCustom<T extends Record<string, any> = DefaultBarDa
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className={containerClassName}>
-          <BarChart
+        {createElement(
+          ChartContainer as any,
+          { config: chartConfig, className: containerClassName },
+          (<BarChart
             accessibilityLayer
             data={resolvedData}
             layout="vertical"
@@ -85,43 +88,43 @@ export function ChartBarLabelCustom<T extends Record<string, any> = DefaultBarDa
           >
             <CartesianGrid horizontal={false} />
             <YAxis
-              dataKey={categoryKey}
+              dataKey={categoryKey as any}
               type="category"
               tickLine={false}
               tickMargin={10}
               axisLine={false}
-              tickFormatter={(value) => value.slice(0, 3)}
+              tickFormatter={(value: unknown) => String(value).slice(0, 3)}
               hide
             />
-            <XAxis dataKey={valueKey} type="number" hide />
+            <XAxis dataKey={valueKey as any} type="number" hide />
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent indicator={tooltipIndicator} />}
+              content={createElement(ChartTooltipContent as any, { indicator: tooltipIndicator })}
             />
-            <Bar dataKey={valueKey} fill="var(--color-desktop)" radius={[0, 24, 24, 0]} barSize={28}>
-              {resolvedData.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={getBarFill ? getBarFill(entry, index) : "var(--color-desktop)"}
-                />
-              ))}
+            <Bar dataKey={valueKey as any} fill="var(--color-desktop)" radius={[0, 24, 24, 0]} barSize={28}>
+              {resolvedData.map((entry, index) =>
+                createElement(Cell as any, {
+                  key: `cell-${index}`,
+                  fill: getBarFill ? getBarFill(entry, index) : "var(--color-desktop)",
+                })
+              )}
               <LabelList
-                dataKey={categoryKey}
+                dataKey={categoryKey as any}
                 position="insideLeft"
                 offset={8}
                 className="fill-(--color-label)"
                 fontSize={12}
               />
               <LabelList
-                dataKey={valueKey}
+                dataKey={valueKey as any}
                 position="right"
                 offset={8}
                 className="fill-foreground"
                 fontSize={12}
               />
             </Bar>
-          </BarChart>
-        </ChartContainer>
+          </BarChart>) as any
+        )}
       </CardContent>
     </Card>
   )

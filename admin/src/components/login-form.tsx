@@ -16,12 +16,8 @@ import { FloatingLabelInput } from "@/components/floating-input";
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
 import { AnimatedSeparator } from "@/components/animated-separator";
 
-export function LoginForm({
-	className,
-	...props
-}: React.ComponentProps<"div">) {
+export function LoginForm() {
 	const router = useRouter()
-    const supabase = createClient()
 	const [showPassword, setShowPassword] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
 	const [isSuccess, setIsSuccess] = useState(false)
@@ -38,6 +34,7 @@ export function LoginForm({
 		setIsLoading(true)
 
 		try {
+			const supabase = createClient()
 			const trimmedEmail = formData.email.trim().toLowerCase()
 			const { error } = await supabase.auth.signInWithPassword({
 				email: trimmedEmail,
@@ -63,7 +60,7 @@ export function LoginForm({
 		}
 	}
 	return (
-		<div className={cn("flex flex-col gap-6", className)} {...props}>
+		<div className={cn("flex flex-col gap-6", '')} >
 			<Card className="relative rounded-3xl overflow-hidden bg-gray-900 text-white shadow-[0_0_40px_rgba(251,146,60,0.55)] ring-2 ring-orange-300/45 before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl before:shadow-[0_0_55px_rgba(251,146,60,0.45)] lg:min-h-[560px] lg:py-10 lg:gap-8">
 				<CardHeader className="text-center pb-3 md:pb-5 min-[850px]:pb-7 lg:pb-6">
 					<div className="flex items-center justify-center gap-2 mb-2">
@@ -116,14 +113,14 @@ export function LoginForm({
 									setShowPassword={setShowPassword}
 									className="h-11 min-[850px]:h-[60px] lg:h-11 rounded-3xl border-transparent bg-gray-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-transparent pr-10"
 								/>
-								<div className="mt-2 text-right">
+								{/* <div className="mt-2 text-right">
 									<Link
 										href="/auth/forgot-password"
 										className="inline-block text-sm underline-offset-4 hover:underline text-indigo-400 hover:text-indigo-300"
 									>
 										Forgot your password?
 									</Link>
-								</div>
+								</div> */}
 								<div className="mt-2 h-px w-full bg-zinc-400/40 md:hidden" />
 							</Field>
 							<Field className="pt-1">
