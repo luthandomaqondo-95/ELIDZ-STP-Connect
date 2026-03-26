@@ -3,7 +3,7 @@
     "apps": [],
     "details": [
       {
-        "appID": "REPLACE_WITH_APPLE_TEAM_ID.com.elidzstp.app",
+        "appID": "5MF7V6G7WN.com.elidzstp.app",
         "paths": [
           "/auth/*"
         ]
