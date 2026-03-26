@@ -26,6 +26,33 @@ export interface ContactWithConnection extends Profile {
 }
 
 class ConnectionService {
+	async getBlockStatus(currentUserId: string, otherUserId: string): Promise<{ isBlocked: boolean; blockedByCurrentUser: boolean; blockedByOtherUser: boolean }> {
+		const { data, error } = await supabase
+			.from('connections')
+			.select('id,user_id,connected_user_id,status')
+			.eq('status', 'blocked')
+			.or(`and(user_id.eq.${currentUserId},connected_user_id.eq.${otherUserId}),and(user_id.eq.${otherUserId},connected_user_id.eq.${currentUserId})`)
+			.limit(10);
+
+		if (error) {
+			console.error('ConnectionService.getBlockStatus error:', error);
+			throw error;
+		}
+
+		if (!data || data.length === 0) {
+			return { isBlocked: false, blockedByCurrentUser: false, blockedByOtherUser: false };
+		}
+
+		const blockedByCurrentUser = data.some((row: any) => row.user_id === currentUserId && row.connected_user_id === otherUserId);
+		const blockedByOtherUser = data.some((row: any) => row.user_id === otherUserId && row.connected_user_id === currentUserId);
+
+		return {
+			isBlocked: blockedByCurrentUser || blockedByOtherUser,
+			blockedByCurrentUser,
+			blockedByOtherUser,
+		};
+	}
+
 	async getAcceptedConnections(userId: string): Promise<Connection[]> {
 		console.log('ConnectionService.getAcceptedConnections called for userId:', userId);
 
@@ -313,18 +340,31 @@ class ConnectionService {
 
 	/** Cancel a pending connection request between two users (works for both sent and received requests) */
 	async cancelConnectionRequestByUsers(userId1: string, userId2: string): Promise<boolean> {
-		const { data, error } = await supabase
+		const { data: rows, error: findError } = await supabase
+			.from('connections')
+			.select('id')
+			.eq('status', 'pending')
+			.or(`and(user_id.eq.${userId1},connected_user_id.eq.${userId2}),and(user_id.eq.${userId2},connected_user_id.eq.${userId1})`);
+
+		if (findError) {
+			console.error('ConnectionService.cancelConnectionRequestByUsers find error:', findError);
+			throw findError;
+		}
+
+		const ids = (rows || []).map((r: any) => r.id);
+		if (ids.length === 0) return false;
+
+		const { error: deleteError } = await supabase
 			.from('connections')
 			.delete()
-			.eq('status', 'pending')
-			.or(`and(user_id.eq.${userId1},connected_user_id.eq.${userId2}),and(user_id.eq.${userId2},connected_user_id.eq.${userId1})`)
-			.select('id');
+			.in('id', ids);
 
-		if (error) {
-			console.error('ConnectionService.cancelConnectionRequestByUsers error:', error);
-			throw error;
+		if (deleteError) {
+			console.error('ConnectionService.cancelConnectionRequestByUsers delete error:', deleteError);
+			throw deleteError;
 		}
-		return (data?.length ?? 0) > 0;
+
+		return true;
 	}
 
 	/** Block a user - updates existing connection to blocked, or creates a blocked connection if none exists */
@@ -359,6 +399,35 @@ class ConnectionService {
 				throw error;
 			}
 		}
+	}
+
+	/** Undo a block relation between two users. */
+	async unblockUser(currentUserId: string, otherUserId: string): Promise<boolean> {
+		const { data: rows, error: findError } = await supabase
+			.from('connections')
+			.select('id')
+			.eq('status', 'blocked')
+			.or(`and(user_id.eq.${currentUserId},connected_user_id.eq.${otherUserId}),and(user_id.eq.${otherUserId},connected_user_id.eq.${currentUserId})`);
+
+		if (findError) {
+			console.error('ConnectionService.unblockUser find error:', findError);
+			throw findError;
+		}
+
+		const ids = (rows || []).map((r: any) => r.id);
+		if (ids.length === 0) return false;
+
+		const { error: deleteError } = await supabase
+			.from('connections')
+			.delete()
+			.in('id', ids);
+
+		if (deleteError) {
+			console.error('ConnectionService.unblockUser delete error:', deleteError);
+			throw deleteError;
+		}
+
+		return true;
 	}
 
 	async acceptConnection(connectionId: string): Promise<Connection> {

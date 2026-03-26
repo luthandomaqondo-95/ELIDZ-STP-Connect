@@ -5,9 +5,9 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { revalidatePath } from "next/cache"
 
 export async function updateSmmeStatus(userId: string, status: string) {
-    const supabase = await createClient()
+    const adminSupabase = createAdminClient()
     
-    const { error } = await supabase
+    const { error } = await adminSupabase
         .from('profiles')
         .update({ verification_status: status })
         .eq('id', userId)

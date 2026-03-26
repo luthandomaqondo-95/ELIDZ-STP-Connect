@@ -1,10 +1,30 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, revalidateTag, unstable_cache } from "next/cache"
 import { cookies } from "next/headers"
 
+import type { PublishedEventItem } from "@/lib/events"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
+
+type EventRsvpRelation = {
+  user_id: string
+  created_at: string | null
+  profiles: Array<{
+    name: string | null
+    email: string | null
+  }> | null
+}
+
+type EventRecord = {
+  id: string
+  title: string | null
+  description: string | null
+  date: string | null
+  location: string | null
+  created_at: string | null
+  event_rsvps: EventRsvpRelation[] | null
+}
 
 async function isDummyAuth() {
   const cookieStore = await cookies()
@@ -40,6 +60,45 @@ async function getAuthenticatedUserId(): Promise<string | null> {
 export type PublishEventResult = {
   success?: true
   error?: string
+}
+
+const ADMIN_EVENTS_LIST_TAG = "admin-published-events"
+
+/** Cap rows; nested RSVPs can be heavy. Cache is safe here (service client, no cookies). */
+const ADMIN_EVENTS_LIST_LIMIT = 200
+
+const getPublishedEventsForAdminCached = unstable_cache(
+  async (): Promise<PublishedEventItem[]> => {
+    const supabase = createAdminClient()
+
+    const { data: rawEvents } = await supabase
+      .from("events")
+      .select(
+        "id, title, description, date, location, created_at, event_rsvps(user_id, created_at, profiles(name, email))"
+      )
+      .order("created_at", { ascending: false })
+      .limit(ADMIN_EVENTS_LIST_LIMIT)
+
+    return ((rawEvents || []) as EventRecord[]).map((event) => ({
+      id: event.id,
+      title: event.title ?? null,
+      description: event.description ?? null,
+      date: event.date ?? null,
+      location: event.location ?? null,
+      rsvps: (event.event_rsvps || []).map((rsvp) => ({
+        id: rsvp.user_id,
+        name: rsvp.profiles?.[0]?.name ?? null,
+        email: rsvp.profiles?.[0]?.email ?? null,
+        joinedAt: rsvp.created_at,
+      })),
+    }))
+  },
+  ["admin-published-events-v1"],
+  { revalidate: 30, tags: [ADMIN_EVENTS_LIST_TAG] }
+)
+
+export async function getPublishedEventsForAdmin(): Promise<PublishedEventItem[]> {
+  return getPublishedEventsForAdminCached()
 }
 
 function normalizeIsoDate(dateValue: string) {
@@ -99,6 +158,7 @@ export async function publishEvent(formData: FormData): Promise<PublishEventResu
     }
 
     revalidatePath("/dashboard/communication/events")
+    revalidateTag(ADMIN_EVENTS_LIST_TAG, "max")
     return { success: true }
   } catch (error) {
     return {
@@ -120,6 +180,7 @@ export async function deleteEvent(id: string): Promise<PublishEventResult> {
     }
 
     revalidatePath("/dashboard/communication/events")
+    revalidateTag(ADMIN_EVENTS_LIST_TAG, "max")
     return { success: true }
   } catch (error) {
     return {

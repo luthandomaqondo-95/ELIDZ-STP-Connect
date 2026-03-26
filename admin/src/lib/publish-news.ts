@@ -1,5 +1,6 @@
 "use server"
 
+import { cache } from "react"
 import { revalidatePath } from "next/cache"
 import { cookies } from "next/headers"
 
@@ -9,6 +10,7 @@ import {
   NEWS_IMAGE_ALLOWED_TYPES,
   NEWS_IMAGE_BUCKET,
   NEWS_IMAGE_MAX_BYTES,
+  type PublishedNewsItem,
 } from "@/lib/news"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { createClient } from "@/lib/supabase/server"
@@ -149,6 +151,20 @@ async function publishMobileNews(input: PublishMobileNewsInput) {
 
   revalidatePath("/dashboard/communication/news")
 }
+
+/** Cap rows so the admin list stays fast; UI paginates client-side within this window. */
+const ADMIN_NEWS_LIST_LIMIT = 200
+
+export const getPublishedNewsForAdmin = cache(async (): Promise<PublishedNewsItem[]> => {
+  const supabase = await createClient()
+  const { data: news } = await supabase
+    .from("news")
+    .select("id, title, content, published_at, created_at, author:profiles(id, name, email)")
+    .order("published_at", { ascending: false })
+    .limit(ADMIN_NEWS_LIST_LIMIT)
+
+  return (news || []) as PublishedNewsItem[]
+})
 
 export async function publishNews(formData: FormData): Promise<PublishNewsResult> {
   try {
