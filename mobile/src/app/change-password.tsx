@@ -13,6 +13,7 @@ import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { validatePassword, validateConfirmPassword, MIN_PASSWORD_LENGTH } from '@/utils/validation';
 import { PasswordField } from '@/components/PasswordField';
+import { authBack } from '@/utils/navigation';
 
 const { height } = Dimensions.get('window');
 
@@ -136,7 +137,7 @@ export default function InAppChangePasswordScreen() {
         <View className="px-6 pt-2 rounded-3xl" style={{ height: height * 0.24, zIndex: 1 }}>
           <TouchableOpacity
             className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
-            onPress={() => router.back()}
+            onPress={authBack}
           >
             <Ionicons name="chevron-back" size={24} color="#FFFFFF" />
             <Text className="text-white text-sm ml-1">Back</Text>

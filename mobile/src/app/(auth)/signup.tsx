@@ -16,6 +16,7 @@ import { PasswordField } from '@/components/PasswordField';
 import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
 import { fetchZaPostalCodesForCity, fetchZaCitiesByProvince, fetchZaProvinces } from '@/services/za-postal-codes.service';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
+import { authBack } from '@/utils/navigation';
 
 const ROLES = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'] as const;
 
@@ -245,7 +246,7 @@ export default function SignupScreen() {
 				<View className="px-6 pt-1 pb-3 rounded-3xl z-20">
 					<TouchableOpacity
 						className="flex-row items-center self-start mt-1 py-2 pr-3 pl-0 active:opacity-80"
-						onPress={() => router.back()}
+						onPress={authBack}
 						accessibilityRole="button"
 						accessibilityLabel="Go back"
 					>

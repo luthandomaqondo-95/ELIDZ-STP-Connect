@@ -17,6 +17,7 @@ import { PasswordField } from '@/components/PasswordField';
 import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
 import { ErrorAlert } from '@/components/Error';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
+import { authBack } from '@/utils/navigation';
 
 export default function LoginScreen() {
     const insets = useSafeAreaInsets();
@@ -121,6 +122,8 @@ export default function LoginScreen() {
         );
     }
 
+    const handleBack = authBack;
+
     return (
         <View className="flex-1 bg-background">
             <View className="absolute inset-0 z-0">
@@ -137,7 +140,7 @@ export default function LoginScreen() {
                 <View className="px-6 pt-1 pb-3 rounded-3xl z-20">
                     <TouchableOpacity
                         className="flex-row items-center self-start mt-1 py-2 pr-3 pl-0 active:opacity-80"
-                        onPress={() => router.back()}
+                        onPress={handleBack}
                         accessibilityRole="button"
                         accessibilityLabel="Go back"
                     >
