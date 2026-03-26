@@ -208,7 +208,7 @@ function SettingsScreen() {
               title="Change Password"
               subtitle="Update your password"
               isFirst
-              onPress={() => router.push('/(auth)/change-password')}
+              onPress={() => router.push('/change-password')}
             />
             <SettingRow
               icon="log-out"

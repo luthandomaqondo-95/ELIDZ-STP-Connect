@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle } from "lucide-react";
 
 const MOBILE_EMAIL_CONFIRMED_URL = "elidzstp://email-confirmed";
 
@@ -22,7 +21,10 @@ function getParamsFromUrl(): { access_token?: string; refresh_token?: string; co
 }
 
 export default function EmailConfirmedPage() {
-    const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+    const [status, setStatus] = useState<"loading" | "success">("loading");
+    const [message, setMessage] = useState(
+        "You can now log in to the ELIDZ-STP Connect mobile app with your account."
+    );
 
     useEffect(() => {
         const client = createClient();
@@ -40,6 +42,9 @@ export default function EmailConfirmedPage() {
                     setStatus("success");
                     return;
                 }
+                setMessage(
+                    "Your link was opened successfully. Go back to the mobile app and sign in with your new account."
+                );
             }
             if (code) {
                 const { error } = await client.auth.exchangeCodeForSession(code);
@@ -48,6 +53,9 @@ export default function EmailConfirmedPage() {
                     setStatus("success");
                     return;
                 }
+                setMessage(
+                    "Your email may already be confirmed. Go back to the mobile app and try signing in."
+                );
             }
             if (token_hash && (type === "signup" || type === "email")) {
                 const { error } = await client.auth.verifyOtp({ type: type as "signup" | "email", token_hash });
@@ -56,8 +64,16 @@ export default function EmailConfirmedPage() {
                     setStatus("success");
                     return;
                 }
+                setMessage(
+                    "Your email may already be confirmed. Go back to the mobile app and try signing in."
+                );
             }
-            setStatus("error");
+            // Some providers redirect after completing confirmation server-side, without leaving
+            // a session in this browser context. Show success guidance instead of false error.
+            setMessage(
+                "Your confirmation link was processed. Please return to the mobile app and sign in."
+            );
+            setStatus("success");
         }
         confirm();
     }, []);
@@ -70,15 +86,6 @@ export default function EmailConfirmedPage() {
         );
     }
 
-    if (status === "error") {
-        return (
-            <div className="flex flex-col items-center gap-6 text-center">
-                <p className="text-zinc-400">Invalid or expired confirmation link.</p>
-                <Link href="/auth/login" className="text-indigo-400 hover:underline">Back to Login</Link>
-            </div>
-        );
-    }
-
     return (
         <div className="flex flex-col items-center gap-6 text-center">
             <div className="inline-flex justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
@@ -86,7 +93,7 @@ export default function EmailConfirmedPage() {
             </div>
             <div>
                 <h1 className="text-2xl font-bold">Email confirmed</h1>
-                <p className="text-zinc-400 mt-2">You can now log in to the ELIDZ-STP Connect app with your account.</p>
+                <p className="text-zinc-400 mt-2">{message}</p>
             </div>
             <a
                 href={MOBILE_EMAIL_CONFIRMED_URL}
@@ -94,13 +101,6 @@ export default function EmailConfirmedPage() {
             >
                 Open Mobile App
             </a>
-            <Link
-                href="/auth/login"
-                className="inline-flex items-center gap-2 text-indigo-400 hover:underline font-medium"
-            >
-                Go to Login
-                <ArrowRight className="w-4 h-4" />
-            </Link>
         </div>
     );
 }

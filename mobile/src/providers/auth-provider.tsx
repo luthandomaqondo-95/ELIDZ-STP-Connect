@@ -35,6 +35,19 @@ function getEmailConfirmationRedirectUrl(): string {
 		: 'elidzstp://email-confirmed';
 }
 
+function isInvalidRefreshTokenError(error: unknown): boolean {
+	const message =
+		typeof error === 'object' && error !== null && 'message' in error
+			? String((error as { message?: unknown }).message ?? '')
+			: '';
+	const code =
+		typeof error === 'object' && error !== null && 'code' in error
+			? String((error as { code?: unknown }).code ?? '')
+			: '';
+
+	return /invalid refresh token|refresh token not found/i.test(message) || code === 'refresh_token_not_found';
+}
+
 export default function AuthProvider({ children }: PropsWithChildren) {
 	const [session, setSession] = useState<Session | undefined | null>()
 	const [profile, setProfile] = useState<Profile | null>()
@@ -123,10 +136,10 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 		if (authError) {
 			const message = authError.message ?? '';
-			if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message)) {
-				throw new Error(
-					'Too many signup attempts. Please wait about a minute, then try again. If you already signed up, check your email (including spam) for the confirmation link.'
-				);
+		if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message)) {
+			throw new Error(
+				'Too many email requests. Please wait up to an hour before trying again. If you already signed up, check your email (including spam) for the confirmation link, or try logging in instead.'
+			);
 			}
 			if (/user already registered|already been registered/i.test(message)) {
 				throw new Error(
@@ -226,7 +239,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			throw new Error('Please enter your email first.');
 		}
 
-		const { error } = await supabase.auth.resend({
+		const RESEND_TIMEOUT_MS = 15000;
+		const resendPromise = supabase.auth.resend({
 			type: 'signup',
 			email: normalizedEmail,
 			options: {
@@ -234,8 +248,21 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			},
 		});
 
+		// Supabase can occasionally hang on RN when local auth storage is stale / networking is flaky.
+		// This makes sure the UI doesn't get stuck on "Sending…".
+		const timeoutPromise = new Promise<never>((_, reject) => {
+			setTimeout(() => reject(new Error('Request timed out. Please try again.')), RESEND_TIMEOUT_MS);
+		});
+
+		const { error } = await Promise.race([resendPromise, timeoutPromise]);
+
 		if (error) {
 			const message = error.message ?? '';
+			if (isInvalidRefreshTokenError(error)) {
+				// Clear stale session storage so future auth actions behave normally.
+				await supabase.auth.signOut({ scope: 'local' });
+				throw new Error('Session expired. Please log in again.');
+			}
 			if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message)) {
 				throw new Error('Too many email requests. Please wait about a minute, then try again.');
 			}
@@ -482,6 +509,14 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			} = await supabase.auth.getSession()
 
 			if (error) {
+				if (isInvalidRefreshTokenError(error)) {
+					// Stale local auth storage can trigger this after password changes or old installs.
+					// Clear only local session state to avoid noisy errors for unauthenticated users.
+					await supabase.auth.signOut({ scope: 'local' });
+					setSession(null);
+					setIsLoading(false);
+					return;
+				}
 				console.error('Error fetching session:', error)
 			}
 

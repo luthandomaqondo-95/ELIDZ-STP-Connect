@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, Dimensions, TouchableOpacity, Image } from 'react-native';
+import { View, TextInput, Pressable, Dimensions, TouchableOpacity, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
@@ -41,11 +41,15 @@ export default function ForgotPasswordScreen() {
 
         try {
             const appWebUrl = Constants.expoConfig?.extra?.appWebUrl as string | undefined;
-            const redirectTo = appWebUrl?.trim()
-                ? `${appWebUrl.replace(/\/$/, '')}/auth/reset-password`
-                : Constants.appOwnership === 'expo'
-                    ? ExpoLinking.createURL('change-password')
-                    : 'elidzstp://change-password';
+            // Mobile-originated password resets should return directly to the app.
+            const redirectTo =
+                Platform.OS === 'ios' || Platform.OS === 'android'
+                    ? Constants.appOwnership === 'expo'
+                        ? ExpoLinking.createURL('change-password')
+                        : 'elidzstp://change-password'
+                    : appWebUrl?.trim()
+                        ? `${appWebUrl.replace(/\/$/, '')}/auth/reset-password`
+                        : 'elidzstp://change-password';
 
             const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
                 redirectTo,
@@ -139,11 +143,11 @@ export default function ForgotPasswordScreen() {
 
                             {/* Reset Button */}
                             <Button
-                                className="h-14 rounded-full bg-accent justify-center items-center mb-6 active:opacity-80 active:scale-95 shadow-sm"
+                                className="min-h-[56px] rounded-full bg-accent justify-center items-center mb-6 px-6 py-3.5 active:opacity-80 active:scale-95 shadow-sm"
                                 onPress={handleResetPassword}
                                 disabled={isLoading}
                             >
-                                <Text className="text-lg font-bold text-white">
+                                <Text className="text-base leading-6 font-bold text-white text-center">
                                     {isLoading ? 'Sending...' : 'Send Reset Link'}
                                 </Text>
                             </Button>
@@ -174,18 +178,18 @@ export default function ForgotPasswordScreen() {
 
                             {/* Back to Login Button */}
                             <Pressable
-                                className="w-full h-14 rounded-full bg-accent justify-center items-center mb-4 active:opacity-80 active:scale-95 shadow-sm"
+                                className="w-full min-h-[56px] rounded-full bg-accent justify-center items-center mb-4 px-6 py-3.5 active:opacity-80 active:scale-95 shadow-sm"
                                 onPress={handleBackToLogin}
                             >
-                                <Text className="text-lg font-bold text-white">Back to Login</Text>
+                                <Text className="text-base leading-6 font-bold text-white text-center">Back to Login</Text>
                             </Pressable>
 
                             {/* Try Different Email */}
                             <Pressable
-                                className="w-full h-14 rounded-full border-2 border-accent justify-center items-center active:opacity-80 active:scale-95"
+                                className="w-full min-h-[56px] rounded-full border-2 border-accent justify-center items-center px-6 py-3.5 active:opacity-80 active:scale-95"
                                 onPress={() => setIsEmailSent(false)}
                             >
-                                <Text className="text-lg font-bold text-accent">Try Different Email</Text>
+                                <Text className="text-base leading-6 font-bold text-accent text-center">Try Different Email</Text>
                             </Pressable>
                         </View>
                     )}

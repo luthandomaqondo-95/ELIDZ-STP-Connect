@@ -1,33 +1,44 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ShieldCheck, ArrowLeft } from "lucide-react";
+import { ShieldCheck, ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-const MOBILE_CHANGE_PASSWORD_URL = "elidzstp://change-password";
+const MOBILE_APP_LOGIN_URL = "elidzstp://";
 
-function getParamsFromHash(hash: string): { access_token?: string; refresh_token?: string } {
-    const params = new URLSearchParams(hash.replace(/^#/, ""));
+function getParamsFromUrl(): {
+    access_token?: string;
+    refresh_token?: string;
+    code?: string;
+    token_hash?: string;
+    type?: string;
+} {
+    if (typeof window === "undefined") return {};
+    const hash = window.location.hash?.replace(/^#/, "") || "";
+    const search = window.location.search?.replace(/^\?/, "") || "";
+    const params = new URLSearchParams(hash || search);
     return {
         access_token: params.get("access_token") ?? undefined,
         refresh_token: params.get("refresh_token") ?? undefined,
+        code: params.get("code") ?? undefined,
+        token_hash: params.get("token_hash") ?? undefined,
+        type: params.get("type") ?? undefined,
     };
 }
 
 export function ResetPasswordForm() {
-    const router = useRouter();
     const supabase = createClient();
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasSession, setHasSession] = useState<boolean | null>(null);
+    const [isSuccess, setIsSuccess] = useState(false);
 
     useEffect(() => {
         const client = createClient();
@@ -37,21 +48,55 @@ export function ResetPasswordForm() {
                 setHasSession(true);
                 return;
             }
-            if (typeof window !== "undefined" && window.location.hash) {
-                const { access_token, refresh_token } = getParamsFromHash(window.location.hash);
-                if (access_token) {
-                    const { error: err } = await client.auth.setSession({ access_token, refresh_token: refresh_token ?? "" });
-                    if (!err) {
-                        window.history.replaceState(null, "", window.location.pathname);
-                        setHasSession(true);
-                        return;
-                    }
+            const { access_token, refresh_token, code, token_hash, type } = getParamsFromUrl();
+
+            if (access_token && refresh_token) {
+                const { error: err } = await client.auth.setSession({ access_token, refresh_token });
+                if (!err) {
+                    window.history.replaceState(null, "", window.location.pathname);
+                    setHasSession(true);
+                    return;
                 }
             }
+
+            if (code) {
+                const { error: err } = await client.auth.exchangeCodeForSession(code);
+                if (!err) {
+                    window.history.replaceState(null, "", window.location.pathname);
+                    setHasSession(true);
+                    return;
+                }
+            }
+
+            if (token_hash && type === "recovery") {
+                const { error: err } = await client.auth.verifyOtp({ type: "recovery", token_hash });
+                if (!err) {
+                    window.history.replaceState(null, "", window.location.pathname);
+                    const { data: { session: verifiedSession } } = await client.auth.getSession();
+                    setHasSession(!!verifiedSession);
+                    return;
+                }
+            }
+
+            // Final fallback: sometimes auth params are consumed by middleware and a session already exists.
+            const { data: { session: fallbackSession } } = await client.auth.getSession();
+            if (fallbackSession) {
+                setHasSession(true);
+                return;
+            }
+
             setHasSession(false);
         }
         init();
     }, []);
+
+    useEffect(() => {
+        if (!isSuccess || typeof window === "undefined") return;
+        const timeoutId = window.setTimeout(() => {
+            window.location.href = MOBILE_APP_LOGIN_URL;
+        }, 1200);
+        return () => window.clearTimeout(timeoutId);
+    }, [isSuccess]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -72,14 +117,35 @@ export function ResetPasswordForm() {
                 return;
             }
             await supabase.auth.signOut();
-            router.push("/auth/login");
-            router.refresh();
+            setIsSuccess(true);
         } catch {
             setError("Something went wrong. Please try again.");
         } finally {
             setIsLoading(false);
         }
     };
+
+    if (isSuccess) {
+        return (
+            <div className={cn("flex flex-col items-center gap-6 text-center", "")}>
+                <div className="inline-flex justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
+                    <CheckCircle className="w-8 h-8" />
+                </div>
+                <div>
+                    <h1 className="text-2xl font-bold">Password updated</h1>
+                    <p className="text-zinc-400 mt-2">
+                        Your password was reset successfully. Opening the mobile app for sign in...
+                    </p>
+                </div>
+                <a
+                    href={MOBILE_APP_LOGIN_URL}
+                    className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+                >
+                    Open Mobile App
+                </a>
+            </div>
+        );
+    }
 
     if (hasSession === null) {
         return (
@@ -92,14 +158,14 @@ export function ResetPasswordForm() {
     if (!hasSession) {
         return (
             <div className={cn("flex flex-col gap-6", '')}>
-                <p className="text-zinc-400">Invalid or expired reset link. Request a new one.</p>
-                <a href={MOBILE_CHANGE_PASSWORD_URL} className="text-indigo-400 hover:underline">
-                    Open in Mobile App
-                </a>
-                <Link href="/auth/forgot-password" className="text-indigo-400 hover:underline">Request reset link</Link>
-                <Link href="/auth/login" className="inline-flex items-center text-indigo-400 hover:underline font-medium">
-                    <ArrowLeft className="w-4 h-4 mr-1" />
-                    Back to Login
+                <p className="text-zinc-400">
+                    This reset link is invalid or has expired. Request a new link to continue.
+                </p>
+                <Link
+                    href="/auth/forgot-password"
+                    className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
+                >
+                    Request new reset link
                 </Link>
             </div>
         );
@@ -115,9 +181,6 @@ export function ResetPasswordForm() {
                 <p className="text-muted-foreground text-sm text-balance">
                     Enter your new password below.
                 </p>
-                <a href={MOBILE_CHANGE_PASSWORD_URL} className="text-indigo-400 hover:underline text-sm">
-                    Prefer mobile? Open in app
-                </a>
             </div>
 
             <form onSubmit={handleSubmit} className="grid gap-6">

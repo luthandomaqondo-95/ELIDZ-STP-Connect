@@ -56,8 +56,8 @@ async function promoteToSuperAdmin() {
             CHECK (role IN ('Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant', 'Admin', 'Super Admin'));
         `);
 
-        // 4. Promote the user
-        const email = "tebogolekgothoane5@gmail.com";
+        // 4. Promote the default admin (set DEFAULT_ADMIN_EMAIL in admin/.env.local to override)
+        const email = (process.env.DEFAULT_ADMIN_EMAIL?.trim() || "admin@elidz.co.za").toLowerCase();
         console.log(`Promoting user ${email} to Super Admin...`);
         const res = await client.query(`
             UPDATE public.profiles 

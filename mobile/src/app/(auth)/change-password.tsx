@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { validatePassword, validateConfirmPassword, MIN_PASSWORD_LENGTH } from '@/utils/validation';
 import { authBack } from '@/utils/navigation';
 import { PasswordField } from '@/components/PasswordField';
+import { useAuthContext } from '@/hooks/use-auth-context';
 
 const { height } = Dimensions.get('window');
 
@@ -48,6 +49,7 @@ function getAuthParamsFromUrl(url: string): {
 export default function ChangePasswordScreen() {
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme];
+    const { session } = useAuthContext();
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState<string | null>(null);
@@ -89,6 +91,13 @@ export default function ChangePasswordScreen() {
     }, []);
 
     useEffect(() => {
+        // Opened from Settings while logged in: skip link parsing and allow immediate reset.
+        if (session?.user) {
+            setCanReset(true);
+            setIsSettingSession(false);
+            return;
+        }
+
         Linking.getInitialURL().then((url) => {
             if (url) {
                 trySetSessionFromUrl(url);
@@ -100,9 +109,16 @@ export default function ChangePasswordScreen() {
         });
         const sub = Linking.addEventListener('url', ({ url }) => trySetSessionFromUrl(url));
         return () => sub.remove();
-    }, [trySetSessionFromUrl]);
+    }, [session?.user, trySetSessionFromUrl]);
 
     const handleChangePassword = async () => {
+        const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
+            const timeoutPromise = new Promise<never>((_, reject) => {
+                setTimeout(() => reject(new Error(message)), ms);
+            });
+            return Promise.race([promise, timeoutPromise]);
+        };
+
         setError(null);
         const pwdCheck = validatePassword(newPassword, { minLength: MIN_PASSWORD_LENGTH });
         if (!pwdCheck.valid) {
@@ -118,9 +134,14 @@ export default function ChangePasswordScreen() {
 
         setIsLoading(true);
         try {
-            const { error: updateError } = await supabase.auth.updateUser({ password: trimmed });
+            const { error: updateError } = await withTimeout(
+                supabase.auth.updateUser({ password: trimmed }),
+                15000,
+                'Request timed out. Please try again.'
+            );
             if (updateError) throw updateError;
-            await supabase.auth.signOut();
+            // Local sign-out is enough here and avoids unnecessary network delay.
+            await supabase.auth.signOut({ scope: 'local' });
             Alert.alert(
                 'Password Changed',
                 'Your password has been successfully updated. You can now sign in with your new password.',
@@ -149,8 +170,8 @@ export default function ChangePasswordScreen() {
                 <Text className="text-center text-muted-foreground mb-4">
                     Invalid or expired reset link. Please request a new one from the Forgot Password screen.
                 </Text>
-                <Button onPress={handleBackToLogin} className="rounded-full">
-                    <Text className="text-white font-semibold">Back to Login</Text>
+                <Button onPress={handleBackToLogin} className="min-h-[56px] rounded-full px-6 py-3.5">
+                    <Text className="text-base leading-6 text-white font-semibold text-center">Back to Login</Text>
                 </Button>
             </View>
         );
@@ -220,11 +241,13 @@ export default function ChangePasswordScreen() {
                     </View>
 
                     <Button
-                        className="h-14 rounded-full bg-accent justify-center items-center mb-4"
+                        className="min-h-[56px] rounded-full bg-accent justify-center items-center mb-4 px-6 py-3.5"
                         onPress={handleChangePassword}
                         disabled={isLoading}
                     >
-                        <Text className="text-lg font-bold text-white">{isLoading ? 'Updating…' : 'Change Password'}</Text>
+                        <Text className="text-base leading-6 font-bold text-white text-center">
+                            {isLoading ? 'Updating…' : 'Change Password'}
+                        </Text>
                     </Button>
 
                     <View className="flex-row justify-center mt-2">
