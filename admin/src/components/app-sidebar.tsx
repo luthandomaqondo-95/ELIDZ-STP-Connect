@@ -128,6 +128,10 @@ const baseData = {
 					title: "User Roles",
 					url: "/dashboard/users/roles",
 				},
+				{
+					title: "Message Reports",
+					url: "/dashboard/users/reports",
+				},
 			],
 		},
 		{

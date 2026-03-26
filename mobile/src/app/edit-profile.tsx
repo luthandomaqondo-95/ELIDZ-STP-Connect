@@ -14,6 +14,7 @@ import { COLORS } from '@/theme/colors';
 import { TabsLayoutHeader } from '@/components/Header';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
 import { DEFAULT_AVATAR } from '@/constants/avatars';
+import { Picker } from '@react-native-picker/picker';
 
 function EditProfileScreen() {
     const { profile: user, updateProfile } = useAuthContext();
@@ -23,12 +24,14 @@ function EditProfileScreen() {
     const [name, setName] = useState(user?.name || '');
     const [email, setEmail] = useState(user?.email || '');
     const [address, setAddress] = useState<string>('');
+    const [role, setRole] = useState<Profile['role']>(user?.role || 'Entrepreneur');
     
     React.useEffect(() => {
         if (user) {
             const profile = user as Profile;
             // Type assertion needed due to TypeScript cache issue with optional properties
             setAddress((profile as Profile & { address?: string }).address ?? '');
+            setRole(profile.role || 'Entrepreneur');
         }
     }, [user]);
     const [organization, setOrganization] = useState(user?.organization || '');
@@ -71,9 +74,13 @@ function EditProfileScreen() {
 
         setIsSaving(true);
         try {
+            const previousRole = (user as Profile | null)?.role;
+            const nextRole = role;
+
             const updates: Record<string, any> = {
                 name: name.trim(),
                 email: email.trim(),
+                role: nextRole,
             };
             
             if (address.trim()) {
@@ -103,11 +110,27 @@ function EditProfileScreen() {
                 // Keep existing avatar if no new image selected
                 updates.avatar = user.avatar;
             }
+
+            // If user switches into SMME, ensure they are not treated as verified until reviewed.
+            if (nextRole === 'SMME' && previousRole !== 'SMME') {
+                updates.verification_status = 'unverified';
+            }
             
             await updateProfile(updates as Partial<Profile>);
-            Alert.alert('Success', 'Profile updated successfully', [
-                { text: 'OK', onPress: () => router.back() },
-            ]);
+
+            if (nextRole === 'SMME' && previousRole !== 'SMME') {
+                Alert.alert(
+                    'SMME Verification Required',
+                    'To appear as a legitimate SMME, please upload your business documents for verification.',
+                    [
+                        { text: 'Later', onPress: () => router.back() },
+                        { text: 'Upload Now', onPress: () => router.replace('/smme-verification') },
+                    ]
+                );
+                return;
+            }
+
+            Alert.alert('Success', 'Profile updated successfully', [{ text: 'OK', onPress: () => router.back() }]);
         } catch (error) {
             console.error('Error updating profile:', error);
             Alert.alert('Error', 'Failed to update profile. Please try again.');
@@ -246,12 +269,39 @@ function EditProfileScreen() {
                     </View>
 
                     {/* Role Display (Read-only) */}
-                    <View className="bg-primary/10 p-4 rounded-xl mb-8 border border-primary/20 flex-row items-center justify-between">
-                        <View>
-                            <Text className="text-foreground text-xs font-bold uppercase mb-1">Current Role</Text>
-                            <Text className="text-foreground text-base font-medium">{user?.role}</Text>
+                    <View className="bg-card p-5 rounded-2xl border border-border shadow-sm mb-8">
+                        <View className="flex-row items-center justify-between mb-3">
+                            <View>
+                                <Text className="text-foreground text-xs font-bold uppercase mb-1 ml-1">Account Type</Text>
+                                <Text className="text-muted-foreground text-xs ml-1">
+                                    Choose the role that best matches you.
+                                </Text>
+                            </View>
+                            <Feather name="shield" size={20} color={colors.primary} />
                         </View>
-                        <Feather name="shield" size={20} color={colors.primary} />
+
+                        <View className="border border-border rounded-xl overflow-hidden" style={{ backgroundColor: colors.input }}>
+                            <Picker
+                                selectedValue={role}
+                                onValueChange={(value) => setRole(value as Profile['role'])}
+                                style={{ color: colors.text }}
+                            >
+                                <Picker.Item label="Entrepreneur" value="Entrepreneur" color={colors.text} />
+                                <Picker.Item label="SMME (Business)" value="SMME" color={colors.text} />
+                                <Picker.Item label="Investor" value="Investor" color={colors.text} />
+                                <Picker.Item label="Student" value="Student" color={colors.text} />
+                                <Picker.Item label="Researcher" value="Researcher" color={colors.text} />
+                                <Picker.Item label="Tenant" value="Tenant" color={colors.text} />
+                            </Picker>
+                        </View>
+
+                        {role === 'SMME' && (
+                            <View className="mt-3 p-3 rounded-xl border border-accent/30 bg-accent/10">
+                                <Text className="text-xs text-foreground font-medium">
+                                    SMME accounts require verification. You’ll be asked to upload 3 business documents after saving.
+                                </Text>
+                            </View>
+                        )}
                     </View>
 
                     {/* Save Button */}

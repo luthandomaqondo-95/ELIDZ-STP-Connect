@@ -433,6 +433,24 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 	async function updateProfile(updates: Partial<Profile>) {
 		if (!session?.user) return;
 
+		const allowedRoles: Array<Profile['role']> = [
+			'Entrepreneur',
+			'Researcher',
+			'SMME',
+			'Student',
+			'Investor',
+			'Tenant',
+		];
+
+		const nextRole: Profile['role'] | undefined =
+			updates.role && allowedRoles.includes(updates.role) ? updates.role : undefined;
+
+		// Users should never be able to mark themselves "verified" or "rejected" from the client.
+		const nextVerificationStatus =
+			updates.verification_status === 'pending' || updates.verification_status === 'unverified'
+				? updates.verification_status
+				: undefined;
+
 		const { error } = await supabase
 			.from('profiles')
 			.update({
@@ -442,6 +460,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				organization: updates.organization,
 				bio: updates.bio,
 				avatar: updates.avatar,
+				role: nextRole,
+				verification_status: nextVerificationStatus,
 			})
 			.eq('id', session.user.id);
 
