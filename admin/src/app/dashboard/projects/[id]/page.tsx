@@ -1,6 +1,5 @@
 "use client"
 
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -14,6 +13,8 @@ import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
 import { Loader2 } from "lucide-react"
+import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 
 export default function FacilityPage() {
     const params = useParams()
@@ -96,21 +97,70 @@ export default function FacilityPage() {
     }
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    <div 
-                        className="flex h-10 w-10 items-center justify-center rounded-lg text-white shadow-lg"
-                        style={{ backgroundColor: facility.color || '#3b82f6' }}
-                    >
-                        {/* Placeholder icon based on facility type - could be improved with dynamic icon map */}
-                        <span className="text-lg font-bold">{facility.name.charAt(0)}</span>
-                    </div>
-                    <h1 className="text-2xl font-bold tracking-tight">{facility.name}</h1>
+        <div className="flex flex-1 flex-col gap-4 pt-0">
+            <DashboardPageHeader
+                title={facility.name}
+                backHref="/dashboard"
+                action={<AnimatedDashboardButton label="Manage Facility" />}
+            />
+            <p className="max-w-3xl text-sm italic text-muted-foreground">
+                Explore the {facility.name} virtual tour, featured sections, and key facility information in one place.
+            </p>
+            <Tabs defaultValue="overview" className="space-y-4">
+                <div className="flex justify-center overflow-x-auto">
+                    <TabsList className="h-11 rounded-3xl border-0 bg-white/90 p-1 shadow-sm dark:bg-slate-900/70 whitespace-nowrap">
+                        <TabsTrigger value="overview" className="rounded-3xl px-5">Overview</TabsTrigger>
+                        <TabsTrigger value="services" className="rounded-3xl px-5">Services & Features</TabsTrigger>
+                    </TabsList>
                 </div>
-                <Button>Manage Facility</Button>
-            </div>
-            
+                <TabsContent value="overview" className="space-y-4">
+                     <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                        <CardHeader className="pb-3">
+                            <CardTitle>About {facility.name}</CardTitle>
+                            <CardDescription className="text-sm">{facility.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid gap-4 md:grid-cols-2">
+                                <div className="rounded-3xl bg-orange-100/70 p-4 dark:bg-slate-800/60">
+                                    <h4 className="text-sm font-semibold mb-2">Location</h4>
+                                    <p className="text-sm text-muted-foreground">{facility.location}</p>
+                                </div>
+                                <div className="rounded-3xl bg-orange-100/70 p-4 dark:bg-slate-800/60">
+                                    <h4 className="text-sm font-semibold mb-2">Facility Type</h4>
+                                    <p className="text-sm text-muted-foreground">{facility.type}</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
+                <TabsContent value="services" className="space-y-4">
+                     <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+                        {vrSections.map((section) => (
+                            <Card key={section.id} className="h-full min-h-[220px] rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                                <CardHeader className="pb-1">
+                                    <CardTitle className="text-[15px] leading-tight">{section.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent className="pt-0">
+                                    <p className="mb-2 text-sm leading-snug text-muted-foreground">{section.description}</p>
+                                    {section.details && Array.isArray(section.details) && (
+                                        <ul className="list-disc space-y-1 pl-4 text-sm text-muted-foreground">
+                                            {section.details.map((detail: string, idx: number) => (
+                                                <li key={idx} className="leading-snug">{detail}</li>
+                                            ))}
+                                        </ul>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                        {vrSections.length === 0 && (
+                            <div className="col-span-full text-center py-8 text-muted-foreground">
+                                No specific services listed for this facility yet.
+                            </div>
+                        )}
+                     </div>
+                </TabsContent>
+            </Tabs>
+
             {/* Panoramic View Section */}
             {activeScene && (
                 <Card className="overflow-hidden border-zinc-800">
@@ -151,59 +201,6 @@ export default function FacilityPage() {
                     </div>
                 </Card>
             )}
-
-            <Tabs defaultValue="overview" className="space-y-4">
-                <TabsList>
-                    <TabsTrigger value="overview">Overview</TabsTrigger>
-                    <TabsTrigger value="services">Services & Features</TabsTrigger>
-                </TabsList>
-                <TabsContent value="overview" className="space-y-4">
-                     <Card>
-                        <CardHeader>
-                            <CardTitle>About {facility.name}</CardTitle>
-                            <CardDescription>{facility.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <h4 className="text-sm font-semibold mb-2">Location</h4>
-                                    <p className="text-sm text-muted-foreground">{facility.location}</p>
-                                </div>
-                                <div>
-                                    <h4 className="text-sm font-semibold mb-2">Facility Type</h4>
-                                    <p className="text-sm text-muted-foreground">{facility.type}</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-                <TabsContent value="services" className="space-y-4">
-                     <div className="grid gap-4 md:grid-cols-2">
-                        {vrSections.map((section) => (
-                            <Card key={section.id}>
-                                <CardHeader>
-                                    <CardTitle className="text-lg">{section.title}</CardTitle>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground mb-4">{section.description}</p>
-                                    {section.details && Array.isArray(section.details) && (
-                                        <ul className="list-disc pl-4 text-sm text-muted-foreground space-y-2">
-                                            {section.details.map((detail: string, idx: number) => (
-                                                <li key={idx}>{detail}</li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </CardContent>
-                            </Card>
-                        ))}
-                        {vrSections.length === 0 && (
-                            <div className="col-span-full text-center py-8 text-muted-foreground">
-                                No specific services listed for this facility yet.
-                            </div>
-                        )}
-                     </div>
-                </TabsContent>
-            </Tabs>
         </div>
     );
 }

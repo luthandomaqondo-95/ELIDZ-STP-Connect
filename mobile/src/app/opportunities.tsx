@@ -13,6 +13,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { TabsLayoutHeader } from '@/components/Header';
 import { ListSkeleton } from '@/components/Loading';
 import { TenantLogo } from '@/components/TenantLogo';
+import { formatOpportunityDisplayTitle } from '@/utils/opportunity-display';
 
 const { width } = Dimensions.get('window');
 const isTablet = width >= 768;
@@ -143,7 +144,7 @@ function OpportunitiesScreen() {
           </Text>
         </View>
         <Text className="text-foreground text-base font-bold mb-2" numberOfLines={2}>
-          {item.title}
+          {formatOpportunityDisplayTitle(item.title, item.org)}
         </Text>
         {(item.tenant || item.org) && (
           <View className="flex-row items-center mb-2">
@@ -178,7 +179,7 @@ function OpportunitiesScreen() {
       <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View className="bg-background">
-          <TabsLayoutHeader title="Opportunities" variant="navy">
+          <TabsLayoutHeader title="Opportunities" variant="navy" showBackButton>
             <View
               style={{ maxWidth: isTablet ? 1200 : '100%', alignSelf: 'center', width: '100%' }}
             >

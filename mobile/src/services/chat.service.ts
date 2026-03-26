@@ -34,10 +34,21 @@ export interface Message {
 	sender?: Profile;
 }
 
+export interface MessageReportPayload {
+	messageId: string;
+	chatId: string;
+	reporterId: string;
+	reportedUserId: string;
+	reason: string;
+}
+
 export interface ChatWithDetails extends Chat {
 	participants: ChatParticipant[];
 	lastMessage?: Message;
 	unreadCount?: number;
+	isBlocked?: boolean;
+	blockedByCurrentUser?: boolean;
+	blockedByOtherUser?: boolean;
 }
 
 class ChatService {
@@ -66,7 +77,7 @@ class ChatService {
 		}
 
 		// Batch fetch all related data in parallel instead of per-chat queries
-		const [chatsResult, allParticipantsResult, allMessagesResult, allUnreadCountsResult] = await Promise.all([
+		const [chatsResult, allParticipantsResult, allMessagesResult, allUnreadCountsResult, blockedConnectionsResult] = await Promise.all([
 			supabase
 				.from('chats')
 				.select('*')
@@ -91,12 +102,18 @@ class ChatService {
 				.in('chat_id', chatIds)
 				.is('read_at', null)
 				.neq('sender_id', userId),
+			supabase
+				.from('connections')
+				.select('user_id, connected_user_id, status')
+				.eq('status', 'blocked')
+				.or(`user_id.eq.${userId},connected_user_id.eq.${userId}`),
 		]);
 
 		const { data: chats, error: chatsError } = chatsResult;
 		const { data: allParticipants, error: participantsErr } = allParticipantsResult;
 		const { data: allMessages, error: messagesErr } = allMessagesResult;
 		const { data: unreadMessages, error: unreadErr } = allUnreadCountsResult;
+		const { data: blockedConnections, error: blockedConnectionsErr } = blockedConnectionsResult;
 
 		if (chatsError) {
 			console.error('ChatService.getUserChats chats error:', JSON.stringify(chatsError, null, 2));
@@ -113,6 +130,9 @@ class ChatService {
 
 		if (unreadErr) {
 			console.error('ChatService.getUserChats unread count error:', unreadErr);
+		}
+		if (blockedConnectionsErr) {
+			console.error('ChatService.getUserChats blocked connections error:', blockedConnectionsErr);
 		}
 
 		// Group data by chat_id for efficient lookup
@@ -137,6 +157,25 @@ class ChatService {
 			unreadCountByChat.set(msg.chat_id, count + 1);
 		});
 
+		type BlockInfo = { blockedByCurrentUser: boolean; blockedByOtherUser: boolean };
+		const blockedByOtherUserMap = new Map<string, BlockInfo>();
+		(blockedConnections || []).forEach((conn: any) => {
+			const requesterId = conn.user_id as string;
+			const targetId = conn.connected_user_id as string;
+			const otherId = requesterId === userId ? targetId : requesterId;
+			const existing = blockedByOtherUserMap.get(otherId) || {
+				blockedByCurrentUser: false,
+				blockedByOtherUser: false,
+			};
+
+			if (requesterId === userId) {
+				existing.blockedByCurrentUser = true;
+			} else if (targetId === userId) {
+				existing.blockedByOtherUser = true;
+			}
+			blockedByOtherUserMap.set(otherId, existing);
+		});
+
 		let chatsWithDetails: ChatWithDetails[] = (chats || []).map((chat) => {
 			const participants = participantsByChat.get(chat.id) || [];
 			const lastMessage = lastMessageByChat.get(chat.id);
@@ -149,6 +188,10 @@ class ChatService {
 			} else if (chat.type === 'direct' && participants.length === 1) {
 				otherUser = participants[0]?.user as Profile;
 			}
+			const otherUserId = otherUser?.id;
+			const blockInfo = otherUserId ? blockedByOtherUserMap.get(otherUserId) : undefined;
+			const blockedByCurrentUser = blockInfo?.blockedByCurrentUser ?? false;
+			const blockedByOtherUser = blockInfo?.blockedByOtherUser ?? false;
 
 			return {
 				...chat,
@@ -156,6 +199,9 @@ class ChatService {
 				lastMessage,
 				unreadCount,
 				otherUser,
+				isBlocked: blockedByCurrentUser || blockedByOtherUser,
+				blockedByCurrentUser,
+				blockedByOtherUser,
 			} as ChatWithDetails;
 		});
 
@@ -312,6 +358,31 @@ class ChatService {
 		}
 
 		console.log('ChatService.markMessagesAsRead succeeded');
+	}
+
+	async reportMessage(payload: MessageReportPayload): Promise<void> {
+		const reason = payload.reason.trim();
+		if (reason.length < 3) {
+			throw new Error('Please provide a valid report reason.');
+		}
+
+		const { error } = await supabase
+			.from('message_reports')
+			.insert({
+				message_id: payload.messageId,
+				chat_id: payload.chatId,
+				reporter_id: payload.reporterId,
+				reported_user_id: payload.reportedUserId,
+				reason,
+			});
+
+		if (error) {
+			if ((error as any)?.code === '23505') {
+				throw new Error('You already reported this message.');
+			}
+			console.error('ChatService.reportMessage error:', JSON.stringify(error, null, 2));
+			throw error;
+		}
 	}
 
 	// ===== GROUP CHAT MANAGEMENT =====

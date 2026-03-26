@@ -1,28 +1,45 @@
 {
   "expo": {
     "name": "elidz-stp",
-    "slug": "elidz-stp",
+    "slug": "elidz-stp-connect",
     "version": "1.0.0",
     "orientation": "default",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/logos/ios-light.png",
     "scheme": "elidzstp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ce8a343f-b27d-4f97-a742-7c5e5cc8c57d"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.elidzstp.app",
+      "usesAppleSignIn": true,
+      "icon": {
+        "light": "./assets/logos/ios-light.png",
+        "dark": "./assets/logos/ios-dark.png",
+        "tinted": "./assets/logos/ios-tinted.png"
+      },
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "Allow $(PRODUCT_NAME) to access your photos",
+        "NSPhotoLibraryAddUsageDescription": "Allow $(PRODUCT_NAME) to save photos",
+        "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location while using the app",
+        "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to use your camera",
+        "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use your microphone",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/icon.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#ffffff",
+        "foregroundImage": "./assets/logos/Adaptive Icon.png"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
       "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"
       ],
@@ -33,6 +50,13 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "@reactvision/react-viro",
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3"
+        }
+      ],
       "expo-router",
       [
         "expo-splash-screen",
@@ -42,7 +66,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff",
           "dark": {
-            "backgroundColor": "#121212"
+            "image": "./assets/images/splash-icon.png",
+            "backgroundColor": "#ffffff"
           }
         }
       ],
@@ -63,7 +88,14 @@
       ],
       "expo-audio",
       "expo-secure-store",
-      "expo-asset"
+      "expo-apple-authentication",
+      "expo-asset",
+      [
+        "expo-web-browser",
+        {
+          "experimentalLauncherActivity": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
@@ -74,14 +106,15 @@
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbmdyZ2t5b296cXlzeHRnZ2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTk4MjYsImV4cCI6MjA3OTM3NTgyNn0.epIGq-VP_ULklXjG5zWy3KjOGZa52Z_vcRein_ewaZc",
       "router": {},
       "eas": {
-        "projectId": "dc718464-724f-4f89-9098-d94149a275ff"
+        "projectId": "ce8a343f-b27d-4f97-a742-7c5e5cc8c57d"
+      },
+      "googleAuth": {
+        "webClientId": "1054716405677-b07skgocod1bkhjn0681oesqjl75jqjr.apps.googleusercontent.com",
+        "androidClientId": "1054716405677-dihkrlvbnh432l3p82m2i4p7m823nr3c.apps.googleusercontent.com",
+        "iosClientId": "1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3.apps.googleusercontent.com",
+        "iosUrlScheme": "com.googleusercontent.apps.1054716405677-nnrprpg3pjj0c9ljuoor8oihfbq8pda3"
       }
     },
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/dc718464-724f-4f89-9098-d94149a275ff"
-    }
+    "owner": "appimate"
   }
 }

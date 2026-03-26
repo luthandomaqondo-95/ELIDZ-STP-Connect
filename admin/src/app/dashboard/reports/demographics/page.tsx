@@ -7,6 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { UserDemographicsCharts } from "./demographics-charts"
+import { DashboardPageHeader } from "@/components/dashboard-page-header"
 
 export default async function UserDemographicsPage() {
     const supabase = await createClient()
@@ -72,8 +73,11 @@ export default async function UserDemographicsPage() {
     }))
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
-            <h1 className="text-2xl font-bold tracking-tight">User Demographics</h1>
+        <div className="flex flex-1 flex-col gap-4 pt-0">
+            <DashboardPageHeader title="User Demographics" backHref="/dashboard/reports" />
+            <p className="max-w-3xl text-sm text-muted-foreground">
+                Analyze user growth, role distribution, and location trends across ELIDZ to understand where engagement is strongest.
+            </p>
             <UserDemographicsCharts 
                 roleData={rolesChartData} 
                 locationData={locationChartData} 

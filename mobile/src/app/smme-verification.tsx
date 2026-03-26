@@ -178,7 +178,7 @@ export default function SMMEVerificationScreen() {
                         try {
                             const { supabase } = await import('@/lib/supabase');
                             const { error } = await supabase
-                                .from('sme_services_products')
+                                .from('smme_services_products')
                                 .update({ status: 'inactive' })
                                 .eq('id', item.id);
 
@@ -213,7 +213,7 @@ export default function SMMEVerificationScreen() {
                 // Update existing item
                 const { supabase } = await import('@/lib/supabase');
                 const { error } = await supabase
-                    .from('sme_services_products')
+                    .from('smme_services_products')
                     .update({
                         type: formType,
                         name: formName.trim(),
@@ -319,16 +319,7 @@ export default function SMMEVerificationScreen() {
     return (
         <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
             <View className="bg-background">
-                <TabsLayoutHeader
-                    title="Business Documents"
-                    variant="navy"
-                    showActions={false}
-                    left={
-                        <Pressable onPress={() => router.back()} className="p-2 bg-white/10 rounded-full">
-                            <Feather name="arrow-left" size={20} color="white" />
-                        </Pressable>
-                    }
-                >
+                <TabsLayoutHeader title="Business Documents" variant="navy" showActions={false} showBackButton>
                     <View className="px-0">
                         <Text className="text-white/80 text-base mb-1">
                             {isVerified

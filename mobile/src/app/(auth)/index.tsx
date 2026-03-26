@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, TextInput, Pressable, TouchableOpacity, Image } from 'react-native';
+import { View, TextInput, Pressable, TouchableOpacity, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -11,7 +11,7 @@ import { Stars } from '@/components/Stars';
 import { verificationService } from '@/services/verification.service';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { validateEmail } from '@/utils/validation';
 import { PasswordField } from '@/components/PasswordField';
 import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
@@ -19,6 +19,7 @@ import { ErrorAlert } from '@/components/Error';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 
 export default function LoginScreen() {
+    const insets = useSafeAreaInsets();
     const { login, signInWithGoogle, signInWithApple, resendSignupConfirmation, profile } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme ?? 'light'];
@@ -84,10 +85,6 @@ export default function LoginScreen() {
             setError('Please enter both email and password', 'Missing fields');
             return;
         }
-        if (!acceptedTerms) {
-            setError('Please accept the Terms of Use and Privacy Policy before signing in.', 'Terms not accepted');
-            return;
-        }
         if (cooldownSeconds > 0) {
             setError(`Too many attempts. Try again in ${cooldownSeconds}s.`, 'Rate limited');
             return;
@@ -135,15 +132,17 @@ export default function LoginScreen() {
                 />
                 <Stars />
             </View>
-            <SafeAreaView className="flex-1 z-10 relative" edges={['top']}>
-                {/* Header stays on top when scrolling (z-20 above scroll content z-0) */}
-                <View className="px-6 pt-2 rounded-3xl h-1/4 z-20">
+            <SafeAreaView className="flex-1 z-10 relative" edges={['top', 'bottom', 'left', 'right']}>
+                {/* Header: padding-driven height so short/tall phones and iOS/Android align; no fixed h-1/4 */}
+                <View className="px-6 pt-1 pb-3 rounded-3xl z-20">
                     <TouchableOpacity
-                        className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
+                        className="flex-row items-center self-start mt-1 py-2 pr-3 pl-0 active:opacity-80"
                         onPress={() => router.back()}
+                        accessibilityRole="button"
+                        accessibilityLabel="Go back"
                     >
                         <Ionicons name="chevron-back" size={24} color={colors.white} />
-                        <Text className="text-white text-sm ml-1">Back</Text>
+                        <Text className="text-white text-sm ml-0.5">Back</Text>
                     </TouchableOpacity>
                     <View className="items-center mt-2">
                         <Image
@@ -153,17 +152,17 @@ export default function LoginScreen() {
                         />
                         <Text className="text-white text-3xl font-bold mt-4 mb-2">Sign In</Text>
                         <Text className="text-white/80 text-base mb-2">Welcome to ELIDZ-STP</Text>
-                        <Text className="text-white/70 text-xs text-center mt-1 px-4">
-                            New user? Confirm your email after signing up before you can sign in.
-                        </Text>
+                      
                     </View>
                 </View>
 
                 <ScreenKeyboardAwareScrollView
                     contentContainerClassName="flex-grow rounded-3xl"
                     className="flex-1 z-0"
+                    insetTop={false}
+                    insetBottom={false}
                 >
-                    <View className="w-full px-6 pb-10 pt-6 rounded-3xl mt-4 bg-background flex flex-col">
+                    <View className="w-full px-6 pt-5 pb-8 rounded-3xl mt-2 bg-background flex flex-col">
                         <View className="flex-row items-center bg-input rounded-xl mb-4 px-4 h-14 border border-border overflow-hidden">
                             <View className="mr-3">
                                 <Ionicons name="mail-outline" size={20} color={colors.accent} />
@@ -171,7 +170,7 @@ export default function LoginScreen() {
                             <TextInput
                                 className="flex-1 min-h-0 py-0 text-base text-foreground"
                                 value={email}
-                                onChangeText={setEmail}
+                                onChangeText={(t) => { setEmail(t); clearError(); }}
                                 placeholder="Email"
                                 placeholderTextColor={colors.placeholder}
                                 keyboardType="email-address"
@@ -181,22 +180,29 @@ export default function LoginScreen() {
                         </View>
                         <PasswordField
                             value={password}
-                            onChangeText={setPassword}
+                            onChangeText={(t) => { setPassword(t); clearError(); }}
                             placeholder="Password"
                             accentColor={colors.accent}
                             placeholderColor={colors.placeholder}
                             editable={!isLoading}
                             containerClassName="flex-row items-center bg-input rounded-xl mb-2 px-4 h-14 border border-border overflow-hidden"
                         />
-                        <View className="flex-row justify-end mb-6">
+                        <View className="flex-row justify-end mb-4">
                             <Pressable onPress={() => router.push('/(auth)/forgot-password')}>
                                 <Text className="text-accent text-sm">Forgot Password?</Text>
                             </Pressable>
                         </View>
                         <TermsAndPrivacyNotice
-                            accepted={acceptedTerms}
-                            onToggle={() => setAcceptedTerms(!acceptedTerms)}
+                            accepted={true}
+                            onToggle={() => {}}
+                            showCheckbox={false}
+                            context="signin"
                         />
+                        {error && !error?.includes('Account created!') && !error?.includes('Confirmation email sent') && (
+                            <View className="mb-4 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
+                                <Text className="text-destructive text-sm">{error}</Text>
+                            </View>
+                        )}
                         <Button
                             className="rounded-xl bg-secondary justify-center rounded-full items-center mb-6 py-3.5 px-6 min-h-[48px]"
                             onPress={handleLogin}
@@ -212,32 +218,50 @@ export default function LoginScreen() {
                             <View className="flex-1 h-px bg-border" />
                         </View>
                         <Pressable
-                            className="min-h-[48px] py-3.5 px-6 rounded-xl bg-card border border-border flex-row items-center justify-center mb-4 active:opacity-80"
+                            className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
                             onPress={async () => {
-                                await execute(() => signInWithGoogle());
+                                await execute(() => signInWithGoogle(), {
+                                    onSuccess: () => {
+                                        clearError();
+                                        router.replace('/(tabs)');
+                                    },
+                                });
                             }}
+                            disabled={isLoading}
                         >
                             <Image
                                 source={require('../../../assets/logos/search.png')}
                                 className="w-[22px] h-[22px] mr-3"
                                 resizeMode="contain"
                             />
-                            <Text className="text-base font-semibold text-foreground">Continue with Google</Text>
+                            <Text className="text-base font-semibold text-foreground">
+                                {isLoading ? 'Signing in...' : 'Continue with Google'}
+                            </Text>
                         </Pressable>
-                        <Pressable
-                            className="min-h-[48px] py-3.5 px-6 rounded-xl bg-card border border-border flex-row items-center justify-center mb-6 active:opacity-80"
-                            onPress={async () => {
-                                await execute(() => signInWithApple());
-                            }}
-                        >
-                            <Image
-                                source={require('../../../assets/logos/apple-logo.png')}
-                                className="w-[22px] h-[22px] mr-3"
-                                resizeMode="contain"
-                            />
-                            <Text className="text-base font-semibold text-foreground">Continue with Apple</Text>
-                        </Pressable>
-                        <View className="flex-row justify-center items-center">
+                        {Platform.OS === 'ios' && (
+                            <Pressable
+                                className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
+                                onPress={async () => {
+                                    await execute(() => signInWithApple(), {
+                                        onSuccess: () => {
+                                            clearError();
+                                            router.replace('/(tabs)');
+                                        },
+                                    });
+                                }}
+                                disabled={isLoading}
+                            >
+                                <Image
+                                    source={require('../../../assets/logos/apple-logo.png')}
+                                    className="w-[22px] h-[22px] mr-3"
+                                    resizeMode="contain"
+                                />
+                                <Text className="text-base font-semibold text-foreground">
+                                    {isLoading ? 'Signing in...' : 'Continue with Apple'}
+                                </Text>
+                            </Pressable>
+                        )}
+                        <View className="flex-row justify-center items-center mt-1">
                             <Text className="text-sm text-muted-foreground">Don&apos;t have an account? </Text>
                             <Pressable onPress={() => router.push('/(auth)/signup')}>
                                 <Text className="text-sm font-semibold text-accent">Sign Up</Text>
@@ -247,25 +271,26 @@ export default function LoginScreen() {
                 </ScreenKeyboardAwareScrollView>
             </SafeAreaView>
 
-            {/* Error Alert */}
+            {/* Error Alert - only for success/info messages (Account created, Confirmation email sent) */}
             <ErrorAlert
-                visible={!!error}
+                visible={!!error && (error?.includes('Account created!') || error?.includes('Confirmation email sent'))}
                 title={errorTitle}
                 message={error ?? ''}
                 onDismiss={clearError}
                 severity={
-                    error?.includes('Rate limited') || error?.includes('Too many') ? 'warning'
-                        : error?.includes('Confirmation email sent') ? 'success'
+                    error?.includes('Confirmation email sent') ? 'success'
                         : error?.includes('Account created!') || error?.includes('confirm your account') ? 'info'
-                        : error?.includes('Email') ? 'info'
                         : 'error'
                 }
                 autoDismissMs={error?.includes('Account created!') ? 5000 : 6000}
             />
 
-            {/* Resend confirmation link when login fails due to unconfirmed email */}
-            {error?.includes('confirm your account') && !error?.includes('Account created!') && email && (
-                <View className="absolute top-28 left-4 right-4 z-40">
+            {/* Resend confirmation: show after signup ("Account created!") or when login fails due to unconfirmed email */}
+            {error?.includes('confirm your account') && email && (
+                <View
+                    className="absolute left-4 right-4 z-40"
+                    style={{ top: insets.top + 52 }}
+                >
                     <Pressable
                         onPress={async () => {
                             if (cooldownSeconds > 0 || isResending) return;

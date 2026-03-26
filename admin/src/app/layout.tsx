@@ -1,17 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers"
-
-const geistSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"],
-});
+import NextTopLoader from "nextjs-toploader";
+import { Toaster } from "@/components/ui/sonner"
 
 export const metadata: Metadata = {
 	title: "ELIDZ-STP Admin Portal",
@@ -27,11 +18,13 @@ export default function RootLayout({
 	children: React.ReactNode;
 }>) {
 	return (
-		<html lang="en" suppressHydrationWarning>
+		<html lang="en" className="dark" suppressHydrationWarning>
 			<body
-				className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
+				className="antialiased bg-background text-foreground"
 			>
 				<Providers>
+					<NextTopLoader color="#1e3a8a" showSpinner={false} />
+					<Toaster position="top-center" richColors />
 					{children}
 				</Providers>
 			</body>

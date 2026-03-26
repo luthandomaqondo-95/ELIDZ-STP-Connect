@@ -5,6 +5,7 @@ export interface Profile {
   email: string;
   role: 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
   address?: string;
+  id_number?: string | null;
   organization?: string;
   bio?: string;
   avatar?: string;

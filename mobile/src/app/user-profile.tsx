@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { connectionService } from '@/services/connection.service';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { verificationService } from '@/services/verification.service';
+import { chatService } from '@/services/chat.service';
 import { Profile } from '@/types';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
 import { DEFAULT_AVATAR } from '@/constants/avatars';
@@ -159,15 +160,19 @@ function UserProfileScreen() {
     }, [currentUser?.id, profileUser?.id, profileUser?.name, queryClient]);
 
     const handleAccept = useCallback(async () => {
-        if (!connectionId) return;
+        if (!connectionId || !currentUser?.id || !profileUser?.id) return;
         try {
             await connectionService.acceptConnectionRequest(connectionId);
+            await chatService.createDirectChat(currentUser.id, profileUser.id);
             setConnectionStatus('connected');
+            queryClient.invalidateQueries({ queryKey: ['contacts'] });
+            queryClient.invalidateQueries({ queryKey: ['chats'] });
+            Alert.alert('Connected', `You can now message ${profileUser.name} from the Messages tab.`);
         } catch (error: any) {
             console.error('Accept error:', error);
             Alert.alert('Error', error?.message || 'Failed to accept request.');
         }
-    }, [connectionId]);
+    }, [connectionId, currentUser?.id, profileUser?.id, profileUser?.name, queryClient]);
 
     const handleDecline = useCallback(async () => {
         if (!connectionId) return;
@@ -377,8 +382,13 @@ function UserProfileScreen() {
                                                     </Text>
                                                 </View>
                                                 <View className="items-end">
-                                                    <View className="bg-primary/10 px-2 py-1 rounded-lg">
-                                                        <Text className="text-xs font-bold text-primary">{item.category}</Text>
+                                                    <View
+                                                        className="px-2 py-1 rounded-lg"
+                                                        style={{ backgroundColor: colors.whiteOpacity15 }}
+                                                    >
+                                                        <Text className="text-xs font-bold" style={{ color: colors.accent }}>
+                                                            {item.category}
+                                                        </Text>
                                                     </View>
                                                     <Text className="text-foreground font-extrabold mt-2 text-sm">
                                                         {item.price || 'Contact'}
@@ -389,12 +399,16 @@ function UserProfileScreen() {
                                                 <View className="flex-row flex-wrap mt-3">
                                                     {item.contact_email ? (
                                                         <Pressable onPress={() => Linking.openURL(`mailto:${item.contact_email}`)} className="mr-3 mt-1">
-                                                            <Text className="text-xs text-primary font-semibold">{item.contact_email}</Text>
+                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                                                                {item.contact_email}
+                                                            </Text>
                                                         </Pressable>
                                                     ) : null}
                                                     {item.contact_phone ? (
                                                         <Pressable onPress={() => Linking.openURL(`tel:${item.contact_phone}`)} className="mt-1">
-                                                            <Text className="text-xs text-primary font-semibold">{item.contact_phone}</Text>
+                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                                                                {item.contact_phone}
+                                                            </Text>
                                                         </Pressable>
                                                     ) : null}
                                                 </View>
@@ -423,8 +437,13 @@ function UserProfileScreen() {
                                                     </Text>
                                                 </View>
                                                 <View className="items-end">
-                                                    <View className="bg-primary/10 px-2 py-1 rounded-lg">
-                                                        <Text className="text-xs font-bold text-primary">{item.category}</Text>
+                                                    <View
+                                                        className="px-2 py-1 rounded-lg"
+                                                        style={{ backgroundColor: colors.whiteOpacity15 }}
+                                                    >
+                                                        <Text className="text-xs font-bold" style={{ color: colors.accent }}>
+                                                            {item.category}
+                                                        </Text>
                                                     </View>
                                                 </View>
                                             </View>
@@ -432,12 +451,16 @@ function UserProfileScreen() {
                                                 <View className="flex-row flex-wrap mt-3">
                                                     {item.contact_email ? (
                                                         <Pressable onPress={() => Linking.openURL(`mailto:${item.contact_email}`)} className="mr-3 mt-1">
-                                                            <Text className="text-xs text-primary font-semibold">{item.contact_email}</Text>
+                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                                                                {item.contact_email}
+                                                            </Text>
                                                         </Pressable>
                                                     ) : null}
                                                     {item.contact_phone ? (
                                                         <Pressable onPress={() => Linking.openURL(`tel:${item.contact_phone}`)} className="mt-1">
-                                                            <Text className="text-xs text-primary font-semibold">{item.contact_phone}</Text>
+                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
+                                                                {item.contact_phone}
+                                                            </Text>
                                                         </Pressable>
                                                     ) : null}
                                                 </View>

@@ -11,11 +11,10 @@ import { Button } from '@/components/ui/button';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { validateEmail, validatePassword, validateConfirmPassword } from '@/utils/validation';
+import { validateEmail, validatePassword, validateConfirmPassword, validateIdNumber } from '@/utils/validation';
 import { PasswordField } from '@/components/PasswordField';
 import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
 import { fetchZaPostalCodesForCity, fetchZaCitiesByProvince, fetchZaProvinces } from '@/services/za-postal-codes.service';
-import { ErrorAlert } from '@/components/Error';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 
 const ROLES = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'] as const;
@@ -26,6 +25,7 @@ export default function SignupScreen() {
 	const colors = COLORS[colorScheme];
 	const { isLoading, error, errorTitle, execute, clearError, setError } = useAsyncOperation();
 	const [name, setName] = useState('');
+	const [idNumber, setIdNumber] = useState('');
 	const [email, setEmail] = useState('');
 	const [province, setProvince] = useState<string>('');
 	const [city, setCity] = useState('');
@@ -137,8 +137,14 @@ export default function SignupScreen() {
 			return;
 		}
 
-		if (!name || !email || !password || !province || !city || !postalCode) {
+		if (!name || !idNumber || !email || !password || !province || !city || !postalCode) {
 			setError('Please fill in all fields', 'Missing Fields');
+			return;
+		}
+
+		const idCheck = validateIdNumber(idNumber);
+		if (!idCheck.valid) {
+			setError(idCheck.message ?? 'Please enter a valid South African ID number', 'Invalid ID Number');
 			return;
 		}
 
@@ -189,7 +195,7 @@ export default function SignupScreen() {
 
 		isSubmittingRef.current = true;
 		await execute(
-			() => signup(name, email, password, role, fullAddress),
+			() => signup(name, email, password, role, fullAddress, idNumber.trim()),
 			{
 				onSuccess: () => {
 					// Email confirmation not required (e.g. dev mode) - sign in and navigate
@@ -234,31 +240,36 @@ export default function SignupScreen() {
 				/>
 				<Stars />
 			</View>
-			<SafeAreaView className="flex-1 z-10 relative" edges={['top']}>
-				<View className="px-6 pt-2 rounded-3xl h-1/4 z-10">
+			<SafeAreaView className="flex-1 z-10 relative" edges={['top', 'bottom', 'left', 'right']}>
+				{/* Fixed above scroll so "Register" / subtitle never sit under the white form card (z-20 > scroll z-0) */}
+				<View className="px-6 pt-1 pb-3 rounded-3xl z-20">
 					<TouchableOpacity
-						className="w-10 h-10 rounded-full flex-row justify-center items-center mt-2"
+						className="flex-row items-center self-start mt-1 py-2 pr-3 pl-0 active:opacity-80"
 						onPress={() => router.back()}
+						accessibilityRole="button"
+						accessibilityLabel="Go back"
 					>
 						<Ionicons name="chevron-back" size={24} color={colors.white} />
-						<Text className="text-white text-sm ml-1">Back</Text>
+						<Text className="text-white text-sm ml-0.5">Back</Text>
 					</TouchableOpacity>
-					<View className="items-center mt-2">
+					<View className="items-center mt-1">
 						<Image
 							source={require('../../../assets/logos/blue text-idz logo.png')}
 							className="w-60 h-[100px]"
 							resizeMode="contain"
 						/>
-						<Text className="text-white text-3xl font-bold mt-4 mb-2">Register</Text>
-						<Text className="text-white/80 text-base mb-2">Create a new account</Text>
+						<Text className="text-white text-3xl font-bold mt-3 mb-1">Register</Text>
+						<Text className="text-white/80 text-base mb-1">Create a new account</Text>
 					</View>
 				</View>
 
 				<ScreenKeyboardAwareScrollView
 					contentContainerClassName="flex-grow rounded-3xl"
-					className="flex-1 z-10"
+					className="flex-1 z-0"
+					insetTop={false}
+					insetBottom={false}
 				>
-					<View className="w-full px-6 pb-10 pt-6 rounded-3xl mt-4 bg-background flex flex-col">
+					<View className="w-full px-6 pt-5 pb-8 rounded-3xl mt-2 bg-background flex flex-col">
 					{/* Full Name Input */}
 					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
 						<View className="mr-3">
@@ -272,6 +283,23 @@ export default function SignupScreen() {
 							placeholderTextColor={colors.placeholder}
 							autoCapitalize="words"
 							autoComplete="name"
+						/>
+					</View>
+
+					{/* ID Number Input */}
+					<View className="flex-row items-center bg-input rounded-full mb-4 px-4 h-14 border border-border overflow-hidden">
+						<View className="mr-3">
+							<Ionicons name="card-outline" size={20} color={colors.accent} />
+						</View>
+						<TextInput
+							className="flex-1 min-h-0 py-0 text-base text-foreground"
+							value={idNumber}
+							onChangeText={(t) => setIdNumber(t.replace(/\D/g, '').slice(0, 13))}
+							placeholder="ID number (13 digits)"
+							placeholderTextColor={colors.placeholder}
+							keyboardType="number-pad"
+							maxLength={13}
+							autoComplete="off"
 						/>
 					</View>
 
@@ -589,7 +617,14 @@ export default function SignupScreen() {
 					<TermsAndPrivacyNotice
 						accepted={acceptedTerms}
 						onToggle={() => setAcceptedTerms(!acceptedTerms)}
+						context="signup"
 					/>
+
+					{error && (
+						<View className="mb-4 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
+							<Text className="text-destructive text-sm">{error}</Text>
+						</View>
+					)}
 
 					<Text className="text-muted-foreground text-xs text-center mb-4">
 						After signing up, check your email to confirm your account before signing in.
@@ -617,14 +652,23 @@ export default function SignupScreen() {
 
 					{/* Google Sign In Button */}
 					<Pressable
-						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-4 active:opacity-80 active:scale-95"
+						className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
 						onPress={async () => {
-							try {
-								await signInWithGoogle();
-							} catch (error: any) {
-								setError(error?.message || 'Failed to sign in with Google', 'Error');
+							if (!acceptedTerms) {
+								setError('Please accept the Terms & Conditions before continuing.', 'Terms Required');
+								return;
 							}
+							await execute(() => signInWithGoogle(), {
+								onSuccess: () => {
+									clearError();
+									router.replace('/(tabs)');
+								},
+								onError: (err) => {
+									setError(err?.message || 'Failed to sign in with Google', 'Error');
+								},
+							});
 						}}
+						disabled={isLoading}
 					>
 						<Image
 							source={require('../../../assets/logos/search.png')}
@@ -632,30 +676,40 @@ export default function SignupScreen() {
 							resizeMode="contain"
 						/>
 						<Text className="text-base font-semibold text-foreground">
-							Continue with Google
+							{isLoading ? 'Signing in...' : 'Continue with Google'}
 						</Text>
 					</Pressable>
 
-					{/* Apple Sign In Button */}
-					<Pressable
-						className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
-						onPress={async () => {
-							try {
-								await signInWithApple();
-							} catch (error: any) {
-								setError(error?.message || 'Failed to sign in with Apple', 'Error');
-							}
-						}}
-					>
-						<Image
-							source={require('../../../assets/logos/apple-logo.png')}
-							className="w-[22px] h-[22px] mr-3"
-							resizeMode="contain"
-						/>
-						<Text className="text-base font-semibold text-foreground">
-							Continue with Apple
-						</Text>
-					</Pressable>
+					{Platform.OS === 'ios' && (
+						<Pressable
+							className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-6 active:opacity-80 active:scale-95"
+							onPress={async () => {
+								if (!acceptedTerms) {
+									setError('Please accept the Terms & Conditions before continuing.', 'Terms Required');
+									return;
+								}
+								await execute(() => signInWithApple(), {
+									onSuccess: () => {
+										clearError();
+										router.replace('/(tabs)');
+									},
+									onError: (err) => {
+										setError(err?.message || 'Failed to sign in with Apple', 'Error');
+									},
+								});
+							}}
+							disabled={isLoading}
+						>
+							<Image
+								source={require('../../../assets/logos/apple-logo.png')}
+								className="w-[22px] h-[22px] mr-3"
+								resizeMode="contain"
+							/>
+							<Text className="text-base font-semibold text-foreground">
+								{isLoading ? 'Signing in...' : 'Continue with Apple'}
+							</Text>
+						</Pressable>
+					)}
 
 					{/* Login Link */}
 					<View className="flex-row justify-center items-center">
@@ -668,18 +722,7 @@ export default function SignupScreen() {
 				</ScreenKeyboardAwareScrollView>
 			</SafeAreaView>
 
-			{/* Error Alert */}
-			<ErrorAlert
-				visible={!!error}
-				title={errorTitle}
-				message={error ?? ''}
-				onDismiss={clearError}
-				severity={
-					error?.includes('Rate Limited') || error?.includes('Loading') ? 'warning'
-						: 'error'
-				}
-				autoDismissMs={5000}
-			/>
+			{/* ErrorAlert removed - all errors shown inline below form fields */}
 		</View>
 	);
 }

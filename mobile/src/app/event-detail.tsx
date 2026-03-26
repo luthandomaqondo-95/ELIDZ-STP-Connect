@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Pressable, Linking, ActivityIndicator, Image } from 'react-native';
+import { View, Pressable, ActivityIndicator, Image } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
@@ -15,6 +15,9 @@ function EventDetailScreen() {
   const [event, setEvent] = useState<Event | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRsvped, setIsRsvped] = useState(false);
+  const [rsvpLoading, setRsvpLoading] = useState(false);
+  const [rsvpError, setRsvpError] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadEvent() {
@@ -28,6 +31,10 @@ function EventDetailScreen() {
         const data = await EventService.getEventById(id);
         setEvent(data ?? null);
         if (!data) setError('Event not found');
+        if (data) {
+          const hasRsvp = await EventService.hasUserRsvped(data.id);
+          setIsRsvped(hasRsvp);
+        }
       } catch (err: any) {
         console.error('Error loading event:', err);
         setError(err.message || 'Failed to load event');
@@ -43,7 +50,7 @@ function EventDetailScreen() {
     return (
       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader title="Events" variant="navy">
+          <TabsLayoutHeader title="Events" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
               Event details.
             </Text>
@@ -61,7 +68,7 @@ function EventDetailScreen() {
     return (
       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader title="Events" variant="navy">
+          <TabsLayoutHeader title="Events" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
               Event details.
             </Text>
@@ -89,10 +96,31 @@ function EventDetailScreen() {
       })
     : '';
 
+  async function handleRsvpPress() {
+    if (!event) return;
+
+    try {
+      setRsvpLoading(true);
+      setRsvpError(null);
+      if (isRsvped) {
+        await EventService.cancelRsvp(event.id);
+        setIsRsvped(false);
+      } else {
+        await EventService.rsvpToEvent(event.id);
+        setIsRsvped(true);
+      }
+    } catch (err: any) {
+      console.error('RSVP update error:', err);
+      setRsvpError(err?.message || 'Failed to update RSVP.');
+    } finally {
+      setRsvpLoading(false);
+    }
+  }
+
   return (
     <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="bg-background">
-        <TabsLayoutHeader title="Events" variant="navy">
+        <TabsLayoutHeader title="Events" variant="navy" showBackButton>
           <Text className="text-white/80 text-base">
             Event details.
           </Text>
@@ -142,22 +170,30 @@ function EventDetailScreen() {
           </View>
         )}
 
-        {event.registration_url && (
-          <View className="p-3 rounded-xl mb-5 bg-secondary shadow-sm">
-            <View className="items-center">
-              <Feather name="user-plus" size={32} color={colors.buttonText} />
-              <Text className="text-lg font-bold text-secondary-foreground mt-2.5 mb-2">
-                Register for this event
-              </Text>
-              <Pressable
-                className="bg-primary-foreground px-5 py-2.5 rounded-lg items-center active:opacity-80"
-                onPress={() => Linking.openURL(event.registration_url!)}
-              >
-                <Text className="text-base font-semibold text-secondary">Register / RSVP</Text>
-              </Pressable>
-            </View>
+        <View className="p-3 rounded-xl mb-5 bg-secondary shadow-sm">
+          <View className="items-center">
+            <Feather name="user-plus" size={32} color={colors.buttonText} />
+            <Text className="text-lg font-bold text-secondary-foreground mt-2.5 mb-2">
+              {isRsvped ? 'You are attending this event' : 'RSVP for this event'}
+            </Text>
+            <Pressable
+              className="bg-primary-foreground px-5 py-2.5 rounded-lg items-center active:opacity-80 min-w-[170px]"
+              onPress={handleRsvpPress}
+              disabled={rsvpLoading}
+            >
+              {rsvpLoading ? (
+                <ActivityIndicator color={colors.secondary} />
+              ) : (
+                <Text className="text-base font-semibold text-secondary">
+                  {isRsvped ? 'Cancel RSVP' : 'RSVP Now'}
+                </Text>
+              )}
+            </Pressable>
+            {rsvpError ? (
+              <Text className="mt-2 text-center text-sm text-red-200">{rsvpError}</Text>
+            ) : null}
           </View>
-        )}
+        </View>
       </View>
     </ScreenScrollView>
   );

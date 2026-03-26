@@ -26,6 +26,33 @@ export interface ContactWithConnection extends Profile {
 }
 
 class ConnectionService {
+	async getBlockStatus(currentUserId: string, otherUserId: string): Promise<{ isBlocked: boolean; blockedByCurrentUser: boolean; blockedByOtherUser: boolean }> {
+		const { data, error } = await supabase
+			.from('connections')
+			.select('id,user_id,connected_user_id,status')
+			.eq('status', 'blocked')
+			.or(`and(user_id.eq.${currentUserId},connected_user_id.eq.${otherUserId}),and(user_id.eq.${otherUserId},connected_user_id.eq.${currentUserId})`)
+			.limit(10);
+
+		if (error) {
+			console.error('ConnectionService.getBlockStatus error:', error);
+			throw error;
+		}
+
+		if (!data || data.length === 0) {
+			return { isBlocked: false, blockedByCurrentUser: false, blockedByOtherUser: false };
+		}
+
+		const blockedByCurrentUser = data.some((row: any) => row.user_id === currentUserId && row.connected_user_id === otherUserId);
+		const blockedByOtherUser = data.some((row: any) => row.user_id === otherUserId && row.connected_user_id === currentUserId);
+
+		return {
+			isBlocked: blockedByCurrentUser || blockedByOtherUser,
+			blockedByCurrentUser,
+			blockedByOtherUser,
+		};
+	}
+
 	async getAcceptedConnections(userId: string): Promise<Connection[]> {
 		console.log('ConnectionService.getAcceptedConnections called for userId:', userId);
 
@@ -313,18 +340,31 @@ class ConnectionService {
 
 	/** Cancel a pending connection request between two users (works for both sent and received requests) */
 	async cancelConnectionRequestByUsers(userId1: string, userId2: string): Promise<boolean> {
-		const { data, error } = await supabase
+		const { data: rows, error: findError } = await supabase
+			.from('connections')
+			.select('id')
+			.eq('status', 'pending')
+			.or(`and(user_id.eq.${userId1},connected_user_id.eq.${userId2}),and(user_id.eq.${userId2},connected_user_id.eq.${userId1})`);
+
+		if (findError) {
+			console.error('ConnectionService.cancelConnectionRequestByUsers find error:', findError);
+			throw findError;
+		}
+
+		const ids = (rows || []).map((r: any) => r.id);
+		if (ids.length === 0) return false;
+
+		const { error: deleteError } = await supabase
 			.from('connections')
 			.delete()
-			.eq('status', 'pending')
-			.or(`and(user_id.eq.${userId1},connected_user_id.eq.${userId2}),and(user_id.eq.${userId2},connected_user_id.eq.${userId1})`)
-			.select('id');
+			.in('id', ids);
 
-		if (error) {
-			console.error('ConnectionService.cancelConnectionRequestByUsers error:', error);
-			throw error;
+		if (deleteError) {
+			console.error('ConnectionService.cancelConnectionRequestByUsers delete error:', deleteError);
+			throw deleteError;
 		}
-		return (data?.length ?? 0) > 0;
+
+		return true;
 	}
 
 	/** Block a user - updates existing connection to blocked, or creates a blocked connection if none exists */
@@ -359,6 +399,35 @@ class ConnectionService {
 				throw error;
 			}
 		}
+	}
+
+	/** Undo a block relation between two users. */
+	async unblockUser(currentUserId: string, otherUserId: string): Promise<boolean> {
+		const { data: rows, error: findError } = await supabase
+			.from('connections')
+			.select('id')
+			.eq('status', 'blocked')
+			.or(`and(user_id.eq.${currentUserId},connected_user_id.eq.${otherUserId}),and(user_id.eq.${otherUserId},connected_user_id.eq.${currentUserId})`);
+
+		if (findError) {
+			console.error('ConnectionService.unblockUser find error:', findError);
+			throw findError;
+		}
+
+		const ids = (rows || []).map((r: any) => r.id);
+		if (ids.length === 0) return false;
+
+		const { error: deleteError } = await supabase
+			.from('connections')
+			.delete()
+			.in('id', ids);
+
+		if (deleteError) {
+			console.error('ConnectionService.unblockUser delete error:', deleteError);
+			throw deleteError;
+		}
+
+		return true;
 	}
 
 	async acceptConnection(connectionId: string): Promise<Connection> {
@@ -397,7 +466,7 @@ class ConnectionService {
 
 		const searchLower = search?.toLowerCase() || '';
 
-		const connectedContacts: ContactWithConnection[] = await Promise.all(
+		const connectedContacts = await Promise.all(
 			connections.map(async (conn) => {
 				const otherUserId = conn.requester_id === userId ? conn.addressee_id : conn.requester_id;
 				const otherUser = conn.requester_id === userId
@@ -421,33 +490,39 @@ class ConnectionService {
 					if (!nameMatch && !messageMatch) return null;
 				}
 
-				return {
+				const row: ContactWithConnection = {
 					...otherUser,
-					connectionStatus: 'connected' as const,
+					connectionStatus: 'connected',
 					connectionId: conn.id,
 					lastMessage: chat?.lastMessage?.content,
 					lastMessageTime: chat?.lastMessage?.created_at ? this.formatTimeAgo(chat.lastMessage.created_at) : undefined,
 					hasUnreadMessages: (chat?.unreadCount || 0) > 0,
-				} as ContactWithConnection;
+				};
+				return row;
 			})
 		);
 
-		const validConnectedContacts = connectedContacts.filter(c => c !== null) as ContactWithConnection[];
+		const validConnectedContacts = connectedContacts.filter(
+			(c): c is ContactWithConnection => c !== null
+		);
 
 		// Process connection requests (pending sent/received)
-		const pendingContacts: ContactWithConnection[] = connectionRequests.map((request) => {
-			const user = request.user;
-			if (search) {
-				const match = user.name.toLowerCase().includes(searchLower) ||
-					user.organization?.toLowerCase().includes(searchLower);
-				if (!match) return null;
-			}
-			return {
-				...user,
-				connectionStatus: request.isIncoming ? 'pending_received' : 'pending_sent' as const,
-				connectionId: request.id,
-			} as ContactWithConnection;
-		}).filter(c => c !== null) as ContactWithConnection[];
+		const pendingContacts = connectionRequests
+			.map((request) => {
+				const user = request.user;
+				if (search) {
+					const match = user.name.toLowerCase().includes(searchLower) ||
+						user.organization?.toLowerCase().includes(searchLower);
+					if (!match) return null;
+				}
+				const row: ContactWithConnection = {
+					...user,
+					connectionStatus: request.isIncoming ? 'pending_received' : 'pending_sent',
+					connectionId: request.id,
+				};
+				return row;
+			})
+			.filter((c): c is ContactWithConnection => c !== null);
 
 		// Get IDs of users who are already in pending or connected lists
 		const excludedUserIds = new Set<string>();
@@ -457,10 +532,12 @@ class ConnectionService {
 		// Available users - exclude those already in pending/connected
 		const availableContacts: ContactWithConnection[] = available
 			.filter(user => !excludedUserIds.has(user.id))
-			.map((user) => ({
-				...user,
-				connectionStatus: 'available' as const,
-			} as ContactWithConnection));
+			.map(
+				(user): ContactWithConnection => ({
+					...user,
+					connectionStatus: 'available',
+				})
+			);
 
 		// Combine all contacts - pending/connected take priority over available
 		const allContacts = [...validConnectedContacts, ...pendingContacts, ...availableContacts];
@@ -490,28 +567,6 @@ class ConnectionService {
 		}
 
 		return data as Profile;
-	}
-
-	/**
-	 * Calculate compatibility score between two users
-	 */
-	async calculateCompatibility(userId1: string, userId2: string): Promise<{
-		score: number;
-		reasons: string[];
-		level: 'high' | 'medium' | 'low';
-	} | null> {
-		const { recommendationService } = await import('./recommendation.service');
-		
-		const [user1, user2] = await Promise.all([
-			this.getProfileById(userId1),
-			this.getProfileById(userId2),
-		]);
-
-		if (!user1 || !user2) {
-			return null;
-		}
-
-		return recommendationService.calculateCompatibility(user1, user2);
 	}
 
 	private formatTimeAgo(dateString: string): string {

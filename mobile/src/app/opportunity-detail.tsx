@@ -7,8 +7,10 @@ import { useTheme } from '../hooks/useTheme';
 import { Feather } from '@expo/vector-icons';
 import { withAuthGuard } from '@/components/withAuthGuard';
 import { supabase } from '@/lib/supabase';
+import { DEFAULT_OPPORTUNITY_ORG_LABEL, resolveOpportunityOrg } from '@/services/opportunity.service';
 import { Opportunity } from '@/types';
 import { TabsLayoutHeader } from '@/components/Header';
+import { formatOpportunityDisplayTitle } from '@/utils/opportunity-display';
 
 function OpportunityDetailScreen() {
   const { colors } = useTheme();
@@ -24,7 +26,7 @@ function OpportunityDetailScreen() {
         setLoading(true);
         const { data, error } = await supabase
           .from('opportunities')
-          .select('*, posted_by(organization)')
+          .select('*, posted_by(organization), tenant:tenants(name, logo_url)')
           .eq('id', params.id)
           .single();
 
@@ -34,7 +36,8 @@ function OpportunityDetailScreen() {
           // Map DB snake_case to UI camelCase
           const mapped: Opportunity = {
             ...data,
-            org: data.posted_by?.organization || 'ELIDZ',
+            org: resolveOpportunityOrg(data),
+            tenant: (data as any).tenant ?? (data as any).tenants ?? null,
             briefingDate: data.briefing_date,
             briefingLocation: data.briefing_location,
             briefingType: data.briefing_type,
@@ -75,7 +78,7 @@ function OpportunityDetailScreen() {
      return (
        <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
          <View className="bg-background">
-           <TabsLayoutHeader title="Opportunity" variant="navy">
+           <TabsLayoutHeader title="Opportunity" variant="navy" showBackButton>
              <Text className="text-white/80 text-base">
                Details and application info.
              </Text>
@@ -92,7 +95,7 @@ function OpportunityDetailScreen() {
     return (
       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader title="Opportunity" variant="navy">
+          <TabsLayoutHeader title="Opportunity" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
               Details and application info.
             </Text>
@@ -197,9 +200,9 @@ function OpportunityDetailScreen() {
   return (
     <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="bg-background">
-        <TabsLayoutHeader title="Opportunity" variant="navy">
+        <TabsLayoutHeader title="Opportunity" variant="navy" showBackButton>
           <Text className="text-white/80 text-base" numberOfLines={1}>
-            {opportunity.type} • {opportunity.org || 'ELIDZ'}
+            {opportunity.type} • {opportunity.org || DEFAULT_OPPORTUNITY_ORG_LABEL}
           </Text>
         </TabsLayoutHeader>
       </View>
@@ -213,7 +216,7 @@ function OpportunityDetailScreen() {
           </Text>
         </View>
         <Text className="text-xl font-bold text-primary-foreground mt-3">
-          {opportunity.title}
+          {formatOpportunityDisplayTitle(opportunity.title, opportunity.org)}
         </Text>
         <Text className="text-base text-primary-foreground/90 mt-2">
           {opportunity.org}

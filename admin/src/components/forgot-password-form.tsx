@@ -2,13 +2,14 @@
 
 import { useState } from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ShieldCheck, ArrowLeft, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import { FloatingLabelInput } from "@/components/floating-input";
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
+import { AnimatedSeparator } from "@/components/animated-separator";
 
 export function ForgotPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
     const [email, setEmail] = useState("");
@@ -41,12 +42,21 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
 
     return (
         <div className={cn("flex flex-col gap-6", className)} {...props}>
-            <Card className="border-zinc-800 bg-zinc-900/50 backdrop-blur-sm shadow-2xl rounded-3xl overflow-hidden">
+            <Card className="relative rounded-3xl overflow-hidden bg-gray-900 text-white shadow-[0_0_40px_rgba(251,146,60,0.55)] ring-2 ring-orange-300/45 before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl before:shadow-[0_0_55px_rgba(251,146,60,0.45)]">
                 <CardHeader className="text-center pb-8">
                     <div className="flex items-center justify-center gap-2 mb-2">
-                        <ShieldCheck className="h-6 w-6 text-indigo-400" />
-                        <CardTitle className="text-2xl font-bold text-white">Forgot Password</CardTitle>
+                        <Image
+                            src="/logos/elidz-icon.png"
+                            alt="ELIDZ Icon"
+                            width={24}
+                            height={24}
+                            className="h-6 w-6 object-contain"
+                        />
+                        <CardTitle className="text-2xl md:text-3xl font-semibold font-serif italic tracking-wide text-orange-50">
+                            Forgot Password
+                        </CardTitle>
                     </div>
+                    <AnimatedSeparator className="-mt-1 !mb-3" lineClassName="w-16 sm:w-20" color="#fb923c" />
                     <CardDescription className="text-zinc-400">
                         {isSent ? "Check your email for a reset link." : "Enter your email to receive a password reset link."}
                     </CardDescription>
@@ -60,35 +70,42 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
                             <p className="text-center text-zinc-300 text-sm">
                                 If an account exists for <strong className="text-white">{email}</strong>, you will receive a link to reset your password.
                             </p>
-                            <Link href="/auth/login" className="inline-flex items-center justify-center text-indigo-400 hover:text-indigo-300 hover:underline font-medium text-sm">
-                                <ArrowLeft className="w-4 h-4 mr-1" />
-                                Back to Login
-                            </Link>
+                            <div className="text-center text-sm mt-2">
+                                <Link href="/auth/login" className="inline-flex items-center text-indigo-400 hover:text-indigo-300 hover:underline font-medium">
+                                    <ArrowLeft className="w-4 h-4 mr-1" />
+                                    Back to Login
+                                </Link>
+                            </div>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="grid gap-4">
-                            {error && (
-                                <div className="rounded-2xl bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-600 dark:text-red-400 border border-red-500/20">
-                                    {error}
-                                </div>
-                            )}
                             <div className="grid gap-2">
-                                <Label htmlFor="email" className="text-zinc-300">Email</Label>
-                                <Input
+                                <FloatingLabelInput
                                     id="email"
                                     type="email"
-                                    placeholder="m@example.com"
+                                    label="Email"
+                                    placeholder="admin@elidz.co.za"
                                     required
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
+                                    onChange={(e) => { setEmail(e.target.value); setError(null); }}
                                     disabled={isLoading}
-                                    className="bg-zinc-950/50 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500/50 placeholder:text-zinc-600 focus-visible:border-indigo-500/50 rounded-3xl h-12"
+                                    className="h-12 rounded-3xl border-transparent bg-gray-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-transparent"
                                 />
+                                {error && (
+                                    <div className="mt-2 rounded-2xl bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-600 dark:text-red-400 border border-red-500/20">
+                                        {error}
+                                    </div>
+                                )}
                             </div>
 
-                            <Button type="submit" disabled={isLoading} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white border-0 rounded-3xl h-12 mt-2">
-                                {isLoading ? "Sending…" : "Send Reset Link"}
-                            </Button>
+                                <div className="flex justify-center pt-2">
+                                <AnimatedDashboardButton
+                                    type="submit"
+                                    disabled={isLoading}
+                                    label={isLoading ? "Sending..." : "Send Reset Link"}
+                                        className="w-full"
+                                />
+                            </div>
 
                             <div className="text-center text-sm mt-2">
                                 <Link href="/auth/login" className="inline-flex items-center text-indigo-400 hover:text-indigo-300 hover:underline font-medium">

@@ -1,6 +1,24 @@
 import { supabase } from '@/lib/supabase';
 import { Opportunity } from '@/types';
 
+/** Shown when an opportunity has no linked tenant (park-wide / staff-posted listings). */
+export const DEFAULT_OPPORTUNITY_ORG_LABEL = 'ELIDZ-STP';
+
+/**
+ * List/detail label for "who is offering this".
+ * Uses only the linked tenant — never `posted_by.organization`, which is the poster's
+ * profile field (e.g. an SMME's company name) and must not appear as the opportunity host.
+ */
+export function resolveOpportunityOrg(item: {
+	tenant?: { name?: string | null } | null;
+	tenants?: { name?: string | null } | null;
+	posted_by?: { organization?: string | null } | null;
+}): string {
+	const tenantName = item.tenant?.name?.trim() || item.tenants?.name?.trim();
+	if (tenantName) return tenantName;
+	return DEFAULT_OPPORTUNITY_ORG_LABEL;
+}
+
 class OpportunityServiceClass {
 	async getOpportunities(filter?: string, search?: string): Promise<Opportunity[]> {
 		console.log('OpportunityService.getOpportunities called with filter:', filter, 'search:', search);
@@ -33,7 +51,7 @@ class OpportunityServiceClass {
 				if (fallbackError) throw fallbackError;
 				return (fallbackData || []).map((item: any) => ({
 					...item,
-					org: 'ELIDZ',
+					org: resolveOpportunityOrg(item),
 					postedByDetails: null
 				})) as Opportunity[];
 			}
@@ -42,7 +60,7 @@ class OpportunityServiceClass {
 
 		return (data || []).map((item: any) => ({
 			...item,
-			org: item.posted_by?.organization || 'ELIDZ',
+			org: resolveOpportunityOrg(item),
 			postedByDetails: item.posted_by,
 			tenant: item.tenant ?? item.tenants ?? null
 		})) as Opportunity[];
@@ -67,7 +85,7 @@ class OpportunityServiceClass {
 
 		return {
 			...data,
-			org: data.posted_by?.organization || 'ELIDZ',
+			org: resolveOpportunityOrg(data),
 			postedByDetails: data.posted_by,
 			tenant: data.tenant ?? data.tenants ?? null
 		} as Opportunity;

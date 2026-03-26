@@ -1,6 +1,7 @@
 import * as React from "react"
-import { Activity, Briefcase, Users } from "lucide-react"
+import { Activity, BriefcaseBusiness, UsersRound, CalendarCheck } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
+import Image from "next/image"
 
 import {
   Card,
@@ -13,6 +14,14 @@ import { AnalyticsCharts } from "./reports/analytics/analytics-charts"
 
 export default async function Page() {
     const supabase = await createClient()
+    
+    // Resolve current user display name
+    const { data: auth } = await supabase.auth.getUser()
+    let displayName = "there"
+    if (auth?.user?.id) {
+        const { data: profile } = await supabase.from("profiles").select("name").eq("id", auth.user.id).single()
+        displayName = (profile?.name || auth.user.email || "there").split(" ")[0]
+    }
     
     // Fetch real counts from Supabase
     const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })
@@ -116,31 +125,79 @@ export default async function Page() {
 
     return (
     <>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            <Card>
+        {/* Welcome banner */}
+        <div className="rounded-3xl bg-gradient-to-r from-slate-800 via-orange-200/15 to-cyan-900 text-white px-5 md:px-6 py-2 md:py-3 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full ring-1 ring-white/15">
+                    <Image
+                        src="/user.jpg"
+                        alt="Profile"
+                        fill
+                        className="object-cover"
+                        priority
+                    />
+                </div>
+                <div>
+                    <div className="text-xl md:text-2xl font-bold tracking-tight leading-none">
+                        <span className="italic text-orange-100">Welcome back,</span>{" "}
+                        <span className="bg-gradient-to-r from-orange-300 to-emerald-300 bg-clip-text text-transparent">
+                            {displayName}
+                        </span>{" "}
+                        <span aria-hidden className="inline-block origin-[70%_70%] animate-[wave_1.8s_ease-in-out_infinite]">👋</span>
+                    </div>
+                    <p className="mt-1 text-sm text-white/80 flex items-center gap-2 translate-y-[6px] md:translate-y-[8px]">
+                        <CalendarCheck className="h-4 w-4 text-emerald-300" />
+                        Review today’s key metrics and recent activity.
+                    </p>
+                </div>
+            </div>
+            <div className="hidden md:flex self-stretch items-end">
+                <Image
+                    src="/admin.png"
+                    alt="Admin illustration"
+                    width={224}
+                    height={120}
+                    className="block h-24 w-56 object-contain object-bottom animate-[adminDrift_4s_ease-in-out_infinite]"
+                    priority
+                />
+            </div>
+        </div>
+
+        <div className="space-y-3">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            <p className="col-span-full text-sm italic text-muted-foreground">
+                Track user growth, understand role distribution, and see where users are most active across ELIDZ.
+            </p>
+            <Card className="rounded-3xl border-0 bg-blue-50/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:bg-blue-900/20 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl bg-blue-100 text-blue-700 ring-1 ring-blue-300 dark:bg-blue-900/40 dark:text-blue-200 dark:ring-blue-700/50">
+                        <UsersRound className="h-4 w-4" />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{userCount || 0}</div>
                     <p className="text-xs text-muted-foreground">+20.1% from last month</p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-3xl border-0 bg-amber-50/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:bg-amber-900/20 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Opportunities</CardTitle>
-                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl bg-amber-100 text-amber-700 ring-1 ring-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:ring-amber-700/50">
+                        <BriefcaseBusiness className="h-4 w-4" />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{opportunityCount || 0}</div>
                     <p className="text-xs text-muted-foreground">+4 new this week</p>
                 </CardContent>
             </Card>
-            <Card>
+            <Card className="rounded-3xl border-0 bg-emerald-50/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:bg-emerald-900/20 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Visits</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
+                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-200 dark:ring-emerald-700/50">
+                        <Activity className="h-4 w-4" />
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{visitCount}</div>
@@ -149,17 +206,37 @@ export default async function Page() {
             </Card>
         </div>
 
-        <AnalyticsCharts 
-            visitsByType={visitsByType}
-            topEntities={topEntities}
-        />
-
+        <div>
         <UserDemographicsCharts 
             roleData={rolesChartData} 
             locationData={locationChartData} 
             growthData={growthChartData}
             totalUsers={profiles?.length || 0}
-        />
+        /></div>
+
+        <div>
+        <AnalyticsCharts 
+            visitsByType={visitsByType}
+            topEntities={topEntities}
+        /></div>
+        </div>
+        <style>{`
+            @keyframes wave {
+                0%,
+                60%,
+                100% { transform: rotate(0deg); }
+                10% { transform: rotate(14deg); }
+                20% { transform: rotate(-8deg); }
+                30% { transform: rotate(14deg); }
+                40% { transform: rotate(-4deg); }
+                50% { transform: rotate(10deg); }
+            }
+            @keyframes adminDrift {
+                0%,
+                100% { transform: translateX(0); }
+                50% { transform: translateX(10px); }
+            }
+        `}</style>
     </>
     )
 }

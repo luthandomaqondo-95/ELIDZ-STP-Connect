@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, Pressable, Alert, Switch, Linking } from 'react-native';
+import React from 'react';
+import { View, Pressable, Alert, Linking } from 'react-native';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '../components/ScreenScrollView';
@@ -15,11 +15,15 @@ import { DEFAULT_AVATAR } from '@/constants/avatars';
 
 function SettingsScreen() {
   const { profile: user, logout } = useAuthContext();
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [emailUpdates, setEmailUpdates] = useState(true);
   const { uri: avatarUri } = useAvatarUri(user?.avatar);
   const { colorScheme } = useColorScheme();
   const colors = COLORS[colorScheme];
+
+  // Play Console requires a link users can use to request deletion of their account/data.
+  // We route users to the public contact page and also offer an email template.
+  const ACCOUNT_DELETION_REQUEST_URL = 'https://www.elidz.co.za/contact-us/';
+  const PRIVACY_POLICY_URL = 'https://tenderportal.elidz.co.za/Privacy';
+  const PRIVACY_SUPPORT_EMAIL = 'info@elidz.co.za';
 
   const avatarSource = avatarUri ? { uri: avatarUri } : DEFAULT_AVATAR;
 
@@ -37,29 +41,34 @@ function SettingsScreen() {
   }
 
   function handleDeleteAccount() {
-    Alert.alert('Delete Account', 'Are you absolutely sure? This action cannot be undone.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          Alert.alert(
-            'Confirm Delete',
-            'This will permanently delete your account and all associated data.',
-            [
-              { text: 'Cancel', style: 'cancel' },
-              {
-                text: 'Delete Forever',
-                style: 'destructive',
-                onPress: async () => {
-                  await logout();
-                },
-              },
-            ],
-          );
+    Alert.alert(
+      'Request Account Deletion',
+      'Deleting your account/data requires a request to our support team. This button will open the request options.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Open Request Form',
+          onPress: () => openUrl(ACCOUNT_DELETION_REQUEST_URL),
         },
-      },
-    ]);
+        {
+          text: 'Email Support',
+          style: 'destructive',
+          onPress: () => {
+            const subject = encodeURIComponent('Account/data deletion request');
+            const body = encodeURIComponent(
+              `Hello,\n\nPlease help me with a data deletion request for ELIDZ-STP-Connect.\n\n` +
+              `I am requesting:\n` +
+              `- Full account deletion (account + associated data), OR\n` +
+              `- Partial data deletion without closing my account (if applicable).\n\n` +
+              `Account email: ${user?.email ?? '(unknown)'}\n` +
+              `User ID: ${user?.id ?? '(unknown)'}\n\n` +
+              `Please confirm once the request is processed.\n\nThanks,`
+            );
+            openUrl(`mailto:${PRIVACY_SUPPORT_EMAIL}?subject=${subject}&body=${body}`);
+          },
+        },
+      ]
+    );
   }
 
   async function openUrl(url: string) {
@@ -124,7 +133,7 @@ function SettingsScreen() {
   return (
     <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="bg-background">
-        <TabsLayoutHeader title="Settings" variant="navy" showActions={false}>
+        <TabsLayoutHeader title="Settings" variant="navy" showActions={false} showBackButton>
           <Text className="text-white/80 text-base">
             Manage your account and preferences.
           </Text>
@@ -166,41 +175,6 @@ function SettingsScreen() {
           </View>
         </Pressable>
 
-        {/* Preferences */}
-        <View className="mt-8">
-          <Text className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">Preferences</Text>
-
-          <View className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-            <SettingRow
-              icon="bell"
-              title="Push Notifications"
-              subtitle="Alerts for messages and updates"
-              isFirst
-              right={
-                <Switch
-                  value={notificationsEnabled}
-                  onValueChange={setNotificationsEnabled}
-                  trackColor={{ false: colors.gray200, true: colors.accent }}
-                  thumbColor={colors.white}
-                />
-              }
-            />
-            <SettingRow
-              icon="mail"
-              title="Email Updates"
-              subtitle="News and important announcements"
-              right={
-                <Switch
-                  value={emailUpdates}
-                  onValueChange={setEmailUpdates}
-                  trackColor={{ false: colors.gray200, true: colors.accent }}
-                  thumbColor={colors.white}
-                />
-              }
-            />
-          </View>
-        </View>
-
         {/* Support */}
         <View className="mt-8">
           <Text className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">Support</Text>
@@ -215,7 +189,7 @@ function SettingsScreen() {
             <SettingRow
               icon="shield"
               title="Privacy Policy"
-              onPress={() => openUrl('https://www.elidz.co.za/privacy-policy/')}
+              onPress={() => openUrl(PRIVACY_POLICY_URL)}
             />
             <SettingRow
               icon="file-text"
@@ -230,16 +204,22 @@ function SettingsScreen() {
           <Text className="text-sm font-bold text-foreground mb-3 uppercase tracking-wide">Account</Text>
           <View className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
             <SettingRow
+              icon="lock"
+              title="Change Password"
+              subtitle="Update your password"
+              isFirst
+              onPress={() => router.push('/(auth)/change-password')}
+            />
+            <SettingRow
               icon="log-out"
               title="Logout"
               destructive
-              isFirst
               onPress={handleLogout}
             />
             <SettingRow
               icon="trash-2"
               title="Delete Account"
-              subtitle="This cannot be undone"
+                subtitle="Request deletion of your account/data"
               destructive
               onPress={handleDeleteAccount}
             />
@@ -251,4 +231,3 @@ function SettingsScreen() {
 }
 
 export default withAuthGuard(SettingsScreen);
-

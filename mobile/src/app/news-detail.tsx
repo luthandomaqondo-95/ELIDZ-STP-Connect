@@ -48,7 +48,7 @@ function NewsDetailScreen() {
     return (
       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader title="News" variant="navy">
+          <TabsLayoutHeader title="News" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
              Story overview.
             </Text>
@@ -68,7 +68,7 @@ function NewsDetailScreen() {
     return (
       <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
         <View className="bg-background">
-          <TabsLayoutHeader title="News" variant="navy">
+          <TabsLayoutHeader title="News" variant="navy" showBackButton>
             <Text className="text-white/80 text-base">
               Story overview.
             </Text>
@@ -145,7 +145,7 @@ function NewsDetailScreen() {
   return (
     <ScreenScrollView insetTop={false} contentContainerStyle={{ paddingBottom: 40 }}>
       <View className="bg-background">
-        <TabsLayoutHeader title="News" variant="navy">
+        <TabsLayoutHeader title="News" variant="navy" showBackButton>
           <Text className="text-white/80 text-base">
               Story overview.
           </Text>

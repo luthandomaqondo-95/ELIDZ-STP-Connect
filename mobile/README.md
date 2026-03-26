@@ -33,8 +33,21 @@ Email confirmation and password reset require redirect URLs to be whitelisted in
 2. Add these to **Redirect URLs**:
    - `elidzstp://email-confirmed` (email confirmation)
    - `elidzstp://change-password` (password reset)
-   - `elidzstp://oauth-callback` (Google/Apple sign-in)
-3. For Expo Go development, also add the URL shown when running `npx expo start` (e.g. `exp://192.168.x.x:8081/--/email-confirmed`)
+   - `elidzstp://oauth-callback` (Apple sign-in)
+3. **Google Sign-In (native)**: Uses `signInWithIdToken` – no browser, no redirect URLs. Configure:
+   - In **app.json** → `extra.googleAuth.webClientId`: Add your **Web application** OAuth Client ID from [Google Cloud Console](https://console.cloud.google.com/apis/credentials) (create a "Web application" client if needed).
+   - In **Supabase** → Authentication → Providers → Google: Add the Web Client ID (first), Android Client ID, and iOS Client ID. Enable **Skip nonce check** for iOS.
+4. For Expo Go development, also add the URL shown when running `npx expo start` (e.g. `exp://192.168.x.x:8081/--/email-confirmed`)
+
+### Password reset / email confirmation links open a blank page
+
+**On mobile (app installed):** The deep link `elidzstp://change-password` should open the app directly. Ensure:
+- `elidzstp://change-password` and `elidzstp://email-confirmed` are in Supabase Redirect URLs
+- AuthProvider handles `PASSWORD_RECOVERY` and navigates to change-password
+
+**If you get about:blank:** Gmail opens links in a browser, which can't handle `elidzstp://`. The app now uses the admin URL for redirects. Ensure:
+1. `appWebUrl` in `app.json` → `extra` is your deployed admin URL (e.g. `https://elidz-stp-admin.vercel.app`)
+2. Add to Supabase **Redirect URLs**: `https://your-admin-url.com/auth/reset-password` and `https://your-admin-url.com/auth/email-confirmed`
 
 ## Get a fresh project
 

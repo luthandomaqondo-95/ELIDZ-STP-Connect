@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import {
   Dialog,
   DialogContent,
@@ -11,23 +12,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { FloatingLabelInput, FloatingLabelSelect, SelectItem } from "@/components/floating-input"
 import { inviteUser } from "@/app/actions"
-import { Loader2, Plus } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 export function InviteUserDialog() {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [role, setRole] = useState("Tenant")
   const router = useRouter()
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -44,6 +37,7 @@ export function InviteUserDialog() {
         setError(result.error)
     } else {
         setOpen(false)
+        setRole("Tenant")
         router.refresh()
     }
   }
@@ -51,12 +45,9 @@ export function InviteUserDialog() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Invite User
-        </Button>
+        <AnimatedDashboardButton label="+ Invite User" />
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[460px] rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.12)] backdrop-blur-sm dark:bg-slate-900/80 dark:shadow-[0_10px_30px_rgba(2,6,23,0.4)]">
         <DialogHeader>
           <DialogTitle>Invite User</DialogTitle>
           <DialogDescription>
@@ -66,25 +57,33 @@ export function InviteUserDialog() {
         <form onSubmit={onSubmit}>
             <div className="grid gap-4 py-4">
                 {error && (
-                    <div className="text-sm text-red-500 bg-red-50 p-2 rounded border border-red-200">
+                    <div className="rounded-xl border border-red-200 bg-red-50 p-2 text-sm text-red-500 dark:border-red-900/40 dark:bg-red-950/20">
                         {error}
                     </div>
                 )}
-                <div className="grid gap-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" name="name" placeholder="John Doe" required />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" placeholder="john@example.com" required />
-                </div>
-                <div className="grid gap-2">
-                    <Label htmlFor="role">Role</Label>
-                    <Select name="role" required defaultValue="Tenant">
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                        <SelectContent>
+                <FloatingLabelInput
+                  id="name"
+                  name="name"
+                  label="Full Name"
+                  placeholder="John Doe"
+                  className="rounded-3xl bg-gray-800"
+                  required
+                />
+                <FloatingLabelInput
+                  id="email"
+                  name="email"
+                  type="email"
+                  label="Email"
+                  placeholder="john@example.com"
+                  className="rounded-3xl bg-gray-800"
+                  required
+                />
+                <FloatingLabelSelect
+                  label="Role"
+                  value={role}
+                  onValueChange={setRole}
+                  className="rounded-3xl bg-gray-800"
+                >
                             <SelectItem value="Super Admin">Super Admin</SelectItem>
                             <SelectItem value="Admin">Admin</SelectItem>
                             <SelectItem value="Tenant">Tenant</SelectItem>
@@ -93,18 +92,20 @@ export function InviteUserDialog() {
                             <SelectItem value="SME">SME</SelectItem>
                             <SelectItem value="Student">Student</SelectItem>
                             <SelectItem value="Investor">Investor</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
+                </FloatingLabelSelect>
+                <input type="hidden" name="role" value={role} />
             </div>
-            <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setOpen(false)} disabled={loading}>
+            <DialogFooter className="justify-center sm:justify-center">
+                <Button type="button" variant="outline" className="rounded-2xl mt-1" onClick={() => setOpen(false)} disabled={loading}>
                     Cancel
                 </Button>
-                <Button type="submit" disabled={loading}>
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Send Invitation
-                </Button>
+                <AnimatedDashboardButton
+                  type="submit"
+                  variant="green"
+                  disabled={loading}
+                  className="rounded-3xl h-10 px-5"
+                  label={loading ? "Sending Invitation..." : "Send Invitation"}
+                />
             </DialogFooter>
         </form>
       </DialogContent>

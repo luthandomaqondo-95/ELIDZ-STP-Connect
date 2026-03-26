@@ -13,6 +13,14 @@ export interface Event {
   updated_at: string;
 }
 
+export interface EventRsvp {
+  id: string;
+  event_id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+}
+
 class EventServiceClass {
   async getUpcomingEvents(limit = 5): Promise<Event[]> {
     console.log('EventService.getUpcomingEvents called');
@@ -34,7 +42,7 @@ class EventServiceClass {
     const { data, error } = await supabase
       .from('events')
       .select('*')
-      .order('date', { ascending: true });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('EventService.getAllEvents error:', JSON.stringify(error, null, 2));
@@ -73,6 +81,74 @@ class EventServiceClass {
     }
 
     return data as Event;
+  }
+
+  private async getCurrentUserId(): Promise<string> {
+    const { data, error } = await supabase.auth.getUser();
+    if (error) {
+      throw new Error(error.message || 'Failed to resolve current user');
+    }
+
+    if (!data.user?.id) {
+      throw new Error('You must be logged in to RSVP');
+    }
+
+    return data.user.id;
+  }
+
+  async hasUserRsvped(eventId: string): Promise<boolean> {
+    const userId = await this.getCurrentUserId();
+
+    const { data, error } = await supabase
+      .from('event_rsvps')
+      .select('id')
+      .eq('event_id', eventId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message || 'Failed to check RSVP status');
+    }
+
+    return !!data;
+  }
+
+  async rsvpToEvent(eventId: string): Promise<EventRsvp> {
+    const userId = await this.getCurrentUserId();
+
+    const { data, error } = await supabase
+      .from('event_rsvps')
+      .upsert(
+        {
+          event_id: eventId,
+          user_id: userId,
+        },
+        {
+          onConflict: 'event_id,user_id',
+        }
+      )
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(error.message || 'Failed to RSVP to event');
+    }
+
+    return data as EventRsvp;
+  }
+
+  async cancelRsvp(eventId: string): Promise<void> {
+    const userId = await this.getCurrentUserId();
+
+    const { error } = await supabase
+      .from('event_rsvps')
+      .delete()
+      .eq('event_id', eventId)
+      .eq('user_id', userId);
+
+    if (error) {
+      throw new Error(error.message || 'Failed to cancel RSVP');
+    }
   }
 }
 

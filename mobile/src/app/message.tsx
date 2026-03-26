@@ -29,7 +29,6 @@ import * as DocumentPicker from 'expo-document-picker';
 import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
-import { TabsLayoutHeader } from '@/components/Header';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -123,9 +122,11 @@ interface MessageBubbleProps {
   isMe: boolean;
   colors: AppColors;
   onImagePress?: (url: string) => void;
+  canReport?: boolean;
+  onLongPress?: () => void;
 }
 
-function MessageBubble({ item, isMe, colors, onImagePress }: MessageBubbleProps) {
+function MessageBubble({ item, isMe, colors, onImagePress, canReport = false, onLongPress }: MessageBubbleProps) {
   const handleOpenAttachment = useCallback(() => {
     if (item.attachment_url) {
       Linking.openURL(item.attachment_url).catch(() => {
@@ -136,14 +137,19 @@ function MessageBubble({ item, isMe, colors, onImagePress }: MessageBubbleProps)
 
   return (
     <View className={`mb-3 ${isMe ? 'items-end' : 'items-start'}`}>
-      <View
-        style={[
-          styles.bubble,
-          isMe
-            ? { backgroundColor: colors.accent, borderBottomRightRadius: 4 }
-            : { backgroundColor: colors.card, borderBottomLeftRadius: 4, borderColor: colors.accent + '30', borderWidth: 1 },
-        ]}
+      <Pressable
+        onLongPress={canReport ? onLongPress : undefined}
+        delayLongPress={450}
+        className={canReport ? 'active:opacity-90' : ''}
       >
+        <View
+          style={[
+            styles.bubble,
+            isMe
+              ? { backgroundColor: colors.accent, borderBottomRightRadius: 4 }
+              : { backgroundColor: colors.card, borderBottomLeftRadius: 4, borderColor: colors.accent + '30', borderWidth: 1 },
+          ]}
+        >
         {/* Attachment */}
         {item.attachment_url && (
           <View className="mb-2">
@@ -195,7 +201,8 @@ function MessageBubble({ item, isMe, colors, onImagePress }: MessageBubbleProps)
             {item.content}
           </Text>
         ) : null}
-      </View>
+        </View>
+      </Pressable>
 
       {/* Time + Read status */}
       <View className="flex-row items-center mt-1 px-1 gap-1">
@@ -223,7 +230,8 @@ interface MenuProps {
   onClearChat: () => void;
   onDeleteChat: () => void;
   onCancelRequest: () => void;
-  onBlockUser: () => void;
+  onToggleBlockUser: () => void;
+  blockActionLabel: string;
 }
 
 function DropdownMenu({
@@ -235,7 +243,8 @@ function DropdownMenu({
   onClearChat,
   onDeleteChat,
   onCancelRequest,
-  onBlockUser,
+  onToggleBlockUser,
+  blockActionLabel,
 }: MenuProps) {
   if (!visible) return null;
 
@@ -244,7 +253,7 @@ function DropdownMenu({
     { icon: 'rotate-ccw', label: 'Cancel Request', onPress: onCancelRequest, danger: false },
     { icon: 'trash-2', label: 'Clear Chat', onPress: onClearChat, danger: false },
     { icon: 'x-circle', label: 'Delete Chat', onPress: onDeleteChat, danger: true },
-    { icon: 'slash', label: 'Block User', onPress: onBlockUser, danger: true },
+    { icon: 'slash', label: blockActionLabel, onPress: onToggleBlockUser, danger: true },
   ] as const;
 
   return (
@@ -367,11 +376,13 @@ function MessageScreen() {
   const [sending, setSending] = useState(false);
   const [attachment, setAttachment] = useState<Attachment | null>(null);
   const [showMenu, setShowMenu] = useState(false);
+  const [reportingMessageId, setReportingMessageId] = useState<string | null>(null);
   const [chatId, setChatId] = useState<string | null>(() => (paramChatId as string) || null);
   const [otherUserId, setOtherUserId] = useState<string | null>(() => (paramUserId as string) || null);
   const [otherUserAvatar, setOtherUserAvatar] = useState<string | null>(null);
-  const [isOnline, setIsOnline] = useState(false);
   const [fullScreenImageUrl, setFullScreenImageUrl] = useState<string | null>(null);
+  const [isBlockedByMe, setIsBlockedByMe] = useState(false);
+  const [isBlockedByOtherUser, setIsBlockedByOtherUser] = useState(false);
   const { uri: otherAvatarUri } = useAvatarUri(otherUserAvatar);
 
   const flatListRef = useRef<FlatList>(null);
@@ -469,6 +480,31 @@ function MessageScreen() {
       supabase.removeChannel(channel);
     };
   }, [chatId, user, loadMessages, loadChatDetails]);
+
+  useEffect(() => {
+    if (!user?.id || !otherUserId) {
+      setIsBlockedByMe(false);
+      setIsBlockedByOtherUser(false);
+      return;
+    }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const blockStatus = await connectionService.getBlockStatus(user.id, otherUserId);
+        if (!cancelled) {
+          setIsBlockedByMe(blockStatus.blockedByCurrentUser);
+          setIsBlockedByOtherUser(blockStatus.blockedByOtherUser);
+        }
+      } catch (err) {
+        console.error('Failed to fetch block status:', err);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, otherUserId]);
 
   // ── Document picker ────────────────────────────────────────────────────────
 
@@ -629,35 +665,169 @@ function MessageScreen() {
       Alert.alert('Error', 'Unable to block this user.');
       return;
     }
+
+    const submitBlockReasonAsReport = async (reason: string): Promise<'saved' | 'skipped'> => {
+      if (!chatId) return 'skipped';
+
+      const { data: lastMessageFromBlockedUser, error } = await supabase
+        .from('messages')
+        .select('id')
+        .eq('chat_id', chatId)
+        .eq('sender_id', otherUserId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      if (!lastMessageFromBlockedUser?.id) {
+        return 'skipped';
+      }
+
+      try {
+        await chatService.reportMessage({
+          messageId: lastMessageFromBlockedUser.id,
+          chatId,
+          reporterId: user.id,
+          reportedUserId: otherUserId,
+          reason: `Blocked user: ${reason}`,
+        });
+        return 'saved';
+      } catch (reportErr) {
+        const reportMessage =
+          reportErr instanceof Error ? reportErr.message.toLowerCase() : '';
+        if (reportMessage.includes('already reported')) {
+          return 'saved';
+        }
+        throw reportErr;
+      }
+    };
+
+    const completeBlockFlow = async (reason: string) => {
+      try {
+        const reportResult = await submitBlockReasonAsReport(reason);
+        await connectionService.blockUser(user.id, otherUserId);
+
+        queryClient.invalidateQueries({ queryKey: ['contacts'] });
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+
+        const confirmationMessage =
+          reportResult === 'saved'
+            ? `${userName || 'User'} has been blocked and your reason was saved for moderation.`
+            : `${userName || 'User'} has been blocked. No report was saved because there were no messages from this user yet.`;
+
+        setIsBlockedByMe(true);
+        setIsBlockedByOtherUser(false);
+        Alert.alert('User Blocked', confirmationMessage, [
+          { text: 'OK' },
+        ]);
+      } catch (err) {
+        console.error('handleBlockUser error:', err);
+        Alert.alert('Error', 'Failed to block user. Please try again.');
+      }
+    };
+
+    const openReasonPrompt = () => {
+      Alert.alert(
+        'Why are you blocking this user?',
+        'Choose a reason to help moderation.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Spam/Scam', style: 'destructive', onPress: () => void completeBlockFlow('Spam or scam') },
+          { text: 'Harassment', style: 'destructive', onPress: () => void completeBlockFlow('Harassment or abuse') },
+          { text: 'Inappropriate', style: 'destructive', onPress: () => void completeBlockFlow('Inappropriate content') },
+        ]
+      );
+    };
+
     Alert.alert(
       'Block User',
       `Are you sure you want to block ${userName || 'this user'}? You will no longer see each other in Discover or be able to message.`,
       [
         { text: 'Cancel', style: 'cancel' },
+        { text: 'Continue', style: 'destructive', onPress: openReasonPrompt },
+      ]
+    );
+  };
+
+  const handleUnblockUser = () => {
+    setShowMenu(false);
+    if (!user || !otherUserId) {
+      Alert.alert('Error', 'Unable to unblock this user.');
+      return;
+    }
+
+    Alert.alert(
+      'Unblock User',
+      `Do you want to unblock ${userName || 'this user'}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Block',
-          style: 'destructive',
+          text: 'Unblock',
           onPress: async () => {
             try {
-              await connectionService.blockUser(user.id, otherUserId);
-              if (chatId) {
-                try {
-                  await deleteChat(chatId);
-                } catch (deleteErr) {
-                  console.warn('Could not delete chat after block:', deleteErr);
-                }
+              const unblocked = await connectionService.unblockUser(user.id, otherUserId);
+              if (!unblocked) {
+                Alert.alert('Info', 'No active block was found.');
+                return;
               }
+
+              setIsBlockedByMe(false);
+              setIsBlockedByOtherUser(false);
               queryClient.invalidateQueries({ queryKey: ['contacts'] });
               queryClient.invalidateQueries({ queryKey: ['chats'] });
-              Alert.alert('User Blocked', `${userName || 'User'} has been blocked.`, [
-                { text: 'OK', onPress: () => router.back() },
-              ]);
+              Alert.alert('User Unblocked', `${userName || 'User'} has been unblocked.`);
             } catch (err) {
-              console.error('handleBlockUser error:', err);
-              Alert.alert('Error', 'Failed to block user. Please try again.');
+              console.error('handleUnblockUser error:', err);
+              Alert.alert('Error', 'Failed to unblock user. Please try again.');
             }
           },
         },
+      ]
+    );
+  };
+
+  const submitMessageReport = async (item: Message, reason: string) => {
+    if (!chatId || !user) {
+      Alert.alert('Error', 'Unable to submit report right now.');
+      return;
+    }
+    if (item.sender_id === user.id) {
+      Alert.alert('Info', 'You cannot report your own message.');
+      return;
+    }
+
+    setReportingMessageId(item.id);
+    try {
+      await chatService.reportMessage({
+        messageId: item.id,
+        chatId,
+        reporterId: user.id,
+        reportedUserId: item.sender_id,
+        reason,
+      });
+      Alert.alert('Report Sent', 'Thanks. Your report has been submitted for review.');
+    } catch (err) {
+      const messageText = err instanceof Error ? err.message : 'Failed to submit report.';
+      Alert.alert('Report Failed', messageText);
+    } finally {
+      setReportingMessageId(null);
+    }
+  };
+
+  const handleReportMessage = (item: Message) => {
+    if (!user || item.sender_id === user.id || reportingMessageId === item.id) return;
+
+    Alert.alert(
+      'Report Message',
+      'Why are you reporting this message?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Spam/Scam', onPress: () => void submitMessageReport(item, 'Spam or scam') },
+        { text: 'Harassment', onPress: () => void submitMessageReport(item, 'Harassment or abuse') },
+        { text: 'Inappropriate', onPress: () => void submitMessageReport(item, 'Inappropriate content') },
       ]
     );
   };
@@ -678,13 +848,16 @@ function MessageScreen() {
           isMe={isMe}
           colors={colors}
           onImagePress={(url) => setFullScreenImageUrl(url)}
+          canReport={!isMe}
+          onLongPress={() => handleReportMessage(item)}
         />
       </View>
     );
   }
 
   const avatarSource = otherAvatarUri ? { uri: otherAvatarUri } : DEFAULT_AVATAR;
-  const canSend = !!chatId && (message.trim().length > 0 || !!attachment) && !sending;
+  const isChatBlocked = isBlockedByMe || isBlockedByOtherUser;
+  const canSend = !!chatId && !isChatBlocked && (message.trim().length > 0 || !!attachment) && !sending;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -784,13 +957,23 @@ function MessageScreen() {
             onCancelRequest={handleCancelRequest}
             onClearChat={handleClearChat}
             onDeleteChat={handleDeleteChat}
-            onBlockUser={handleBlockUser}
+            onToggleBlockUser={isBlockedByMe ? handleUnblockUser : handleBlockUser}
+            blockActionLabel={isBlockedByMe ? 'Unblock User' : 'Block User'}
           />
         </View>
       </Modal>
 
       {/* ── Messages ── */}
       <View style={{ flex: 1 }}>
+        {isChatBlocked && (
+          <View className="mx-4 mt-3 px-3 py-2 rounded-xl border border-destructive/40 bg-destructive/10">
+            <Text className="text-xs text-destructive font-medium">
+              {isBlockedByMe
+                ? 'You blocked this user. Unblock to send messages.'
+                : 'You cannot send messages to this user because they blocked you.'}
+            </Text>
+          </View>
+        )}
         {loading ? (
           <View className="flex-1 justify-center items-center">
             <ActivityIndicator size="large" color={colors.primary} />
