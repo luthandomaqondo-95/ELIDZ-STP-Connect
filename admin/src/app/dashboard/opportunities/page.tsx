@@ -8,7 +8,10 @@ import { OpportunitiesList } from "./opportunities-list"
 
 export default async function OpportunitiesPage() {
     const supabase = await createClient()
-    const { data: opportunities } = await supabase.from('opportunities').select('*').order('created_at', { ascending: false })
+    const { data: opportunities } = await supabase
+        .from("opportunities")
+        .select("*, tenant:tenants(name, logo_url)")
+        .order("created_at", { ascending: false })
 
     return (
         <div className="flex flex-1 flex-col gap-4 pt-0">

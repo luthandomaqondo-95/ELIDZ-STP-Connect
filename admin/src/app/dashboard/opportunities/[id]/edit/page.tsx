@@ -13,7 +13,6 @@ import { FloatingLabelInput, FloatingLabelSelect, FloatingLabelTextarea, SelectI
 type OpportunityForm = {
   title: string
   type: string
-  location: string
   deadline: string
   description: string
   requirements: string
@@ -30,7 +29,6 @@ export default function EditOpportunityPage() {
   const [form, setForm] = useState<OpportunityForm>({
     title: "",
     type: "tender",
-    location: "",
     deadline: "",
     description: "",
     requirements: "",
@@ -40,7 +38,7 @@ export default function EditOpportunityPage() {
     async function fetchOpportunity() {
       const { data, error: fetchError } = await supabase
         .from("opportunities")
-        .select("title, type, location, deadline, description, requirements")
+        .select("title, type, deadline, description, requirements")
         .eq("id", params.id)
         .single()
 
@@ -53,7 +51,6 @@ export default function EditOpportunityPage() {
       setForm({
         title: data.title || "",
         type: data.type || "tender",
-        location: data.location || "",
         deadline: data.deadline ? String(data.deadline).slice(0, 10) : "",
         description: data.description || "",
         requirements: data.requirements || "",
@@ -74,7 +71,6 @@ export default function EditOpportunityPage() {
       .update({
         title: form.title,
         type: form.type,
-        location: form.location,
         deadline: form.deadline || null,
         description: form.description,
         requirements: form.requirements || null,
@@ -146,13 +142,6 @@ export default function EditOpportunityPage() {
             </div>
 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <FloatingLabelInput
-                id="location"
-                label="Location"
-                value={form.location}
-                onChange={(e) => setForm((prev) => ({ ...prev, location: e.target.value }))}
-                className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
-              />
               <FloatingLabelInput
                 id="deadline"
                 label="Deadline"

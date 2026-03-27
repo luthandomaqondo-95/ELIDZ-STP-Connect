@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
 import { SmmeTable } from "./smme-table"
-import { AddSmmeDialog } from "./add-smme-dialog"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { BadgeCheck } from "lucide-react"
 
@@ -23,7 +22,6 @@ export default async function VerifiedSmmePage() {
             <DashboardPageHeader
                 title="Verified SMMEs"
                 icon={<BadgeCheck className="h-5 w-5" />}
-                action={<AddSmmeDialog />}
             />
             <SmmeTable initialData={smmes || []} />
         </div>

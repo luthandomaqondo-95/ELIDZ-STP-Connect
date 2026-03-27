@@ -17,7 +17,7 @@ interface OpportunityItem {
   status: string
   type: string
   deadline?: string | null
-  location?: string | null
+  tenant?: { name?: string | null } | null
 }
 
 const OPPORTUNITY_FILTER_COLORS: Record<string, string> = {
@@ -38,7 +38,7 @@ export function OpportunitiesList({ opportunities }: { opportunities: Opportunit
         (opp.title || "").toLowerCase().includes(q) ||
         (opp.description || "").toLowerCase().includes(q) ||
         (opp.type || "").toLowerCase().includes(q) ||
-        (opp.location || "").toLowerCase().includes(q)
+        (opp.tenant?.name || "").toLowerCase().includes(q)
 
       const status = (opp.status || "").toLowerCase()
       const matchesStatus =
@@ -125,7 +125,7 @@ export function OpportunitiesList({ opportunities }: { opportunities: Opportunit
                 </div>
                 <div className="flex items-center gap-2 rounded-xl bg-slate-100/80 px-2.5 py-2 dark:bg-slate-800/70">
                   <MapPin className="h-4 w-4 text-orange-600 dark:text-orange-300" />
-                  <span>{opp.location || "ELIDZ STP"}</span>
+                  <span>{opp.tenant?.name || "ELIDZ STP"}</span>
                 </div>
                 <div className="flex items-center gap-2 rounded-xl bg-slate-100/80 px-2.5 py-2 dark:bg-slate-800/70">
                   <Users className="h-4 w-4 text-orange-600 dark:text-orange-300" />

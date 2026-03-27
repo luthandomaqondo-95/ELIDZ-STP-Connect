@@ -17,8 +17,85 @@ import {
     FloatingLabelSelect,
     SelectItem,
 } from "@/components/floating-input"
+import { useRouter } from "next/navigation"
+import { useEffect, useState } from "react"
+import { toast } from "sonner"
+import { createOpportunity } from "../actions"
+import { createClient } from "@/lib/supabase/client"
 
 export default function CreateOpportunityPage() {
+    const router = useRouter()
+    const [saving, setSaving] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+    const [loadingTenants, setLoadingTenants] = useState(true)
+    const [tenants, setTenants] = useState<Array<{ id: string; name: string }>>([])
+
+    const [form, setForm] = useState({
+        title: "",
+        type: "tender",
+        tenant_id: "",
+        deadline: "",
+        description: "",
+        requirements: "",
+    })
+
+    useEffect(() => {
+        async function fetchTenants() {
+            try {
+                const supabase = createClient()
+                const { data } = await supabase
+                    .from("tenants")
+                    .select("id, name")
+                    .order("name", { ascending: true })
+
+                if (data) setTenants(data as Array<{ id: string; name: string }>)
+            } catch (e) {
+                // Tenant loading failure shouldn't block draft creation entirely,
+                // but posting will fail if tenant_id is missing.
+                console.error("Failed to load tenants:", e)
+            } finally {
+                setLoadingTenants(false)
+            }
+        }
+
+        fetchTenants()
+    }, [])
+
+    async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+        event.preventDefault()
+        setSaving(true)
+        setError(null)
+
+        if (!form.tenant_id) {
+            setSaving(false)
+            const message = "Please select a tenant."
+            setError(message)
+            toast.error(message)
+            return
+        }
+
+        const fd = new FormData()
+        fd.set("title", form.title)
+        fd.set("type", form.type)
+        fd.set("tenant_id", form.tenant_id)
+        fd.set("deadline", form.deadline)
+        fd.set("description", form.description)
+        fd.set("requirements", form.requirements)
+
+        const result = await createOpportunity(fd)
+        setSaving(false)
+
+        if (!result.success) {
+            setError(result.error)
+            toast.error(result.error)
+            return
+        }
+
+        toast.success("Opportunity posted.")
+        router.push(`/dashboard/opportunities/${result.id}`)
+        router.refresh()
+    }
+
     return (
         <div className="flex flex-1 flex-col gap-4 pt-0">
             <DashboardPageHeader title="Post New Opportunity" backHref="/dashboard/opportunities" />
@@ -33,17 +110,28 @@ export default function CreateOpportunityPage() {
                                 Fill in the details for the new opportunity.
                             </CardDescription>
                         </CardHeader>
+                        <form onSubmit={onSubmit}>
                         <CardContent className="space-y-6">
+                            {error && (
+                                <div className="rounded-xl border border-red-200 bg-red-50 p-2 text-sm text-red-600 dark:border-red-900/40 dark:bg-red-950/20 dark:text-red-200">
+                                    {error}
+                                </div>
+                            )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <FloatingLabelInput
                                     id="title"
                                     label="Title"
                                     placeholder="e.g. Innovation Challenge 2024"
+                                    value={form.title}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, title: e.target.value }))}
                                     className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+                                    required
                                 />
                                 <FloatingLabelSelect
                                     label="Type"
                                     placeholder="Select type"
+                                    value={form.type}
+                                    onValueChange={(value) => setForm((prev) => ({ ...prev, type: value }))}
                                     className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
                                 >
                                     <SelectItem value="tender">Tender</SelectItem>
@@ -53,16 +141,26 @@ export default function CreateOpportunityPage() {
                                 </FloatingLabelSelect>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FloatingLabelInput
-                                    id="location"
-                                    label="Location"
-                                    placeholder="e.g. East London IDZ"
+                                <FloatingLabelSelect
+                                    label="Tenant"
+                                    placeholder={loadingTenants ? "Loading tenants..." : "Select tenant"}
+                                    value={form.tenant_id}
+                                    onValueChange={(value) => setForm((prev) => ({ ...prev, tenant_id: value }))}
+                                    disabled={loadingTenants}
                                     className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
-                                />
+                                >
+                                    {tenants.map((t) => (
+                                        <SelectItem key={t.id} value={t.id}>
+                                            {t.name}
+                                        </SelectItem>
+                                    ))}
+                                </FloatingLabelSelect>
                                 <FloatingLabelInput
                                     id="deadline"
                                     label="Deadline"
                                     type="date"
+                                    value={form.deadline}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, deadline: e.target.value }))}
                                     className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
                                 />
                             </div>
@@ -71,31 +169,44 @@ export default function CreateOpportunityPage() {
                                     id="description"
                                     label="Description"
                                     placeholder="Describe the opportunity..."
+                                    value={form.description}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, description: e.target.value }))}
                                     className="min-h-[150px] rounded-3xl border-transparent bg-orange-100/80 px-4 py-3 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <FloatingLabelTextarea
+                                    id="requirements"
+                                    label="Requirements"
+                                    placeholder="Optional requirements, eligibility, or documents needed..."
+                                    value={form.requirements}
+                                    onChange={(e) => setForm((prev) => ({ ...prev, requirements: e.target.value }))}
+                                    className="min-h-[120px] rounded-3xl border-transparent bg-orange-100/80 px-4 py-3 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
                                 />
                             </div>
 
-                            {/* Tips section inside the main card, at the bottom */}
-                            <div className="pt-4">
-                                <div className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                                    Tips
-                                </div>
-                                <div className="text-sm space-y-2 rounded-2xl bg-gradient-to-br from-orange-100 via-amber-100 to-rose-100 p-4 text-orange-900 ring-1 ring-orange-200/60 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] dark:from-orange-900/30 dark:via-amber-900/25 dark:to-rose-900/25 dark:text-orange-100 dark:ring-orange-800/40">
-                                    <p>• Be specific about the requirements and eligibility criteria.</p>
-                                    <p>• Provide clear instructions on how to apply.</p>
-                                    <p>• Set a realistic deadline to allow applicants enough time.</p>
-                                </div>
-                            </div>
+                        
                         </CardContent>
                         <CardFooter className="justify-center gap-2">
                             <Button
                                 variant="outline"
                                 className="h-10 rounded-3xl border-0 bg-red-600 px-5 font-semibold text-white shadow-sm hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
+                                type="button"
+                                onClick={() => router.push("/dashboard/opportunities")}
+                                disabled={saving}
                             >
                                 Cancel
                             </Button>
-                            <AnimatedDashboardButton label="Post Opportunity" className="h-10 rounded-3xl px-5" />
+                            <AnimatedDashboardButton
+                                type="submit"
+                                variant="green"
+                                disabled={saving}
+                                label={saving ? "Posting..." : "Post Opportunity"}
+                                className="h-10 rounded-3xl px-5"
+                            />
                         </CardFooter>
+                        </form>
                     </Card>
             </div>
         </div>

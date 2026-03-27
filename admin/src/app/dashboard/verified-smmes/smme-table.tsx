@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
 import { updateSmmeStatus } from "./actions"
+import { SmmeDetailsDialog } from "./smme-details-dialog"
 
 interface SmmeTableProps {
     initialData: any[]
@@ -138,15 +139,26 @@ export function SmmeTable({ initialData }: SmmeTableProps) {
                         })()}
                     </TableCell>
                     <TableCell className="text-right">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            disabled={loading === smme.id}
-                            onClick={() => handleToggleStatus(smme.id, smme.verification_status)}
-                            className="rounded-3xl px-4"
-                        >
-                            {loading === smme.id ? "Updating..." : (smme.verification_status === 'verified' ? "Revoke" : "Verify")}
-                        </Button>
+                        <div className="flex justify-end gap-2">
+                            <SmmeDetailsDialog
+                                smme={{
+                                    id: smme.id,
+                                    name: smme.name,
+                                    email: smme.email,
+                                    organization: smme.organization,
+                                    verification_status: smme.verification_status,
+                                }}
+                            />
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={loading === smme.id}
+                                onClick={() => handleToggleStatus(smme.id, smme.verification_status)}
+                                className="rounded-3xl px-4"
+                            >
+                                {loading === smme.id ? "Updating..." : (smme.verification_status === 'verified' ? "Revoke" : "Verify")}
+                            </Button>
+                        </div>
                     </TableCell>
                 </>
             )}

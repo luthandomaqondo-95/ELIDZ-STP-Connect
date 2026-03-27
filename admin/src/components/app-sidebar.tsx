@@ -140,12 +140,8 @@ const baseData = {
 			icon: Briefcase,
 			items: [
 				{
-					title: "View Opportunities",
+					title: "Manage Opportunities",
 					url: "/dashboard/opportunities",
-				},
-				{
-					title: "Post Opportunity",
-					url: "/dashboard/opportunities/create",
 				},
 				{
 					title: "Funding Info",

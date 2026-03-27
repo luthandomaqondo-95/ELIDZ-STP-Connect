@@ -2,11 +2,17 @@ import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
-export default function ManagePermissionsPage() {
+export default function ManagePermissionsPage({
+  searchParams,
+}: {
+  searchParams?: { role?: string };
+}) {
+  const role = searchParams?.role
+
   return (
     <div className="flex flex-1 flex-col gap-4 pt-0">
       <DashboardPageHeader
-        title="Manage Permissions"
+        title={role ? `Manage Permissions — ${role}` : "Manage Permissions"}
         backHref="/dashboard/users/roles"
         className="pb-2"
       />

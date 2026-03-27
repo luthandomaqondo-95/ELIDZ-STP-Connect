@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { EditOpportunityDialog } from "./edit-opportunity-dialog"
+import { DeleteOpportunityButton } from "./delete-opportunity-button"
 
 interface PageProps {
     params: Promise<{ id: string }>
@@ -23,7 +24,7 @@ export default async function OpportunityPage({ params }: PageProps) {
         .select(`
             *,
             tenant:tenants(name, logo_url),
-            poster:profiles(name, email)
+            posted_by:profiles(name, email)
         `)
         .eq('id', id)
         .single()
@@ -69,7 +70,7 @@ export default async function OpportunityPage({ params }: PageProps) {
                 }
             />
             <p className="-mt-2 text-sm text-muted-foreground">
-                Posted on {new Date(opportunity.created_at).toLocaleDateString()} by {opportunity.poster?.name || 'Unknown'}
+                Posted on {new Date(opportunity.created_at).toLocaleDateString()} by {opportunity.posted_by?.name || 'Unknown'}
             </p>
 
             <div className="space-y-6">
@@ -83,12 +84,7 @@ export default async function OpportunityPage({ params }: PageProps) {
                                 ) : (
                                     <Button className="w-full rounded-3xl">Reopen Opportunity</Button>
                                 )}
-                                <Button
-                                    variant="destructive"
-                                    className="w-full rounded-3xl bg-red-600 text-white hover:bg-red-700 dark:bg-red-700 dark:hover:bg-red-800"
-                                >
-                                    Delete
-                                </Button>
+                                <DeleteOpportunityButton opportunityId={id} />
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -124,18 +120,9 @@ export default async function OpportunityPage({ params }: PageProps) {
                                     </div>
                                     <div className="flex items-center gap-2 text-sm">
                                         <MapPin className="h-4 w-4 text-emerald-400" />
-                                        <span className="font-medium">Location:</span>
-                                        <span>{opportunity.location || 'ELIDZ STP'}</span>
+										<span className="font-medium">Tenant:</span>
+										<span>{opportunity.tenant?.name || 'ELIDZ STP'}</span>
                                     </div>
-                                    {opportunity.tenant && (
-                                        <>
-                                            <Separator />
-                                            <div className="flex items-center gap-2 text-sm">
-                                                <span className="font-medium">Tenant:</span>
-                                                <span>{opportunity.tenant.name}</span>
-                                            </div>
-                                        </>
-                                    )}
                                 </div>
                             </div>
                         </CardContent>
