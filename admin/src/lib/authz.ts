@@ -66,3 +66,18 @@ export function assertCanManageRole(actor: AdminRole, targetRole: ProfileRole, n
   }
 }
 
+export async function requireSuperAdmin() {
+  const { user, profile } = await getAuthedProfile();
+  const role = (profile?.role ?? "") as ProfileRole;
+
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  if (role !== "Super Admin") {
+    throw new Error("Forbidden - Super Admin access required");
+  }
+
+  return { userId: user.id, role: role as "Super Admin", profile };
+}
+

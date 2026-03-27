@@ -37,3 +37,18 @@ export async function approveUser(userId: string) {
     return { success: true }
 }
 
+export async function updateUserRole(userId: string, newRole: string) {
+    const supabase = await createClient()
+
+    const { error } = await supabase.from('profiles').update({ role: newRole }).eq('id', userId)
+
+    if (error) {
+        console.error("Error updating user role:", error)
+        return { success: false, error: error.message }
+    }
+
+    revalidatePath('/dashboard/users/all')
+    revalidatePath('/dashboard/users/roles')
+    return { success: true }
+}
+

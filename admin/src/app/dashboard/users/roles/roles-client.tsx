@@ -49,9 +49,8 @@ function permissionsForRole(role: string) {
 }
 
 function canEditRole(actorRole: AdminRole, targetRole: string) {
-  if (actorRole === "Super Admin") return true;
-  // Admin cannot edit Admin/Super Admin roles.
-  return targetRole !== "Admin" && targetRole !== "Super Admin";
+  // Only Super Admin can edit permissions
+  return actorRole === "Super Admin";
 }
 
 export function RolesClient({
@@ -156,7 +155,7 @@ export function RolesClient({
           { header: "Role Name" },
           { header: "Active Users" },
           { header: "Permissions" },
-          { header: "Actions", align: "right" },
+          { header: "Actions", align: "right", className: "w-[100px]" },
         ]}
         data={filteredRoles}
         emptyMessage="No roles found."
@@ -184,7 +183,7 @@ export function RolesClient({
                   variant="ghost"
                   size="sm"
                   disabled={!editable}
-                  title={!editable ? "Only Super Admin can edit Admin roles" : undefined}
+                  title={!editable ? "Only Super Admin can edit permissions" : undefined}
                   onClick={() => router.push(`/dashboard/users/roles/permissions?role=${encodeURIComponent(role.role)}`)}
                 >
                   Edit

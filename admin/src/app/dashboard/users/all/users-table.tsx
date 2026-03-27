@@ -15,10 +15,14 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { deleteUser, approveUser } from "./actions"
+import { deleteUser, approveUser, updateUserRole } from "./actions"
+import { ChevronDown } from "lucide-react"
 
 export interface User {
     id: string
@@ -32,6 +36,7 @@ export interface User {
 }
 
 const ROLES = ["All", "Entrepreneur", "Researcher", "SME", "Tenant", "Investor", "Admin", "Super Admin"]
+const USER_ROLES = ["Entrepreneur", "Researcher", "SME", "Tenant", "Investor", "Admin", "Super Admin"]
 const ITEMS_PER_PAGE = 10
 const ROLE_FILTER_COLORS: Record<string, string> = {
     All: "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-700/80",
@@ -44,9 +49,9 @@ const ROLE_FILTER_COLORS: Record<string, string> = {
     "Super Admin": "bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900/35 dark:text-orange-200 dark:hover:bg-orange-900/50",
 }
 
-export function UsersTable({ users }: { users: User[] }) {
+export function UsersTable({ users, initialRole }: { users: User[]; initialRole?: string }) {
     const [searchQuery, setSearchQuery] = React.useState("")
-    const [selectedRole, setSelectedRole] = React.useState("All")
+    const [selectedRole, setSelectedRole] = React.useState(initialRole || "All")
     const [isPending, setIsPending] = React.useState(false)
     const [currentPage, setCurrentPage] = React.useState(1)
 
@@ -88,6 +93,17 @@ export function UsersTable({ users }: { users: User[] }) {
         await approveUser(userId)
         setIsPending(false)
         // Ideally show a toast here
+    }
+
+    const handleRoleChange = async (userId: string, newRole: string) => {
+        if (confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+            setIsPending(true)
+            const result = await updateUserRole(userId, newRole)
+            setIsPending(false)
+            if (!result.success) {
+                alert("Failed to update user role: " + result.error)
+            }
+        }
     }
 
     return (
@@ -183,6 +199,25 @@ export function UsersTable({ users }: { users: User[] }) {
                                                     <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
                                                         Copy User ID
                                                     </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuSub>
+                                                        <DropdownMenuSubTrigger>
+                                                            <ChevronDown className="mr-2 h-4 w-4" />
+                                                            Change Role
+                                                        </DropdownMenuSubTrigger>
+                                                        <DropdownMenuSubContent>
+                                                            {USER_ROLES.map((role) => (
+                                                                <DropdownMenuItem
+                                                                    key={role}
+                                                                    onClick={() => handleRoleChange(user.id, role)}
+                                                                    disabled={role === user.role}
+                                                                >
+                                                                    {role}
+                                                                    {role === user.role && " (current)"}
+                                                                </DropdownMenuItem>
+                                                            ))}
+                                                        </DropdownMenuSubContent>
+                                                    </DropdownMenuSub>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handleApprove(user.id)}>
                                                         <CheckCircle className="mr-2 h-4 w-4 text-green-500" />

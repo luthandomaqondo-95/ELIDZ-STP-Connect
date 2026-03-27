@@ -4,9 +4,14 @@ import { InviteUserDialog } from "./invite-user-dialog"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Users } from "lucide-react"
 
-export default async function AllUsersPage() {
+export default async function AllUsersPage({
+    searchParams,
+}: {
+    searchParams?: { role?: string };
+}) {
     const supabase = await createClient()
     const { data: profiles } = await supabase.from('profiles').select('*')
+    const selectedRole = searchParams?.role
 
     const users: User[] = (profiles || []).map(profile => ({
         id: profile.id,
@@ -22,11 +27,12 @@ export default async function AllUsersPage() {
     return (
         <div className="flex flex-1 flex-col gap-4 px-0 md:px-0 py-0 pt-0">
             <DashboardPageHeader
-                title="All Users"
+                title={selectedRole ? `Users — ${selectedRole}` : "All Users"}
                 icon={<Users className="h-5 w-5" />}
                 action={<InviteUserDialog />}
+                backHref={selectedRole ? "/dashboard/users/roles" : undefined}
             />
-            <UsersTable users={users} />
+            <UsersTable users={users} initialRole={selectedRole} />
         </div>
     );
 }
