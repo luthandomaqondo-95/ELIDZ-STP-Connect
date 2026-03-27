@@ -9,7 +9,7 @@ export default async function VerifiedSmmePage() {
     const { data: smmes, error } = await supabase
         .from('profiles')
         .select('*')
-        .in('role', ['SME', 'SMME', 'Entrepreneur', 'Tenant'])
+        .in('role', ['SME', 'SMME'])
         .order('created_at', { ascending: false })
 
     if (error) {
