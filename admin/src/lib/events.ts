@@ -13,3 +13,10 @@ export type PublishedEventItem = {
   location: string | null
   rsvps: EventRsvpPerson[]
 }
+
+// Simple replacement for the deleted getPublishedEventsForAdmin function
+export async function getPublishedEventsForAdmin(): Promise<PublishedEventItem[]> {
+  // For now, return empty array - the list functionality can be implemented later
+  // with a separate API route or by querying the database directly
+  return []
+}

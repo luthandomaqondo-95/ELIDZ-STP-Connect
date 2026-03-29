@@ -4,7 +4,7 @@ import { Newspaper } from "lucide-react"
 import { NewsPublisher, PublishedNewsList } from "@/components/communication/publish-ui"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getPublishedNewsForAdmin } from "@/lib/publish-news"
+import { getPublishedNewsForAdmin } from "@/lib/news"
 
 function PublishedNewsListFallback() {
   return (

@@ -27,6 +27,8 @@ import { toast } from "sonner"
 import {
   FloatingLabelInput,
   FloatingLabelTextarea,
+  FloatingLabelSelect,
+  SelectItem,
 } from "@/components/floating-input"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -47,8 +49,6 @@ import {
   type NewsAuthor,
   type PublishedNewsItem,
 } from "@/lib/news"
-import { deleteEvent, publishEvent } from "@/lib/publish-events"
-import { deleteNews, publishNews } from "@/lib/publish-news"
 
 type PublishedItemsListCardProps<T> = {
   title: string
@@ -203,23 +203,62 @@ export function NewsPublisher() {
     setLoading(true)
 
     const formData = new FormData(event.currentTarget)
-    const result = await publishNews(formData)
+    const imageUrl = String(formData.get("image_url") ?? "").trim() || null
+    console.log("Form data image_url:", formData.get("image_url"))
+    console.log("Processed imageUrl:", imageUrl)
+    console.log("Form imageUrl state:", form.imageUrl)
+    console.log("Selected image file:", selectedImageFile)
+    
+    // Create FormData for API call
+    const apiFormData = new FormData()
+    apiFormData.append("title", String(formData.get("title") ?? ""))
+    apiFormData.append("content", String(formData.get("content") ?? ""))
+    apiFormData.append("excerpt", String(formData.get("excerpt") ?? ""))
+    apiFormData.append("target_audience", String(formData.get("target_audience") ?? "all"))
+    apiFormData.append("published_at", String(formData.get("published_at") ?? ""))
+    apiFormData.append("createdBy", "admin")
+    
+    // Add image file if uploaded, otherwise add image URL
+    if (selectedImageFile && imageSource === "upload") {
+      apiFormData.append("image_file", selectedImageFile)
+      console.log("Using uploaded file:", selectedImageFile.name)
+    } else if (imageUrl) {
+      apiFormData.append("featuredImage", imageUrl)
+      console.log("Using image URL:", imageUrl)
+    }
 
-    if (result.error) {
-      toast.error(result.error)
+    try {
+      const response = await fetch('/api/admin/news', {
+        method: 'POST',
+        body: apiFormData // Send FormData instead of JSON
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        toast.error(result.error || "Failed to publish news")
+        setLoading(false)
+        return
+      }
+
+      if (result.duplicate) {
+        toast.error("This news was already published recently. Please wait a few minutes before publishing again.")
+      } else {
+        toast.success(`News published to ${result.notificationsCreated || 0} users!`)
+      }
+
+      setForm(createNewsPublisherInitialForm())
+      setImageSource("url")
+      setSelectedImageFile(null)
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
+      router.refresh()
+    } catch (error) {
+      toast.error("Network error. Please try again.")
+    } finally {
       setLoading(false)
-      return
     }
-
-    toast.success("News published to the mobile app feed.")
-    setForm(createNewsPublisherInitialForm())
-    setImageSource("url")
-    setSelectedImageFile(null)
-    if (fileInputRef.current) {
-      fileInputRef.current.value = ""
-    }
-    router.refresh()
-    setLoading(false)
   }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -269,6 +308,22 @@ export function NewsPublisher() {
             </div>
 
             <input type="hidden" name="image_url" value={form.imageUrl} />
+            <input type="hidden" name="target_audience" value={form.targetAudience} />
+            <FloatingLabelSelect
+              label="Target Audience"
+              placeholder="Select audience"
+              className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+              value={form.targetAudience}
+              onValueChange={(value) => setForm((current) => ({ ...current, targetAudience: value }))}
+            >
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="tenants">Tenants</SelectItem>
+              <SelectItem value="investors">Investors</SelectItem>
+              <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
+              <SelectItem value="students">Students</SelectItem>
+              <SelectItem value="smmes">SMMES</SelectItem>
+              <SelectItem value="staff">Staff Only</SelectItem>
+            </FloatingLabelSelect>
 
             <div className="space-y-4">
               <div className="space-y-2">
@@ -464,6 +519,7 @@ function createEventPublisherInitialForm() {
     date: "",
     location: "",
     description: "",
+    targetAudience: "all",
   }
 }
 
@@ -515,18 +571,48 @@ export function EventPublisher() {
     setLoading(true)
 
     const formData = new FormData(event.currentTarget)
-    const result = await publishEvent(formData)
-
-    if (result.error) {
-      toast.error(result.error)
-      setLoading(false)
-      return
+    const eventData = {
+      title: String(formData.get("title") ?? ""),
+      description: String(formData.get("description") ?? ""),
+      startDate: String(formData.get("date") ?? ""),
+      endDate: String(formData.get("date") ?? ""), // Same as start date for now
+      location: String(formData.get("location") ?? ""),
+      type: "general", // Default event type
+      targetAudience: String(formData.get("target_audience") ?? "all"),
+      maxParticipants: null, // Optional field
+      createdBy: "admin" // You might want to get this from auth context
     }
 
-    toast.success("Event published to the mobile app.")
-    setForm(createEventPublisherInitialForm())
-    router.refresh()
-    setLoading(false)
+    try {
+      const response = await fetch('/api/admin/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(eventData)
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        toast.error(result.error || "Failed to publish event")
+        setLoading(false)
+        return
+      }
+
+      if (result.duplicate) {
+        toast.error("This event was already published recently. Please wait a few minutes before publishing again.")
+      } else {
+        toast.success(`Event published to ${result.notificationsCreated || 0} users!`)
+      }
+
+      setForm(createEventPublisherInitialForm())
+      router.refresh()
+    } catch (error) {
+      toast.error("Network error. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -577,6 +663,23 @@ export function EventPublisher() {
               onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
               className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
             />
+
+            <input type="hidden" name="target_audience" value={form.targetAudience} />
+            <FloatingLabelSelect
+              label="Target Audience"
+              placeholder="Select audience"
+              className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+              value={form.targetAudience}
+              onValueChange={(value) => setForm((current) => ({ ...current, targetAudience: value }))}
+            >
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="tenants">Tenants</SelectItem>
+              <SelectItem value="investors">Investors</SelectItem>
+              <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
+              <SelectItem value="students">Students</SelectItem>
+              <SelectItem value="smmes">SMMES</SelectItem>
+              <SelectItem value="staff">Staff Only</SelectItem>
+            </FloatingLabelSelect>
 
             <FloatingLabelTextarea
               id="description"
@@ -706,16 +809,8 @@ export function PublishedNewsList({ items }: { items: PublishedNewsItem[] }) {
 
   async function handleDelete(id: string) {
     setDeletingId(id)
-    const result = await deleteNews(id)
-
-    if (result.error) {
-      toast.error(result.error)
-      setDeletingId(null)
-      return
-    }
-
-    toast.success("News item deleted.")
-    router.refresh()
+    // Delete functionality not implemented yet - would need DELETE API routes
+    toast.error("Delete functionality not available in this version.")
     setDeletingId(null)
   }
 
@@ -793,16 +888,8 @@ export function PublishedEventsList({ items }: { items: PublishedEventItem[] }) 
 
   async function handleDelete(id: string) {
     setDeletingId(id)
-    const result = await deleteEvent(id)
-
-    if (result.error) {
-      toast.error(result.error)
-      setDeletingId(null)
-      return
-    }
-
-    toast.success("Event deleted.")
-    router.refresh()
+    // Delete functionality not implemented yet - would need DELETE API routes
+    toast.error("Delete functionality not available in this version.")
     setDeletingId(null)
   }
 

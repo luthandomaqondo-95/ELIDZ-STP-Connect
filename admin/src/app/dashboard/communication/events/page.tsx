@@ -4,7 +4,7 @@ import { CalendarDays } from "lucide-react"
 import { EventPublisher, PublishedEventsList } from "@/components/communication/publish-ui"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Skeleton } from "@/components/ui/skeleton"
-import { getPublishedEventsForAdmin } from "@/lib/publish-events"
+import { getPublishedEventsForAdmin } from "@/lib/events"
 
 function PublishedEventsListFallback() {
   return (
