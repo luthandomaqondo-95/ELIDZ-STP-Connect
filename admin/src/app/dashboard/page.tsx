@@ -10,7 +10,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { UserDemographicsCharts } from "./reports/demographics/demographics-charts"
-import { AnalyticsCharts } from "./reports/analytics/analytics-charts"
 
 export default async function Page() {
     const supabase = await createClient()
@@ -28,39 +27,6 @@ export default async function Page() {
     const { count: opportunityCount } = await supabase.from('opportunities').select('*', { count: 'exact', head: true }).eq('status', 'active')
     const { count: visitCountResult } = await supabase.from('analytics_visits').select('*', { count: 'exact', head: true })
     
-    // Fetch all analytics data for charts
-    const { data: visits } = await supabase
-        .from('analytics_visits')
-        .select('*')
-
-    // Process Analytics Data
-    const visitsByTypeMap: Record<string, number> = {}
-    const visitsByNameMap: Record<string, number> = {}
-
-    visits?.forEach(visit => {
-        // By Type
-        let type = 'Unknown'
-        switch (visit.entity_type) {
-            case 'service': type = 'Service'; break;
-            case 'product': type = 'Product'; break;
-            case 'facility': type = 'Facility'; break;
-            case 'lab': type = 'Lab'; break;
-            default: type = visit.entity_type;
-        }
-        visitsByTypeMap[type] = (visitsByTypeMap[type] || 0) + 1
-
-        // By Name
-        const name = visit.entity_name || 'Unknown'
-        visitsByNameMap[name] = (visitsByNameMap[name] || 0) + 1
-    })
-
-    const visitsByType = Object.entries(visitsByTypeMap).map(([name, count]) => ({ name, count }))
-    
-    const topEntities = Object.entries(visitsByNameMap)
-        .map(([name, count]) => ({ name, count }))
-        .sort((a, b) => b.count - a.count)
-        .slice(0, 5)
-
     // Fallback if null
     const visitCount = visitCountResult || 0
 
@@ -69,7 +35,7 @@ export default async function Page() {
         .from('profiles')
         .select('*')
 
-    // Process data for charts
+    // Process data for demographics charts
     const roleCounts: Record<string, number> = {}
     const locationCounts: Record<string, number> = {}
     const growthData: Record<string, number> = {} // Key: Month-Year
@@ -200,7 +166,7 @@ export default async function Page() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{visitCount}</div>
+                    <div className="text-2xl font-bold">{visitCountResult || 0}</div>
                     <p className="text-xs text-muted-foreground">Product & Service Views</p>
                 </CardContent>
             </Card>
@@ -212,12 +178,6 @@ export default async function Page() {
             locationData={locationChartData} 
             growthData={growthChartData}
             totalUsers={profiles?.length || 0}
-        /></div>
-
-        <div>
-        <AnalyticsCharts 
-            visitsByType={visitsByType}
-            topEntities={topEntities}
         /></div>
         </div>
         <style>{`

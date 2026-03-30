@@ -1,4 +1,3 @@
-import { createClient } from "@/lib/supabase/server"
 import { UsersTable, User } from "./users-table"
 import { InviteUserDialog } from "./invite-user-dialog"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
@@ -9,20 +8,36 @@ export default async function AllUsersPage({
 }: {
     searchParams?: { role?: string };
 }) {
-    const supabase = await createClient()
-    const { data: profiles } = await supabase.from('profiles').select('*')
     const selectedRole = searchParams?.role
 
-    const users: User[] = (profiles || []).map(profile => ({
-        id: profile.id,
-        name: profile.name || "Unknown",
-        email: profile.email || "",
-        role: profile.role || "User",
-        status: "Active", // Default as we don't have status in profiles table yet
-        company: profile.organization || "-",
-        lastActive: new Date(profile.updated_at).toLocaleDateString(),
-        avatar: profile.avatar || ""
-    }))
+    // Fetch users via API route
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    const apiUrl = new URL('/api/admin/users', baseUrl)
+    
+    if (selectedRole && selectedRole !== "All") {
+        apiUrl.searchParams.set('role', selectedRole)
+    }
+
+    let users = []
+    try {
+        const response = await fetch(apiUrl.toString(), {
+            cache: 'no-store',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+
+        if (response.ok) {
+            const data = await response.json()
+            users = data.users || []
+        } else {
+            console.error('Failed to fetch users:', response.statusText)
+            users = []
+        }
+    } catch (error) {
+        console.error('Error fetching users:', error)
+        users = []
+    }
 
     return (
         <div className="flex flex-1 flex-col gap-4 px-0 md:px-0 py-0 pt-0">

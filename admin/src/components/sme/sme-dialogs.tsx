@@ -6,6 +6,7 @@ import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import { FloatingLabelInput, FloatingLabelSelect, SelectItem } from "@/components/floating-input"
 import { ExternalLink, FileText, Package, ShieldCheck } from "lucide-react"
 import { useSmmeDetails, statusBadge, docLabel, type SmmeLite } from "@/hooks/use-smmes"
+import { useVisitTracker } from "@/hooks/use-visit-tracker"
 
 interface AddSmmeDialogProps {
     open: boolean
@@ -123,6 +124,7 @@ interface SmmeDetailsDialogProps {
 export function SmmeDetailsDialog({ open, onOpenChange, smme }: SmmeDetailsDialogProps) {
     const [selectedDoc, setSelectedDoc] = useState<any>(null)
     const { documents, products, services, loading, error } = useSmmeDetails(smme?.id || null)
+    const { trackServiceVisit, trackProductVisit } = useVisitTracker()
 
     const docByType = documents.reduce((map, d) => {
         if (!map.has(d.document_type)) map.set(d.document_type, d)
@@ -257,7 +259,7 @@ export function SmmeDetailsDialog({ open, onOpenChange, smme }: SmmeDetailsDialo
                                                 {services.map((service) => (
                                                     <div key={service.id} className="rounded-lg border p-3">
                                                         <div className="flex items-start justify-between">
-                                                            <div>
+                                                            <div onClick={() => trackServiceVisit(service.id)} className="cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors">
                                                                 <p className="font-medium">{service.name}</p>
                                                                 <p className="text-sm text-muted-foreground">{service.description}</p>
                                                                 {service.contact_email && (
@@ -284,20 +286,22 @@ export function SmmeDetailsDialog({ open, onOpenChange, smme }: SmmeDetailsDialo
                                                 {products.map((product) => (
                                                     <div key={product.id} className="rounded-lg border p-3">
                                                         <div className="flex items-start justify-between">
-                                                            <div className="flex gap-3">
-                                                                {product.image_url && (
-                                                                    <img
-                                                                        src={product.image_url}
-                                                                        alt={product.name}
-                                                                        className="h-12 w-12 rounded-lg object-cover"
-                                                                    />
-                                                                )}
-                                                                <div>
-                                                                    <p className="font-medium">{product.name}</p>
-                                                                    <p className="text-sm text-muted-foreground">{product.description}</p>
-                                                                    {product.price && (
-                                                                        <p className="text-sm font-medium text-emerald-600">{product.price}</p>
+                                                            <div onClick={() => trackProductVisit(product.id)} className="cursor-pointer hover:bg-muted/50 p-2 rounded transition-colors">
+                                                                <div className="flex gap-3">
+                                                                    {product.image_url && (
+                                                                        <img
+                                                                            src={product.image_url}
+                                                                            alt={product.name}
+                                                                            className="h-12 w-12 rounded-lg object-cover"
+                                                                        />
                                                                     )}
+                                                                    <div>
+                                                                        <p className="font-medium">{product.name}</p>
+                                                                        <p className="text-sm text-muted-foreground">{product.description}</p>
+                                                                        {product.price && (
+                                                                            <p className="text-sm font-medium text-emerald-600">{product.price}</p>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
                                                             </div>
                                                             <Badge variant="outline">{product.category}</Badge>

@@ -182,8 +182,8 @@ const baseData = {
 					url: "/dashboard/reports/demographics",
 				},
 				{
-					title: "Product Line Visits",
-					url: "/dashboard/reports/visits",
+					title: "System Usage",
+					url: "/dashboard/reports/usage",
 				},
 			],
 		}

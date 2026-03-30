@@ -15,6 +15,7 @@ import { Loader2 } from "lucide-react"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import { UploadButton } from "@/components/upload-button"
+import { useVisitTracker } from "@/hooks/use-visit-tracker"
 
 type Facility = {
   id: string
@@ -41,6 +42,7 @@ export default function CenterFacilityPage({
   const [activeScene, setActiveScene] = useState<any | null>(null)
   const [uploading, setUploading] = useState(false)
   const [videos, setVideos] = useState<any[]>([])
+  const { trackFacilityVisit } = useVisitTracker()
 
   const supabase = createClient()
 
@@ -129,7 +131,7 @@ export default function CenterFacilityPage({
         if (rows && rows.length > 0) {
           const first = rows[0]
 
-          setFacility({
+          const facilityData = {
             id: first.service_id,
             name: first.service_name,
             description: first.service_description,
@@ -138,7 +140,12 @@ export default function CenterFacilityPage({
             color: first.service_color,
             icon: first.service_icon,
             image_url: first.service_image_url,
-          })
+          }
+
+          setFacility(facilityData)
+
+          // Track facility visit
+          trackFacilityVisit(facilityData.id)
 
           setVrScenes(
             rows.map((r: any) => ({

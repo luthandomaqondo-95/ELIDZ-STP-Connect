@@ -27,11 +27,11 @@ interface AnalyticsChartsProps {
 export function AnalyticsCharts({ visitsByType, topEntities }: AnalyticsChartsProps) {
     return (
         <div className="mt-4 grid gap-4 grid-cols-1 md:grid-cols-2">
-            {/* Visits by Type (Service vs Product) */}
+            {/* User Distribution by Role */}
             <Card className="col-span-2 rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm md:col-span-1 dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <CardHeader className="pb-1 md:pb-2">
-                    <CardTitle>Visits by Type</CardTitle>
-                    <CardDescription>Distribution of visits across entity categories.</CardDescription>
+                    <CardTitle>User Distribution</CardTitle>
+                    <CardDescription>Distribution of users across different roles.</CardDescription>
                 </CardHeader>
                 <CardContent className="h-[220px] md:h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
@@ -56,7 +56,7 @@ export function AnalyticsCharts({ visitsByType, topEntities }: AnalyticsChartsPr
                 </CardContent>
             </Card>
 
-            {/* Top Visited Entities */}
+            {/* Top System Entities */}
             <Card className="col-span-2 rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm md:col-span-1 dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <CardHeader className="pb-1 md:pb-2">
                     <CardTitle>Top Visited Items</CardTitle>

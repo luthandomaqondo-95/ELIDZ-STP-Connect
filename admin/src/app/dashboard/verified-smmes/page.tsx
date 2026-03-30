@@ -9,15 +9,14 @@ import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Search, BadgeCheck } from "lucide-react"
 import { useSmmes, SMME_FILTER_COLORS, type SmmeLite } from "@/hooks/use-smmes"
-import { AddSmmeDialog, SmmeDetailsDialog } from "@/components/sme/sme-dialogs"
+import { SmmeDetailsDialog } from "@/components/sme/sme-dialogs"
 
 export default function VerifiedSmmePage() {
-    const { smmes, loading, updatingId, toggleStatus, addSmme } = useSmmes()
+    const { smmes, loading, updatingId, toggleStatus } = useSmmes()
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("All")
     
     // Dialog states
-    const [addDialogOpen, setAddDialogOpen] = useState(false)
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
     const [selectedSmme, setSelectedSmme] = useState<SmmeLite | null>(null)
 
@@ -154,27 +153,12 @@ export default function VerifiedSmmePage() {
                 )}
             />
 
-            {/* Add SMME Dialog */}
-            <AddSmmeDialog
-                open={addDialogOpen}
-                onOpenChange={setAddDialogOpen}
-                onAddSmme={addSmme}
-            />
-
             {/* SMME Details Dialog */}
             <SmmeDetailsDialog
                 open={detailsDialogOpen}
                 onOpenChange={setDetailsDialogOpen}
                 smme={selectedSmme}
             />
-
-            {/* Add SMME Button */}
-            <div className="fixed bottom-6 right-6">
-                <AnimatedDashboardButton
-                    label="+ Add Verified SMME"
-                    onClick={() => setAddDialogOpen(true)}
-                />
-            </div>
         </div>
     )
 }
