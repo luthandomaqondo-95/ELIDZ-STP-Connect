@@ -41,12 +41,12 @@ function isActiveStatus(status: string) {
     return s === "active" || s === "approved"
 }
 
-const ROLES = ["All", "Entrepreneur", "SME", "Tenant", "Admin", "Super Admin"]
+const ROLES = ["All", "Entrepreneur", "SMME", "Tenant", "Admin", "Super Admin"]
 const ITEMS_PER_PAGE = 10
 
 export function UsersTable({ users, initialRole }: { users: User[]; initialRole?: string }) {
     const [searchQuery, setSearchQuery] = React.useState("")
-    const [selectedRole, setSelectedRole] = React.useState(initialRole || "All")
+    const [selectedRole, setSelectedRole] = React.useState(initialRole === "SME" ? "SMME" : (initialRole || "All"))
     const [isPending, setIsPending] = React.useState(false)
     const [currentPage, setCurrentPage] = React.useState(1)
 
@@ -57,7 +57,9 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
             user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
             user.company.toLowerCase().includes(searchQuery.toLowerCase())
         
-        const matchesRole = selectedRole === "All" || user.role === selectedRole
+        const matchesRole =
+            selectedRole === "All" ||
+            (selectedRole === "SMME" ? user.role === "SMME" || user.role === "SME" : user.role === selectedRole)
 
         return matchesSearch && matchesRole
     })
