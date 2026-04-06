@@ -33,7 +33,7 @@ import {
 // This is sample data.
 const ElidzLogo = ({ className }: { className?: string }) => (
 	<div className={`relative ${className}`}>
-		<Image src="/logos/elidz-icon.png" alt="ELIDZ" fill className="object-contain" />
+		<Image src="/logos/elidz-icon.png" alt="ELIDZ" fill className="object-contain" sizes="32px" />
 	</div>
 )
 
@@ -199,9 +199,12 @@ const baseData = {
 
 export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: { name: string; email: string; avatar: string } }) {
     const [projects, setProjects] = React.useState<SidebarProject[]>([])
+    const [isLoading, setIsLoading] = React.useState(true)
+    const [mounted, setMounted] = React.useState(false)
     const supabase = createClient()
 
     React.useEffect(() => {
+        setMounted(true)
         async function fetchFacilities() {
             try {
                 const { data } = await supabase.from('facilities').select('service_id, service_name, service_icon')
@@ -222,10 +225,15 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
                 }
             } catch (error) {
                 console.error("Error fetching facilities:", error)
+            } finally {
+                setIsLoading(false)
             }
         }
-        fetchFacilities()
-    }, [supabase])
+        
+        if (mounted) {
+            fetchFacilities()
+        }
+    }, [supabase, mounted])
 
     const mergedProjects = React.useMemo(() => {
         const normalize = (value: unknown) =>
@@ -316,10 +324,41 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         return Array.from(map.values())
     }, [projects])
 
-    const sidebarData = { 
-        ...baseData, 
-        user: user || baseData.user,
-        projects: mergedProjects
+    const sidebarData = React.useMemo(() => { 
+        if (!mounted) {
+            // Return static data only during SSR
+            return { 
+                ...baseData, 
+                user: user || baseData.user,
+                projects: []
+            }
+        }
+        
+        return { 
+            ...baseData, 
+            user: user || baseData.user,
+            projects: mergedProjects
+        }
+    }, [mounted, user, mergedProjects])
+
+    // Show loading state or prevent hydration mismatch
+    if (!mounted || isLoading) {
+        return (
+            <Sidebar collapsible="icon" {...props}>
+                <SidebarHeader className="border-b">
+                    <TeamSwitcher teams={baseData.teams} />
+                </SidebarHeader>
+                <SidebarContent>
+                    <NavMain items={baseData.navMain} />
+                    <NavProjects projects={[]} />
+                </SidebarContent>
+                <SidebarFooter>
+                    <SidebarSeparator className="ml-0 mr-4" />
+                    <NavUser user={user || baseData.user} />
+                </SidebarFooter>
+                <SidebarRail />
+            </Sidebar>
+        )
     }
 
 	return (

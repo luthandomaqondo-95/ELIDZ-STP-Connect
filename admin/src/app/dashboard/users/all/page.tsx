@@ -3,20 +3,26 @@ import { InviteUserDialog } from "./invite-user-dialog"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Users } from "lucide-react"
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic'
+
 export default async function AllUsersPage({
     searchParams,
 }: {
-    searchParams?: { role?: string };
+    searchParams?: Promise<{ role?: string }>;
 }) {
-    const selectedRole = searchParams?.role
+    const resolvedSearchParams = await searchParams
+    const selectedRole = resolvedSearchParams?.role
 
-    // Fetch users via API route
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+    // Fetch users via API route with cache busting
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://elidzconnect.vercel.app'
     const apiUrl = new URL('/api/admin/users', baseUrl)
     
     if (selectedRole && selectedRole !== "All") {
         apiUrl.searchParams.set('role', selectedRole)
     }
+    // Add timestamp to bust any caching
+    apiUrl.searchParams.set('_t', Date.now().toString())
 
     let users = []
     try {

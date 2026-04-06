@@ -320,7 +320,10 @@ function TenantDetailScreen() {
 
         {/* Contact Button (if no email/phone) */}
           {!tenant?.contact_email && !tenant?.contact_phone && (
-            <Pressable className="flex-row justify-center items-center h-[52px] rounded-lg mb-5 bg-primary active:opacity-70">
+            <Pressable 
+              className="flex-row justify-center items-center h-[52px] rounded-lg mb-5 bg-primary active:opacity-70"
+              onPress={() => handleEmail('')}
+            >
               <Feather name="mail" size={20} color={colors.buttonText} />
               <Text className="text-base font-semibold text-primary-foreground ml-2.5">
                 Contact {name}

@@ -19,9 +19,31 @@ export function TeamSwitcher({
   }[]
 }) {
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const [mounted, setMounted] = React.useState(false)
 
-  if (!activeTeam) {
-    return null
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted || !activeTeam) {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton
+            size="lg"
+            className="cursor-default select-none"
+          >
+            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-stone-600 text-slate-100">
+              <div className="size-4" />
+            </div>
+            <div className="grid flex-1 text-left text-sm leading-tight">
+              <span className="truncate font-medium italic text-orange-100">Loading...</span>
+              <span className="truncate text-xs italic text-orange-100/85">Loading...</span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
   }
 
   return (

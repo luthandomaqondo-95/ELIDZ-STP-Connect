@@ -192,16 +192,32 @@ class NotificationService {
      * Delete a notification
      */
     async deleteNotification(notificationId: string, userId: string): Promise<void> {
-        const { error } = await supabase
+        // Check if user is authenticated
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            console.error('NotificationService.deleteNotification: No active session');
+            throw new Error('User must be authenticated to delete notifications');
+        }
+
+        console.log('NotificationService.deleteNotification: Attempting delete', { 
+            notificationId, 
+            userId,
+            sessionUserId: session.user?.id 
+        });
+
+        const { error, data } = await supabase
             .from('notifications')
             .delete()
             .eq('id', notificationId)
-            .eq('user_id', userId);
+            .eq('user_id', userId)
+            .select();
 
         if (error) {
             console.error('NotificationService.deleteNotification error:', error);
             throw error;
         }
+
+        console.log('NotificationService.deleteNotification: Success', { deleted: data });
     }
 
     /**

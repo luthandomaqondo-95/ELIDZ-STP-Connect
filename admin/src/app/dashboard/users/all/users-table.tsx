@@ -8,7 +8,7 @@ import { AnimatedTable } from "@/components/animated-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { MoreHorizontal, Search, Trash2, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { MoreHorizontal, Search, Trash2, Ban, UserCheck, ChevronLeft, ChevronRight } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +21,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { deleteUser, approveUser, updateUserRole } from "./actions"
+import { deleteUser, suspendUser, unsuspendUser, updateUserRole } from "./actions"
 import { ChevronDown } from "lucide-react"
 
 export interface User {
@@ -82,17 +82,58 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
             setIsPending(true)
             const result = await deleteUser(userId)
             setIsPending(false)
-            if (!result.success) {
+            if (result.success) {
+                // Show success message and refresh the page
+                window.location.reload()
+            } else {
                 alert("Failed to delete user: " + result.error)
             }
         }
     }
 
-    const handleApprove = async (userId: string) => {
-        setIsPending(true)
-        await approveUser(userId)
-        setIsPending(false)
-        // Ideally show a toast here
+    const handleSuspend = async (userId: string) => {
+        console.log("🔍 CLIENT DEBUG: Attempting to suspend user:", userId)
+        
+        if (confirm("Are you sure you want to suspend this user? They will not be able to access their account.")) {
+            console.log("✅ CLIENT INFO: User confirmed suspend action")
+            setIsPending(true)
+            
+            try {
+                const result = await suspendUser(userId)
+                console.log("🔍 CLIENT DEBUG: Suspend API result:", result)
+                
+                if (result.success) {
+                    console.log("✅ CLIENT SUCCESS: User suspended successfully, refreshing page")
+                    // Show success message and refresh the page
+                    window.location.reload()
+                } else {
+                    console.log("❌ CLIENT ERROR: Failed to suspend user:", result.error)
+                    alert("Failed to suspend user: " + result.error)
+                }
+            } catch (error) {
+                console.log("❌ CLIENT FATAL: Unexpected error during suspend:", error)
+                alert("An unexpected error occurred: " + (error instanceof Error ? error.message : "Unknown error"))
+            } finally {
+                setIsPending(false)
+                console.log("🔍 CLIENT DEBUG: Suspend action completed, loading state reset")
+            }
+        } else {
+            console.log("🔍 CLIENT INFO: User cancelled suspend action")
+        }
+    }
+
+    const handleUnsuspend = async (userId: string) => {
+        if (confirm("Are you sure you want to unsuspend this user? They will be able to access their account again.")) {
+            setIsPending(true)
+            const result = await unsuspendUser(userId)
+            setIsPending(false)
+            if (result.success) {
+                // Show success message and refresh the page
+                window.location.reload()
+            } else {
+                alert("Failed to unsuspend user: " + result.error)
+            }
+        }
     }
 
     const handleRoleChange = async (userId: string, newRole: string) => {
@@ -100,53 +141,45 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
             setIsPending(true)
             const result = await updateUserRole(userId, newRole)
             setIsPending(false)
-            if (!result.success) {
+            if (result.success) {
+                // Show success message and refresh the page
+                window.location.reload()
+            } else {
                 alert("Failed to update user role: " + result.error)
             }
         }
     }
 
     return (
-        <div className="space-y-4">
-            <div className="space-y-3">
-                <div className="relative w-full md:max-w-md">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            placeholder="Search users..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 rounded-3xl border-orange-200/60 bg-white/80 pl-10 shadow-sm dark:bg-slate-900/60 dark:border-orange-800/40"
-                        />
-                </div>
+        <div className="w-full space-y-4">
+            {/* Search and Filter Controls */}
+            <div className="flex flex-col gap-4">
+                {/* Search Input */}
                 <div className="relative w-full max-w-md">
-                    <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-orange-200/70 dark:border-orange-800/40" />
-                    </div>
-                    <div className="relative flex justify-start">
-                        <span className="rounded-full bg-background px-3 text-xs font-medium uppercase tracking-wide text-orange-600 dark:text-orange-300">
-                            Filters
-                        </span>
-                    </div>
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        placeholder="Search users..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-11 rounded-2xl border-orange-200/60 bg-white/80 pl-10 shadow-sm dark:bg-slate-900/60 dark:border-orange-800/40"
+                    />
                 </div>
+
+                {/* Role Filters */}
                 <div className="flex flex-wrap gap-2">
                     {ROLES.map((role) => (
                         <Button
                             key={role}
-                            variant="ghost"
+                            variant={selectedRole === role ? "default" : "outline"}
                             size="sm"
                             onClick={() => setSelectedRole(role)}
-                            className={`h-9 rounded-3xl px-4 border-0 shadow-none transition-all ${
+                            className={`h-9 rounded-full px-4 transition-all ${
                                 selectedRole === role
-                                    ? "bg-orange-500 text-white hover:bg-orange-500/90"
-                                    : ROLE_FILTER_COLORS[role]
+                                    ? "bg-orange-500 text-white hover:bg-orange-500/90 border-orange-500"
+                                    : "border-orange-200/60 hover:bg-orange-50 dark:border-orange-800/40 dark:hover:bg-orange-900/20"
                             }`}
                         >
-                            <span
-                                className={`mr-2 inline-block h-2 w-2 rounded-full ${
-                                    selectedRole === role ? "bg-emerald-400" : "bg-zinc-400"
-                                }`}
-                            />
-                            <span>{role}</span>
+                            {role}
                         </Button>
                     ))}
                 </div>
@@ -179,12 +212,23 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
                                     <TableCell>{user.role}</TableCell>
                                     <TableCell>
                             <Badge
-                                variant={user.status === "Active" ? "default" : user.status === "Pending" ? "secondary" : "destructive"}
-                                className={user.status === "Active" ? "bg-emerald-600 text-white hover:bg-emerald-600" : undefined}
+                                variant={
+                                    user.status === "approved" || user.status === "Active" ? "default" : 
+                                    user.status === "pending" || user.status === "Pending" ? "secondary" : 
+                                    user.status === "suspended" || user.status === "Suspended" ? "destructive" : 
+                                    "destructive"
+                                }
+                                className={
+                                    user.status === "approved" || user.status === "Active" ? "bg-emerald-600 text-white hover:bg-emerald-600" : 
+                                    user.status === "suspended" || user.status === "Suspended" ? "bg-orange-600 text-white hover:bg-orange-600" : 
+                                    undefined
+                                }
                             >
-                                            {user.status}
-                                        </Badge>
-                                    </TableCell>
+                                {user.status === "approved" || user.status === "Active" ? "Active" : 
+                                 user.status === "suspended" || user.status === "Suspended" ? "Suspended" : 
+                                 user.status}
+                            </Badge>
+                        </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end gap-2">
                                             <DropdownMenu>
@@ -210,22 +254,31 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
                                                                 <DropdownMenuItem
                                                                     key={role}
                                                                     onClick={() => handleRoleChange(user.id, role)}
-                                                                    disabled={role === user.role}
+                                                                    disabled={role === user.role || isPending}
                                                                 >
                                                                     {role}
                                                                     {role === user.role && " (current)"}
+                                                                    {isPending && role !== user.role && " (updating...)"}
                                                                 </DropdownMenuItem>
                                                             ))}
                                                         </DropdownMenuSubContent>
                                                     </DropdownMenuSub>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => handleApprove(user.id)}>
-                                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
-                                                        Approve Account
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600 focus:text-red-600">
+                                                    {user.status === 'suspended' || user.status === 'Suspended' ? (
+                                                        <DropdownMenuItem onClick={() => handleUnsuspend(user.id)} className="text-green-600 focus:text-green-600" disabled={isPending}>
+                                                            <UserCheck className="mr-2 h-4 w-4" />
+                                                            {isPending ? "Unsuspending..." : "Unsuspend Account"}
+                                                        </DropdownMenuItem>
+                                                    ) : (
+                                                        <DropdownMenuItem onClick={() => handleSuspend(user.id)} className="text-orange-600 focus:text-orange-600" disabled={isPending}>
+                                                            <Ban className="mr-2 h-4 w-4" />
+                                                            {isPending ? "Suspending..." : "Suspend Account"}
+                                                        </DropdownMenuItem>
+                                                    )}
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600 focus:text-red-600" disabled={isPending}>
                                                         <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete Account
+                                                        {isPending ? "Deleting..." : "Delete Account"}
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
