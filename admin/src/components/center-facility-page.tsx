@@ -321,7 +321,7 @@ export default function CenterFacilityPage({
 
       {/* Panoramic View Section */}
       {(activeScene || videos.length > 0) && (
-        <Card className="overflow-hidden border-zinc-800">
+        <Card className="overflow-hidden rounded-3xl border-0 bg-black shadow-[0_10px_30px_rgba(2,6,23,0.12)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
           <div className="relative aspect-video w-full bg-black">
             {/* Check if we have videos for this facility */}
             {videos.length > 0 ? (

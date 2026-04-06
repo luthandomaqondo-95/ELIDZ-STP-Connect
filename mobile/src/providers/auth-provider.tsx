@@ -35,6 +35,19 @@ function getEmailConfirmationRedirectUrl(): string {
 		: 'elidzstp://email-confirmed';
 }
 
+const ACCOUNT_SUSPENDED_MESSAGE =
+	'Your account has been suspended. If you believe this is a mistake, please contact support.';
+
+function isAccountSuspended(row: {
+	verification_status?: string | null;
+	status?: string | null;
+} | null): boolean {
+	if (!row) return false;
+	const v = String(row.verification_status ?? '').toLowerCase();
+	const s = String(row.status ?? '').toLowerCase();
+	return v === 'suspended' || s === 'suspended';
+}
+
 function isInvalidRefreshTokenError(error: unknown): boolean {
 	const message =
 		typeof error === 'object' && error !== null && 'message' in error
@@ -73,6 +86,11 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			}
 
 			if (data) {
+				if (isAccountSuspended(data as Profile)) {
+					await supabase.auth.signOut();
+					setProfile(null);
+					return;
+				}
 				setProfile(data as Profile);
 			}
 		} catch (error) {
@@ -110,6 +128,15 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		console.log('AuthProvider.login: Login successful, user:', data?.user?.email);
 		
 		if (data?.user) {
+			const { data: statusRow } = await supabase
+				.from('profiles')
+				.select('verification_status')
+				.eq('id', data.user.id)
+				.maybeSingle();
+			if (isAccountSuspended(statusRow)) {
+				await supabase.auth.signOut();
+				throw new Error(ACCOUNT_SUSPENDED_MESSAGE);
+			}
 			await loadProfile(data.user.id);
 		}
 	}
@@ -332,6 +359,15 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				}
 
 				if (data?.session?.user) {
+					const { data: statusRow } = await supabase
+						.from('profiles')
+						.select('verification_status')
+						.eq('id', data.session.user.id)
+						.maybeSingle();
+					if (isAccountSuspended(statusRow)) {
+						await supabase.auth.signOut();
+						throw new Error(ACCOUNT_SUSPENDED_MESSAGE);
+					}
 					await loadProfile(data.session.user.id);
 				}
 				return data;
@@ -405,6 +441,15 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				}
 
 				if (data?.session?.user) {
+					const { data: statusRow } = await supabase
+						.from('profiles')
+						.select('verification_status')
+						.eq('id', data.session.user.id)
+						.maybeSingle();
+					if (isAccountSuspended(statusRow)) {
+						await supabase.auth.signOut();
+						throw new Error(ACCOUNT_SUSPENDED_MESSAGE);
+					}
 					await loadProfile(data.session.user.id);
 				}
 				return data;
@@ -462,10 +507,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 		const allowedRoles: Array<Profile['role']> = [
 			'Entrepreneur',
-			'Researcher',
 			'SMME',
 			'Student',
-			'Investor',
 			'Tenant',
 		];
 
@@ -563,7 +606,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					const name = userMetadata.name || userMetadata.full_name || email.split('@')[0] || 'User';
 
 					// Ensure role is one of the allowed values
-					const allowedRoles = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'];
+					const allowedRoles = ['Entrepreneur', 'SMME', 'Student', 'Tenant'];
 					const defaultRole = 'Entrepreneur';
 					const userRole = userMetadata.role || defaultRole;
 					const validRole = allowedRoles.includes(userRole) ? userRole : defaultRole;

@@ -86,13 +86,13 @@ function PublishedItemsListCard<T>({
   const visibleItems = filteredItems.slice(startIndex, startIndex + itemsPerPage)
 
   return (
-    <Card className="rounded-3xl border border-cyan-500/20 bg-[#040c20] text-slate-100 shadow-[0_20px_45px_rgba(2,10,30,0.45)]">
+    <Card className="rounded-3xl border-0 bg-white/90 text-slate-900 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:text-slate-100 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
       <CardHeader className="space-y-4">
-        <CardTitle className="text-lg text-slate-100">{title}</CardTitle>
-        <p className="text-sm text-slate-300">{description}</p>
+        <CardTitle className="text-lg text-slate-900 dark:text-slate-100">{title}</CardTitle>
+        <p className="text-sm text-muted-foreground">{description}</p>
 
         <div className="relative">
-          <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
             value={query}
@@ -101,20 +101,20 @@ function PublishedItemsListCard<T>({
               setCurrentPage(1)
             }}
             placeholder={filterPlaceholder}
-            className="h-12 w-full rounded-full border border-cyan-500/40 bg-[#07152f] pl-11 pr-4 text-sm text-slate-100 outline-none transition focus:border-cyan-400/70"
+            className="h-11 w-full rounded-2xl border border-orange-200/60 bg-white/80 pl-10 pr-4 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-orange-500/25 dark:border-orange-800/40 dark:bg-slate-900/60 dark:text-slate-100"
           />
         </div>
       </CardHeader>
 
       <CardContent className="space-y-4">
-        <div className="flex items-center justify-between text-sm text-slate-300">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
           <p>
             {filteredItems.length} result{filteredItems.length === 1 ? "" : "s"}
           </p>
         </div>
 
         {visibleItems.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-700 p-6 text-sm text-slate-300">
+          <div className="rounded-2xl border border-dashed border-orange-200/70 bg-orange-50/40 p-6 text-sm text-muted-foreground dark:border-orange-800/40 dark:bg-slate-800/40">
             {emptyText}
           </div>
         ) : (
@@ -126,26 +126,26 @@ function PublishedItemsListCard<T>({
             <Button
               type="button"
               size="sm"
-              variant="ghost"
+              variant="outline"
               disabled={safePage === 1}
               onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              className="rounded-full border border-cyan-500/20 bg-[#0a1a37] px-4 text-slate-200 hover:bg-[#10264d] disabled:opacity-45"
+              className="rounded-3xl border-orange-200/60 px-4 dark:border-orange-800/40"
             >
               <ChevronLeft className="mr-1 h-4 w-4" />
               Previous
             </Button>
 
-            <p className="text-sm text-slate-300">
+            <p className="text-sm text-muted-foreground">
               Page {safePage} of {totalPages}
             </p>
 
             <Button
               type="button"
               size="sm"
-              variant="ghost"
+              variant="outline"
               disabled={safePage === totalPages}
               onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-              className="rounded-full border border-cyan-500/20 bg-[#0a1a37] px-4 text-slate-200 hover:bg-[#10264d] disabled:opacity-45"
+              className="rounded-3xl border-orange-200/60 px-4 dark:border-orange-800/40"
             >
               Next
               <ChevronRight className="ml-1 h-4 w-4" />
@@ -318,7 +318,6 @@ export function NewsPublisher() {
             >
               <SelectItem value="all">All Users</SelectItem>
               <SelectItem value="tenants">Tenants</SelectItem>
-              <SelectItem value="investors">Investors</SelectItem>
               <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
               <SelectItem value="students">Students</SelectItem>
               <SelectItem value="smmes">SMMES</SelectItem>
@@ -674,7 +673,6 @@ export function EventPublisher() {
             >
               <SelectItem value="all">All Users</SelectItem>
               <SelectItem value="tenants">Tenants</SelectItem>
-              <SelectItem value="investors">Investors</SelectItem>
               <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
               <SelectItem value="students">Students</SelectItem>
               <SelectItem value="smmes">SMMES</SelectItem>
@@ -831,25 +829,25 @@ export function PublishedNewsList({ items }: { items: PublishedNewsItem[] }) {
         return (
           <article
             key={item.id}
-            className="group flex h-full flex-col rounded-3xl border border-cyan-500/15 bg-[#06122a] p-5 shadow-[0_12px_30px_rgba(1,8,22,0.45)]"
+            className="group flex h-full flex-col overflow-hidden rounded-3xl border-0 bg-white/90 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(249,115,22,0.22)] dark:bg-slate-900/75"
           >
             <div className="mb-2 flex items-start justify-between gap-3">
-              <h3 className="line-clamp-3 text-xl font-semibold leading-tight text-slate-100">
+              <h3 className="line-clamp-3 text-xl font-semibold leading-tight text-slate-900 dark:text-slate-100">
                 {item.title || "Untitled article"}
               </h3>
-              <Badge className="shrink-0 rounded-full bg-emerald-500/25 px-3 py-1 text-emerald-200 hover:bg-emerald-500/25">
+              <Badge className="shrink-0 rounded-full bg-emerald-600 px-3 py-1 text-white hover:bg-emerald-600">
                 Published
               </Badge>
             </div>
 
-            {authorName ? <p className="mb-3 text-sm text-slate-300">{authorName}</p> : null}
+            {authorName ? <p className="mb-3 text-sm text-muted-foreground">{authorName}</p> : null}
 
-            <p className="line-clamp-4 text-base leading-relaxed text-slate-200/95">
+            <p className="line-clamp-4 text-base leading-relaxed text-slate-600 dark:text-slate-300">
               {item.content || "No content available."}
             </p>
 
             <div className="mt-auto pt-4">
-              <p className="inline-flex items-center gap-2 text-sm text-slate-400">
+              <p className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                 <Clock3 className="h-4 w-4" />
                 {toDisplayDate(item.published_at)}
               </p>
@@ -862,7 +860,7 @@ export function PublishedNewsList({ items }: { items: PublishedNewsItem[] }) {
                   disabled={deletingId === item.id}
                   onClick={() => handleDelete(item.id)}
                   aria-label="Delete news item"
-                  className="h-8 w-8 rounded-full text-slate-400/35 transition hover:bg-red-500/10 hover:text-red-400 group-hover:text-slate-300/80"
+                  className="h-8 w-8 rounded-full text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600"
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>
@@ -913,10 +911,10 @@ export function PublishedEventsList({ items }: { items: PublishedEventItem[] }) 
       renderItem={(item) => (
         <article
           key={item.id}
-          className="group flex h-full flex-col rounded-3xl border border-cyan-500/15 bg-[#06122a] p-5 shadow-[0_12px_30px_rgba(1,8,22,0.45)]"
+          className="group flex h-full flex-col overflow-hidden rounded-3xl border-0 bg-white/90 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(249,115,22,0.22)] dark:bg-slate-900/75"
         >
           <div className="mb-3 flex items-start justify-between gap-3">
-            <h3 className="line-clamp-2 text-lg font-semibold leading-tight text-slate-100">
+            <h3 className="line-clamp-2 text-lg font-semibold leading-tight text-slate-900 dark:text-slate-100">
               {item.title || "Untitled event"}
             </h3>
             <Button
@@ -926,13 +924,13 @@ export function PublishedEventsList({ items }: { items: PublishedEventItem[] }) 
               disabled={deletingId === item.id}
               onClick={() => handleDelete(item.id)}
               aria-label="Delete event"
-              className="h-8 w-8 rounded-full text-slate-400/35 transition hover:bg-red-500/10 hover:text-red-400 group-hover:text-slate-300/80"
+              className="h-8 w-8 shrink-0 rounded-full text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600"
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           </div>
 
-          <div className="space-y-2 text-sm text-slate-300">
+          <div className="space-y-2 text-sm text-muted-foreground">
             <p className="inline-flex items-center gap-2">
               <Clock3 className="h-4 w-4" />
               {toEventDate(item.date)}
@@ -946,28 +944,28 @@ export function PublishedEventsList({ items }: { items: PublishedEventItem[] }) 
           </div>
 
           {item.description ? (
-            <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-200/95">
+            <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               {item.description}
             </p>
           ) : null}
 
-          <div className="mt-5 rounded-2xl border border-cyan-500/15 bg-[#071936] p-3">
-            <p className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-cyan-200">
+          <div className="mt-5 rounded-2xl border border-orange-200/50 bg-orange-50/50 p-3 dark:border-orange-800/35 dark:bg-slate-800/50">
+            <p className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-orange-800 dark:text-orange-200">
               <Users className="h-4 w-4" />
               RSVP&apos;d ({item.rsvps.length})
             </p>
 
             {item.rsvps.length === 0 ? (
-              <p className="text-xs text-slate-400">No RSVPs yet.</p>
+              <p className="text-xs text-muted-foreground">No RSVPs yet.</p>
             ) : (
               <div className="space-y-2">
                 {item.rsvps.map((person) => (
                   <div
                     key={`${item.id}-${person.id}`}
-                    className="rounded-xl border border-cyan-500/10 bg-[#081f3f] px-3 py-2"
+                    className="rounded-xl border border-orange-100/90 bg-white/90 px-3 py-2 dark:border-slate-600 dark:bg-slate-900/60"
                   >
-                    <p className="text-sm text-slate-100">{person.name || "Unnamed attendee"}</p>
-                    <p className="text-xs text-slate-300">{person.email || "No email"}</p>
+                    <p className="text-sm text-slate-900 dark:text-slate-100">{person.name || "Unnamed attendee"}</p>
+                    <p className="text-xs text-muted-foreground">{person.email || "No email"}</p>
                   </div>
                 ))}
               </div>

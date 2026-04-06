@@ -158,7 +158,7 @@ export default function SystemUsagePage() {
                         <CardTitle className="text-sm font-medium">Total Users</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-emerald-600">{usageData.totalUsers.toLocaleString()}</div>
+                        <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{usageData.totalUsers.toLocaleString()}</div>
                         <p className="text-xs text-muted-foreground">+{usageData.newUsersThisMonth} this month</p>
                     </CardContent>
                 </Card>
@@ -167,7 +167,7 @@ export default function SystemUsagePage() {
                         <CardTitle className="text-sm font-medium">Total Content</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-orange-600">{usageData.systemMetrics.totalContent}</div>
+                        <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{usageData.systemMetrics.totalContent}</div>
                         <p className="text-xs text-muted-foreground">Facilities, services & products</p>
                     </CardContent>
                 </Card>
@@ -176,7 +176,7 @@ export default function SystemUsagePage() {
                         <CardTitle className="text-sm font-medium">Storage Used</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-blue-600">{usageData.systemMetrics.estimatedStorage}</div>
+                        <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{usageData.systemMetrics.estimatedStorage}</div>
                         <p className="text-xs text-muted-foreground">Estimated content storage</p>
                     </CardContent>
                 </Card>
@@ -185,7 +185,7 @@ export default function SystemUsagePage() {
                         <CardTitle className="text-sm font-medium">Users per Facility</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-purple-600">{usageData.systemMetrics.avgUsersPerFacility}</div>
+                        <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{usageData.systemMetrics.avgUsersPerFacility}</div>
                         <p className="text-xs text-muted-foreground">Average engagement ratio</p>
                     </CardContent>
                 </Card>

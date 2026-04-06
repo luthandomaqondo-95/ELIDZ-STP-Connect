@@ -153,8 +153,7 @@ export default function SendAlertsPage() {
                             >
                                 <SelectItem value="all">All Users</SelectItem>
                                 <SelectItem value="tenants">Tenants</SelectItem>
-                                <SelectItem value="investors">Investors</SelectItem>
-                                <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
+                                                  <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
                                 <SelectItem value="students">Students</SelectItem>
                                 <SelectItem value="smmes">SMMES</SelectItem>
                                 <SelectItem value="staff">Staff Only</SelectItem>

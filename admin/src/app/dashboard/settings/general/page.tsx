@@ -19,7 +19,7 @@ export default function GeneralSettingsPage() {
         <div className="flex flex-1 flex-col gap-4 pt-0">
             <DashboardPageHeader title="General Settings" backHref="/dashboard/settings" />
             
-            <Card>
+            <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <CardHeader>
                     <CardTitle>Platform Information</CardTitle>
                     <CardDescription>
@@ -29,19 +29,19 @@ export default function GeneralSettingsPage() {
                 <CardContent className="space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="platform-name">Platform Name</Label>
-                        <Input id="platform-name" defaultValue="ELIDZ STP Connect" />
+                        <Input id="platform-name" defaultValue="ELIDZ STP Connect" className="h-11 rounded-2xl border-orange-200/60 bg-white/80 dark:border-orange-800/40 dark:bg-slate-900/60" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="support-email">Support Email</Label>
-                        <Input id="support-email" defaultValue="support@elidz.co.za" />
+                        <Input id="support-email" defaultValue="support@elidz.co.za" className="h-11 rounded-2xl border-orange-200/60 bg-white/80 dark:border-orange-800/40 dark:bg-slate-900/60" />
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button>Save Changes</Button>
+                    <Button className="rounded-3xl">Save Changes</Button>
                 </CardFooter>
             </Card>
 
-            <Card>
+            <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <CardHeader>
                     <CardTitle>Appearance</CardTitle>
                     <CardDescription>

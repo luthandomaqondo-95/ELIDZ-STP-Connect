@@ -8,13 +8,13 @@ import { getPublishedEventsForAdmin } from "@/lib/events"
 
 function PublishedEventsListFallback() {
   return (
-    <div className="rounded-3xl border border-cyan-500/20 bg-[#040c20] p-6 shadow-[0_20px_45px_rgba(2,10,30,0.45)]">
-      <Skeleton className="mb-2 h-6 w-56 rounded-lg bg-slate-700/80" />
-      <Skeleton className="mb-6 h-4 max-w-xl rounded-lg bg-slate-700/60" />
-      <Skeleton className="mb-3 h-12 w-full rounded-full bg-slate-700/70" />
+    <div className="rounded-3xl border-0 bg-white/90 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+      <Skeleton className="mb-2 h-6 w-56 rounded-lg bg-slate-200 dark:bg-slate-700" />
+      <Skeleton className="mb-6 h-4 max-w-xl rounded-lg bg-slate-200 dark:bg-slate-700" />
+      <Skeleton className="mb-3 h-11 w-full rounded-2xl bg-slate-200 dark:bg-slate-700" />
       <div className="grid gap-4 md:grid-cols-2">
-        <Skeleton className="h-56 rounded-3xl bg-slate-700/50" />
-        <Skeleton className="h-56 rounded-3xl bg-slate-700/50" />
+        <Skeleton className="h-56 rounded-3xl bg-slate-200 dark:bg-slate-700" />
+        <Skeleton className="h-56 rounded-3xl bg-slate-200 dark:bg-slate-700" />
       </div>
     </div>
   )

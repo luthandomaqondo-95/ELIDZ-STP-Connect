@@ -75,7 +75,7 @@ export default async function UserDemographicsPage() {
     return (
         <div className="flex flex-1 flex-col gap-4 pt-0">
             <DashboardPageHeader title="User Demographics" backHref="/dashboard/reports" />
-            <p className="max-w-3xl text-sm text-muted-foreground">
+            <p className="max-w-3xl text-sm italic text-muted-foreground">
                 Analyze user growth, role distribution, and location trends across ELIDZ to understand where engagement is strongest.
             </p>
             <UserDemographicsCharts 

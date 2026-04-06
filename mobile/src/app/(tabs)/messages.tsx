@@ -34,7 +34,7 @@ function ContactAvatar({ avatar, size = 48 }: { avatar?: string; size?: number }
 }
 const isTablet = width >= 768;
 
-type UserRole = 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
+type UserRole = 'Entrepreneur' | 'SMME' | 'Student' | 'Tenant';
 
 type TabType = 'messages' | 'requests' | 'discover';
 
@@ -145,10 +145,8 @@ function MessagesScreen() {
     function getRoleColor(role: UserRole): string {
         const roleColors: Record<UserRole, string> = {
             Entrepreneur: colors.constructive,
-            Researcher: colors.primary,
             SMME: colors.accent,
             Student: colors.purple,
-            Investor: colors.pink,
             Tenant: colors.teal,
         };
         return roleColors[role] || colors.primary;
@@ -157,10 +155,8 @@ function MessagesScreen() {
     function getRoleIcon(role: UserRole): string {
         const roleIcons: Record<UserRole, string> = {
             Entrepreneur: 'zap',
-            Researcher: 'search',
             SMME: 'briefcase',
             Student: 'book-open',
-            Investor: 'trending-up',
             Tenant: 'home',
         };
         return roleIcons[role] || 'user';

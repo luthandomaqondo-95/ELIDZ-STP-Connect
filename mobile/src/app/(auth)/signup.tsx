@@ -18,7 +18,7 @@ import { fetchZaPostalCodesForCity, fetchZaCitiesByProvince, fetchZaProvinces } 
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import { authBack } from '@/utils/navigation';
 
-const ROLES = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'] as const;
+const ROLES = ['Entrepreneur', 'SMME', 'Student', 'Tenant'] as const;
 
 export default function SignupScreen() {
 	const { signup, signInWithGoogle, signInWithApple } = useAuthContext();
@@ -33,7 +33,7 @@ export default function SignupScreen() {
 	const [postalCode, setPostalCode] = useState('');
 	const [password, setPassword] = useState('');
 	const [confirmPassword, setConfirmPassword] = useState('');
-	const [role, setRole] = useState<'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant'>('Entrepreneur');
+	const [role, setRole] = useState<'Entrepreneur' | 'SMME' | 'Student' | 'Tenant'>('Entrepreneur');
 	const isSubmittingRef = useRef(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
 	const [cooldownSeconds, setCooldownSeconds] = useState(0);

@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { isProfileSuspended } from "@/lib/account-status";
 import { cn } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -16,8 +17,34 @@ import { FloatingLabelInput } from "@/components/floating-input";
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
 import { AnimatedSeparator } from "@/components/animated-separator";
 
+function isLikelyNetworkFailure(err: unknown): boolean {
+	const msg = err instanceof Error ? err.message : String(err)
+	const m = msg.toLowerCase()
+	return (
+		m.includes("failed to fetch") ||
+		m.includes("networkerror") ||
+		m.includes("load failed") ||
+		m.includes("connection closed") ||
+		m.includes("err_connection") ||
+		m.includes("fetch failed")
+	)
+}
+
+function loginErrorMessage(err: unknown): string {
+	if (isLikelyNetworkFailure(err)) {
+		return (
+			"Could not reach Supabase (connection was closed or blocked). Check your internet, VPN, firewall, or antivirus. " +
+			"Try another network or browser, and confirm https://YOUR-PROJECT.supabase.co loads. This is not a wrong password."
+		)
+	}
+	return "An error occurred. Please try again."
+}
+
+const SUSPENDED_MSG =
+	"Your account has been suspended. If you believe this is a mistake, please contact support.";
+
 export function LoginForm() {
-	const router = useRouter()
+	const searchParams = useSearchParams()
 	const [showPassword, setShowPassword] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
 	const [isSuccess, setIsSuccess] = useState(false)
@@ -26,6 +53,16 @@ export function LoginForm() {
 		email: "",
 		password: "",
 	})
+
+	useEffect(() => {
+		if (searchParams.get("error") === "suspended") {
+			setError(SUSPENDED_MSG)
+			void (async () => {
+				const supabase = createClient()
+				await supabase.auth.signOut()
+			})()
+		}
+	}, [searchParams])
 
 	const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault()
@@ -36,26 +73,77 @@ export function LoginForm() {
 		try {
 			const supabase = createClient()
 			const trimmedEmail = formData.email.trim().toLowerCase()
-			const { error } = await supabase.auth.signInWithPassword({
-				email: trimmedEmail,
-				password: formData.password,
-			})
+			let signInResult
+			try {
+				signInResult = await supabase.auth.signInWithPassword({
+					email: trimmedEmail,
+					password: formData.password,
+				})
+			} catch (fetchErr) {
+				console.error("Login fetch error:", fetchErr)
+				setError(loginErrorMessage(fetchErr))
+				setIsLoading(false)
+				return
+			}
 
+			const { error } = signInResult
 			if (error) {
 				setError(error.message)
 				setIsLoading(false)
 				return
 			}
 
+			let session = null
+			try {
+				const {
+					data: { session: s },
+				} = await supabase.auth.getSession()
+				session = s
+			} catch (sessionErr) {
+				console.error("getSession after login:", sessionErr)
+				setError(loginErrorMessage(sessionErr))
+				setIsLoading(false)
+				return
+			}
+			if (!session) {
+				setError("Session was not saved. Check browser cookies and try again.")
+				setIsLoading(false)
+				return
+			}
+
+			const { data: profile, error: profileError } = await supabase
+				.from("profiles")
+				.select("verification_status")
+				.eq("id", session.user.id)
+				.maybeSingle()
+
+			if (profileError) {
+				console.error("Login profile check:", profileError)
+				await supabase.auth.signOut()
+				setError("Could not verify your account. Please try again.")
+				setIsLoading(false)
+				return
+			}
+
+			if (isProfileSuspended(profile)) {
+				await supabase.auth.signOut()
+				setError(SUSPENDED_MSG)
+				setIsLoading(false)
+				return
+			}
+
 			setIsSuccess(true)
-			setTimeout(() => {
-				router.push("/dashboard")
-				router.refresh()
-			}, 350)
+			// Full page load so middleware always receives the auth cookies. Client-side
+			// router.push can race cookie sync and leave you stuck on /auth/login with "Signed in".
+			window.location.assign("/dashboard")
 		} catch (err) {
 			console.error("Login error:", err)
-			setError("An error occurred. Please try again.")
-		} finally {
+			const msg = err instanceof Error ? err.message : String(err)
+			if (/suspended/i.test(msg)) {
+				setError(msg)
+			} else {
+				setError(loginErrorMessage(err))
+			}
 			setIsLoading(false)
 		}
 	}
@@ -81,7 +169,7 @@ export function LoginForm() {
 					</CardDescription>
 				</CardHeader>
 				<CardContent className="pt-0">
-					<form onSubmit={handleSubmit}>
+					<form onSubmit={handleSubmit} suppressHydrationWarning>
 						{error && (
 							<div className="mb-3 rounded-2xl border border-red-500/20 bg-red-50 p-3 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
 								{error}

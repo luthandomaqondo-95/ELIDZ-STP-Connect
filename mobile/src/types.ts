@@ -3,14 +3,16 @@ export interface Profile {
   id: string;
   name: string;
   email: string;
-  role: 'Entrepreneur' | 'Researcher' | 'SMME' | 'Student' | 'Investor' | 'Tenant';
+  role: 'Entrepreneur' | 'SMME' | 'Student' | 'Tenant';
   address?: string;
   id_number?: string | null;
   organization?: string;
   bio?: string;
   avatar?: string;
   isPremium?: boolean;
-  verification_status?: 'verified' | 'pending' | 'rejected' | 'unverified';
+  verification_status?: 'verified' | 'pending' | 'rejected' | 'unverified' | 'suspended';
+  /** Some deployments sync admin actions via `status` instead of or in addition to `verification_status`. */
+  status?: string;
   created_at: string;
 }
 

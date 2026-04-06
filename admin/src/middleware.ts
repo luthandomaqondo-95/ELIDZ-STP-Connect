@@ -1,5 +1,6 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from "@supabase/ssr"
+import { NextResponse, type NextRequest } from "next/server"
+import { isProfileSuspended } from "@/lib/account-status"
 
 export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
@@ -31,34 +32,71 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Mis-typed or legacy URL — avoid noisy 404s in logs
+  if (request.nextUrl.pathname === "/auth/blue") {
+    return NextResponse.redirect(new URL("/auth/login", request.url))
+  }
 
-  // Protect dashboard routes
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
+  if (!request.nextUrl.pathname.startsWith("/dashboard")) {
+    return response
+  }
+
+  let user = null
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    if (!error) {
+      user = data.user
     }
+  } catch (e) {
+    console.error("[middleware] getUser failed (network?):", e)
+  }
 
-    // Check user role in profiles table
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
+  if (!user) {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      user = session?.user ?? null
+    } catch (e) {
+      console.error("[middleware] getSession fallback failed:", e)
+    }
+  }
+
+  if (!user) {
+    return NextResponse.redirect(new URL("/auth/login", request.url))
+  }
+
+  try {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("role, verification_status")
+      .eq("id", user.id)
       .single()
 
-    // If no profile or role is not Admin or Super Admin
-    if (!profile || (profile.role !== 'Admin' && profile.role !== 'Super Admin')) {
-      return NextResponse.redirect(new URL('/auth/unauthorized', request.url))
+    if (error) {
+      console.error("[middleware] profile fetch:", error.message)
+      return NextResponse.redirect(new URL("/auth/login", request.url))
     }
+
+    if (profile && isProfileSuspended(profile)) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = "/auth/login"
+      url.searchParams.set("error", "suspended")
+      return NextResponse.redirect(url)
+    }
+
+    if (!profile || (profile.role !== "Admin" && profile.role !== "Super Admin")) {
+      return NextResponse.redirect(new URL("/auth/unauthorized", request.url))
+    }
+  } catch (e) {
+    console.error("[middleware] profile error:", e)
+    return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
   return response
 }
 
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ["/dashboard/:path*", "/auth/blue"],
 }

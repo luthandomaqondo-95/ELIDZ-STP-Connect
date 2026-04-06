@@ -59,7 +59,7 @@ export function OpportunitiesList({ opportunities }: { opportunities: Opportunit
             placeholder="Search opportunities..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="h-11 rounded-3xl border-orange-200/60 bg-white/80 pl-10 shadow-sm dark:bg-slate-900/60 dark:border-orange-800/40"
+            className="h-11 rounded-2xl border-orange-200/60 bg-white/80 pl-10 shadow-sm dark:bg-slate-900/60 dark:border-orange-800/40"
           />
         </div>
         <div className="relative w-full max-w-md">

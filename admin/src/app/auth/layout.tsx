@@ -58,6 +58,7 @@ export default function AuthLayout({
                                 width={190}
                                 height={56}
                                 className="h-14 w-auto object-contain"
+                                style={{ width: "auto", height: "auto" }}
                         priority
                     />
                 </div>

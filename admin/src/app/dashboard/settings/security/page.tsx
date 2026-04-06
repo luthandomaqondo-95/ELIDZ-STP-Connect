@@ -19,7 +19,7 @@ export default function SecuritySettingsPage() {
         <div className="flex flex-1 flex-col gap-4 pt-0">
             <DashboardPageHeader title="Security Settings" backHref="/dashboard/settings" />
             
-            <Card>
+            <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
                 <CardHeader>
                     <CardTitle>Authentication</CardTitle>
                     <CardDescription>
@@ -36,11 +36,11 @@ export default function SecuritySettingsPage() {
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="password-expiry">Password Expiry (Days)</Label>
-                        <Input id="password-expiry" type="number" defaultValue="90" />
+                        <Input id="password-expiry" type="number" defaultValue="90" className="h-11 max-w-xs rounded-2xl border-orange-200/60 bg-white/80 dark:border-orange-800/40 dark:bg-slate-900/60" />
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button>Save Changes</Button>
+                    <Button className="rounded-3xl">Save Changes</Button>
                 </CardFooter>
             </Card>
         </div>

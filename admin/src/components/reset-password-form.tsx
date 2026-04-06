@@ -9,7 +9,6 @@ import { ShieldCheck, ArrowLeft, CheckCircle } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
-const MOBILE_APP_LOGIN_URL = "elidzstp://";
 
 function getParamsFromUrl(): {
     access_token?: string;
@@ -68,8 +67,9 @@ export function ResetPasswordForm() {
                 }
             }
 
-            if (token_hash && type === "recovery") {
-                const { error: err } = await client.auth.verifyOtp({ type: "recovery", token_hash });
+            if (token_hash && (type === "recovery" || type === "invite")) {
+                const otpType = type === "invite" ? "invite" : "recovery";
+                const { error: err } = await client.auth.verifyOtp({ type: otpType, token_hash });
                 if (!err) {
                     window.history.replaceState(null, "", window.location.pathname);
                     const { data: { session: verifiedSession } } = await client.auth.getSession();
@@ -93,7 +93,7 @@ export function ResetPasswordForm() {
     useEffect(() => {
         if (!isSuccess || typeof window === "undefined") return;
         const timeoutId = window.setTimeout(() => {
-            window.location.href = MOBILE_APP_LOGIN_URL;
+            window.location.href = "/auth/login";
         }, 1200);
         return () => window.clearTimeout(timeoutId);
     }, [isSuccess]);
@@ -134,15 +134,15 @@ export function ResetPasswordForm() {
                 <div>
                     <h1 className="text-2xl font-bold">Password updated</h1>
                     <p className="text-zinc-400 mt-2">
-                        Your password was reset successfully. Opening the mobile app for sign in...
+                        Your password was set successfully. Redirecting to sign in…
                     </p>
                 </div>
-                <a
-                    href={MOBILE_APP_LOGIN_URL}
+                <Link
+                    href="/auth/login"
                     className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
                 >
-                    Open Mobile App
-                </a>
+                    Go to sign in
+                </Link>
             </div>
         );
     }
@@ -161,6 +161,21 @@ export function ResetPasswordForm() {
                 <p className="text-zinc-400">
                     This reset link is invalid or has expired. Request a new link to continue.
                 </p>
+                <div className="rounded-2xl border border-amber-500/30 bg-amber-950/40 p-4 text-left text-sm text-amber-100/90">
+                    <p className="font-medium text-amber-100">Invite opened on supabase.co?</p>
+                    <p className="mt-2 text-amber-100/80">
+                        If the address bar shows{" "}
+                        <code className="rounded bg-black/30 px-1 text-xs">*.supabase.co</code> and a JSON error,
+                        Supabase could not redirect to this app (wrong Site URL or redirect allow list).
+                        Copy everything from <code className="rounded bg-black/30 px-1 text-xs">#</code> to the end of the URL,
+                        then open{" "}
+                        <code className="break-all rounded bg-black/30 px-1 text-xs">
+                            {typeof window !== "undefined" ? window.location.origin : ""}/auth/reset-password
+                        </code>
+                        {" "}and paste that fragment at the end, or ask an admin to re-send the invite after fixing{" "}
+                        <strong>Authentication → URL Configuration</strong> in Supabase (Site URL = this app, Redirect URLs includes this page).
+                    </p>
+                </div>
                 <Link
                     href="/auth/forgot-password"
                     className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"

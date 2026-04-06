@@ -143,10 +143,6 @@ const baseData = {
 					title: "Manage Opportunities",
 					url: "/dashboard/opportunities",
 				},
-				{
-					title: "Funding Info",
-					url: "/dashboard/opportunities/funding",
-				},
 			],
 		},
 		{

@@ -40,7 +40,7 @@ async function promoteToSuperAdmin() {
         await client.query(`
             UPDATE public.profiles
             SET role = 'Tenant'
-            WHERE role NOT IN ('Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant', 'Admin', 'Super Admin');
+            WHERE role NOT IN ('Entrepreneur', 'SME', 'Student', 'Tenant', 'Admin', 'Super Admin');
         `);
 
         // 2. Drop the existing constraint
@@ -53,7 +53,7 @@ async function promoteToSuperAdmin() {
         console.log("Adding new role constraint...");
         await client.query(`
             ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check 
-            CHECK (role IN ('Entrepreneur', 'Researcher', 'SME', 'Student', 'Investor', 'Tenant', 'Admin', 'Super Admin'));
+            CHECK (role IN ('Entrepreneur', 'SME', 'Student', 'Tenant', 'Admin', 'Super Admin'));
         `);
 
         // 4. Promote the default admin (set DEFAULT_ADMIN_EMAIL in admin/.env.local to override)

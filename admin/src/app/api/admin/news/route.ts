@@ -225,15 +225,15 @@ export async function POST(request: NextRequest) {
         console.log(`Found ${userIds.length} tenants for audience: tenants`);
         break;
 
-      case "investors":
-        const { data: investors, error: investorsError } = await supabase
+      case "entrepreneurs":
+        const { data: entrepreneurs, error: entrepreneursError } = await supabase
           .from("profiles")
           .select("id")
-          .eq("role", "Investor");
-        
-        if (investorsError) throw investorsError;
-        userIds = investors.map(investor => investor.id);
-        console.log(`Found ${userIds.length} investors for audience: investors`);
+          .eq("role", "Entrepreneur");
+
+        if (entrepreneursError) throw entrepreneursError;
+        userIds = entrepreneurs.map((entrepreneur) => entrepreneur.id);
+        console.log(`Found ${userIds.length} entrepreneurs for audience: ${targetAudience}`);
         break;
 
       case "staff":
@@ -245,17 +245,6 @@ export async function POST(request: NextRequest) {
         if (staffError) throw staffError;
         userIds = staff.map(staff => staff.id);
         console.log(`Found ${userIds.length} staff members for audience: staff`);
-        break;
-
-      case "entrepreneurs":
-        const { data: entrepreneurs, error: entrepreneursError } = await supabase
-          .from("profiles")
-          .select("id")
-          .eq("role", "Entrepreneur");
-        
-        if (entrepreneursError) throw entrepreneursError;
-        userIds = entrepreneurs.map(entrepreneur => entrepreneur.id);
-        console.log(`Found ${userIds.length} entrepreneurs for audience: entrepreneurs`);
         break;
 
       case "students":

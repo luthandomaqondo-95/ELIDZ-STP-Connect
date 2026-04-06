@@ -288,9 +288,7 @@ function EditProfileScreen() {
                             >
                                 <Picker.Item label="Entrepreneur" value="Entrepreneur" color={colors.text} />
                                 <Picker.Item label="SMME (Business)" value="SMME" color={colors.text} />
-                                <Picker.Item label="Investor" value="Investor" color={colors.text} />
                                 <Picker.Item label="Student" value="Student" color={colors.text} />
-                                <Picker.Item label="Researcher" value="Researcher" color={colors.text} />
                                 <Picker.Item label="Tenant" value="Tenant" color={colors.text} />
                             </Picker>
                         </View>

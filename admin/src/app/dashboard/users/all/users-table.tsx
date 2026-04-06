@@ -15,14 +15,10 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { deleteUser, suspendUser, unsuspendUser, updateUserRole } from "./actions"
-import { ChevronDown } from "lucide-react"
+import { deleteUser, suspendUser, unsuspendUser } from "./actions"
 
 export interface User {
     id: string
@@ -32,22 +28,21 @@ export interface User {
     status: string
     company: string
     lastActive: string
-    avatar: string
+    avatar: string | null
 }
 
-const ROLES = ["All", "Entrepreneur", "Researcher", "SME", "Tenant", "Investor", "Admin", "Super Admin"]
-const USER_ROLES = ["Entrepreneur", "Researcher", "SME", "Tenant", "Investor", "Admin", "Super Admin"]
-const ITEMS_PER_PAGE = 10
-const ROLE_FILTER_COLORS: Record<string, string> = {
-    All: "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-700/80",
-    Entrepreneur: "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/35 dark:text-amber-200 dark:hover:bg-amber-900/50",
-    Researcher: "bg-sky-100 text-sky-800 hover:bg-sky-200 dark:bg-sky-900/35 dark:text-sky-200 dark:hover:bg-sky-900/50",
-    SME: "bg-emerald-100 text-emerald-800 hover:bg-emerald-200 dark:bg-emerald-900/35 dark:text-emerald-200 dark:hover:bg-emerald-900/50",
-    Tenant: "bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/35 dark:text-purple-200 dark:hover:bg-purple-900/50",
-    Investor: "bg-rose-100 text-rose-800 hover:bg-rose-200 dark:bg-rose-900/35 dark:text-rose-200 dark:hover:bg-rose-900/50",
-    Admin: "bg-indigo-100 text-indigo-800 hover:bg-indigo-200 dark:bg-indigo-900/35 dark:text-indigo-200 dark:hover:bg-indigo-900/50",
-    "Super Admin": "bg-orange-100 text-orange-800 hover:bg-orange-200 dark:bg-orange-900/35 dark:text-orange-200 dark:hover:bg-orange-900/50",
+/** Matches normalized list status and any legacy casing from the API. */
+function isSuspendedStatus(status: string) {
+    return status.trim().toLowerCase() === "suspended"
 }
+
+function isActiveStatus(status: string) {
+    const s = status.trim().toLowerCase()
+    return s === "active" || s === "approved"
+}
+
+const ROLES = ["All", "Entrepreneur", "SME", "Tenant", "Admin", "Super Admin"]
+const ITEMS_PER_PAGE = 10
 
 export function UsersTable({ users, initialRole }: { users: User[]; initialRole?: string }) {
     const [searchQuery, setSearchQuery] = React.useState("")
@@ -92,33 +87,20 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
     }
 
     const handleSuspend = async (userId: string) => {
-        console.log("🔍 CLIENT DEBUG: Attempting to suspend user:", userId)
-        
         if (confirm("Are you sure you want to suspend this user? They will not be able to access their account.")) {
-            console.log("✅ CLIENT INFO: User confirmed suspend action")
             setIsPending(true)
-            
             try {
                 const result = await suspendUser(userId)
-                console.log("🔍 CLIENT DEBUG: Suspend API result:", result)
-                
                 if (result.success) {
-                    console.log("✅ CLIENT SUCCESS: User suspended successfully, refreshing page")
-                    // Show success message and refresh the page
                     window.location.reload()
                 } else {
-                    console.log("❌ CLIENT ERROR: Failed to suspend user:", result.error)
                     alert("Failed to suspend user: " + result.error)
                 }
             } catch (error) {
-                console.log("❌ CLIENT FATAL: Unexpected error during suspend:", error)
                 alert("An unexpected error occurred: " + (error instanceof Error ? error.message : "Unknown error"))
             } finally {
                 setIsPending(false)
-                console.log("🔍 CLIENT DEBUG: Suspend action completed, loading state reset")
             }
-        } else {
-            console.log("🔍 CLIENT INFO: User cancelled suspend action")
         }
     }
 
@@ -132,20 +114,6 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
                 window.location.reload()
             } else {
                 alert("Failed to unsuspend user: " + result.error)
-            }
-        }
-    }
-
-    const handleRoleChange = async (userId: string, newRole: string) => {
-        if (confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
-            setIsPending(true)
-            const result = await updateUserRole(userId, newRole)
-            setIsPending(false)
-            if (result.success) {
-                // Show success message and refresh the page
-                window.location.reload()
-            } else {
-                alert("Failed to update user role: " + result.error)
             }
         }
     }
@@ -202,7 +170,7 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
                     <>
                                     <TableCell>
                                         <Avatar className="h-9 w-9">
-                                            <AvatarImage src={user.avatar} alt={user.name} />
+                                            <AvatarImage src={user.avatar ?? undefined} alt={user.name} />
                                 <AvatarFallback>{user.name ? user.name.slice(0, 2).toUpperCase() : "UN"}</AvatarFallback>
                                         </Avatar>
                                     </TableCell>
@@ -213,19 +181,19 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
                                     <TableCell>
                             <Badge
                                 variant={
-                                    user.status === "approved" || user.status === "Active" ? "default" : 
+                                    isActiveStatus(user.status) ? "default" : 
                                     user.status === "pending" || user.status === "Pending" ? "secondary" : 
-                                    user.status === "suspended" || user.status === "Suspended" ? "destructive" : 
+                                    isSuspendedStatus(user.status) ? "destructive" : 
                                     "destructive"
                                 }
                                 className={
-                                    user.status === "approved" || user.status === "Active" ? "bg-emerald-600 text-white hover:bg-emerald-600" : 
-                                    user.status === "suspended" || user.status === "Suspended" ? "bg-orange-600 text-white hover:bg-orange-600" : 
+                                    isActiveStatus(user.status) ? "bg-emerald-600 text-white hover:bg-emerald-600" : 
+                                    isSuspendedStatus(user.status) ? "bg-orange-600 text-white hover:bg-orange-600" : 
                                     undefined
                                 }
                             >
-                                {user.status === "approved" || user.status === "Active" ? "Active" : 
-                                 user.status === "suspended" || user.status === "Suspended" ? "Suspended" : 
+                                {isActiveStatus(user.status) ? "Active" : 
+                                 isSuspendedStatus(user.status) ? "Suspended" : 
                                  user.status}
                             </Badge>
                         </TableCell>
@@ -244,27 +212,7 @@ export function UsersTable({ users, initialRole }: { users: User[]; initialRole?
                                                         Copy User ID
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuSub>
-                                                        <DropdownMenuSubTrigger>
-                                                            <ChevronDown className="mr-2 h-4 w-4" />
-                                                            Change Role
-                                                        </DropdownMenuSubTrigger>
-                                                        <DropdownMenuSubContent>
-                                                            {USER_ROLES.map((role) => (
-                                                                <DropdownMenuItem
-                                                                    key={role}
-                                                                    onClick={() => handleRoleChange(user.id, role)}
-                                                                    disabled={role === user.role || isPending}
-                                                                >
-                                                                    {role}
-                                                                    {role === user.role && " (current)"}
-                                                                    {isPending && role !== user.role && " (updating...)"}
-                                                                </DropdownMenuItem>
-                                                            ))}
-                                                        </DropdownMenuSubContent>
-                                                    </DropdownMenuSub>
-                                                    <DropdownMenuSeparator />
-                                                    {user.status === 'suspended' || user.status === 'Suspended' ? (
+                                                    {isSuspendedStatus(user.status) ? (
                                                         <DropdownMenuItem onClick={() => handleUnsuspend(user.id)} className="text-green-600 focus:text-green-600" disabled={isPending}>
                                                             <UserCheck className="mr-2 h-4 w-4" />
                                                             {isPending ? "Unsuspending..." : "Unsuspend Account"}
