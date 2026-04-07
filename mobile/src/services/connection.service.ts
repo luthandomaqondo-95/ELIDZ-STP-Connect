@@ -195,6 +195,7 @@ class ConnectionService {
 		let query = supabase
 			.from('profiles')
 			.select('*')
+			.not('role', 'in', '("Admin","Super Admin")')
 			.order('created_at', { ascending: false });
 
 		if (search) {

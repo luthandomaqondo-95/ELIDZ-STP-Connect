@@ -75,8 +75,8 @@ export async function GET(request: Request) {
       responded_at,
       created_at,
       updated_at,
-      user:profiles!enquiries_user_id_fkey(id,name,email,avatar,role),
-      responder:profiles!enquiries_responded_by_fkey(id,name,email)
+      user:profiles!user_id(id,name,email,avatar,role),
+      responder:profiles!responded_by(id,name,email)
     `
     )
     .or("enquiry_type.eq.Facility,related_facility_id.not.is.null")
@@ -109,10 +109,10 @@ export async function PATCH(request: Request) {
 
   const id = (body?.id ?? "").trim();
   const response = (body?.response ?? "").trim();
-  const status: EnquiryStatus =
-    body?.status === "new" || body?.status === "in_progress" || body?.status === "resolved" || body?.status === "closed"
-      ? body.status
-      : "resolved";
+  const VALID_STATUSES: EnquiryStatus[] = ["new", "in_progress", "resolved", "closed"];
+  const status: EnquiryStatus = VALID_STATUSES.includes(body?.status as EnquiryStatus)
+    ? (body!.status as EnquiryStatus)
+    : "in_progress";
 
   if (!id) {
     return NextResponse.json({ error: "Missing enquiry id" }, { status: 400 });
@@ -145,8 +145,8 @@ export async function PATCH(request: Request) {
       responded_at,
       created_at,
       updated_at,
-      user:profiles!enquiries_user_id_fkey(id,name,email,avatar,role),
-      responder:profiles!enquiries_responded_by_fkey(id,name,email)
+      user:profiles!user_id(id,name,email,avatar,role),
+      responder:profiles!responded_by(id,name,email)
     `
     )
     .single();
