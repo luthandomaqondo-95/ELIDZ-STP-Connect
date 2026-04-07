@@ -21,6 +21,7 @@ type RoleRow = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
+
 const ROLE_FILTER_COLORS: Record<string, string> = {
   All: "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-700/80",
   "Super Admin":
@@ -39,17 +40,7 @@ function iconForRole(role: string) {
   return Shield;
 }
 
-function permissionsForRole(role: string) {
-  // These are UI labels only (until you back with a DB table).
-  if (role === "Super Admin") return ["All Access"];
-  if (role === "Admin") return ["Manage Users", "Manage Content", "View Reports"];
-  if (role === "Tenant") return ["View Opportunities", "Post Requests", "Edit Profile"];
-  if (role === "Investor") return ["View Opportunities", "View Reports"];
-  return ["Standard Access"];
-}
-
-function canEditRole(actorRole: AdminRole, targetRole: string) {
-  // Only Super Admin can edit permissions
+function canEditRole(actorRole: AdminRole) {
   return actorRole === "Super Admin";
 }
 
@@ -58,7 +49,7 @@ export function RolesClient({
   summaries,
 }: {
   actorRole: AdminRole;
-  summaries: Array<{ role: string; users: number }>;
+  summaries: Array<{ role: string; users: number; permissions: string[] }>;
 }) {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -68,7 +59,7 @@ export function RolesClient({
     return summaries.map((s) => ({
       role: s.role,
       users: s.users,
-      permissions: permissionsForRole(s.role),
+      permissions: s.permissions.length > 0 ? s.permissions : ["No permissions assigned"],
       icon: iconForRole(s.role),
     }));
   }, [summaries]);
@@ -161,7 +152,7 @@ export function RolesClient({
         emptyMessage="No roles found."
         theme="orange"
         renderRow={(role: RoleRow) => {
-          const editable = canEditRole(actorRole, role.role);
+          const editable = canEditRole(actorRole);
           return (
             <>
               <TableCell>

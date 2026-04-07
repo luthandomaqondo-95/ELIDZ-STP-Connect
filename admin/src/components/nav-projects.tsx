@@ -2,11 +2,11 @@
 
 import * as React from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
-  Folder,
-  Forward,
+  ExternalLink,
   MoreHorizontal,
-  Trash2,
+  Upload,
   type LucideIcon,
 } from "lucide-react"
 
@@ -14,7 +14,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import {
@@ -39,6 +38,7 @@ export function NavProjects({
 }) {
   const { isMobile } = useSidebar()
   const pathname = usePathname()
+  const router = useRouter()
   const [mounted, setMounted] = React.useState(false)
 
   React.useEffect(() => {
@@ -68,48 +68,41 @@ export function NavProjects({
         {projects.map((item) => {
           const active = pathname === item.url || pathname.startsWith(`${item.url}/`)
           return (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild isActive={active}>
-              <Link href={item.url}>
-                <item.icon className="text-sky-400" />
-                <span>{item.name}</span>
-              </Link>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                className="w-48 rounded-lg"
-                side={isMobile ? "bottom" : "right"}
-                align={isMobile ? "end" : "start"}
-              >
-                <DropdownMenuItem>
-                  <Folder className="text-muted-foreground" />
-                  <span>View Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Forward className="text-muted-foreground" />
-                  <span>Share Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Trash2 className="text-muted-foreground" />
-                  <span>Delete Project</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        )})}
-        <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontal className="text-sidebar-foreground/70" />
-            <span>More</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton asChild isActive={active}>
+                <Link href={item.url}>
+                  <item.icon className="text-sky-400" />
+                  <span>{item.name}</span>
+                </Link>
+              </SidebarMenuButton>
+
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuAction showOnHover>
+                    <MoreHorizontal />
+                    <span className="sr-only">More</span>
+                  </SidebarMenuAction>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-48 rounded-lg"
+                  side={isMobile ? "bottom" : "right"}
+                  align={isMobile ? "end" : "start"}
+                >
+                  <DropdownMenuItem onClick={() => router.push(item.url)}>
+                    <ExternalLink className="text-muted-foreground" />
+                    <span>Open</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => router.push(`${item.url}?tab=facilities`)}
+                  >
+                    <Upload className="text-muted-foreground" />
+                    <span>Upload Media</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          )
+        })}
       </SidebarMenu>
     </SidebarGroup>
   )

@@ -1,27 +1,34 @@
 import { redirect } from "next/navigation";
-import { requireSuperAdmin } from "@/lib/authz"
-import { PermissionsClient } from "./permissions-client"
+import { requireSuperAdmin } from "@/lib/authz";
+import { getAllPermissions, getAllRolePermissions } from "../actions";
+import { PermissionsClient } from "./permissions-client";
 
 export default async function ManagePermissionsPage({
   searchParams,
 }: {
-  searchParams?: { role?: string };
+  searchParams?: Promise<{ role?: string }>;
 }) {
-  // Server-side access control
   let currentUser;
   try {
     currentUser = await requireSuperAdmin();
-  } catch (error) {
-    // Redirect to unauthorized page or dashboard if not Super Admin
-    redirect('/dashboard?error=unauthorized');
+  } catch {
+    redirect("/dashboard?error=unauthorized");
   }
 
-  const role = searchParams?.role
+  const params = await searchParams;
+  const selectedRole = params?.role;
+
+  const [allPermissions, rolePermissions] = await Promise.all([
+    getAllPermissions(),
+    getAllRolePermissions(),
+  ]);
 
   return (
-    <PermissionsClient 
-      role={role} 
+    <PermissionsClient
+      selectedRole={selectedRole}
       currentUserRole={currentUser.role}
+      allPermissions={allPermissions}
+      initialRolePermissions={rolePermissions}
     />
-  )
+  );
 }

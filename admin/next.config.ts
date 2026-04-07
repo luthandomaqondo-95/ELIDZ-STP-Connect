@@ -6,6 +6,24 @@ const nextConfig: NextConfig = {
 	turbopack: {
 		root: path.resolve(process.cwd()),
 	},
+	images: {
+		remotePatterns: [
+			{
+				protocol: "https",
+				hostname: "www.elidzstp.co.za",
+			},
+			{
+				// Supabase storage (facility videos/images uploaded by admins)
+				protocol: "https",
+				hostname: "*.supabase.co",
+			},
+			{
+				// S3 bucket used for existing seed/test videos
+				protocol: "https",
+				hostname: "s3b-assets-bucket.s3.amazonaws.com",
+			},
+		],
+	},
 	async headers() {
 		return [
 			{

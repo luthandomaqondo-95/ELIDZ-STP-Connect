@@ -178,8 +178,20 @@ const baseData = {
 					url: "/dashboard/reports/demographics",
 				},
 				{
-					title: "System Usage",
-					url: "/dashboard/reports/usage",
+					title: "Platform Engagement",
+					url: "/dashboard/reports/engagement",
+				},
+				{
+					title: "Opportunities Pipeline",
+					url: "/dashboard/reports/opportunities",
+				},
+				{
+					title: "SMME & Business",
+					url: "/dashboard/reports/smme",
+				},
+				{
+					title: "Moderation & Safety",
+					url: "/dashboard/reports/moderation",
 				},
 			],
 		}
