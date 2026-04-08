@@ -97,9 +97,10 @@ export function EngagementCharts({ trendData, typeBreakdown }: EngagementChartsP
                                     paddingAngle={4}
                                     dataKey="value"
                                     nameKey="name"
-                                    label={({ name, percent }) =>
-                                        `${name} ${(percent * 100).toFixed(0)}%`
-                                    }
+                                    label={({ name, percent }) => {
+                                        const safePercent = (percent ?? 0) * 100
+                                        return `${name} ${safePercent.toFixed(0)}%`
+                                    }}
                                     labelLine={false}
                                 >
                                     {typeBreakdown.map((_, index) => (
@@ -107,7 +108,13 @@ export function EngagementCharts({ trendData, typeBreakdown }: EngagementChartsP
                                     ))}
                                 </Pie>
                                 <Tooltip
-                                    formatter={(value: number) => [value.toLocaleString(), "Visits"]}
+                                    formatter={(value) => {
+                                        const numericValue =
+                                            typeof value === "number"
+                                                ? value
+                                                : Number(value ?? 0)
+                                        return [numericValue.toLocaleString(), "Visits"]
+                                    }}
                                 />
                                 <Legend />
                             </PieChart>

@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 import { getAuthedProfile } from "@/lib/authz"
 import { getAppOrigin } from "@/lib/app-url"
 import { revalidatePath } from "next/cache"
+import { headers } from "next/headers"
 
 const ADMIN_INVITE_ROLES = new Set(["Admin", "Super Admin"])
 
@@ -38,9 +39,18 @@ export async function inviteAdminUser(formData: FormData) {
     // redirectTo must be listed under Auth → URL Configuration → Redirect URLs (exact match or wildcard).
     // Site URL in Supabase should be your Vercel app, not *.supabase.co — otherwise the email link can
     // land on the project host and show {"error":"requested path is invalid"}.
-    const origin = getAppOrigin()
+    // Prefer request-derived origin so we don't accidentally send localhost in production.
+    const h = await headers()
+    const host = h.get("x-forwarded-host") ?? h.get("host")
+    const forwardedProto = h.get("x-forwarded-proto")
+    const proto =
+      forwardedProto ??
+      (host && /(^localhost(:\d+)?$|^127\.0\.0\.1(:\d+)?$)/.test(host) ? "http" : "https")
+    const origin =
+      host && proto ? `${proto}://${host}`.replace(/\/$/, "") : getAppOrigin()
     const { data: authData, error: inviteError } =
       await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
+        // Invite links should land on password setup.
         redirectTo: `${origin}/auth/reset-password`,
         data: {
           full_name: name,
@@ -50,6 +60,14 @@ export async function inviteAdminUser(formData: FormData) {
 
     if (inviteError) {
       console.error("Invite error:", inviteError)
+      // Translate common Supabase error codes into actionable messages.
+      const code = (inviteError as { code?: string }).code
+      if (code === "over_email_send_rate_limit") {
+        return {
+          error:
+            "Email rate limit reached. Supabase free tier allows only a few invite emails per hour. Wait a few minutes then try again, or use a different email address.",
+        }
+      }
       return { error: inviteError.message }
     }
 

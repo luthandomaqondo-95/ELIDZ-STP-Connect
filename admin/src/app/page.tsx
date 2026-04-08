@@ -8,6 +8,19 @@ import { AnimatedSeparator } from "@/components/animated-separator";
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
 
 export default function LandingPage() {
+    // If Supabase redirects an invite/recovery link to the root (Site URL fallback),
+    // forward straight to /auth/reset-password so the token isn't lost.
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        const hash = window.location.hash?.replace(/^#/, "");
+        if (!hash) return;
+        const params = new URLSearchParams(hash);
+        const type = params.get("type");
+        if (type === "invite" || type === "recovery") {
+            window.location.replace(`/auth/reset-password#${hash}`);
+        }
+    }, []);
+
     const rotatingDescriptions = [
         "Monitor key operations, manage locators and stakeholders, and track park performance in one secure workspace built for ELIDZ administrators.",
         "Get a real-time view of occupancy, locator profiles, and park-wide activities from a centralized ELIDZ control panel.",
