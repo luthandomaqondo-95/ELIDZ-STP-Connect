@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthedProfile } from "@/lib/authz";
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts";
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 
@@ -14,6 +16,7 @@ const recentEvents = new Map<string, number>();
 export async function POST(request: NextRequest) {
   try {
     console.log("Starting events API call...");
+    const { user, profile } = await getAuthedProfile();
     const { 
       title, 
       description, 
@@ -222,6 +225,16 @@ export async function POST(request: NextRequest) {
         console.log(`Successfully created ${notificationsData?.length || 0} event notifications`);
       }
     }
+
+    await notifySuperAdminsOfAdminAction({
+      action: "Published event",
+      actorId: user?.id ?? null,
+      actorName: (profile?.name as string | undefined) ?? createdBy ?? null,
+      actorRole: (profile?.role as string | undefined) ?? "Admin",
+      details: `Published "${title}" to ${targetAudience} (${userIds.length} recipients).`,
+      relatedEntityType: "event",
+      relatedEntityId: event.id,
+    });
 
     return NextResponse.json({
       success: true,

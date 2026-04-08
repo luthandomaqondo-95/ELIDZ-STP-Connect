@@ -166,6 +166,10 @@ const baseData = {
 					title: "Message Center",
 					url: "/dashboard/communication/messages",
 				},
+				{
+					title: "Admin Activity",
+					url: "/dashboard/communication/admin-activity",
+				},
 			],
 		},
 		{
@@ -205,7 +209,7 @@ const baseData = {
 	},
 }
 
-export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: { name: string; email: string; avatar: string } }) {
+export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sidebar> & { user?: { name: string; email: string; avatar: string; role?: string } }) {
     const [projects, setProjects] = React.useState<SidebarProject[]>([])
     const [isLoading, setIsLoading] = React.useState(true)
     const [mounted, setMounted] = React.useState(false)
@@ -333,11 +337,39 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
     }, [projects])
 
     const sidebarData = React.useMemo(() => { 
+        const role = user?.role ?? ""
+        const isSuperAdmin = role === "Super Admin"
+        const navMain = baseData.navMain
+            .map((section) => {
+                if (section.title === "User Management") {
+                    return {
+                        ...section,
+                        items: (section.items ?? []).filter((item) => {
+                            if (item.title === "User Roles") return isSuperAdmin
+                            return true
+                        }),
+                    }
+                }
+
+                if (section.title === "Communication") {
+                    return {
+                        ...section,
+                        items: (section.items ?? []).filter((item) => {
+                            if (item.title === "Admin Activity") return isSuperAdmin
+                            return true
+                        }),
+                    }
+                }
+
+                return section
+            })
+
         if (!mounted) {
             // Return static data only during SSR
             return { 
                 ...baseData, 
                 user: user || baseData.user,
+                navMain,
                 projects: []
             }
         }
@@ -345,6 +377,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
         return { 
             ...baseData, 
             user: user || baseData.user,
+            navMain,
             projects: mergedProjects
         }
     }, [mounted, user, mergedProjects])

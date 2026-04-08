@@ -10,9 +10,7 @@ import {
   Search,
   Loader2,
   RefreshCcw,
-  Send,
   CheckCircle2,
-  Clock,
   XCircle,
   MessageSquare,
 } from "lucide-react"
@@ -67,6 +65,12 @@ function formatDate(dateString: string) {
 
 function initials(name: string) {
   return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?"
+}
+
+function extractPreferredBookingDate(message?: string | null) {
+  if (!message) return null
+  const match = message.match(/Preferred date:\s*([^\n\r]+)/i)
+  return match?.[1]?.trim() ?? null
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -137,7 +141,7 @@ export default function MessageCenterPage() {
 
   // Reset draft + success state when switching conversations
   useEffect(() => {
-    setDraftResponse(selectedEnquiry?.response ?? "")
+    setDraftResponse("")
     setSaveSuccess(false)
     setError(null)
   }, [selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -149,30 +153,44 @@ export default function MessageCenterPage() {
     }
   }, [selectedEnquiry?.response, selectedId])
 
-  // ── Send response ───────────────────────────────────────────────────────────
+  const preferredBookingDate = useMemo(
+    () => extractPreferredBookingDate(selectedEnquiry?.message),
+    [selectedEnquiry?.message]
+  )
 
-  const sendResponse = useCallback(async (overrideStatus?: EnquiryStatus) => {
-    if (!selectedEnquiry || !draftResponse.trim()) return
+  const isFacilityBookingEnquiry = useMemo(
+    () =>
+      selectedEnquiry?.enquiry_type === "Facility" ||
+      Boolean(selectedEnquiry?.related_facility_id),
+    [selectedEnquiry?.enquiry_type, selectedEnquiry?.related_facility_id]
+  )
+
+  // ── Send response ───────────────────────────────────────────────────────────
+  const sendResponse = useCallback(async (options?: { overrideStatus?: EnquiryStatus; responseText?: string }) => {
+    if (!selectedEnquiry) return
+    const finalResponse = (options?.responseText ?? draftResponse).trim()
+    if (!finalResponse) return
     setSaving(true)
     setSaveSuccess(false)
     setError(null)
 
     // Auto-advance "new" → "in_progress" when admin replies without specifying status
     const status: EnquiryStatus =
-      overrideStatus ??
+      options?.overrideStatus ??
       (selectedEnquiry.status === "new" ? "in_progress" : selectedEnquiry.status)
 
     try {
       const res = await fetch("/api/admin/facility-enquiries", {
         method: "PATCH",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: selectedEnquiry.id, response: draftResponse.trim(), status }),
+        body: JSON.stringify({ id: selectedEnquiry.id, response: finalResponse, status }),
       })
       const json = await res.json().catch(() => null)
       if (!res.ok) throw new Error(json?.error || "Failed to send response")
 
       const updated = json?.enquiry as EnquiryRow
       setEnquiries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
+      setDraftResponse("")
       setSaveSuccess(true)
       setTimeout(() => setSaveSuccess(false), 4000)
       // Scroll to bottom so the new response bubble is visible
@@ -411,53 +429,60 @@ export default function MessageCenterPage() {
                   disabled={saving}
                 />
 
+                {isFacilityBookingEnquiry && preferredBookingDate && (
+                  <div className="rounded-2xl border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-200">
+                    Preferred booking date requested: <span className="font-semibold">{preferredBookingDate}</span>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   {/* Status-change helpers */}
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-2xl text-xs h-8"
-                      onClick={() => sendResponse("in_progress")}
-                      disabled={!canSend}
-                    >
-                      <Clock className="h-3 w-3 mr-1" />
-                      Send &amp; In Progress
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-2xl text-xs h-8 text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/20"
-                      onClick={() => sendResponse("resolved")}
-                      disabled={!canSend}
-                    >
-                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Send &amp; Resolve
-                    </Button>
+                    {isFacilityBookingEnquiry && preferredBookingDate && (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-2xl text-xs h-8 text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/20"
+                          onClick={() =>
+                            sendResponse({
+                              overrideStatus: "resolved",
+                              responseText: `Booking approval: Approved\nApproved booking date: ${preferredBookingDate}\n\nYour facility booking has been approved for ${preferredBookingDate}.`,
+                            })
+                          }
+                          disabled={saving}
+                        >
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Approve Booking
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-2xl text-xs h-8 text-red-700 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
+                          onClick={() =>
+                            sendResponse({
+                              overrideStatus: "closed",
+                              responseText: "Booking approval: Declined\n\nYour requested booking date is currently unavailable. Please submit another preferred date.",
+                            })
+                          }
+                          disabled={saving}
+                        >
+                          <XCircle className="h-3 w-3 mr-1" />
+                          Decline Booking
+                        </Button>
+                      </>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
                       className="rounded-2xl text-xs h-8 text-slate-500 border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-                      onClick={() => sendResponse("closed")}
+                      onClick={() => sendResponse({ overrideStatus: "closed" })}
                       disabled={!canSend}
                     >
                       <XCircle className="h-3 w-3 mr-1" />
-                      Send &amp; Close
+                      Close
                     </Button>
                   </div>
-
-                  {/* Primary send */}
-                  <Button
-                    size="sm"
-                    className="rounded-2xl h-8 bg-[#002147] hover:bg-[#002147]/90 text-white"
-                    onClick={() => sendResponse()}
-                    disabled={!canSend}
-                  >
-                    {saving
-                      ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                      : <Send className="h-4 w-4 mr-1.5" />}
-                    {saving ? "Sending…" : "Send Reply"}
-                  </Button>
                 </div>
               </div>
             </>

@@ -26,8 +26,7 @@ export default async function AllUsersPage({
     const { profile } = await getAuthedProfile()
     const actorRole = (profile?.role as string) ?? ""
     const canInviteSuperAdmin = actorRole === "Super Admin"
-    const canInviteAdmin =
-        actorRole === "Admin" || actorRole === "Super Admin"
+    const canInviteAdmin = actorRole === "Super Admin"
 
     return (
         <div className="flex flex-1 flex-col gap-4 px-0 md:px-0 py-0 pt-0">

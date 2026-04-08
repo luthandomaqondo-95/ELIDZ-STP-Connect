@@ -11,7 +11,8 @@ export default async function Page({ children }: { children: React.ReactNode }) 
     let userData = {
         name: "Guest",
         email: "",
-        avatar: ""
+        avatar: "",
+        role: ""
     }
 
     if (user) {
@@ -19,7 +20,8 @@ export default async function Page({ children }: { children: React.ReactNode }) 
         userData = {
             name: profile?.name || user.email || "User",
             email: user.email || "",
-            avatar: profile?.avatar || ""
+            avatar: profile?.avatar || "",
+            role: profile?.role || ""
         }
     }
 

@@ -21,7 +21,66 @@ import {
 } from "@/components/ui/card"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 
-export default async function Page() {
+type BookingEnquiry = {
+    id: string
+    subject: string | null
+    message: string | null
+    response: string | null
+    status: string | null
+    created_at: string
+    user: {
+        name: string | null
+        email: string | null
+    } | null
+}
+
+function extractPreferredDate(message?: string | null): string | null {
+    if (!message) return null
+    const match = message.match(/Preferred date:\s*([^\n\r]+)/i)
+    if (!match?.[1]) return null
+    return match[1].trim()
+}
+
+function parseLooseDate(value: string): Date | null {
+    const raw = value.trim()
+    if (!raw) return null
+
+    const normalized = raw
+        .replace(/(\d+)(st|nd|rd|th)/gi, "$1")
+        .replace(/,/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+
+    const direct = new Date(normalized)
+    if (!Number.isNaN(direct.getTime())) return direct
+
+    const isoLike = normalized.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/)
+    if (isoLike) {
+        const day = Number(isoLike[1])
+        const month = Number(isoLike[2]) - 1
+        const year = Number(isoLike[3])
+        const d = new Date(year, month, day)
+        if (!Number.isNaN(d.getTime())) return d
+    }
+
+    return null
+}
+
+function extractApprovedBookingDate(response?: string | null): string | null {
+    if (!response) return null
+    const approved = /Booking approval:\s*Approved/i.test(response)
+    if (!approved) return null
+    const explicitDate = response.match(/Approved booking date:\s*([^\n\r]+)/i)?.[1]?.trim()
+    return explicitDate ?? null
+}
+
+export default async function Page({
+    searchParams,
+}: {
+    searchParams?: Promise<{ bookingMonth?: string }>
+}) {
+    const params = await searchParams
+    const bookingMonthParam = (params?.bookingMonth ?? "").trim()
     const supabase = await createClient()
     const adminDb = createAdminClient()
 
@@ -53,6 +112,7 @@ export default async function Page() {
         { count: pendingApplications },
         { count: pendingReports },
         { data: allProfiles },
+        { data: bookingEnquiries },
     ] = await Promise.all([
         adminDb.from("profiles").select("*", { count: "exact", head: true }),
         adminDb.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", thisMonthStart),
@@ -63,7 +123,90 @@ export default async function Page() {
         adminDb.from("applications").select("*", { count: "exact", head: true }).eq("status", "pending"),
         adminDb.from("message_reports").select("*", { count: "exact", head: true }).eq("status", "pending"),
         adminDb.from("profiles").select("created_at"),
+        adminDb
+            .from("enquiries")
+            .select("id, subject, message, response, status, created_at, user:profiles!user_id(name,email)")
+            .or("enquiry_type.eq.Facility,related_facility_id.not.is.null")
+            .order("created_at", { ascending: false })
+            .limit(2000),
     ])
+
+    const parsedBookingRequests = ((bookingEnquiries ?? []) as BookingEnquiry[])
+        .map((item) => {
+            const preferredDateText = extractPreferredDate(item.message)
+            const preferredDate = preferredDateText ? parseLooseDate(preferredDateText) : null
+            const approvedDateText = extractApprovedBookingDate(item.response)
+            const approvedDate = approvedDateText ? parseLooseDate(approvedDateText) : null
+            const approvalDate = approvedDate ?? preferredDate
+            const isApproved = /Booking approval:\s*Approved/i.test(item.response ?? "")
+
+            return approvalDate
+                ? {
+                      id: item.id,
+                      subject: item.subject ?? "Facility enquiry",
+                      status: item.status ?? "new",
+                      preferredDate: approvalDate,
+                      preferredDateText,
+                      isApproved,
+                      requesterName: item.user?.name?.trim() || item.user?.email?.trim() || "Unknown requester",
+                  }
+                : null
+        })
+        .filter((item): item is NonNullable<typeof item> => Boolean(item))
+
+    const nowLocal = new Date()
+    const parsedMonth = bookingMonthParam.match(/^(\d{4})-(\d{2})$/)
+    const selectedYear = parsedMonth ? Number(parsedMonth[1]) : nowLocal.getFullYear()
+    const selectedMonthIndex = parsedMonth ? Number(parsedMonth[2]) - 1 : nowLocal.getMonth()
+    const safeMonthIndex = Number.isNaN(selectedMonthIndex) ? nowLocal.getMonth() : Math.min(11, Math.max(0, selectedMonthIndex))
+    const monthStart = new Date(selectedYear, safeMonthIndex, 1)
+    const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0)
+    const firstWeekday = monthStart.getDay()
+    const daysInMonth = monthEnd.getDate()
+    const selectedMonthKey = `${monthStart.getFullYear()}-${String(monthStart.getMonth() + 1).padStart(2, "0")}`
+    const prevMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() - 1, 1)
+    const nextMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 1)
+    const prevMonthKey = `${prevMonth.getFullYear()}-${String(prevMonth.getMonth() + 1).padStart(2, "0")}`
+    const nextMonthKey = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, "0")}`
+
+    const bookingDayCounts = new Map<number, number>()
+    const bookingDetailsByDay = new Map<number, Array<{
+        requesterName: string
+        subject: string
+        status: string
+        preferredDateText: string | null
+    }>>()
+    parsedBookingRequests
+        .filter((booking) => booking.isApproved)
+        .forEach((booking) => {
+        const d = booking.preferredDate
+        if (d.getFullYear() === monthStart.getFullYear() && d.getMonth() === monthStart.getMonth()) {
+            const day = d.getDate()
+            bookingDayCounts.set(day, (bookingDayCounts.get(day) ?? 0) + 1)
+            const existing = bookingDetailsByDay.get(day) ?? []
+            existing.push({
+                requesterName: booking.requesterName,
+                subject: booking.subject,
+                status: booking.status,
+                preferredDateText: booking.preferredDateText,
+            })
+            bookingDetailsByDay.set(day, existing)
+        }
+    })
+
+    const upcomingBookings = parsedBookingRequests
+        .filter(
+            (booking) =>
+                booking.isApproved &&
+                booking.preferredDate.getFullYear() === monthStart.getFullYear() &&
+                booking.preferredDate.getMonth() === monthStart.getMonth()
+        )
+        .sort((a, b) => a.preferredDate.getTime() - b.preferredDate.getTime())
+        .slice(0, 6)
+
+    const pendingBookingRequests = parsedBookingRequests
+        .filter((booking) => !booking.isApproved)
+        .slice(0, 4)
 
     // Build monthly registration trend
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
@@ -227,6 +370,157 @@ export default async function Page() {
                         <CardContent>
                             <div className="text-2xl font-bold">{(pendingReports || 0).toLocaleString()}</div>
                             <p className="text-xs text-muted-foreground">Chat reports pending review</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* Facility booking snapshot */}
+                <div className="grid gap-3 lg:grid-cols-3">
+                    <Card className="lg:col-span-2 relative z-20 rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                        <CardHeader className="pb-1">
+                            <CardTitle className="text-base">Facility Bookings Calendar</CardTitle>
+                            <p className="text-xs text-muted-foreground">
+                                Highlighted dates show approved bookings only.
+                            </p>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="mb-3 text-sm font-medium">
+                                <div className="flex items-center justify-between gap-2">
+                                    <Link
+                                        href={`/dashboard?bookingMonth=${prevMonthKey}`}
+                                        className="text-xs rounded-md border px-2 py-1 hover:bg-muted"
+                                    >
+                                        Previous
+                                    </Link>
+                                    <div className="font-medium">
+                                        {monthStart.toLocaleString("default", { month: "long", year: "numeric" })}
+                                    </div>
+                                    <Link
+                                        href={`/dashboard?bookingMonth=${nextMonthKey}`}
+                                        className="text-xs rounded-md border px-2 py-1 hover:bg-muted"
+                                    >
+                                        Next
+                                    </Link>
+                                </div>
+                                <form method="get" className="mt-2">
+                                    <input
+                                        type="month"
+                                        name="bookingMonth"
+                                        defaultValue={selectedMonthKey}
+                                        className="h-8 rounded-md border border-input bg-background px-2 text-xs"
+                                    />
+                                    <button
+                                        type="submit"
+                                        className="ml-2 h-8 rounded-md border px-2 text-xs hover:bg-muted"
+                                    >
+                                        Go
+                                    </button>
+                                </form>
+                            </div>
+                            <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-muted-foreground mb-1">
+                                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                                    <div key={day} className="py-1">{day}</div>
+                                ))}
+                            </div>
+                            <div className="relative z-20 grid grid-cols-7 gap-1">
+                                {Array.from({ length: firstWeekday }).map((_, i) => (
+                                    <div key={`empty-${i}`} className="h-9 rounded-md bg-transparent" />
+                                ))}
+                                {Array.from({ length: daysInMonth }).map((_, index) => {
+                                    const day = index + 1
+                                    const count = bookingDayCounts.get(day) ?? 0
+                                    const hasBookings = count > 0
+                                    const details = bookingDetailsByDay.get(day) ?? []
+                                    return (
+                                        <div
+                                            key={day}
+                                            className={`relative group h-9 rounded-md border text-xs flex items-center justify-center ${
+                                                hasBookings
+                                                    ? "bg-orange-100 border-orange-300 text-orange-900 font-semibold dark:bg-orange-900/30 dark:border-orange-700 dark:text-orange-200"
+                                                    : "bg-background/60 border-border text-muted-foreground"
+                                            }`}
+                                            title={
+                                                hasBookings
+                                                    ? `${count} approved booking${count > 1 ? "s" : ""}`
+                                                    : undefined
+                                            }
+                                        >
+                                            {day}
+                                            {hasBookings && (
+                                                <div className="pointer-events-none absolute left-1/2 bottom-full z-50 mb-2 hidden w-72 -translate-x-1/2 rounded-xl border border-border bg-background/95 p-3 text-left shadow-xl backdrop-blur-sm group-hover:block">
+                                                    <p className="mb-2 text-xs font-semibold text-foreground">
+                                                        {count} approved booking{count > 1 ? "s" : ""} on this date
+                                                    </p>
+                                                    <div className="space-y-2">
+                                                        {details.map((detail, idx) => (
+                                                            <div key={`${day}-${idx}`} className="rounded-lg border border-border bg-muted/30 p-2">
+                                                                <p className="text-[11px] font-semibold text-foreground truncate" title={detail.requesterName}>
+                                                                    {detail.requesterName}
+                                                                </p>
+                                                                <p className="text-[11px] text-muted-foreground truncate" title={detail.subject}>
+                                                                    {detail.subject}
+                                                                </p>
+                                                                <p className="text-[10px] text-muted-foreground capitalize">
+                                                                    Status: {detail.status.replace("_", " ")}
+                                                                </p>
+                                                                {detail.preferredDateText && (
+                                                                    <p className="text-[10px] text-muted-foreground">
+                                                                        Requested: {detail.preferredDateText}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+                                <span className="inline-block h-3 w-3 rounded-sm bg-orange-200 border border-orange-300 dark:bg-orange-900/40 dark:border-orange-700" />
+                                Approved booking date
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                        <CardHeader className="pb-1">
+                            <CardTitle className="text-base">
+                                Approved Bookings ({monthStart.toLocaleString("default", { month: "short", year: "numeric" })})
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                            {upcomingBookings.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">No upcoming approved bookings found.</p>
+                            ) : (
+                                upcomingBookings.map((booking) => (
+                                    <div key={booking.id} className="rounded-xl border border-border bg-background/60 p-2">
+                                        <p className="text-xs font-semibold truncate" title={booking.subject}>{booking.subject}</p>
+                                        <p className="text-xs text-muted-foreground">
+                                            {booking.preferredDate.toLocaleDateString("en-ZA", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
+                                        </p>
+                                        <p className="text-[11px] text-muted-foreground capitalize">Status: {booking.status.replace("_", " ")}</p>
+                                    </div>
+                                ))
+                            )}
+                            {pendingBookingRequests.length > 0 && (
+                                <div className="pt-2">
+                                    <p className="text-[11px] font-semibold text-amber-600 dark:text-amber-400 mb-1">
+                                        Pending approval ({pendingBookingRequests.length})
+                                    </p>
+                                    <Link
+                                        href="/dashboard/communication/messages"
+                                        className="text-xs underline text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                                    >
+                                        Review booking requests in Message Centre
+                                    </Link>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>

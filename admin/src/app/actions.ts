@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import { getAuthedProfile } from "@/lib/authz"
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts"
 import { getAppOrigin } from "@/lib/app-url"
 import { revalidatePath } from "next/cache"
 import { headers } from "next/headers"
@@ -24,12 +25,8 @@ export async function inviteAdminUser(formData: FormData) {
   const { profile } = await getAuthedProfile()
   const actorRole = (profile?.role as string) ?? ""
 
-  if (actorRole !== "Admin" && actorRole !== "Super Admin") {
-    return { error: "Forbidden" }
-  }
-
-  if (actorRole === "Admin" && role === "Super Admin") {
-    return { error: "Only a Super Admin can invite another Super Admin" }
+  if (actorRole !== "Super Admin") {
+    return { error: "Only Super Admin can invite users" }
   }
 
   try {
@@ -89,6 +86,16 @@ export async function inviteAdminUser(formData: FormData) {
         })
       }
     }
+
+    await notifySuperAdminsOfAdminAction({
+      action: "Invited admin user",
+      actorId: (profile?.id as string | undefined) ?? null,
+      actorName: (profile?.name as string | undefined) ?? null,
+      actorRole,
+      details: `Invited ${name} (${email}) with role ${role}.`,
+      relatedEntityType: "admin_user",
+      relatedEntityId: authData.user?.id ?? null,
+    })
 
     revalidatePath("/dashboard/users/all")
     return { success: true }

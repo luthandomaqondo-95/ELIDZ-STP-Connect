@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { getAuthedProfile } from "@/lib/authz"
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(
@@ -16,6 +18,7 @@ export async function POST(
     }
 
     const supabase = createAdminClient()
+    const { user, profile } = await getAuthedProfile()
 
     // First, try to delete from auth.users using admin functions
     // This requires service role key which createAdminClient provides
@@ -34,6 +37,16 @@ export async function POST(
         { status: 500 }
       )
     }
+
+    await notifySuperAdminsOfAdminAction({
+      action: "Deleted user account",
+      actorId: user?.id ?? null,
+      actorName: (profile?.name as string | undefined) ?? null,
+      actorRole: (profile?.role as string | undefined) ?? null,
+      details: `Deleted user ID ${userId}.`,
+      relatedEntityType: "profile",
+      relatedEntityId: userId,
+    })
 
     return NextResponse.json({
       success: true,

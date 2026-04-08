@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthedProfile } from "@/lib/authz";
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts";
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 
@@ -15,6 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     console.log("Starting alerts API call...");
     const { title, message, type, targetAudience, createdBy } = await request.json();
+    const { user, profile } = await getAuthedProfile();
     
     console.log("Received data:", { title, message, type, targetAudience, createdBy });
 
@@ -178,6 +181,16 @@ export async function POST(request: NextRequest) {
     console.log("Successfully inserted notifications:");
     console.log("Inserted data:", JSON.stringify(data, null, 2));
     console.log(`Number of notifications created: ${data?.length || 0}`);
+
+    await notifySuperAdminsOfAdminAction({
+      action: "Published platform alert",
+      actorId: user?.id ?? null,
+      actorName: (profile?.name as string | undefined) ?? createdBy ?? null,
+      actorRole: (profile?.role as string | undefined) ?? "Admin",
+      details: `Alert "${title}" targeted ${targetAudience} (${userIds.length} recipients).`,
+      relatedEntityType: "admin_alert",
+      relatedEntityId: null,
+    });
 
     return NextResponse.json({
       success: true,

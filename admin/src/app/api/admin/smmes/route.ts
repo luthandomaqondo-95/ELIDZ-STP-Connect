@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthedProfile } from "@/lib/authz";
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts";
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 
@@ -54,6 +56,14 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const { user, profile } = await getAuthedProfile();
+    if ((profile?.role as string) !== "Super Admin") {
+      return NextResponse.json(
+        { error: "Only Super Admin can invite users" },
+        { status: 403 }
+      );
+    }
+
     const { email, name, organization, role } = await request.json();
 
     if (!email || !name || !organization || !role) {
@@ -124,6 +134,16 @@ export async function POST(request: NextRequest) {
       console.error("Error creating welcome notification:", notificationError);
       // Don't fail the request, just log the error
     }
+
+    await notifySuperAdminsOfAdminAction({
+      action: "Created SMME account",
+      actorId: user?.id ?? null,
+      actorName: (profile?.name as string | undefined) ?? null,
+      actorRole: (profile?.role as string | undefined) ?? "Admin",
+      details: `Created SMME ${name} (${email}) for organization ${organization}.`,
+      relatedEntityType: "profile",
+      relatedEntityId: userData.user.id,
+    });
 
     return NextResponse.json({
       success: true,

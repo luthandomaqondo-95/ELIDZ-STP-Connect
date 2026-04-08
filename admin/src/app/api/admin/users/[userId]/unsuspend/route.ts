@@ -1,4 +1,6 @@
 import { unsuspendProfileById } from "@/lib/admin/profile-suspend"
+import { getAuthedProfile } from "@/lib/authz"
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(
@@ -19,6 +21,17 @@ export async function POST(
       if (result.details) body.details = result.details
       return NextResponse.json(body, { status: result.status })
     }
+
+    const { user, profile } = await getAuthedProfile()
+    await notifySuperAdminsOfAdminAction({
+      action: "Unsuspended user",
+      actorId: user?.id ?? null,
+      actorName: (profile?.name as string | undefined) ?? null,
+      actorRole: (profile?.role as string | undefined) ?? null,
+      details: `Unsuspended user ID ${userId}.`,
+      relatedEntityType: "profile",
+      relatedEntityId: userId,
+    })
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthedProfile } from "@/lib/authz";
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function PATCH(
@@ -8,6 +10,7 @@ export async function PATCH(
   try {
     const { status } = await request.json();
     const { id } = await params;
+    const { user, profile: actorProfile } = await getAuthedProfile();
 
     console.log("SMME Status Update - ID:", id, "Status:", status);
 
@@ -80,6 +83,16 @@ export async function PATCH(
       console.error("Error creating status notification:", notificationError);
       // Don't fail the request, just log the error
     }
+
+    await notifySuperAdminsOfAdminAction({
+      action: "Updated SMME verification status",
+      actorId: user?.id ?? null,
+      actorName: (actorProfile?.name as string | undefined) ?? null,
+      actorRole: (actorProfile?.role as string | undefined) ?? "Admin",
+      details: `Set SMME profile ${id} verification status to ${status}.`,
+      relatedEntityType: "profile",
+      relatedEntityId: id,
+    });
 
     return NextResponse.json({
       success: true,

@@ -1,4 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { getAuthedProfile } from "@/lib/authz";
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts";
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { buildNewsImagePath, isAllowedNewsImageType, NEWS_IMAGE_BUCKET, NEWS_IMAGE_MAX_BYTES } from "@/lib/news";
@@ -15,6 +17,7 @@ const recentNews = new Map<string, number>();
 export async function POST(request: NextRequest) {
   try {
     console.log("Starting news API call...");
+    const { user, profile } = await getAuthedProfile();
     
     let title: string;
     let content: string;
@@ -297,6 +300,16 @@ export async function POST(request: NextRequest) {
         console.log(`Successfully created ${notificationsData?.length || 0} news notifications`);
       }
     }
+
+    await notifySuperAdminsOfAdminAction({
+      action: "Published news",
+      actorId: user?.id ?? null,
+      actorName: (profile?.name as string | undefined) ?? createdBy ?? null,
+      actorRole: (profile?.role as string | undefined) ?? "Admin",
+      details: `Published "${title}" to ${targetAudience} (${userIds.length} recipients).`,
+      relatedEntityType: "news",
+      relatedEntityId: news.id,
+    });
 
     return NextResponse.json({
       success: true,
