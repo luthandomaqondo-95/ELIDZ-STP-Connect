@@ -28,10 +28,16 @@ type BookingEnquiry = {
     response: string | null
     status: string | null
     created_at: string
-    user: {
+    user:
+    | {
         name: string | null
         email: string | null
-    } | null
+    }
+    | Array<{
+        name: string | null
+        email: string | null
+    }>
+    | null
 }
 
 function extractPreferredDate(message?: string | null): string | null {
@@ -131,24 +137,26 @@ export default async function Page({
             .limit(2000),
     ])
 
-    const parsedBookingRequests = ((bookingEnquiries ?? []) as BookingEnquiry[])
+    const parsedBookingRequests = (bookingEnquiries ?? [])
         .map((item) => {
+            const row = item as BookingEnquiry
             const preferredDateText = extractPreferredDate(item.message)
             const preferredDate = preferredDateText ? parseLooseDate(preferredDateText) : null
             const approvedDateText = extractApprovedBookingDate(item.response)
             const approvedDate = approvedDateText ? parseLooseDate(approvedDateText) : null
             const approvalDate = approvedDate ?? preferredDate
             const isApproved = /Booking approval:\s*Approved/i.test(item.response ?? "")
+            const userRecord = Array.isArray(row.user) ? row.user[0] : row.user
 
             return approvalDate
                 ? {
-                      id: item.id,
-                      subject: item.subject ?? "Facility enquiry",
-                      status: item.status ?? "new",
+                      id: row.id,
+                      subject: row.subject ?? "Facility enquiry",
+                      status: row.status ?? "new",
                       preferredDate: approvalDate,
                       preferredDateText,
                       isApproved,
-                      requesterName: item.user?.name?.trim() || item.user?.email?.trim() || "Unknown requester",
+                      requesterName: userRecord?.name?.trim() || userRecord?.email?.trim() || "Unknown requester",
                   }
                 : null
         })
