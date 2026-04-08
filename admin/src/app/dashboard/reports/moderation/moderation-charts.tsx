@@ -80,7 +80,13 @@ export function ModerationCharts({ statusData, reasonData, trendData }: Moderati
                                         />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(v: number) => [v.toLocaleString(), "Reports"]} />
+                                <Tooltip
+                                    formatter={(v) => {
+                                        const numericValue =
+                                            typeof v === "number" ? v : Number(v ?? 0)
+                                        return [numericValue.toLocaleString(), "Reports"]
+                                    }}
+                                />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -110,7 +116,13 @@ export function ModerationCharts({ statusData, reasonData, trendData }: Moderati
                                     width={120}
                                     tick={{ fontSize: 11 }}
                                 />
-                                <Tooltip formatter={(v: number) => [v.toLocaleString(), "Reports"]} />
+                                <Tooltip
+                                    formatter={(v) => {
+                                        const numericValue =
+                                            typeof v === "number" ? v : Number(v ?? 0)
+                                        return [numericValue.toLocaleString(), "Reports"]
+                                    }}
+                                />
                                 <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                                     {reasonData.map((_, i) => (
                                         <Cell key={i} fill={REASON_COLORS[i % REASON_COLORS.length]} />
