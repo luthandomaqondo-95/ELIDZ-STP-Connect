@@ -86,7 +86,13 @@ export function OpportunitiesCharts({
                                         <Cell key={i} fill={STATUS_COLORS[i % STATUS_COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(v: number) => [v.toLocaleString(), "Opportunities"]} />
+                                <Tooltip
+                                    formatter={(v) => {
+                                        const numericValue =
+                                            typeof v === "number" ? v : Number(v ?? 0)
+                                        return [numericValue.toLocaleString(), "Opportunities"]
+                                    }}
+                                />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -109,7 +115,13 @@ export function OpportunitiesCharts({
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} />
                                 <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} width={100} tick={{ fontSize: 12 }} />
-                                <Tooltip formatter={(v: number) => [v.toLocaleString(), "Opportunities"]} />
+                                <Tooltip
+                                    formatter={(v) => {
+                                        const numericValue =
+                                            typeof v === "number" ? v : Number(v ?? 0)
+                                        return [numericValue.toLocaleString(), "Opportunities"]
+                                    }}
+                                />
                                 <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                                     {typeData.map((_, i) => (
                                         <Cell key={i} fill={TYPE_COLORS[i % TYPE_COLORS.length]} />
@@ -167,7 +179,13 @@ export function OpportunitiesCharts({
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" tickLine={false} axisLine={false} />
                                 <YAxis tickLine={false} axisLine={false} allowDecimals={false} />
-                                <Tooltip formatter={(v: number) => [v.toLocaleString(), "Applications"]} />
+                                <Tooltip
+                                    formatter={(v) => {
+                                        const numericValue =
+                                            typeof v === "number" ? v : Number(v ?? 0)
+                                        return [numericValue.toLocaleString(), "Applications"]
+                                    }}
+                                />
                                 <Bar dataKey="count" radius={[6, 6, 0, 0]}>
                                     {appStatusData.map((entry, i) => (
                                         <Cell

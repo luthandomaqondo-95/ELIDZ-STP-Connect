@@ -86,7 +86,13 @@ export function SmmeCharts({
                                         />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(v: number) => [v.toLocaleString(), "Businesses"]} />
+                                <Tooltip
+                                    formatter={(v) => {
+                                        const numericValue =
+                                            typeof v === "number" ? v : Number(v ?? 0)
+                                        return [numericValue.toLocaleString(), "Businesses"]
+                                    }}
+                                />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -118,16 +124,23 @@ export function SmmeCharts({
                                     paddingAngle={4}
                                     dataKey="value"
                                     nameKey="name"
-                                    label={({ name, percent }) =>
-                                        `${name} ${(percent * 100).toFixed(0)}%`
-                                    }
+                                    label={({ name, percent }) => {
+                                        const safePercent = (percent ?? 0) * 100
+                                        return `${name} ${safePercent.toFixed(0)}%`
+                                    }}
                                     labelLine={false}
                                 >
                                     {listingTypeData.map((_, i) => (
                                         <Cell key={i} fill={LISTING_COLORS[i % LISTING_COLORS.length]} />
                                     ))}
                                 </Pie>
-                                <Tooltip formatter={(v: number) => [v.toLocaleString(), "Listings"]} />
+                                <Tooltip
+                                    formatter={(v) => {
+                                        const numericValue =
+                                            typeof v === "number" ? v : Number(v ?? 0)
+                                        return [numericValue.toLocaleString(), "Listings"]
+                                    }}
+                                />
                                 <Legend />
                             </PieChart>
                         </ResponsiveContainer>
@@ -157,7 +170,13 @@ export function SmmeCharts({
                                     width={110}
                                     tick={{ fontSize: 11 }}
                                 />
-                                <Tooltip formatter={(v: number) => [v.toLocaleString(), "Listings"]} />
+                                <Tooltip
+                                    formatter={(v) => {
+                                        const numericValue =
+                                            typeof v === "number" ? v : Number(v ?? 0)
+                                        return [numericValue.toLocaleString(), "Listings"]
+                                    }}
+                                />
                                 <Bar dataKey="count" radius={[0, 6, 6, 0]}>
                                     {categoryData.map((_, i) => (
                                         <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />

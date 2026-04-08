@@ -29,7 +29,7 @@ export async function getRoleSummaries(): Promise<RoleSummary[]> {
   const adminDb = createAdminClient();
 
   const [profilesRes, rolePermsRes] = await Promise.all([
-    supabase.from("profiles").select("role") as Promise<{ data: Array<{ role: string | null }> | null; error: { message?: string } | null }>,
+    supabase.from("profiles").select("role"),
     adminDb.from("role_permissions").select("role, permission_key, name"),
   ]);
 
