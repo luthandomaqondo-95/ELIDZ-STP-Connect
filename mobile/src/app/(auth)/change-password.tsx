@@ -41,8 +41,11 @@ export default function ChangePasswordScreen() {
     const { session } = useAuthContext();
 
     useEffect(() => {
+        let cancelled = false;
+        let linkingSub: ReturnType<typeof Linking.addEventListener> | null = null;
+
         const processUrl = async (url: string | null) => {
-            if (!url) return;
+            if (!url || cancelled) return;
 
             const [, hashRaw = ''] = url.split('#');
             const queryRaw = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
@@ -54,41 +57,53 @@ export default function ChangePasswordScreen() {
             const refresh_token = get('refresh_token');
             const type = get('type');
 
-            // Tokens forwarded by the web bridge — apply session directly.
-            // Supabase RN SDK does NOT auto-process deep link URL fragments.
             if (access_token && refresh_token) {
                 hasRecoveryParams.current = true;
                 const { error } = await supabase.auth.setSession({ access_token, refresh_token });
-                if (!error) {
-                    setRecoveryReady(true);
-                }
+                if (!error && !cancelled) setRecoveryReady(true);
                 return;
             }
 
-            // Fallback: URL contains recovery marker but no tokens yet — wait for SDK event.
             if (type === 'recovery' || url.includes('type=recovery') || url.includes('code=')) {
                 hasRecoveryParams.current = true;
-                setTimeout(async () => {
-                    const nextSession = await authService.getSession();
-                    if (nextSession) setRecoveryReady(true);
-                }, 500);
+                const nextSession = await authService.getSession();
+                if (nextSession && !cancelled) setRecoveryReady(true);
             }
         };
 
-        Linking.getInitialURL().then(processUrl);
+        async function init() {
+            // Fast path: auth-provider already handled PASSWORD_RECOVERY and routed
+            // here — session is active, show the form immediately.
+            const existingSession = await authService.getSession();
+            if (existingSession && !cancelled) {
+                setRecoveryReady(true);
+                return;
+            }
 
-        const linkingSub = Linking.addEventListener('url', ({ url }) => processUrl(url));
+            // Slow path: app cold-started from deep link before auth-provider could
+            // process it — parse URL tokens and apply session manually.
+            const initialUrl = await Linking.getInitialURL();
+            await processUrl(initialUrl);
+
+            if (!cancelled) {
+                linkingSub = Linking.addEventListener('url', ({ url }) => processUrl(url));
+            }
+        }
+
+        init();
 
         const {
             data: { subscription },
         } = supabase.auth.onAuthStateChange((event, eventSession) => {
+            if (cancelled) return;
             if (event === 'PASSWORD_RECOVERY') setRecoveryReady(true);
             if (event === 'SIGNED_IN' && hasRecoveryParams.current) setRecoveryReady(true);
             if (event === 'SIGNED_IN' && eventSession) setRecoveryReady(true);
         });
 
         return () => {
-            linkingSub.remove();
+            cancelled = true;
+            linkingSub?.remove();
             subscription.unsubscribe();
         };
     }, []);
