@@ -69,6 +69,22 @@ export function ResetPasswordForm() {
             const hasRecoveryParams = !!(access_token || refresh_token || code || token_hash);
             if (isMobileReset && hasRecoveryParams) {
                 setRedirectingToApp(true);
+
+                // PKCE code flow: code is one-time use and tied to the browser's PKCE verifier.
+                // Exchange it here in the browser first, then forward the real tokens to the app.
+                if (code) {
+                    const { data, error: exchangeError } = await client.auth.exchangeCodeForSession(code);
+                    if (!exchangeError && data.session) {
+                        const deepLink = buildMobileDeepLink({
+                            access_token: data.session.access_token,
+                            refresh_token: data.session.refresh_token,
+                        });
+                        window.location.href = deepLink;
+                        return;
+                    }
+                }
+
+                // Implicit flow (tokens already in URL hash) or token_hash: forward directly.
                 const deepLink = buildMobileDeepLink(urlParams);
                 window.location.href = deepLink;
                 return;

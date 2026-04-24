@@ -41,17 +41,43 @@ export default function ChangePasswordScreen() {
     const { session } = useAuthContext();
 
     useEffect(() => {
-        Linking.getInitialURL().then(async (url) => {
-            if (url && (url.includes('type=recovery') || url.includes('code=') || url.includes('#access_token='))) {
+        const processUrl = async (url: string | null) => {
+            if (!url) return;
+
+            const [, hashRaw = ''] = url.split('#');
+            const queryRaw = url.includes('?') ? url.split('?')[1].split('#')[0] : '';
+            const hashParams = new URLSearchParams(hashRaw);
+            const searchParams = new URLSearchParams(queryRaw);
+            const get = (key: string) => hashParams.get(key) ?? searchParams.get(key) ?? null;
+
+            const access_token = get('access_token');
+            const refresh_token = get('refresh_token');
+            const type = get('type');
+
+            // Tokens forwarded by the web bridge — apply session directly.
+            // Supabase RN SDK does NOT auto-process deep link URL fragments.
+            if (access_token && refresh_token) {
+                hasRecoveryParams.current = true;
+                const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+                if (!error) {
+                    setRecoveryReady(true);
+                }
+                return;
+            }
+
+            // Fallback: URL contains recovery marker but no tokens yet — wait for SDK event.
+            if (type === 'recovery' || url.includes('type=recovery') || url.includes('code=')) {
                 hasRecoveryParams.current = true;
                 setTimeout(async () => {
                     const nextSession = await authService.getSession();
-                    if (nextSession) {
-                        setRecoveryReady(true);
-                    }
+                    if (nextSession) setRecoveryReady(true);
                 }, 500);
             }
-        });
+        };
+
+        Linking.getInitialURL().then(processUrl);
+
+        const linkingSub = Linking.addEventListener('url', ({ url }) => processUrl(url));
 
         const {
             data: { subscription },
@@ -62,6 +88,7 @@ export default function ChangePasswordScreen() {
         });
 
         return () => {
+            linkingSub.remove();
             subscription.unsubscribe();
         };
     }, []);
