@@ -201,15 +201,15 @@ export function LoginForm() {
 									setShowPassword={setShowPassword}
 									className="h-11 min-[850px]:h-[60px] lg:h-11 rounded-3xl border-transparent bg-gray-800 text-zinc-100 focus-visible:ring-indigo-500/50 focus-visible:border-transparent pr-10"
 								/>
-								{/* <div className="mt-2 text-right">
-									<Link
-										href="/auth/forgot-password"
-										className="inline-block text-sm underline-offset-4 hover:underline text-indigo-400 hover:text-indigo-300"
-									>
-										Forgot your password?
-									</Link>
-								</div> */}
-								<div className="mt-2 h-px w-full bg-zinc-400/40 md:hidden" />
+							<div className="mt-2 text-right">
+								<Link
+									href="/auth/forgot-password"
+									className="inline-block text-sm underline-offset-4 hover:underline text-indigo-400 hover:text-indigo-300"
+								>
+									Forgot your password?
+								</Link>
+							</div>
+							<div className="mt-2 h-px w-full bg-zinc-400/40 md:hidden" />
 							</Field>
 							<Field className="pt-1">
 								<div className="flex justify-center">

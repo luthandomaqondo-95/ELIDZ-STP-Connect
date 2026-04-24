@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Pressable, Dimensions, TouchableOpacity, Image, Platform } from 'react-native';
+import { View, TextInput, Pressable, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
@@ -40,16 +40,13 @@ export default function ForgotPasswordScreen() {
         setError(null);
 
         try {
-            const appWebUrl = Constants.expoConfig?.extra?.appWebUrl as string | undefined;
-            // Always redirect to the web URL so the reset link opens correctly in any
-            // browser/email client. The web page detects source=mobile and forwards the
-            // recovery tokens back into the app via the elidzstp:// deep link.
+            // In Expo Go (development) the scheme is managed by Expo; everywhere else
+            // (dev-client, production build) use the app's own custom scheme so the
+            // reset link opens the app directly without touching the admin site.
             const redirectTo =
-                appWebUrl?.trim()
-                    ? `${appWebUrl.replace(/\/$/, '')}/auth/reset-password?source=mobile`
-                    : Constants.appOwnership === 'expo'
-                        ? ExpoLinking.createURL('change-password')
-                        : 'elidzstp://change-password';
+                Constants.appOwnership === 'expo'
+                    ? ExpoLinking.createURL('change-password')
+                    : 'elidzstp://change-password';
 
             const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
                 redirectTo,

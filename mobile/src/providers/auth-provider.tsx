@@ -582,13 +582,21 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange(async (event, session) => {
-			console.log('Auth state changed:', { event, session })
-			setSession(session)
-			if (event === 'PASSWORD_RECOVERY') {
-				router.replace('/(auth)/change-password');
-				return;
-			}
+	} = supabase.auth.onAuthStateChange(async (event, session) => {
+		console.log('Auth state changed:', { event, session })
+		if (event === 'PASSWORD_RECOVERY') {
+			// Don't update the global session state here — doing so would trigger the
+			// session-change effect which reloads the profile and causes a full-screen
+			// spinner to cover the change-password page. The change-password screen
+			// sets its own session via supabase.auth.setSession() from the deep-link tokens.
+			// Use root `/change-password`, not `/(auth)/change-password`: the `(auth)` group
+			// is behind `Stack.Protected guard={!isLoggedIn}`. A stale session from cold start
+			// leaves `isLoggedIn` true, so nested auth routes are unreachable and the user
+			// would stay on `(tabs)` (home) until the next link open clears the race.
+			router.replace('/change-password');
+			return;
+		}
+		setSession(session)
 			if (session?.user) {
 				// Check if profile exists, if not create it (for OAuth users).
 				// IMPORTANT: Never treat a SELECT error (e.g. RLS) as "missing", otherwise we
@@ -667,16 +675,17 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 	}, [])
 
 	useEffect(() => {
+		// NOTE: No setIsLoading here — the full-screen spinner should only appear during
+		// the initial session check (handled by fetchSession above). Subsequent session
+		// changes (e.g. PASSWORD_RECOVERY, token refresh) reload the profile silently so
+		// they never block the UI with a spinner.
+		if (session === undefined) return; // skip the initial render before fetchSession runs
 		const fetchProfile = async () => {
-			setIsLoading(true)
-
 			if (session) {
 				await loadProfile(session.user.id);
 			} else {
 				setProfile(null)
 			}
-
-			setIsLoading(false)
 		}
 
 		fetchProfile()

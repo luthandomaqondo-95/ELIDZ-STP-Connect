@@ -142,6 +142,9 @@ export default function ChangePasswordScreen() {
             await new Promise((resolve) => setTimeout(resolve, 300));
             await authService.updatePassword(sanitizedNewPassword);
             setSuccessMessage('Your password has been successfully changed');
+            // Clear local session so `isLoggedIn` is false; otherwise `Stack.Protected`
+            // blocks `/(auth)` and login cannot be shown after a successful reset.
+            await supabase.auth.signOut({ scope: 'local' });
             setTimeout(() => {
                 router.replace('/(auth)');
             }, 2000);
@@ -245,10 +248,15 @@ export default function ChangePasswordScreen() {
                         </Text>
                     </Button>
 
-                    <View className="flex-row justify-center mt-2">
-                        <Text className="text-muted-foreground">Remember your password? </Text>
-                        <Pressable onPress={handleBackToLogin}>
-                            <Text className="text-accent font-bold">Log In</Text>
+                    <View className="items-center mt-2">
+                        <Pressable
+                            onPress={handleBackToLogin}
+                            hitSlop={10}
+                            className="px-3 py-2"
+                        >
+                            <Text className="text-muted-foreground">
+                                Remember your password? <Text className="text-accent font-bold">Log In</Text>
+                            </Text>
                         </Pressable>
                     </View>
                     </View>

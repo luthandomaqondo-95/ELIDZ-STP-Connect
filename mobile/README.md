@@ -41,31 +41,60 @@ Email confirmation and password reset require redirect URLs to be whitelisted in
 
 ### Production deep linking (recommended)
 
-Use verified `https` links in production and keep custom scheme links as fallback.
+Use verified `https` links when you want taps on `https://elidzconnect.vercel.app/auth/...` to open the **mobile app** (not only the browser). Custom scheme `elidzstp://` works independently and does **not** use this verification.
 
 - **Domain**: `https://elidzconnect.vercel.app`
 - **Android App Links**:
-  - `mobile/app.json` includes `android.intentFilters` with `autoVerify: true` for `/auth/*`
-  - `admin/public/.well-known/assetlinks.json` is added
-  - Replace `REPLACE_WITH_ANDROID_SHA256_CERT_FINGERPRINT` with your real release SHA-256 certificate fingerprint
+  - `mobile/app.json` includes `android.intentFilters` with `autoVerify: true` for `https://elidzconnect.vercel.app` and `pathPrefix` `/auth`
+  - `admin/public/.well-known/assetlinks.json` must list package `com.elidzstp.app` and the correct **SHA-256** certificate(s)
+  - `admin/next.config.ts` sets `Content-Type: application/json` for `/.well-known/assetlinks.json` and `apple-app-site-association`
 - **iOS Universal Links**:
   - `mobile/app.json` includes `ios.associatedDomains` = `applinks:elidzconnect.vercel.app`
-  - `admin/public/.well-known/apple-app-site-association` is added
-  - Replace `REPLACE_WITH_APPLE_TEAM_ID` with your Apple Team ID
-- **Supabase Redirect URLs** should include:
-  - `https://elidzconnect.vercel.app/auth/reset-password`
-  - `https://elidzconnect.vercel.app/auth/email-confirmed`
-  - plus existing scheme fallbacks (`elidzstp://...`)
+  - `admin/public/.well-known/apple-app-site-association` must use your real **Apple Team ID** + bundle `com.elidzstp.app`
+- **Supabase Redirect URLs** (typical set):
+  - `elidzstp://change-password`, `elidzstp://email-confirmed`, `elidzstp://oauth-callback` (and `elidzstp://**` if you use a wildcard)
+  - For **admin** web reset only: `https://elidzconnect.vercel.app/auth/reset-password` and `https://elidzconnect.vercel.app/auth/email-confirmed`
 
-### Password reset / email confirmation links open a blank page
+### Fix Google Play Console → “Failed domain checks” (Android App Links)
 
-**On mobile (app installed):** The deep link `elidzstp://change-password` should open the app directly. Ensure:
-- `elidzstp://change-password` and `elidzstp://email-confirmed` are in Supabase Redirect URLs
-- AuthProvider handles `PASSWORD_RECOVERY` and navigates to change-password
+Play checks that your **website** (`elidzconnect.vercel.app`) declares the **same signing certificate** that users’ Play Store builds use. If they differ, you see **Failed domain checks** even though `assetlinks.json` exists.
 
-**If you get about:blank:** Gmail opens links in a browser, which can't handle `elidzstp://`. The app now uses the admin URL for redirects. Ensure:
-1. `appWebUrl` in `app.json` → `extra` is your deployed admin URL (`https://elidzconnect.vercel.app`)
-2. Add to Supabase **Redirect URLs**: `https://elidzconnect.vercel.app/auth/reset-password` and `https://elidzconnect.vercel.app/auth/email-confirmed`
+**Most common cause:** `assetlinks.json` contains the **upload key** or an **EAS build** fingerprint, but Play **re-signs** the app with **Play App Signing**. The SHA-256 in the file must include the **App signing key certificate** from Play Console.
+
+Do this in order:
+
+1. **Get the correct SHA-256 from Play Console**
+   - Open [Google Play Console](https://play.google.com/console) → your app.
+   - Go to **Release** → **Setup** → **App integrity** (older UI: **Setup** → **App signing**).
+   - Under **App signing key certificate**, copy **SHA-256 certificate fingerprint** (format like `AB:CD:...`).
+
+2. **Update `admin/public/.well-known/assetlinks.json`**
+   - Open the file in this repo.
+   - In `sha256_cert_fingerprints`, set the value(s) so they **include** that Play **App signing** SHA-256. You can list **multiple** fingerprints as separate strings in the JSON array (e.g. Play app signing + upload key) if you need more than one verified.
+
+3. **Deploy the admin site**
+   - Merge and deploy to Vercel so `https://elidzconnect.vercel.app/.well-known/assetlinks.json` serves the updated JSON.
+
+4. **Verify the file is live**
+   - In a browser: open `https://elidzconnect.vercel.app/.well-known/assetlinks.json` → must be **200**, valid JSON, **no HTML** wrapper.
+   - Optional: [Google Digital Asset Links API](https://digitalassetlinks.googleapis.com/v1/statements:list?source.web.site=https://elidzconnect.vercel.app&relation=delegate_permission/common.handle_all_urls) should list your app + fingerprint.
+
+5. **Wait for Play to re-scan**
+   - Play Console deep-link / domain checks can take **hours to a day** after the site is fixed. Re-open **Grow** → **Deep links** (or **Policy** → **App content** → **App links**, depending on UI) and use any **Re-check** / **Test** action if available.
+
+6. **Optional on-device check** (debug build or Play build installed):
+   - `adb shell pm get-app-links com.elidzstp.app` and look for `elidzconnect.vercel.app` → **verified** vs **none**.
+
+**If you do not need HTTPS links to open the app** (you only use `elidzstp://` for mobile auth): you can remove the `android.intentFilters` block from `mobile/app.json` and ship a **new AAB** so Play stops expecting domain verification for that host—but then `https://elidzconnect.vercel.app/auth/...` will not auto-open the app.
+
+### Password reset / email confirmation (mobile)
+
+**Mobile app** uses `elidzstp://` redirects from Supabase. Ensure:
+
+- Supabase **Redirect URLs** include `elidzstp://change-password`, `elidzstp://email-confirmed`, and `elidzstp://oauth-callback` as needed (wildcard `elidzstp://**` is simplest if allowed).
+- `AuthProvider` handles `PASSWORD_RECOVERY` and routes to change-password (see app source).
+
+**Admin users** reset via the admin site only: `https://elidzconnect.vercel.app/auth/forgot-password` → email → `/auth/reset-password` (separate from mobile).
 
 ## Get a fresh project
 

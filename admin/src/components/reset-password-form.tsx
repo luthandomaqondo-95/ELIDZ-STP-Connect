@@ -16,7 +16,6 @@ function getParamsFromUrl(): {
     code?: string;
     token_hash?: string;
     type?: string;
-    source?: string;
 } {
     if (typeof window === "undefined") return {};
     const hash = window.location.hash?.replace(/^#/, "") || "";
@@ -30,22 +29,7 @@ function getParamsFromUrl(): {
         code: get("code"),
         token_hash: get("token_hash"),
         type: get("type"),
-        source: get("source"),
     };
-}
-
-function buildMobileDeepLink(params: ReturnType<typeof getParamsFromUrl>): string {
-    const base = "elidzstp://change-password";
-    if (params.access_token && params.refresh_token) {
-        return `${base}#access_token=${params.access_token}&refresh_token=${params.refresh_token}&type=recovery`;
-    }
-    if (params.code) {
-        return `${base}?code=${params.code}&type=recovery`;
-    }
-    if (params.token_hash) {
-        return `${base}?token_hash=${params.token_hash}&type=recovery`;
-    }
-    return base;
 }
 
 export function ResetPasswordForm() {
@@ -56,39 +40,11 @@ export function ResetPasswordForm() {
     const [error, setError] = useState<string | null>(null);
     const [hasSession, setHasSession] = useState<boolean | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
-    const [redirectingToApp, setRedirectingToApp] = useState(false);
 
     useEffect(() => {
         const client = createClient();
         async function init() {
-            const urlParams = getParamsFromUrl();
-            const { access_token, refresh_token, code, token_hash, type, source } = urlParams;
-
-            // Mobile-originated reset: forward tokens back into the app deep link.
-            const isMobileReset = source === "mobile";
-            const hasRecoveryParams = !!(access_token || refresh_token || code || token_hash);
-            if (isMobileReset && hasRecoveryParams) {
-                setRedirectingToApp(true);
-
-                // PKCE code flow: code is one-time use and tied to the browser's PKCE verifier.
-                // Exchange it here in the browser first, then forward the real tokens to the app.
-                if (code) {
-                    const { data, error: exchangeError } = await client.auth.exchangeCodeForSession(code);
-                    if (!exchangeError && data.session) {
-                        const deepLink = buildMobileDeepLink({
-                            access_token: data.session.access_token,
-                            refresh_token: data.session.refresh_token,
-                        });
-                        window.location.href = deepLink;
-                        return;
-                    }
-                }
-
-                // Implicit flow (tokens already in URL hash) or token_hash: forward directly.
-                const deepLink = buildMobileDeepLink(urlParams);
-                window.location.href = deepLink;
-                return;
-            }
+            const { access_token, refresh_token, code, token_hash, type } = getParamsFromUrl();
 
             const { data: { session } } = await client.auth.getSession();
             if (session) {
@@ -190,24 +146,6 @@ export function ResetPasswordForm() {
                 >
                     Go to sign in
                 </Link>
-            </div>
-        );
-    }
-
-    if (redirectingToApp) {
-        return (
-            <div className={cn("flex flex-col items-center gap-4 text-center", "")}>
-                <p className="text-zinc-400">Opening the app…</p>
-                <p className="text-zinc-500 text-sm">
-                    If the app does not open automatically,{" "}
-                    <a
-                        href={buildMobileDeepLink(getParamsFromUrl())}
-                        className="text-indigo-400 underline"
-                    >
-                        tap here
-                    </a>
-                    .
-                </p>
             </div>
         );
     }
