@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Pressable, Alert, Linking, Dimensions, TouchableOpacity, Image, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Pressable, Linking, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -11,144 +11,100 @@ import { supabase } from '@/lib/supabase';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { validatePassword, validateConfirmPassword, MIN_PASSWORD_LENGTH } from '@/utils/validation';
+import { MIN_PASSWORD_LENGTH } from '@/utils/validation';
 import { authBack } from '@/utils/navigation';
 import { PasswordField } from '@/components/PasswordField';
 import { useAuthContext } from '@/hooks/use-auth-context';
+import { authService } from '@/services/auth.service';
 
 const { height } = Dimensions.get('window');
 
-function getAuthParamsFromUrl(url: string): {
-    access_token?: string;
-    refresh_token?: string;
-    code?: string;
-    token_hash?: string;
-    type?: string;
-} {
-    try {
-        const [baseAndQuery, hashRaw = ''] = url.split('#');
-        const queryRaw = baseAndQuery.includes('?') ? baseAndQuery.split('?').slice(1).join('?') : '';
-        const hash = hashRaw.startsWith('?') ? hashRaw.slice(1) : hashRaw;
-
-        const hashParams = new URLSearchParams(hash);
-        const searchParams = new URLSearchParams(queryRaw);
-        const get = (key: string) => hashParams.get(key) ?? searchParams.get(key) ?? undefined;
-
-        return {
-            access_token: get('access_token'),
-            refresh_token: get('refresh_token'),
-            code: get('code'),
-            token_hash: get('token_hash'),
-            type: get('type'),
-        };
-    } catch {
-        return {};
-    }
+function validatePasswordStrength(password: string): string | null {
+    if (!password) return 'Please enter your new password';
+    if (password.length < MIN_PASSWORD_LENGTH) return `Password must be at least ${MIN_PASSWORD_LENGTH} characters`;
+    if (!/[A-Z]/.test(password)) return 'Password must include at least one uppercase letter';
+    if (!/[a-z]/.test(password)) return 'Password must include at least one lowercase letter';
+    if (!/\d/.test(password)) return 'Password must include at least one number';
+    return null;
 }
 
 export default function ChangePasswordScreen() {
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme];
-    const { session } = useAuthContext();
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState<string | null>(null);
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
-    const [isSettingSession, setIsSettingSession] = useState(true);
-    const [canReset, setCanReset] = useState(false);
+    const [recoveryReady, setRecoveryReady] = useState(false);
+    const hasRecoveryParams = useRef(false);
+    const { session } = useAuthContext();
 
-    const trySetSessionFromUrl = useCallback(async (url: string | null) => {
-        try {
-            if (!url) {
-                const { data: { session } } = await supabase.auth.getSession();
-                setCanReset(!!session);
-                setIsSettingSession(false);
-                return;
+    useEffect(() => {
+        Linking.getInitialURL().then(async (url) => {
+            if (url && (url.includes('type=recovery') || url.includes('code=') || url.includes('#access_token='))) {
+                hasRecoveryParams.current = true;
+                setTimeout(async () => {
+                    const nextSession = await authService.getSession();
+                    if (nextSession) {
+                        setRecoveryReady(true);
+                    }
+                }, 500);
             }
-            const { access_token, refresh_token, code, token_hash, type } = getAuthParamsFromUrl(url);
-            if (access_token && refresh_token) {
-                const { error } = await supabase.auth.setSession({
-                    access_token,
-                    refresh_token,
-                });
-                if (!error) setCanReset(true);
-            } else if (code) {
-                const { error } = await supabase.auth.exchangeCodeForSession(code);
-                if (!error) setCanReset(true);
-            } else if (token_hash && type === 'recovery') {
-                const { error } = await supabase.auth.verifyOtp({
-                    type: 'recovery',
-                    token_hash,
-                });
-                if (!error) setCanReset(true);
-            } else {
-                const { data: { session } } = await supabase.auth.getSession();
-                setCanReset(!!session);
-            }
-        } finally {
-            setIsSettingSession(false);
-        }
+        });
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((event, eventSession) => {
+            if (event === 'PASSWORD_RECOVERY') setRecoveryReady(true);
+            if (event === 'SIGNED_IN' && hasRecoveryParams.current) setRecoveryReady(true);
+            if (event === 'SIGNED_IN' && eventSession) setRecoveryReady(true);
+        });
+
+        return () => {
+            subscription.unsubscribe();
+        };
     }, []);
 
     useEffect(() => {
-        // Opened from Settings while logged in: skip link parsing and allow immediate reset.
-        if (session?.user) {
-            setCanReset(true);
-            setIsSettingSession(false);
-            return;
+        if (session?.user && hasRecoveryParams.current) {
+            setRecoveryReady(true);
         }
-
-        Linking.getInitialURL().then((url) => {
-            if (url) {
-                trySetSessionFromUrl(url);
-            } else if (Platform.OS === 'web' && typeof window !== 'undefined' && window.location?.href) {
-                trySetSessionFromUrl(window.location.href);
-            } else {
-                trySetSessionFromUrl(null);
-            }
-        });
-        const sub = Linking.addEventListener('url', ({ url }) => trySetSessionFromUrl(url));
-        return () => sub.remove();
-    }, [session?.user, trySetSessionFromUrl]);
+    }, [session?.user]);
 
     const handleChangePassword = async () => {
-        const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string): Promise<T> => {
-            const timeoutPromise = new Promise<never>((_, reject) => {
-                setTimeout(() => reject(new Error(message)), ms);
-            });
-            return Promise.race([promise, timeoutPromise]);
-        };
+        setErrorMessage(null);
+        setSuccessMessage(null);
 
-        setError(null);
-        const pwdCheck = validatePassword(newPassword, { minLength: MIN_PASSWORD_LENGTH });
-        if (!pwdCheck.valid) {
-            setError(pwdCheck.message ?? `Password must be at least ${MIN_PASSWORD_LENGTH} characters`);
+        const sanitizedNewPassword = newPassword.trim();
+        const sanitizedConfirmPassword = confirmPassword.trim();
+
+        if (!sanitizedNewPassword || !sanitizedConfirmPassword) {
+            setErrorMessage('Please fill in both password fields');
             return;
         }
-        const confirmCheck = validateConfirmPassword(newPassword.trim(), confirmPassword.trim());
-        if (!confirmCheck.valid) {
-            setError(confirmCheck.message ?? 'Passwords do not match');
+
+        if (sanitizedNewPassword !== sanitizedConfirmPassword) {
+            setErrorMessage('Passwords do not match');
             return;
         }
-        const trimmed = newPassword.trim();
+
+        const passwordValidationError = validatePasswordStrength(sanitizedNewPassword);
+        if (passwordValidationError) {
+            setErrorMessage(passwordValidationError);
+            return;
+        }
 
         setIsLoading(true);
         try {
-            const { error: updateError } = await withTimeout(
-                supabase.auth.updateUser({ password: trimmed }),
-                15000,
-                'Request timed out. Please try again.'
-            );
-            if (updateError) throw updateError;
-            // Local sign-out is enough here and avoids unnecessary network delay.
-            await supabase.auth.signOut({ scope: 'local' });
-            Alert.alert(
-                'Password Changed',
-                'Your password has been successfully updated. You can now sign in with your new password.',
-                [{ text: 'OK', onPress: () => router.replace('/(auth)') }]
-            );
+            await new Promise((resolve) => setTimeout(resolve, 300));
+            await authService.updatePassword(sanitizedNewPassword);
+            setSuccessMessage('Your password has been successfully changed');
+            setTimeout(() => {
+                router.replace('/(auth)');
+            }, 2000);
         } catch (err: any) {
-            setError(err?.message ?? 'Failed to change password. Please try again.');
+            setErrorMessage(err?.message ?? 'Failed to change password. Please try again.');
         } finally {
             setIsLoading(false);
         }
@@ -156,19 +112,11 @@ export default function ChangePasswordScreen() {
 
     const handleBackToLogin = authBack;
 
-    if (isSettingSession) {
-        return (
-            <View className="flex-1 bg-background justify-center items-center">
-                <Text className="text-muted-foreground">Loading…</Text>
-            </View>
-        );
-    }
-
-    if (!canReset) {
+    if (!recoveryReady) {
         return (
             <View className="flex-1 bg-background justify-center items-center px-6">
                 <Text className="text-center text-muted-foreground mb-4">
-                    Invalid or expired reset link. Please request a new one from the Forgot Password screen.
+                    Waiting for password recovery context. Open the reset link from your email to continue.
                 </Text>
                 <Button onPress={handleBackToLogin} className="min-h-[56px] rounded-full px-6 py-3.5">
                     <Text className="text-base leading-6 text-white font-semibold text-center">Back to Login</Text>
@@ -213,7 +161,7 @@ export default function ChangePasswordScreen() {
                     <View className="mb-4">
                         <PasswordField
                             value={newPassword}
-                            onChangeText={(t) => { setNewPassword(t); setError(null); }}
+                            onChangeText={(t) => { setNewPassword(t); setErrorMessage(null); setSuccessMessage(null); }}
                             placeholder={`New password (min ${MIN_PASSWORD_LENGTH} characters)`}
                             accentColor={colors.accent}
                             placeholderColor={colors.placeholder}
@@ -225,7 +173,7 @@ export default function ChangePasswordScreen() {
                     <View className="mb-6">
                         <PasswordField
                             value={confirmPassword}
-                            onChangeText={(t) => { setConfirmPassword(t); setError(null); }}
+                            onChangeText={(t) => { setConfirmPassword(t); setErrorMessage(null); setSuccessMessage(null); }}
                             placeholder="Confirm new password"
                             accentColor={colors.accent}
                             placeholderColor={colors.placeholder}
@@ -233,9 +181,14 @@ export default function ChangePasswordScreen() {
                             autoComplete="password-new"
                             containerClassName="flex-row items-center bg-input rounded-full px-4 h-14 border border-border"
                         />
-                        {error && (
+                        {errorMessage && (
                             <View className="mt-2 rounded-lg bg-destructive/10 border border-destructive/30 px-4 py-3">
-                                <Text className="text-destructive text-sm">{error}</Text>
+                                <Text className="text-destructive text-sm">{errorMessage}</Text>
+                            </View>
+                        )}
+                        {successMessage && (
+                            <View className="mt-2 rounded-lg bg-green-100 border border-green-300 px-4 py-3">
+                                <Text className="text-green-800 text-sm">{successMessage}</Text>
                             </View>
                         )}
                     </View>
@@ -243,7 +196,7 @@ export default function ChangePasswordScreen() {
                     <Button
                         className="min-h-[56px] rounded-full bg-accent justify-center items-center mb-4 px-6 py-3.5"
                         onPress={handleChangePassword}
-                        disabled={isLoading}
+                        disabled={isLoading || !recoveryReady}
                     >
                         <Text className="text-base leading-6 font-bold text-white text-center">
                             {isLoading ? 'Updating…' : 'Change Password'}

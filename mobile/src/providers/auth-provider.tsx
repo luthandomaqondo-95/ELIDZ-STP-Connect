@@ -8,6 +8,7 @@ import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { router } from 'expo-router';
+import { authService, SocialProvider } from '@/services/auth.service';
 
 /** Parse auth params from OAuth callback URL (handles both hash and query params). */
 function getAuthParamsFromUrl(url: string): { code?: string; access_token?: string; refresh_token?: string } {
@@ -344,10 +345,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					throw new Error('No ID token received from Google');
 				}
 
-				const { data, error } = await supabase.auth.signInWithIdToken({
-					provider: 'google',
-					token: response.data.idToken,
-				});
+				const { user, session, error } = await authService.signInWithIdToken('google', response.data.idToken);
 
 				if (error) {
 					if (/provider is not enabled|unsupported provider/i.test(error.message)) {
@@ -358,19 +356,19 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					throw new Error(error.message);
 				}
 
-				if (data?.session?.user) {
+				if (session?.user) {
 					const { data: statusRow } = await supabase
 						.from('profiles')
 						.select('verification_status')
-						.eq('id', data.session.user.id)
+						.eq('id', session.user.id)
 						.maybeSingle();
 					if (isAccountSuspended(statusRow)) {
 						await supabase.auth.signOut();
 						throw new Error(ACCOUNT_SUSPENDED_MESSAGE);
 					}
-					await loadProfile(data.session.user.id);
+					await loadProfile(session.user.id);
 				}
-				return data;
+				return { user, session };
 			}
 
 			// Web platform: fall back to OAuth flow
@@ -401,6 +399,19 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			console.error('Google sign-in error:', error);
 			throw error;
 		}
+	}
+
+	async function socialSignIn(provider: SocialProvider, idToken: string, nonce?: string): Promise<{ error: Error | null }> {
+		const { user, session, error } = await authService.signInWithIdToken(provider, idToken, nonce);
+		if (error) {
+			return { error };
+		}
+
+		setSession(session);
+		if (user?.id) {
+			await loadProfile(user.id);
+		}
+		return { error: null };
 	}
 
 	async function signInWithApple() {
@@ -683,6 +694,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				resendSignupConfirmation,
 				signInWithGoogle,
 				signInWithApple,
+				socialSignIn,
 				logout,
 				updateProfile,
 			}}

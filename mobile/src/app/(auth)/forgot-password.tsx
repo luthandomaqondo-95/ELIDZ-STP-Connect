@@ -41,14 +41,14 @@ export default function ForgotPasswordScreen() {
 
         try {
             const appWebUrl = Constants.expoConfig?.extra?.appWebUrl as string | undefined;
-            // Mobile-originated password resets should return directly to the app.
+            // Always redirect to the web URL so the reset link opens correctly in any
+            // browser/email client. The web page detects source=mobile and forwards the
+            // recovery tokens back into the app via the elidzstp:// deep link.
             const redirectTo =
-                Platform.OS === 'ios' || Platform.OS === 'android'
-                    ? Constants.appOwnership === 'expo'
+                appWebUrl?.trim()
+                    ? `${appWebUrl.replace(/\/$/, '')}/auth/reset-password?source=mobile`
+                    : Constants.appOwnership === 'expo'
                         ? ExpoLinking.createURL('change-password')
-                        : 'elidzstp://change-password'
-                    : appWebUrl?.trim()
-                        ? `${appWebUrl.replace(/\/$/, '')}/auth/reset-password`
                         : 'elidzstp://change-password';
 
             const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {

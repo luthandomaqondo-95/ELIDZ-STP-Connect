@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, Pressable, TouchableOpacity, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
+import Constants from 'expo-constants';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
 import { useAuthContext } from '@/hooks/use-auth-context';
@@ -18,10 +19,11 @@ import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
 import { ErrorAlert } from '@/components/Error';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
 import { authBack } from '@/utils/navigation';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 export default function LoginScreen() {
     const insets = useSafeAreaInsets();
-    const { login, signInWithGoogle, signInWithApple, resendSignupConfirmation, profile } = useAuthContext();
+    const { login, signInWithApple, socialSignIn, resendSignupConfirmation, profile } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme ?? 'light'];
     const params = useLocalSearchParams<{ signupSuccess?: string; email?: string }>();
@@ -29,15 +31,11 @@ export default function LoginScreen() {
     const [email, setEmail] = useState(params.email ?? '');
     const [password, setPassword] = useState('');
     const [cooldownSeconds, setCooldownSeconds] = useState(0);
+    const [providerLoading, setProviderLoading] = useState<'google' | 'apple' | null>(null);
     const [hasCheckedVerification, setHasCheckedVerification] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [showVerificationAlert, setShowVerificationAlert] = useState(false);
     const [isResending, setIsResending] = useState(false);
-    const androidBrand = Platform.OS === 'android' ? String((Platform.constants as any)?.Brand ?? '') : '';
-    const androidManufacturer = Platform.OS === 'android' ? String((Platform.constants as any)?.Manufacturer ?? '') : '';
-    const isHuaweiDevice = Platform.OS === 'android' && /huawei|honor/i.test(`${androidBrand} ${androidManufacturer}`);
-    const showGoogleSignIn = !isHuaweiDevice;
-    const hasSocialOptions = showGoogleSignIn || Platform.OS === 'ios';
 
     // Show success message when redirected from signup (email confirmation required)
     const hasShownSignupSuccess = useRef(false);
@@ -53,6 +51,15 @@ export default function LoginScreen() {
     useEffect(() => {
         if (params.email) setEmail(params.email);
     }, [params.email]);
+
+    useEffect(() => {
+        const googleAuth = Constants.expoConfig?.extra?.googleAuth as { webClientId?: string } | undefined;
+        const webClientId = googleAuth?.webClientId;
+        GoogleSignin.configure({
+            webClientId,
+            scopes: ['openid', 'email', 'profile'],
+        });
+    }, []);
 
     useEffect(() => {
         async function checkSMMEVerification() {
@@ -126,6 +133,55 @@ export default function LoginScreen() {
             }
         );
     }
+
+    const isSuccessResponse = (response: unknown): response is { data: { idToken?: string | null } } => {
+        if (!response || typeof response !== 'object') return false;
+        const data = (response as { data?: { idToken?: string | null } }).data;
+        return !!data && typeof data === 'object';
+    };
+
+    const handleSocialLogin = async (provider: 'google') => {
+        clearError();
+        setProviderLoading(provider);
+        try {
+            await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+            const response = await GoogleSignin.signIn();
+
+            if (!isSuccessResponse(response)) {
+                setError('Google Sign-In failed', 'Error');
+                return;
+            }
+
+            const idToken = response.data.idToken;
+            if (!idToken) {
+                setError('Google Sign-In failed - no idToken', 'Error');
+                return;
+            }
+
+            const { error } = await socialSignIn('google', idToken);
+            if (error) {
+                setError(error.message || 'Failed to login with Google', 'Error');
+                return;
+            }
+
+            router.replace('/(tabs)');
+        } catch (error: any) {
+            if (error?.code === statusCodes.SIGN_IN_CANCELLED) {
+                return;
+            }
+            if (error?.code === statusCodes.IN_PROGRESS) {
+                setError('Google Sign-In already in progress', 'Error');
+                return;
+            }
+            if (error?.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                setError('Google Play Services unavailable', 'Error');
+                return;
+            }
+            setError('Google Sign-In failed', 'Error');
+        } finally {
+            setProviderLoading(null);
+        }
+    };
 
     const handleBack = authBack;
 
@@ -220,36 +276,25 @@ export default function LoginScreen() {
                                 {isLoading ? 'Signing In...' : 'Sign In'}
                             </Text>
                         </Button>
-                        {hasSocialOptions && (
-                            <View className="flex-row items-center my-6">
-                                <View className="flex-1 h-px bg-border" />
-                                <Text className="text-muted-foreground mx-4 text-sm font-medium">Or continue with</Text>
-                                <View className="flex-1 h-px bg-border" />
-                            </View>
-                        )}
-                        {showGoogleSignIn && (
-                            <Pressable
-                                className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
-                                onPress={async () => {
-                                    await execute(() => signInWithGoogle(), {
-                                        onSuccess: () => {
-                                            clearError();
-                                            router.replace('/(tabs)');
-                                        },
-                                    });
-                                }}
-                                disabled={isLoading}
-                            >
-                                <Image
-                                    source={require('../../../assets/logos/search.png')}
-                                    className="w-[22px] h-[22px] mr-3"
-                                    resizeMode="contain"
-                                />
-                                <Text className="text-base font-semibold text-foreground">
-                                    {isLoading ? 'Signing in...' : 'Continue with Google'}
-                                </Text>
-                            </Pressable>
-                        )}
+                        <View className="flex-row items-center my-6">
+                            <View className="flex-1 h-px bg-border" />
+                            <Text className="text-muted-foreground mx-4 text-sm font-medium">Or continue with</Text>
+                            <View className="flex-1 h-px bg-border" />
+                        </View>
+                        <Pressable
+                            className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
+                            onPress={() => handleSocialLogin('google')}
+                            disabled={providerLoading !== null}
+                        >
+                            <Image
+                                source={require('../../../assets/logos/search.png')}
+                                className="w-[22px] h-[22px] mr-3"
+                                resizeMode="contain"
+                            />
+                            <Text className="text-base font-semibold text-foreground">
+                                {providerLoading === 'google' ? 'Signing in...' : 'Continue with Google'}
+                            </Text>
+                        </Pressable>
                         {Platform.OS === 'ios' && (
                             <Pressable
                                 className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"

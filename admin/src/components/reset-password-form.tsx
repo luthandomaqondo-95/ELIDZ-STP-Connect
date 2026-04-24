@@ -16,18 +16,36 @@ function getParamsFromUrl(): {
     code?: string;
     token_hash?: string;
     type?: string;
+    source?: string;
 } {
     if (typeof window === "undefined") return {};
     const hash = window.location.hash?.replace(/^#/, "") || "";
     const search = window.location.search?.replace(/^\?/, "") || "";
-    const params = new URLSearchParams(hash || search);
+    const hashParams = new URLSearchParams(hash);
+    const searchParams = new URLSearchParams(search);
+    const get = (key: string) => hashParams.get(key) ?? searchParams.get(key) ?? undefined;
     return {
-        access_token: params.get("access_token") ?? undefined,
-        refresh_token: params.get("refresh_token") ?? undefined,
-        code: params.get("code") ?? undefined,
-        token_hash: params.get("token_hash") ?? undefined,
-        type: params.get("type") ?? undefined,
+        access_token: get("access_token"),
+        refresh_token: get("refresh_token"),
+        code: get("code"),
+        token_hash: get("token_hash"),
+        type: get("type"),
+        source: get("source"),
     };
+}
+
+function buildMobileDeepLink(params: ReturnType<typeof getParamsFromUrl>): string {
+    const base = "elidzstp://change-password";
+    if (params.access_token && params.refresh_token) {
+        return `${base}#access_token=${params.access_token}&refresh_token=${params.refresh_token}&type=recovery`;
+    }
+    if (params.code) {
+        return `${base}?code=${params.code}&type=recovery`;
+    }
+    if (params.token_hash) {
+        return `${base}?token_hash=${params.token_hash}&type=recovery`;
+    }
+    return base;
 }
 
 export function ResetPasswordForm() {
@@ -38,16 +56,29 @@ export function ResetPasswordForm() {
     const [error, setError] = useState<string | null>(null);
     const [hasSession, setHasSession] = useState<boolean | null>(null);
     const [isSuccess, setIsSuccess] = useState(false);
+    const [redirectingToApp, setRedirectingToApp] = useState(false);
 
     useEffect(() => {
         const client = createClient();
         async function init() {
+            const urlParams = getParamsFromUrl();
+            const { access_token, refresh_token, code, token_hash, type, source } = urlParams;
+
+            // Mobile-originated reset: forward tokens back into the app deep link.
+            const isMobileReset = source === "mobile";
+            const hasRecoveryParams = !!(access_token || refresh_token || code || token_hash);
+            if (isMobileReset && hasRecoveryParams) {
+                setRedirectingToApp(true);
+                const deepLink = buildMobileDeepLink(urlParams);
+                window.location.href = deepLink;
+                return;
+            }
+
             const { data: { session } } = await client.auth.getSession();
             if (session) {
                 setHasSession(true);
                 return;
             }
-            const { access_token, refresh_token, code, token_hash, type } = getParamsFromUrl();
 
             if (access_token && refresh_token) {
                 const { error: err } = await client.auth.setSession({ access_token, refresh_token });
@@ -143,6 +174,24 @@ export function ResetPasswordForm() {
                 >
                     Go to sign in
                 </Link>
+            </div>
+        );
+    }
+
+    if (redirectingToApp) {
+        return (
+            <div className={cn("flex flex-col items-center gap-4 text-center", "")}>
+                <p className="text-zinc-400">Opening the app…</p>
+                <p className="text-zinc-500 text-sm">
+                    If the app does not open automatically,{" "}
+                    <a
+                        href={buildMobileDeepLink(getParamsFromUrl())}
+                        className="text-indigo-400 underline"
+                    >
+                        tap here
+                    </a>
+                    .
+                </p>
             </div>
         );
     }
