@@ -37,6 +37,11 @@ export default function SignupScreen() {
 	const isSubmittingRef = useRef(false);
 	const [acceptedTerms, setAcceptedTerms] = useState(false);
 	const [cooldownSeconds, setCooldownSeconds] = useState(0);
+	const androidBrand = Platform.OS === 'android' ? String((Platform.constants as any)?.Brand ?? '') : '';
+	const androidManufacturer = Platform.OS === 'android' ? String((Platform.constants as any)?.Manufacturer ?? '') : '';
+	const isHuaweiDevice = Platform.OS === 'android' && /huawei|honor/i.test(`${androidBrand} ${androidManufacturer}`);
+	const showGoogleSignIn = !isHuaweiDevice;
+	const hasSocialOptions = showGoogleSignIn || Platform.OS === 'ios';
 
 	const [postalCodesForCity, setPostalCodesForCity] = useState<string[]>([]);
 	const [loadingPostalCodes, setLoadingPostalCodes] = useState(false);
@@ -643,43 +648,47 @@ export default function SignupScreen() {
 					</Button>
 
 					{/* Divider */}
-					<View className="flex-row items-center my-6">
-						<View className="flex-1 h-px bg-border" />
-						<Text className="text-muted-foreground mx-4 text-sm font-medium">
-							Or continue with
-						</Text>
-						<View className="flex-1 h-px bg-border" />
-					</View>
+					{hasSocialOptions && (
+						<View className="flex-row items-center my-6">
+							<View className="flex-1 h-px bg-border" />
+							<Text className="text-muted-foreground mx-4 text-sm font-medium">
+								Or continue with
+							</Text>
+							<View className="flex-1 h-px bg-border" />
+						</View>
+					)}
 
 					{/* Google Sign In Button */}
-					<Pressable
-						className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
-						onPress={async () => {
-							if (!acceptedTerms) {
-								setError('Please accept the Terms & Conditions before continuing.', 'Terms Required');
-								return;
-							}
-							await execute(() => signInWithGoogle(), {
-								onSuccess: () => {
-									clearError();
-									router.replace('/(tabs)');
-								},
-								onError: (err) => {
-									setError(err?.message || 'Failed to sign in with Google', 'Error');
-								},
-							});
-						}}
-						disabled={isLoading}
-					>
-						<Image
-							source={require('../../../assets/logos/search.png')}
-							className="w-[22px] h-[22px] mr-3"
-							resizeMode="contain"
-						/>
-						<Text className="text-base font-semibold text-foreground">
-							{isLoading ? 'Signing in...' : 'Continue with Google'}
-						</Text>
-					</Pressable>
+					{showGoogleSignIn && (
+						<Pressable
+							className={`h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center active:opacity-80 active:scale-95 ${Platform.OS === 'ios' ? 'mb-4' : 'mb-6'}`}
+							onPress={async () => {
+								if (!acceptedTerms) {
+									setError('Please accept the Terms & Conditions before continuing.', 'Terms Required');
+									return;
+								}
+								await execute(() => signInWithGoogle(), {
+									onSuccess: () => {
+										clearError();
+										router.replace('/(tabs)');
+									},
+									onError: (err) => {
+										setError(err?.message || 'Failed to sign in with Google', 'Error');
+									},
+								});
+							}}
+							disabled={isLoading}
+						>
+							<Image
+								source={require('../../../assets/logos/search.png')}
+								className="w-[22px] h-[22px] mr-3"
+								resizeMode="contain"
+							/>
+							<Text className="text-base font-semibold text-foreground">
+								{isLoading ? 'Signing in...' : 'Continue with Google'}
+							</Text>
+						</Pressable>
+					)}
 
 					{Platform.OS === 'ios' && (
 						<Pressable

@@ -33,6 +33,11 @@ export default function LoginScreen() {
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [showVerificationAlert, setShowVerificationAlert] = useState(false);
     const [isResending, setIsResending] = useState(false);
+    const androidBrand = Platform.OS === 'android' ? String((Platform.constants as any)?.Brand ?? '') : '';
+    const androidManufacturer = Platform.OS === 'android' ? String((Platform.constants as any)?.Manufacturer ?? '') : '';
+    const isHuaweiDevice = Platform.OS === 'android' && /huawei|honor/i.test(`${androidBrand} ${androidManufacturer}`);
+    const showGoogleSignIn = !isHuaweiDevice;
+    const hasSocialOptions = showGoogleSignIn || Platform.OS === 'ios';
 
     // Show success message when redirected from signup (email confirmation required)
     const hasShownSignupSuccess = useRef(false);
@@ -215,32 +220,36 @@ export default function LoginScreen() {
                                 {isLoading ? 'Signing In...' : 'Sign In'}
                             </Text>
                         </Button>
-                        <View className="flex-row items-center my-6">
-                            <View className="flex-1 h-px bg-border" />
-                            <Text className="text-muted-foreground mx-4 text-sm font-medium">Or continue with</Text>
-                            <View className="flex-1 h-px bg-border" />
-                        </View>
-                        <Pressable
-                            className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
-                            onPress={async () => {
-                                await execute(() => signInWithGoogle(), {
-                                    onSuccess: () => {
-                                        clearError();
-                                        router.replace('/(tabs)');
-                                    },
-                                });
-                            }}
-                            disabled={isLoading}
-                        >
-                            <Image
-                                source={require('../../../assets/logos/search.png')}
-                                className="w-[22px] h-[22px] mr-3"
-                                resizeMode="contain"
-                            />
-                            <Text className="text-base font-semibold text-foreground">
-                                {isLoading ? 'Signing in...' : 'Continue with Google'}
-                            </Text>
-                        </Pressable>
+                        {hasSocialOptions && (
+                            <View className="flex-row items-center my-6">
+                                <View className="flex-1 h-px bg-border" />
+                                <Text className="text-muted-foreground mx-4 text-sm font-medium">Or continue with</Text>
+                                <View className="flex-1 h-px bg-border" />
+                            </View>
+                        )}
+                        {showGoogleSignIn && (
+                            <Pressable
+                                className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
+                                onPress={async () => {
+                                    await execute(() => signInWithGoogle(), {
+                                        onSuccess: () => {
+                                            clearError();
+                                            router.replace('/(tabs)');
+                                        },
+                                    });
+                                }}
+                                disabled={isLoading}
+                            >
+                                <Image
+                                    source={require('../../../assets/logos/search.png')}
+                                    className="w-[22px] h-[22px] mr-3"
+                                    resizeMode="contain"
+                                />
+                                <Text className="text-base font-semibold text-foreground">
+                                    {isLoading ? 'Signing in...' : 'Continue with Google'}
+                                </Text>
+                            </Pressable>
+                        )}
                         {Platform.OS === 'ios' && (
                             <Pressable
                                 className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
