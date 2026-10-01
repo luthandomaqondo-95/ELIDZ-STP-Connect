@@ -2,8 +2,9 @@
  * 360° equirectangular video viewer (HTML + Three.js) for WebView and web.
  *
  * Gyroscope / device motion (mobile):
- * - Uses the browser Device Orientation API (no extra native deps).
- * - iOS 13+: Motion permission must be requested from a user gesture (tap "Use device motion").
+ * - Native apps prefer DeviceMotion from expo-sensors (injected via __setGyro).
+ * - Fallback: browser Device Orientation API.
+ * - iOS 13+: Motion permission must be requested from a user gesture.
  * - Android: No permission; deviceorientation works when available.
  * - When gyro is on, touch-drag rotation is disabled; pinch zoom and hotspot taps still work.
  * - Camera rotation is smoothed (lerp) for natural movement.
@@ -167,6 +168,8 @@ canvas { display: block; width: 100%; height: 100%; }
   var slowWarningId = null;
 
   window.__toggleGyro = function() {};
+  window.__setGyroEnabled = function() {};
+  window.__setGyro = function() {};
 
   function init() {
     scene = new THREE.Scene();
@@ -245,40 +248,61 @@ canvas { display: block; width: 100%; height: 100%; }
         updateGyroButtonLabel();
         return;
       }
-      var DeviceOrientationEvent = window.DeviceOrientationEvent;
-      if (DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-          .then(function(perm) {
-            if (perm === 'granted') {
-              startDeviceOrientation();
-              gyroEnabled = true;
-              updateGyroButtonLabel();
-            } else {
-              sendMessage({ type: 'error', message: 'Motion permission denied. If you use Expo Go, try a development build (npx expo run:ios) so the permission dialog can appear.' });
-            }
-          })
-          .catch(function(err) {
-            var msg = err && err.message ? err.message : String(err);
-            if (msg.indexOf('denied') !== -1 || msg.indexOf('NotAllowed') !== -1) {
-              msg = 'Motion access denied. Rebuild the app (not Expo Go) and tap again, or allow Motion in Settings > Privacy.';
-            }
-            sendMessage({ type: 'error', message: 'Motion permission failed: ' + msg });
-          });
-      } else {
-        startDeviceOrientation();
-        gyroEnabled = true;
-        updateGyroButtonLabel();
+      try {
+        var DeviceOrientationEvent = window.DeviceOrientationEvent;
+        if (DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+          DeviceOrientationEvent.requestPermission()
+            .then(function(perm) {
+              if (perm === 'granted') {
+                startDeviceOrientation();
+                gyroEnabled = true;
+                updateGyroButtonLabel();
+              } else {
+                sendMessage({ type: 'error', message: 'Motion permission denied. Allow Motion & Orientation in Settings, then try again.' });
+              }
+            })
+            .catch(function(err) {
+              var msg = err && err.message ? err.message : String(err);
+              if (msg.indexOf('denied') !== -1 || msg.indexOf('NotAllowed') !== -1) {
+                msg = 'Motion access denied. Allow Motion in Settings > Privacy, then try again.';
+              }
+              sendMessage({ type: 'error', message: 'Motion permission failed: ' + msg });
+            });
+        } else {
+          startDeviceOrientation();
+          gyroEnabled = true;
+          updateGyroButtonLabel();
+        }
+      } catch (err) {
+        var failMsg = err && err.message ? err.message : String(err);
+        sendMessage({ type: 'error', message: 'Could not enable gyroscope: ' + failMsg });
       }
     });
     window.__toggleGyro = function() {
       if (btn) btn.click();
+    };
+    window.__setGyroEnabled = function(on) {
+      gyroEnabled = !!on;
+      simulatedMotion = false;
+      deviceOrientationAvailable = !!on;
+      updateGyroButtonLabel();
+    };
+    window.__setGyro = function(alpha, beta, gamma) {
+      if (alpha != null && isFinite(alpha)) deviceAlpha = alpha;
+      if (beta != null && isFinite(beta)) deviceBeta = beta;
+      if (gamma != null && isFinite(gamma)) deviceGamma = gamma;
     };
     if (window.ReactNativeWebView) sendMessage({ type: 'gyro_state', enabled: false });
   }
 
   function startDeviceOrientation() {
     deviceOrientationAvailable = true;
-    window.addEventListener('deviceorientation', onDeviceOrientation, { passive: true });
+    try {
+      window.addEventListener('deviceorientation', onDeviceOrientation, { passive: true });
+    } catch (err) {
+      deviceOrientationAvailable = false;
+      throw err;
+    }
   }
 
   function onDeviceOrientation(e) {

@@ -12,15 +12,27 @@ import type { Hotspot, Scene } from '@/lib/scenes';
 import { generateViewerHtml } from '@/lib/viewer-html';
 
 let WebViewComponent: any = null;
-let ViroViewer360: any = null;
 if (Platform.OS !== 'web') {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   WebViewComponent = require('react-native-webview').default;
+}
+
+type GyroSubscription = { remove: () => void };
+
+function radToDeg(rad: number): number {
+  return (rad * 180) / Math.PI;
+}
+
+function getDeviceMotion(): {
+  requestPermissionsAsync?: () => Promise<{ status?: string; granted?: boolean }>;
+  setUpdateInterval?: (ms: number) => void;
+  addListener: (listener: (data: { rotation?: { alpha: number; beta: number; gamma: number } }) => void) => GyroSubscription;
+} | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    ViroViewer360 = require('@/components/ViroViewer360').default;
+    return require('expo-sensors').DeviceMotion ?? null;
   } catch {
-    // @reactvision/react-viro not installed
+    return null;
   }
 }
 
@@ -230,6 +242,17 @@ function NativeViewer({
   const pendingChangeRef = useRef<ChangeVideoMessage | null>(null);
   const lastSentSignatureRef = useRef<string | null>(null);
   const webViewAvailable = !!WebViewComponent;
+  const gyroSubRef = useRef<GyroSubscription | null>(null);
+  const gyroModeRef = useRef<'off' | 'pending' | 'native' | 'webview'>('off');
+
+  const injectGyroScript = useCallback((script: string) => {
+    webViewRef.current?.injectJavaScript?.(script);
+  }, []);
+
+  const stopNativeGyro = useCallback(() => {
+    gyroSubRef.current?.remove();
+    gyroSubRef.current = null;
+  }, []);
 
   const flushPending = useCallback(() => {
     const pending = pendingChangeRef.current;
@@ -326,14 +349,76 @@ function NativeViewer({
   }, [scene, onLoading, onError, webViewAvailable, flushPending]);
 
   const triggerGyro = useCallback(() => {
-    webViewRef.current?.injectJavaScript?.(
-      "window.__toggleGyro && window.__toggleGyro(); true;"
-    );
-  }, []);
+    if (gyroModeRef.current === 'native') {
+      stopNativeGyro();
+      gyroModeRef.current = 'off';
+      injectGyroScript('window.__setGyroEnabled && window.__setGyroEnabled(false); true;');
+      return;
+    }
+
+    if (gyroModeRef.current === 'webview') {
+      gyroModeRef.current = 'off';
+      injectGyroScript('window.__toggleGyro && window.__toggleGyro(); true;');
+      return;
+    }
+
+    if (gyroModeRef.current === 'pending') return;
+    gyroModeRef.current = 'pending';
+
+    void (async () => {
+      const DeviceMotion = getDeviceMotion();
+      if (DeviceMotion) {
+        try {
+          if (Platform.OS === 'ios' && typeof DeviceMotion.requestPermissionsAsync === 'function') {
+            const perm = await Promise.race([
+              DeviceMotion.requestPermissionsAsync(),
+              new Promise<{ status?: string; granted?: boolean }>((_, reject) =>
+                setTimeout(() => reject(new Error('Motion permission timed out')), 2500)
+              ),
+            ]);
+            const granted = perm?.granted === true || perm?.status === 'granted';
+            if (perm?.status && perm.status !== 'granted' && !granted) {
+              throw new Error('Motion permission denied');
+            }
+          }
+          DeviceMotion.setUpdateInterval?.(100);
+          stopNativeGyro();
+          gyroSubRef.current = DeviceMotion.addListener((data) => {
+            const rot = data?.rotation;
+            if (!rot) return;
+            const alpha = radToDeg(rot.alpha);
+            const beta = radToDeg(rot.beta);
+            const gamma = radToDeg(rot.gamma);
+            if (![alpha, beta, gamma].every(Number.isFinite)) return;
+            injectGyroScript(
+              `window.__setGyro && window.__setGyro(${alpha},${beta},${gamma}); true;`
+            );
+          });
+          gyroModeRef.current = 'native';
+          injectGyroScript('window.__setGyroEnabled && window.__setGyroEnabled(true); true;');
+          return;
+        } catch {
+          stopNativeGyro();
+        }
+      }
+
+      if (gyroModeRef.current !== 'native') {
+        gyroModeRef.current = 'webview';
+        injectGyroScript('window.__toggleGyro && window.__toggleGyro(); true;');
+      }
+    })();
+  }, [injectGyroScript, stopNativeGyro]);
 
   useEffect(() => {
     registerGyroTrigger?.(triggerGyro);
   }, [registerGyroTrigger, triggerGyro]);
+
+  useEffect(() => {
+    return () => {
+      stopNativeGyro();
+      gyroModeRef.current = 'off';
+    };
+  }, [stopNativeGyro]);
 
   if (!WebViewComponent) return <View className="flex-1 bg-viewer-bg" />;
 
@@ -354,6 +439,9 @@ function NativeViewer({
         onLoadEnd={() => {
           webViewLoadedRef.current = true;
           flushPending();
+          if (gyroModeRef.current === 'native') {
+            injectGyroScript('window.__setGyroEnabled && window.__setGyroEnabled(true); true;');
+          }
         }}
         onMessage={handleMessage}
         scrollEnabled={false}
@@ -381,9 +469,6 @@ const Viewer360Inner = forwardRef<Viewer360Ref | null, Viewer360Props>(
     if (Platform.OS === 'web') {
       return <WebViewer {...props} />;
     }
-    if (ViroViewer360) {
-      return <Viewer360WithSwitch {...props} toggleRef={toggleRef} />;
-    }
     return <NativeViewerWithGyroRef {...props} toggleRef={toggleRef} />;
   }
 );
@@ -396,26 +481,5 @@ function NativeViewerWithGyroRef(
   const { toggleRef, ...rest } = props;
   return (
     <NativeViewer {...rest} registerGyroTrigger={(fn) => (toggleRef.current = fn)} />
-  );
-}
-
-function Viewer360WithSwitch(
-  props: Viewer360Props & { toggleRef?: React.MutableRefObject<() => void> }
-) {
-  const { toggleRef, ...restProps } = props;
-  const [useViro, setUseViro] = useState(false);
-  const toggle = useCallback(() => setUseViro((v) => !v), []);
-  useEffect(() => {
-    if (toggleRef) toggleRef.current = toggle;
-  }, [toggleRef, toggle]);
-
-  return (
-    <View className="flex-1 bg-viewer-bg">
-      {useViro ? (
-        <ViroViewer360 {...restProps} />
-      ) : (
-        <NativeViewer {...restProps} />
-      )}
-    </View>
   );
 }

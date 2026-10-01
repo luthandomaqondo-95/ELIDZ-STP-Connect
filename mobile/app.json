@@ -32,6 +32,7 @@
         "NSLocationWhenInUseUsageDescription": "Allow $(PRODUCT_NAME) to access your location while using the app",
         "NSCameraUsageDescription": "Allow $(PRODUCT_NAME) to use your camera",
         "NSMicrophoneUsageDescription": "Allow $(PRODUCT_NAME) to use your microphone",
+        "NSMotionUsageDescription": "Allow $(PRODUCT_NAME) to use the gyroscope so you can look around 360° tours by moving your device.",
         "ITSAppUsesNonExemptEncryption": false
       }
     },
@@ -107,6 +108,12 @@
         }
       ],
       "expo-audio",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow $(PRODUCT_NAME) to use the gyroscope so you can look around 360° tours by moving your device."
+        }
+      ],
       "expo-secure-store",
       "expo-apple-authentication",
       "expo-asset",
