@@ -1,4 +1,10 @@
-admin/.env.local
-admin/.env.local
 .playwright-mcp/
+
+# env files (also listed in package gitignores; keep here as a safety net)
+admin/.env
+admin/.env.*
 mobile/.env
+mobile/.env.*
+!.env.example
+!admin/.env.example
+!mobile/.env.example
