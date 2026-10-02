@@ -337,7 +337,7 @@ function EnquiryFormScreen() {
               <Feather
                 name="info"
                 size={20}
-                color={colors.primary}
+                color={colors.primaryBright}
                 style={{ marginRight: 12, marginTop: 2 }}
               />
               <View className="flex-1">

@@ -58,41 +58,37 @@ interface SMMECardProps {
 
 const SMMECard = React.memo(({ smme, colors, onPress }: SMMECardProps) => (
     <Pressable
-        className="bg-card mb-4 rounded-2xl border border-border shadow-sm overflow-hidden active:opacity-95"
+        className="bg-card mb-2 rounded-xl border border-border shadow-sm overflow-hidden active:opacity-95"
         onPress={onPress}
     >
-        <View className="p-4">
-            <View className="flex-row items-start">
-                {/* Logo */}
-                <View className="w-14 h-14 rounded-xl justify-center items-center overflow-hidden bg-primary/5 border border-primary/10">
-                    <TenantLogo name={smme.name} logoUrl={smme.logo_url} />
-                </View>
+        <View className="flex-row items-center px-3 py-2.5">
+            {/* Logo */}
+            <View className="w-10 h-10 rounded-xl justify-center items-center overflow-hidden bg-primary/5 border border-primary/10">
+                <TenantLogo name={smme.name} logoUrl={smme.logo_url} />
+            </View>
 
-                {/* Info */}
-                <View className="flex-1 ml-4">
-                    <View className="flex-row items-center justify-between mb-1">
-                        <Text className="text-base font-bold text-foreground flex-1 mr-2" numberOfLines={1}>
-                            {smme.name}
-                        </Text>
-                    </View>
-
-                    <View className="flex-row items-center mb-2 flex-wrap">
-                        <View className="bg-green-50 px-2 py-0.5 rounded-md mr-2 mb-1 flex-row items-center border border-green-100">
-                            <Feather name="shield" size={10} color={colors.success} />
-                            <Text className="text-green-700 text-[10px] font-bold uppercase ml-1">Verified</Text>
-                        </View>
-                        {smme.bbbee && (
-                            <View className="bg-accent/10 px-2 py-0.5 rounded-md mb-1 border border-accent/20">
-                                <Text className="text-accent text-[10px] font-bold">B-BBEE {smme.bbbee}</Text>
-                            </View>
-                        )}
-                    </View>
-
-                    <Text className="text-muted-foreground text-xs" numberOfLines={2}>
-                        {smme.description}
+            {/* Info */}
+            <View className="flex-1 ml-2.5">
+                <View className="flex-row items-center justify-between mb-0.5">
+                    <Text className="text-sm font-bold text-foreground flex-1 mr-2" numberOfLines={1}>
+                        {smme.name}
                     </Text>
                 </View>
+
+                {smme.bbbee ? (
+                    <View className="flex-row items-center mb-0.5">
+                        <View className="bg-accent/10 px-1.5 py-0.5 rounded-md border border-accent/20">
+                            <Text className="text-accent text-[10px] font-bold">B-BBEE {smme.bbbee}</Text>
+                        </View>
+                    </View>
+                ) : null}
+
+                <Text className="text-muted-foreground text-[11px]" numberOfLines={1}>
+                    {smme.description}
+                </Text>
             </View>
+
+            <Feather name="chevron-right" size={16} color={colors.iconGrayDark || colors.grayMuted} />
         </View>
     </Pressable>
 ));

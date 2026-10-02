@@ -894,7 +894,7 @@ export function PublishedEventsList({ items }: { items: PublishedEventItem[] }) 
   return (
     <PublishedItemsListCard
       title="Published Events & RSVPs"
-      description="Track what is live in the app and who has RSVP&apos;d."
+      description={`Track what is live in the app and who has RSVP'd for each event.`}
       filterPlaceholder="Filter events..."
       emptyText="No events found."
       items={items}
@@ -902,77 +902,112 @@ export function PublishedEventsList({ items }: { items: PublishedEventItem[] }) 
         const title = (item.title ?? "").toLowerCase()
         const description = (item.description ?? "").toLowerCase()
         const location = (item.location ?? "").toLowerCase()
+        const attendeeMatch = item.rsvps.some((person) => {
+          const name = (person.name ?? "").toLowerCase()
+          const email = (person.email ?? "").toLowerCase()
+          return name.includes(query) || email.includes(query)
+        })
         return (
           title.includes(query) ||
           description.includes(query) ||
-          location.includes(query)
+          location.includes(query) ||
+          attendeeMatch
         )
       }}
-      renderItem={(item) => (
-        <article
-          key={item.id}
-          className="group flex h-full flex-col overflow-hidden rounded-3xl border-0 bg-white/90 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(249,115,22,0.22)] dark:bg-slate-900/75"
-        >
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <h3 className="line-clamp-2 text-lg font-semibold leading-tight text-slate-900 dark:text-slate-100">
-              {item.title || "Untitled event"}
-            </h3>
-            <Button
-              type="button"
-              size="icon"
-              variant="ghost"
-              disabled={deletingId === item.id}
-              onClick={() => handleDelete(item.id)}
-              aria-label="Delete event"
-              className="h-8 w-8 shrink-0 rounded-full text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </Button>
-          </div>
+      renderItem={(item) => {
+        const previewRsvps = item.rsvps.slice(0, 3)
+        const remaining = Math.max(item.rsvps.length - previewRsvps.length, 0)
+        const rsvpCount = item.rsvps.length
 
-          <div className="space-y-2 text-sm text-muted-foreground">
-            <p className="inline-flex items-center gap-2">
-              <Clock3 className="h-4 w-4" />
-              {toEventDate(item.date)}
-            </p>
-            {item.location ? (
+        return (
+          <article
+            key={item.id}
+            className="group flex h-full flex-col overflow-hidden rounded-3xl border-0 bg-white/90 p-5 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_40px_rgba(249,115,22,0.22)] dark:bg-slate-900/75"
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <h3 className="line-clamp-2 text-lg font-semibold leading-tight text-slate-900 dark:text-slate-100">
+                {item.title || "Untitled event"}
+              </h3>
+              <div className="flex shrink-0 items-center gap-1">
+                <Badge className="rounded-full bg-orange-500 px-3 py-1 text-white hover:bg-orange-500">
+                  <Users className="mr-1 h-3.5 w-3.5" />
+                  {rsvpCount} RSVP{rsvpCount === 1 ? "" : "s"}
+                </Badge>
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  disabled={deletingId === item.id}
+                  onClick={() => handleDelete(item.id)}
+                  aria-label="Delete event"
+                  className="h-8 w-8 rounded-full text-muted-foreground transition hover:bg-red-500/10 hover:text-red-600"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="space-y-2 text-sm text-muted-foreground">
               <p className="inline-flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                {item.location}
+                <Clock3 className="h-4 w-4" />
+                {toEventDate(item.date)}
+              </p>
+              {item.location ? (
+                <p className="inline-flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  {item.location}
+                </p>
+              ) : null}
+            </div>
+
+            {item.description ? (
+              <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                {item.description}
               </p>
             ) : null}
-          </div>
 
-          {item.description ? (
-            <p className="mt-4 line-clamp-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-              {item.description}
-            </p>
-          ) : null}
+            <div className="mt-5 flex flex-1 flex-col rounded-2xl border border-orange-200/50 bg-orange-50/50 p-3 dark:border-orange-800/35 dark:bg-slate-800/50">
+              <p className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-orange-800 dark:text-orange-200">
+                <Users className="h-4 w-4" />
+                Attendees
+              </p>
 
-          <div className="mt-5 rounded-2xl border border-orange-200/50 bg-orange-50/50 p-3 dark:border-orange-800/35 dark:bg-slate-800/50">
-            <p className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-orange-800 dark:text-orange-200">
-              <Users className="h-4 w-4" />
-              RSVP&apos;d ({item.rsvps.length})
-            </p>
+              {rsvpCount === 0 ? (
+                <p className="text-xs text-muted-foreground">No RSVPs yet.</p>
+              ) : (
+                <div className="space-y-2">
+                  {previewRsvps.map((person) => (
+                    <div
+                      key={`${item.id}-${person.id}`}
+                      className="rounded-xl border border-orange-100/90 bg-white/90 px-3 py-2 dark:border-slate-600 dark:bg-slate-900/60"
+                    >
+                      <p className="text-sm text-slate-900 dark:text-slate-100">
+                        {person.name || "Unnamed attendee"}
+                      </p>
+                      <p className="text-xs text-muted-foreground">{person.email || "No email"}</p>
+                      {person.organization ? (
+                        <p className="text-xs text-muted-foreground">{person.organization}</p>
+                      ) : null}
+                    </div>
+                  ))}
+                  {remaining > 0 ? (
+                    <p className="text-xs text-muted-foreground">+{remaining} more</p>
+                  ) : null}
+                </div>
+              )}
 
-            {item.rsvps.length === 0 ? (
-              <p className="text-xs text-muted-foreground">No RSVPs yet.</p>
-            ) : (
-              <div className="space-y-2">
-                {item.rsvps.map((person) => (
-                  <div
-                    key={`${item.id}-${person.id}`}
-                    className="rounded-xl border border-orange-100/90 bg-white/90 px-3 py-2 dark:border-slate-600 dark:bg-slate-900/60"
-                  >
-                    <p className="text-sm text-slate-900 dark:text-slate-100">{person.name || "Unnamed attendee"}</p>
-                    <p className="text-xs text-muted-foreground">{person.email || "No email"}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </article>
-      )}
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-auto w-full rounded-2xl border-orange-200 bg-white/80 text-orange-800 hover:bg-orange-100 dark:border-orange-800/40 dark:bg-slate-900/50 dark:text-orange-200"
+                onClick={() => router.push(`/dashboard/communication/events/${item.id}`)}
+              >
+                View RSVPs
+              </Button>
+            </div>
+          </article>
+        )
+      }}
     />
   )
 }

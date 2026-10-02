@@ -268,8 +268,8 @@ export default function DashboardScreen() {
                         className="flex-1 min-w-[45%] m-1 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
                         onPress={() => router.push('/(tabs)/verified-smmes')}
                     >
-                        <View className={`w-10 h-10 rounded-full justify-center items-center mb-2 ${colorScheme === 'dark' ? 'bg-secondary/15' : 'bg-blue-100'}`}>
-                            <Feather name="shield" size={20} color={colorScheme === 'dark' ? colors.secondary : colors.primary} />
+                        <View className="mb-2 items-center justify-center self-start">
+                            <Feather name="shield" size={22} color={colorScheme === 'dark' ? colors.secondary : colors.primary} />
                         </View>
                         <Text className="text-sm font-bold text-foreground">Verified SMMEs</Text>
                     </Pressable>
@@ -277,8 +277,8 @@ export default function DashboardScreen() {
                         className="flex-1 min-w-[45%] m-1 bg-card p-4 rounded-2xl border border-border/50 active:opacity-90 shadow-sm"
                         onPress={() => router.push('/(tabs)/services')}
                     >
-                        <View className="w-10 h-10 rounded-full bg-accent/15 justify-center items-center mb-2">
-                            <Feather name="globe" size={20} color={colors.accent} />
+                        <View className="mb-2 items-center justify-center self-start">
+                            <Feather name="globe" size={22} color={colors.accent} />
                         </View>
                         <Text className="text-sm font-bold text-foreground">Virtual Tours</Text>
                     </Pressable>

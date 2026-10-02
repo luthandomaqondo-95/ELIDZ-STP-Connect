@@ -110,13 +110,8 @@ function SettingsScreen() {
         onPress ? "active:opacity-70" : "",
       ].join(" ")}
     >
-      <View
-        className={[
-          "w-10 h-10 rounded-full items-center justify-center mr-4",
-          destructive ? "bg-destructive/10" : "bg-accent/10",
-        ].join(" ")}
-      >
-        <Feather name={icon as any} size={18} color={destructive ? colors.destructive : colors.accent} />
+      <View className="mr-3 items-center justify-center">
+        <Feather name={icon as any} size={20} color={destructive ? colors.destructive : colors.accent} />
       </View>
 
       <View className="flex-1">
@@ -169,7 +164,7 @@ function SettingsScreen() {
                 </View>
               ) : null}
             </View>
-            <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center">
+            <View className="items-center justify-center">
               <Feather name="edit-2" size={18} color={colors.accent} />
             </View>
           </View>

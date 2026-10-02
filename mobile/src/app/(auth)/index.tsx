@@ -53,10 +53,19 @@ export default function LoginScreen() {
     }, [params.email]);
 
     useEffect(() => {
-        const googleAuth = Constants.expoConfig?.extra?.googleAuth as { webClientId?: string } | undefined;
-        const webClientId = googleAuth?.webClientId;
+        const googleAuth =
+            (Constants.expoConfig?.extra?.googleAuth as
+                | { webClientId?: string; iosClientId?: string }
+                | undefined) ??
+            ((Constants as { manifest?: { extra?: { googleAuth?: { webClientId?: string; iosClientId?: string } } } })
+                .manifest?.extra?.googleAuth);
+        const webClientId =
+            googleAuth?.webClientId ?? process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+        const iosClientId =
+            googleAuth?.iosClientId ?? process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
         GoogleSignin.configure({
             webClientId,
+            ...(Platform.OS === 'ios' && iosClientId ? { iosClientId } : {}),
             scopes: ['openid', 'email', 'profile'],
         });
     }, []);
@@ -268,11 +277,11 @@ export default function LoginScreen() {
                             </View>
                         )}
                         <Button
-                            className="rounded-xl bg-secondary justify-center rounded-full items-center mb-6 py-3.5 px-6 min-h-[48px]"
+                            className="h-14 rounded-full bg-secondary justify-center items-center mb-6 px-6"
                             onPress={handleLogin}
                             disabled={isLoading}
                         >
-                            <Text className="text-secondary-foreground min-h-10 text-lg font-semibold">
+                            <Text className="text-secondary-foreground text-lg font-semibold text-center leading-6">
                                 {isLoading ? 'Signing In...' : 'Sign In'}
                             </Text>
                         </Button>
@@ -308,12 +317,13 @@ export default function LoginScreen() {
                                 }}
                                 disabled={isLoading}
                             >
-                                <Image
-                                    source={require('../../../assets/logos/apple-logo.png')}
-                                    className="w-[22px] h-[22px] mr-3"
-                                    resizeMode="contain"
+                                <Ionicons
+                                    name="logo-apple"
+                                    size={22}
+                                    color={colors.foreground}
+                                    style={{ marginRight: 12 }}
                                 />
-                                <Text className="text-base font-semibold text-foreground">
+                                <Text className="text-base font-semibold text-foreground leading-6">
                                     {isLoading ? 'Signing in...' : 'Continue with Apple'}
                                 </Text>
                             </Pressable>
@@ -375,7 +385,7 @@ export default function LoginScreen() {
                         disabled={cooldownSeconds > 0 || isResending}
                         className="py-2 px-4 bg-primary/10 rounded-lg border border-primary/30"
                     >
-                        <Text className="text-primary text-sm font-medium text-center">
+                        <Text className="text-sm font-medium text-center" style={{ color: colors.primaryBright }}>
                             {isResending
                                 ? 'Sending…'
                                 : cooldownSeconds > 0

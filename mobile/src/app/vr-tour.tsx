@@ -13,6 +13,7 @@ import { Text } from '@/components/ui/text';
 import { ScreenScrollView } from '@/components/ScreenScrollView';
 import Viewer360, { type Viewer360Ref } from '@/components/Viewer360';
 import HotspotModal from '@/components/HotspotModal';
+import { ScenePickerPanel } from '@/components/ScenePickerPanel';
 import { TenantLogo } from '@/components/TenantLogo';
 import {
   facilitiesService,
@@ -298,35 +299,14 @@ export default function VRTourScreen() {
             </View>
           )}
 
-          {showScenePicker && (
-            <View className="absolute left-4 right-4 bottom-24 bg-slate-900/95 rounded-xl p-3 border border-cyan-500/20 z-50">
-              {availableScenes.map((s) => (
-                <Pressable
-                  key={s.id}
-                  onPress={() => switchScene(s)}
-                  className={`flex-row items-center gap-3 py-3 px-3 rounded-lg ${
-                    s.id === activeScene?.id ? 'bg-cyan-500/10' : ''
-                  }`}
-                >
-                  <View
-                    className={`w-2 h-2 rounded-full ${
-                      s.id === activeScene?.id ? 'bg-cyan-500' : 'bg-slate-500'
-                    }`}
-                  />
-                  <Text
-                    className={`flex-1 text-sm ${
-                      s.id === activeScene?.id ? 'text-cyan-400' : 'text-white'
-                    }`}
-                    numberOfLines={1}
-                  >
-                    {s.title}
-                  </Text>
-                  {s.id === activeScene?.id && (
-                    <Feather name="check" size={16} color="#06B6D4" />
-                  )}
-                </Pressable>
-              ))}
-            </View>
+          {showScenePicker && activeScene && availableScenes.length > 1 && (
+            <ScenePickerPanel
+              scenes={availableScenes}
+              currentSceneId={activeScene.id}
+              onSelect={switchScene}
+              onClose={() => setShowScenePicker(false)}
+              style={{ bottom: 24 }}
+            />
           )}
 
           <View className="absolute top-4 left-4 right-4 flex-row justify-between items-center z-40">
@@ -338,12 +318,14 @@ export default function VRTourScreen() {
                 Use gyroscope
               </Text>
             </Pressable>
-            <Pressable
-              onPress={() => setShowScenePicker(!showScenePicker)}
-              className="p-2 rounded-full bg-black/40"
-            >
-              <Feather name="layers" size={20} color="#FFFFFF" />
-            </Pressable>
+            {availableScenes.length > 1 && (
+              <Pressable
+                onPress={() => setShowScenePicker(!showScenePicker)}
+                className="p-2 rounded-full bg-black/40"
+              >
+                <Feather name="layers" size={20} color="#FFFFFF" />
+              </Pressable>
+            )}
           </View>
         </View>
       ) : (
@@ -362,8 +344,11 @@ export default function VRTourScreen() {
                     {section.title}
                   </Text>
                 </View>
-                <View className="bg-primary/10 px-3 py-1 rounded-full">
-                  <Text className="text-primary font-bold">
+                <View
+                  className="px-3 py-1 rounded-full"
+                  style={{ backgroundColor: `${facilityWithTour.color}20` }}
+                >
+                  <Text className="font-bold" style={{ color: facilityWithTour.color }}>
                     {currentSection + 1}/{facilityWithTour.sections.length}
                   </Text>
                 </View>

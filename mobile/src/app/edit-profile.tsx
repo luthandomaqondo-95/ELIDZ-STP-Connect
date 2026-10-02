@@ -186,11 +186,11 @@ function EditProfileScreen() {
                                     )}
                                 </View>
                             </View>
-                            <View className={`absolute bottom-0 right-0 w-8 h-8 rounded-full items-center justify-center border-2 border-white shadow-sm ${isUploadingImage ? 'bg-gray-400' : 'bg-[#F38C1E]'}`}>
+                            <View className="absolute bottom-0 right-0 items-center justify-center">
                                 {isUploadingImage ? (
-                                    <ActivityIndicator size="small" color="white" />
+                                    <ActivityIndicator size="small" color="#F38C1E" />
                                 ) : (
-                                    <Feather name="camera" size={14} color="white" />
+                                    <Feather name="camera" size={16} color="#F38C1E" />
                                 )}
                             </View>
                         </Pressable>
@@ -277,7 +277,7 @@ function EditProfileScreen() {
                                     Choose the role that best matches you.
                                 </Text>
                             </View>
-                            <Feather name="shield" size={20} color={colors.primary} />
+                            <Feather name="shield" size={20} color={colors.primaryBright} />
                         </View>
 
                         <View className="border border-border rounded-xl overflow-hidden" style={{ backgroundColor: colors.input }}>

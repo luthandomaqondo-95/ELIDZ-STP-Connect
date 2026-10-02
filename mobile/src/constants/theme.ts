@@ -11,6 +11,7 @@ export const Colors = {
   light: {
     // Map COLORS.light to the expected structure
     primary: COLORS.light.primary,
+    primaryBright: COLORS.light.primaryBright,
     secondary: COLORS.light.blue,
     accent: COLORS.light.orange,
     text: COLORS.light.text,
@@ -36,12 +37,13 @@ export const Colors = {
   dark: {
     // Map COLORS.dark to the expected structure
     primary: COLORS.dark.primary,
+    primaryBright: COLORS.dark.primaryBright,
     secondary: COLORS.dark.blue,
     accent: COLORS.dark.orange,
     text: COLORS.dark.text,
     textSecondary: COLORS.dark.textSecondary,
     buttonText: COLORS.dark.white,
-    link: COLORS.dark.blue,
+    link: COLORS.dark.primaryBright,
     border: COLORS.dark.border,
     backgroundRoot: COLORS.dark.backgroundRoot,
     backgroundDefault: COLORS.dark.backgroundDefault,
@@ -52,7 +54,7 @@ export const Colors = {
     warning: COLORS.dark.warning,
     error: COLORS.dark.destructive,
     tabIconDefault: COLORS.dark.textSecondary,
-    tabIconSelected: COLORS.dark.primary,
+    tabIconSelected: COLORS.dark.tabBarActive,
     black: COLORS.dark.black,
     whiteOpacity10: COLORS.dark.whiteOpacity10,
     whiteOpacity15: COLORS.dark.whiteOpacity15,

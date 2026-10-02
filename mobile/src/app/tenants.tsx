@@ -25,19 +25,19 @@ export default function TenantsScreen() {
     const { data: tenants, isLoading, error } = useTenantsSearch(debouncedSearch);
 
     const filters = useMemo(() => {
-        const locations = Array.from(
+        const industries = Array.from(
             new Set(
                 (tenants || [])
-                    .map((tenant) => tenant.location?.trim())
-                    .filter((location): location is string => Boolean(location))
+                    .map((tenant) => tenant.industry?.trim())
+                    .filter((industry): industry is string => Boolean(industry))
             )
         ).sort((a, b) => a.localeCompare(b));
-        return ['All', ...locations];
+        return ['All', ...industries];
     }, [tenants]);
 
     const filteredTenants = (tenants || []).filter((tenant) => {
         if (selectedFilter === 'All') return true;
-        return tenant.location?.toLowerCase() === selectedFilter.toLowerCase();
+        return tenant.industry?.toLowerCase() === selectedFilter.toLowerCase();
     });
 
     function renderTenant({ item }: any) {

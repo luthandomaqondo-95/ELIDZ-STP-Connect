@@ -68,8 +68,8 @@ export default function PremiumUpgradeScreen() {
     <View className="flex-1 bg-background">
       {/* Header */}
       <View className="bg-primary pt-12 pb-6 px-6 items-center">
-        <View className="w-15 h-15 rounded-full bg-yellow-400 justify-center items-center mb-4">
-          <Feather name="star" size={30} color="rgb(var(--primary))" />
+        <View className="mb-4 items-center justify-center">
+          <Feather name="star" size={30} color="#F38C1E" />
         </View>
 
         <Text className="text-primary-foreground mb-2 text-2xl font-semibold">
@@ -167,8 +167,8 @@ export default function PremiumUpgradeScreen() {
             { icon: 'headphones', title: 'Premium Support', desc: 'Get priority help from our team' },
           ].map((benefit, index) => (
             <View key={index} className="flex-row items-start mb-4">
-              <View className="w-8 h-8 rounded-full bg-primary justify-center items-center mr-3">
-                <Feather name={benefit.icon as any} size={16} color="#FFFFFF" />
+              <View className="mr-3 mt-0.5 items-center justify-center">
+                <Feather name={benefit.icon as any} size={16} color="rgb(var(--primary))" />
               </View>
               <View className="flex-1">
                 <Text className="text-base font-semibold mb-1 text-foreground">

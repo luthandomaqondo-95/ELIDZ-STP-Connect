@@ -111,13 +111,13 @@ function NewsDetailScreen() {
   const category = news.category || getCategoryFromTitle(news.title);
 
   const categoryColors: Record<string, string> = {
-    Corporate: colors.primary,
+    Corporate: colors.primaryBright,
     Achievements: colors.accent,
     Training: colors.secondary,
-    Community: colors.primary,
+    Community: colors.primaryBright,
     Partnership: colors.secondary,
     Events: colors.accent,
-    News: colors.primary,
+    News: colors.primaryBright,
   };
 
   const getCategoryIcon = (cat?: string): keyof typeof Feather.glyphMap => {
@@ -165,7 +165,7 @@ function NewsDetailScreen() {
         ) : (
           <View
             className="rounded-2xl mb-4 p-6 justify-center items-center"
-            style={{ backgroundColor: categoryColors[category] || colors.primary, minHeight: imageHeight }}
+            style={{ backgroundColor: colors.primary, minHeight: imageHeight }}
           >
             <Feather name={getCategoryIcon(category)} size={64} color={colors.buttonText} />
           </View>
@@ -174,35 +174,33 @@ function NewsDetailScreen() {
         {category && (
           <View
             className="self-start px-3 py-1.5 rounded-lg mb-3"
-            style={{ backgroundColor: `${categoryColors[category] || colors.primary}20` }}
+            style={{ backgroundColor: `${categoryColors[category] || colors.primaryBright}20` }}
           >
-            <Text className="text-xs font-semibold" style={{ color: categoryColors[category] || colors.primary }}>
+            <Text className="text-xs font-semibold" style={{ color: categoryColors[category] || colors.primaryBright }}>
               {category}
             </Text>
           </View>
         )}
-        <Text className="text-xl font-bold text-foreground mb-4">
-          {news.title}
-        </Text>
-
-        <View className="p-4 rounded-xl mb-4 bg-card shadow-sm border border-border">
-          <View className="flex-row justify-between flex-wrap">
-            <View className="flex-row items-center mb-2">
-              <Feather name="calendar" size={16} color={colors.textSecondary} />
-              <Text className="text-sm text-muted-foreground ml-1">
-                {news.formattedDate || new Date(news.published_at).toLocaleDateString()}
-              </Text>
-            </View>
-            {news.author && (
-              <View className="flex-row items-center mb-2">
-                <Feather name="user" size={16} color={colors.textSecondary} />
-                <Text className="text-sm text-muted-foreground ml-1">
-                  {news.author.name || 'ELIDZ Communications'}
-                </Text>
-              </View>
-            )}
+        <View className="flex-row items-start justify-between gap-3 mb-4">
+          <Text className="flex-1 text-xl font-bold text-foreground">
+            {news.title}
+          </Text>
+          <View className="flex-row items-center pt-1">
+            <Feather name="calendar" size={14} color={colors.textSecondary} />
+            <Text className="text-xs font-semibold text-muted-foreground ml-1.5">
+              {news.formattedDate || new Date(news.published_at).toLocaleDateString()}
+            </Text>
           </View>
         </View>
+
+        {news.author && (
+          <View className="flex-row items-center mb-4">
+            <Feather name="user" size={14} color={colors.textSecondary} />
+            <Text className="text-sm text-muted-foreground ml-1">
+              {news.author.name || 'ELIDZ Communications'}
+            </Text>
+          </View>
+        )}
 
         <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
           <Text className="text-base text-foreground leading-6">

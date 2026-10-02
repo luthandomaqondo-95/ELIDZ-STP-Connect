@@ -638,11 +638,11 @@ export default function SignupScreen() {
 
 					{/* Sign Up Button */}
 					<Button
-						className="h-14 rounded-full bg-accent justify-center items-center mb-6 active:opacity-80 active:scale-95"
+						className="h-14 rounded-full bg-accent justify-center items-center mb-6 px-6 active:opacity-80 active:scale-95"
 						onPress={handleSignup}
 						disabled={isLoading || cooldownSeconds > 0}
 					>
-						<Text className="text-lg h-10 min-h-8 font-semibold text-white">
+						<Text className="text-lg font-semibold text-white text-center leading-6">
 							{isLoading ? 'Creating Account...' : cooldownSeconds > 0 ? `Try again in ${cooldownSeconds}s` : 'Sign Up'}
 						</Text>
 					</Button>
@@ -710,12 +710,13 @@ export default function SignupScreen() {
 							}}
 							disabled={isLoading}
 						>
-							<Image
-								source={require('../../../assets/logos/apple-logo.png')}
-								className="w-[22px] h-[22px] mr-3"
-								resizeMode="contain"
+							<Ionicons
+								name="logo-apple"
+								size={22}
+								color={colors.foreground}
+								style={{ marginRight: 12 }}
 							/>
-							<Text className="text-base font-semibold text-foreground">
+							<Text className="text-base font-semibold text-foreground leading-6">
 								{isLoading ? 'Signing in...' : 'Continue with Apple'}
 							</Text>
 						</Pressable>

@@ -8,7 +8,8 @@ import { Platform } from 'react-native';
 const ELIDZ_BRAND_COLORS = {
     // Primary Brand Colors - EXACT Blue from logo
     primary: '#002147',          // ELIDZ Navy Blue - EXACT logo blue (RGB: 0, 33, 71)
-    primaryDark: '#001A36',      // Darker navy for dark mode
+    primaryDark: '#001A36',      // Darker navy for dark-mode fills / cards
+    primaryBright: '#4A7FB5',    // Lighter navy for icons & badge text on dark backgrounds
     secondary: '#F38C1E',        // ELIDZ Orange (RGB: 243, 140, 30)
     secondaryDark: '#C27018',    // Darker orange for dark mode
     accent: '#F38C1E',           // ELIDZ Orange (RGB: 243, 140, 30)
@@ -112,6 +113,7 @@ const SYSTEM_COLORS = {
 
         // Brand colors
         primary: ELIDZ_BRAND_COLORS.primary,
+        primaryBright: ELIDZ_BRAND_COLORS.primary,
         secondary: ELIDZ_BRAND_COLORS.secondary,
         accent: ELIDZ_BRAND_COLORS.accent,
 
@@ -219,8 +221,9 @@ const SYSTEM_COLORS = {
         foreground: '#FFFFFF',
         mutedForeground: 'rgba(255, 255, 255, 0.7)',
 
-        // Brand colors
+        // Brand colors — dark fills restored; primaryBright used for icons/badge text
         primary: ELIDZ_BRAND_COLORS.primaryDark,
+        primaryBright: ELIDZ_BRAND_COLORS.primaryBright,
         secondary: ELIDZ_BRAND_COLORS.secondaryDark,
         accent: ELIDZ_BRAND_COLORS.accentDark,
 
@@ -268,8 +271,8 @@ const SYSTEM_COLORS = {
         redLight: ELIDZ_BRAND_COLORS.redLight,
         redDark: ELIDZ_BRAND_COLORS.redDark,
         redDarker: ELIDZ_BRAND_COLORS.redDarker,
-        iconGray: '#9CA3AF',
-        iconGrayDark: '#6C757D',
+        iconGray: '#C4CBD4',
+        iconGrayDark: '#B0B8C4',
 
         // Opacity variants
         whiteOpacity10: ELIDZ_BRAND_COLORS.whiteOpacity10,
@@ -286,7 +289,7 @@ const SYSTEM_COLORS = {
         placeholderLight: '#9CA3AF',
 
         // Extended palette
-        blue: ELIDZ_BRAND_COLORS.blue,
+        blue: ELIDZ_BRAND_COLORS.primaryBright,
         green: ELIDZ_BRAND_COLORS.green,
         orange: ELIDZ_BRAND_COLORS.orange,
         purple: ELIDZ_BRAND_COLORS.purple,

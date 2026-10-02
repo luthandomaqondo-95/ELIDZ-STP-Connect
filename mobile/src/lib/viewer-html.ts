@@ -110,7 +110,6 @@ canvas { display: block; width: 100%; height: 100%; }
 <div id="transition"></div>
 <button id="vrButton" type="button">Enter VR</button>
 <button id="gyroButton" type="button" class="hidden">Use device motion</button>
-<div id="gyroBadge">Motion on</div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function() {

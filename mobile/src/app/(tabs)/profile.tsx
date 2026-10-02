@@ -31,11 +31,7 @@ const ProfileMenuItem = React.memo(
             onPress={disabled ? undefined : onPress}
             className={`flex-row items-center py-4 border-b border-border active:opacity-70 ${disabled ? 'opacity-50' : ''}`}
         >
-            <View
-                className={`w-10 h-10 rounded-full justify-center items-center mr-4 ${
-                    isDestructive ? 'bg-destructive/10' : 'bg-accent/10'
-                }`}
-            >
+            <View className="mr-3 items-center justify-center">
                 <Feather name={icon as any} size={20} color={isDestructive ? colors.destructive : colors.accent} />
             </View>
             <View className="flex-1">
@@ -233,7 +229,7 @@ function ProfileScreen() {
                         {/* Edit Button Absolute */}
                         {isLoggedIn && (
                             <Pressable
-                                className="absolute top-4 right-4 p-2 bg-background rounded-full"
+                                className="absolute top-4 right-4 p-2"
                                 onPress={() => router.push('/edit-profile')}
                             >
                                 <Feather name="edit-2" size={16} color={colors.accent} />
@@ -301,7 +297,7 @@ function ProfileScreen() {
                         <View className="bg-card rounded-2xl p-5 shadow-sm border border-border">
                             <View className="flex-row items-center justify-between mb-3">
                                 <View className="flex-row items-center flex-1">
-                                    <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-3">
+                                    <View className="mr-3 items-center justify-center">
                                         <Feather name="shield" size={18} color={colors.accent} />
                                     </View>
                                     <View className="flex-1">
@@ -381,9 +377,8 @@ function ProfileScreen() {
                         </Text>
                         <View className="bg-card rounded-2xl px-4 shadow-sm">
                             {renderMenuItem('user', 'Personal Information', 'Manage your profile details', () => router.push('/edit-profile'), false, !isLoggedIn)}
-                            {renderMenuItem('bell', 'Notifications', 'View admin communications', () => router.push('/(tabs)/notifications'), false, !isLoggedIn)}
                             {renderMenuItem('mail', 'My Enquiries', 'View and track your enquiries', () => router.push('/my-enquiries'), false, !isLoggedIn)}
-                            {renderMenuItem('settings', 'Settings', 'Notifications, account & more', () => router.push('/settings'), false, !isLoggedIn)}
+                            {renderMenuItem('settings', 'Settings', 'Account, privacy & more', () => router.push('/settings'), false, !isLoggedIn)}
                             {/* Premium Features (disabled) */}
                             {/* {renderMenuItem('star', 'Premium Features', 'Manage subscription', () => router.push('/(modals)/premium-upgrade'), false, !isLoggedIn, true)} */}
                         </View>

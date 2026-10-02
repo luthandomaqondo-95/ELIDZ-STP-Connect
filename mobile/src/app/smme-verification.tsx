@@ -344,8 +344,8 @@ export default function SMMEVerificationScreen() {
                     {documents.map((doc, index) => (
                         <View key={doc.type} className="bg-card p-5 rounded-2xl shadow-sm border border-border mb-4">
                             <View className="flex-row items-center mb-3">
-                                <View className="w-10 h-10 bg-primary/10 rounded-full items-center justify-center mr-3">
-                                    <Feather name={doc.icon as any} size={20} color={colors.primary} />
+                                <View className="mr-3 items-center justify-center">
+                                    <Feather name={doc.icon as any} size={20} color={colors.primaryBright} />
                                 </View>
                                 <View className="flex-1">
                                     <Text className="font-bold text-foreground text-base">{doc.label}</Text>
@@ -419,7 +419,7 @@ export default function SMMEVerificationScreen() {
                 {/* Info Box */}
                 <View className="p-5 rounded-xl border mb-6" style={{ backgroundColor: `${colors.primary}18`, borderColor: `${colors.primary}40` }}>
                     <View className="flex-row items-start">
-                        <Feather name="info" size={20} color={colors.primary} style={{ marginTop: 2, marginRight: 12 }} />
+                        <Feather name="info" size={20} color={colors.primaryBright} style={{ marginTop: 2, marginRight: 12 }} />
                         <View className="flex-1">
                             <Text className="text-foreground font-semibold mb-2">Verification Process</Text>
                             <Text className="text-foreground text-sm leading-5">
@@ -436,8 +436,8 @@ export default function SMMEVerificationScreen() {
                 <View className="mb-6">
                     <View className="flex-row items-center justify-between mb-4">
                         <View className="flex-row items-center">
-                            <View className="w-10 h-10 rounded-full items-center justify-center mr-3" style={{ backgroundColor: `${colors.primary}15` }}>
-                                <Feather name="package" size={20} color={colors.primary} />
+                            <View className="mr-3 items-center justify-center">
+                                <Feather name="package" size={20} color={colors.primaryBright} />
                             </View>
                             <View>
                                 <Text className="text-lg font-bold text-foreground">Products & Services</Text>
@@ -480,7 +480,10 @@ export default function SMMEVerificationScreen() {
                                         className={`flex-1 py-3 rounded-lg border-2 ${formType === 'Service' ? 'border-primary bg-primary/10' : 'border-border'}`}
                                         onPress={() => setFormType('Service')}
                                     >
-                                        <Text className={`text-center font-semibold ${formType === 'Service' ? 'text-primary' : 'text-muted-foreground'}`}>
+                                        <Text
+                                            className={`text-center font-semibold ${formType === 'Service' ? '' : 'text-muted-foreground'}`}
+                                            style={formType === 'Service' ? { color: colors.primaryBright } : undefined}
+                                        >
                                             Service
                                         </Text>
                                     </Pressable>
@@ -488,7 +491,10 @@ export default function SMMEVerificationScreen() {
                                         className={`flex-1 py-3 rounded-lg border-2 ${formType === 'Product' ? 'border-primary bg-primary/10' : 'border-border'}`}
                                         onPress={() => setFormType('Product')}
                                     >
-                                        <Text className={`text-center font-semibold ${formType === 'Product' ? 'text-primary' : 'text-muted-foreground'}`}>
+                                        <Text
+                                            className={`text-center font-semibold ${formType === 'Product' ? '' : 'text-muted-foreground'}`}
+                                            style={formType === 'Product' ? { color: colors.primaryBright } : undefined}
+                                        >
                                             Product
                                         </Text>
                                     </Pressable>
@@ -647,13 +653,13 @@ export default function SMMEVerificationScreen() {
                                                 <View className="flex-row gap-2">
                                                     <Pressable
                                                         onPress={() => handleEdit(product)}
-                                                        className="p-2 bg-primary/10 rounded-lg"
+                                                        className="p-2"
                                                     >
-                                                        <Feather name="edit" size={16} color={colors.primary} />
+                                                        <Feather name="edit" size={16} color={colors.primaryBright} />
                                                     </Pressable>
                                                     <Pressable
                                                         onPress={() => handleDelete(product)}
-                                                        className="p-2 bg-destructive/10 rounded-lg"
+                                                        className="p-2"
                                                     >
                                                         <Feather name="trash-2" size={16} color={colors.redLight} />
                                                     </Pressable>
@@ -681,13 +687,13 @@ export default function SMMEVerificationScreen() {
                                                 <View className="flex-row gap-2">
                                                     <Pressable
                                                         onPress={() => handleEdit(service)}
-                                                        className="p-2 bg-primary/10 rounded-lg"
+                                                        className="p-2"
                                                     >
-                                                        <Feather name="edit" size={16} color={colors.primary} />
+                                                        <Feather name="edit" size={16} color={colors.primaryBright} />
                                                     </Pressable>
                                                     <Pressable
                                                         onPress={() => handleDelete(service)}
-                                                        className="p-2 bg-destructive/10 rounded-lg"
+                                                        className="p-2"
                                                     >
                                                         <Feather name="trash-2" size={16} color={colors.redLight} />
                                                     </Pressable>

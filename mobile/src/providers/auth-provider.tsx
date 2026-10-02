@@ -304,17 +304,24 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			// and Supabase signInWithIdToken. Works on iOS and Android.
 			if (Platform.OS === 'ios' || Platform.OS === 'android') {
 				const { GoogleSignin, statusCodes } = require('@react-native-google-signin/google-signin');
-				const googleAuth = Constants.expoConfig?.extra?.googleAuth as
-					| { webClientId?: string; iosClientId?: string }
-					| undefined;
-				const webClientId = googleAuth?.webClientId;
+				const googleAuth =
+					(Constants.expoConfig?.extra?.googleAuth as
+						| { webClientId?: string; iosClientId?: string }
+						| undefined) ??
+					((Constants as { manifest?: { extra?: { googleAuth?: { webClientId?: string; iosClientId?: string } } } })
+						.manifest?.extra?.googleAuth);
+				const webClientId =
+					googleAuth?.webClientId ??
+					process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
 				if (!webClientId) {
 					throw new Error(
 						'Google Web Client ID is not configured. Add webClientId to app.json → extra.googleAuth. ' +
 						'Create a Web application OAuth client in Google Cloud Console and use that Client ID.'
 					);
 				}
-				const iosClientId = googleAuth?.iosClientId;
+				const iosClientId =
+					googleAuth?.iosClientId ??
+					process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
 				if (Platform.OS === 'ios') {
 					if (!iosClientId) {
 						throw new Error(

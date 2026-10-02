@@ -100,14 +100,14 @@ function OpportunitiesScreen() {
 
   const getTypeColor = (type: string): string => {
     switch (type) {
-      case 'Tenders': return colors.primary;
+      case 'Tenders': return colors.primaryBright;
       case 'Employment': return colors.success;
       case 'Training': return colors.info;
       case 'Internships': return colors.purple;
       case 'Bursaries': return colors.pink;
       case 'Incubation': return colors.accent;
       case 'Funding': return colors.destructive;
-      default: return colors.primary;
+      default: return colors.primaryBright;
     }
   };
 

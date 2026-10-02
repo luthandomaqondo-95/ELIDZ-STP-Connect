@@ -160,7 +160,7 @@ export default function ForgotPasswordScreen() {
                     ) : (
                         <View className="items-center pt-4">
                             {/* Success State */}
-                            <View className="items-center mb-6 bg-accent/10 p-6 rounded-full">
+                            <View className="items-center mb-6">
                                 <Ionicons name="mail-open-outline" size={60} color={colors.accent} />
                             </View>
 

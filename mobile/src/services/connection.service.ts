@@ -238,13 +238,21 @@ class ConnectionService {
 			if (existing.status === 'accepted') {
 				throw new Error('You are already connected with this user');
 			} else if (existing.status === 'pending') {
+				// Idempotent: treat an already-sent request as success so UI can refresh
 				if (existing.user_id === requesterId) {
-					throw new Error('Connection request already sent');
-				} else {
-					throw new Error('You have a pending connection request from this user');
+					return existing as Connection;
 				}
+				throw new Error('You have a pending connection request from this user');
 			} else if (existing.status === 'blocked') {
-				throw new Error('Connection request is not allowed for this user');
+				// Allow reconnect after a previous decline/block by clearing the old row
+				const { error: clearError } = await supabase
+					.from('connections')
+					.delete()
+					.eq('id', existing.id);
+				if (clearError) {
+					console.error('ConnectionService.sendConnectionRequest clear blocked error:', clearError);
+					throw new Error('Connection request is not allowed for this user');
+				}
 			}
 		}
 
@@ -301,10 +309,9 @@ class ConnectionService {
 	async declineConnectionRequest(connectionId: string): Promise<Connection> {
 		console.log('ConnectionService.declineConnectionRequest called for connectionId:', connectionId);
 
-		const { data, error } = await supabase
+		// Delete the request (same as cancel) so either party can connect again later
+		const { data: existing, error: fetchError } = await supabase
 			.from('connections')
-			.update({ status: 'blocked', updated_at: new Date().toISOString() })
-			.eq('id', connectionId)
 			.select(`
 				*,
 				requester_id:user_id,
@@ -312,15 +319,26 @@ class ConnectionService {
 				requester:profiles!connections_user_id_fkey(*),
 				addressee:profiles!connections_connected_user_id_fkey(*)
 			`)
-			.single();
+			.eq('id', connectionId)
+			.maybeSingle();
+
+		if (fetchError) {
+			console.error('ConnectionService.declineConnectionRequest fetch error:', JSON.stringify(fetchError, null, 2));
+			throw fetchError;
+		}
+
+		const { error } = await supabase
+			.from('connections')
+			.delete()
+			.eq('id', connectionId);
 
 		if (error) {
 			console.error('ConnectionService.declineConnectionRequest error:', JSON.stringify(error, null, 2));
 			throw error;
 		}
 
-		console.log('ConnectionService.declineConnectionRequest succeeded:', data);
-		return data as Connection;
+		console.log('ConnectionService.declineConnectionRequest succeeded:', existing);
+		return (existing ?? { id: connectionId }) as Connection;
 	}
 
 	async cancelConnectionRequest(connectionId: string): Promise<void> {

@@ -132,13 +132,13 @@ function OpportunityDetailScreen() {
   };
 
   const typeColors: Record<string, string> = {
-    Tenders: colors.primary,
+    Tenders: colors.primaryBright,
     Employment: colors.secondary,
     Training: colors.accent,
     Internships: colors.secondary,
-    Bursaries: colors.primary,
+    Bursaries: colors.primaryBright,
     Incubation: colors.accent,
-    Funding: colors.primary,
+    Funding: colors.primaryBright,
   };
 
   const handleApplyNow = () => {
@@ -335,16 +335,16 @@ function OpportunityDetailScreen() {
             <Text className="text-lg font-bold mb-2.5">Tender Documents</Text>
             {opportunity.tenderAdvertUrl && (
               <Pressable onPress={handleDownloadTenderAdvert} className="flex-row items-center p-2.5 rounded-lg bg-muted active:opacity-70 mb-2.5">
-                <Feather name="download" size={18} color={colors.primary} />
-                <Text className="text-base text-primary ml-2.5 flex-1 font-semibold">
+                <Feather name="download" size={18} color={colors.primaryBright} />
+                <Text className="text-base ml-2.5 flex-1 font-semibold" style={{ color: colors.primaryBright }}>
                   Download Full Detailed Advert (PDF)
                 </Text>
               </Pressable>
             )}
             {opportunity.tenderDocumentsUrl && (
               <Pressable onPress={handleDownloadTenderDocuments} className="flex-row items-center p-2.5 rounded-lg bg-muted active:opacity-70">
-                <Feather name="download" size={18} color={colors.primary} />
-                <Text className="text-base text-primary ml-2.5 flex-1 font-semibold">
+                <Feather name="download" size={18} color={colors.primaryBright} />
+                <Text className="text-base ml-2.5 flex-1 font-semibold" style={{ color: colors.primaryBright }}>
                   Download Tender Documents (ZIP)
                 </Text>
               </Pressable>
@@ -366,7 +366,7 @@ function OpportunityDetailScreen() {
                   Create an account with your email, company name, and contact details
                 </Text>
                 <Pressable onPress={handleTenderPortalRegister} className="mt-1">
-                  <Text className="text-base text-primary underline">
+                  <Text className="text-base underline" style={{ color: colors.primaryBright }}>
                     Go to Registration Page →
                   </Text>
                 </Pressable>
@@ -382,7 +382,7 @@ function OpportunityDetailScreen() {
                   Use your registered email and password to access the portal
                 </Text>
                 <Pressable onPress={handleTenderPortalLogin} className="mt-1">
-                  <Text className="text-base text-primary underline">
+                  <Text className="text-base underline" style={{ color: colors.primaryBright }}>
                     Go to Login Page →
                   </Text>
                 </Pressable>
@@ -420,7 +420,7 @@ function OpportunityDetailScreen() {
                   Upload and submit your completed tender documents through the portal before the closing date
                 </Text>
                 <Pressable onPress={handleTenderPortalSubmit} className="mt-1">
-                  <Text className="text-base text-primary underline">
+                  <Text className="text-base underline" style={{ color: colors.primaryBright }}>
                     Go to Submit Tender Page →
                   </Text>
                 </Pressable>
@@ -431,28 +431,28 @@ function OpportunityDetailScreen() {
           <View className="p-3 rounded-xl mb-3 bg-card shadow-sm">
             <Text className="text-lg font-bold mb-2.5">Important Resources</Text>
             <Pressable onPress={handleDownloadUserGuide} className="flex-row items-center p-2.5 rounded-lg bg-muted active:opacity-70 mb-2.5">
-              <Feather name="book" size={18} color={colors.primary} />
+              <Feather name="book" size={18} color={colors.primaryBright} />
               <View className="flex-1 ml-2.5">
-                <Text className="text-base font-semibold text-primary">
+                <Text className="text-base font-semibold" style={{ color: colors.primaryBright }}>
                   Online Tender Portal User Guide
                 </Text>
                 <Text className="text-sm text-muted-foreground mt-1">
                   Step-by-step guide for registration and submission process
                 </Text>
               </View>
-              <Feather name="external-link" size={18} color={colors.primary} />
+              <Feather name="external-link" size={18} color={colors.primaryBright} />
             </Pressable>
             <Pressable onPress={handleDownloadProcurementHandbook} className="flex-row items-center p-2.5 rounded-lg bg-muted active:opacity-70">
-              <Feather name="file-text" size={18} color={colors.primary} />
+              <Feather name="file-text" size={18} color={colors.primaryBright} />
               <View className="flex-1 ml-2.5">
-                <Text className="text-base font-semibold text-primary">
+                <Text className="text-base font-semibold" style={{ color: colors.primaryBright }}>
                   ELIDZ Procurement Handbook
                 </Text>
                 <Text className="text-sm text-muted-foreground mt-1">
                   Complete procurement procedures and requirements
                 </Text>
               </View>
-              <Feather name="external-link" size={18} color={colors.primary} />
+              <Feather name="external-link" size={18} color={colors.primaryBright} />
             </Pressable>
           </View>
 
@@ -487,16 +487,16 @@ function OpportunityDetailScreen() {
           <Text className="text-lg font-bold mb-2.5">Contact Information</Text>
           {opportunity.contactEmail && (
             <Pressable onPress={handleContactEmail} className="flex-row items-center">
-              <Feather name="mail" size={18} color={colors.primary} />
-              <Text className="text-base text-primary ml-2.5 flex-1 underline">
+              <Feather name="mail" size={18} color={colors.primaryBright} />
+              <Text className="text-base ml-2.5 flex-1 underline" style={{ color: colors.primaryBright }}>
                 {opportunity.contactEmail}
               </Text>
             </Pressable>
           )}
           {opportunity.contactPhone && (
             <Pressable onPress={handleContactPhone} className={`flex-row items-center ${opportunity.contactEmail ? 'mt-2.5' : ''}`}>
-              <Feather name="phone" size={18} color={colors.primary} />
-              <Text className="text-base text-primary ml-2.5 flex-1 underline">
+              <Feather name="phone" size={18} color={colors.primaryBright} />
+              <Text className="text-base ml-2.5 flex-1 underline" style={{ color: colors.primaryBright }}>
                 {opportunity.contactPhone}
               </Text>
             </Pressable>

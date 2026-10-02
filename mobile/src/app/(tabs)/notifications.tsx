@@ -168,11 +168,8 @@ export default function NotificationsScreen() {
             >
                 <View className="p-4">
                     <View className="flex-row items-start">
-                        <View
-                            className="w-12 h-12 rounded-full justify-center items-center mr-3"
-                            style={{ backgroundColor: `${color}20` }}
-                        >
-                            <Feather name={icon as any} size={20} color={color} />
+                        <View className="mr-3 mt-0.5 items-center justify-center">
+                            <Feather name={icon as any} size={22} color={color} />
                         </View>
                         <View className="flex-1">
                             <View className="flex-row items-start justify-between mb-1">
@@ -221,7 +218,7 @@ export default function NotificationsScreen() {
                 </View>
                 <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
-                        <View className="bg-accent/10 p-2 rounded-full mr-3">
+                        <View className="mr-3 items-center justify-center">
                             <Feather name="lock" size={18} color={colors.accent} />
                         </View>
                         <Text className="text-foreground text-lg font-bold">

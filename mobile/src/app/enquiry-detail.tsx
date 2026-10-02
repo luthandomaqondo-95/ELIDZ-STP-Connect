@@ -138,22 +138,31 @@ export default function EnquiryDetailScreen() {
               </Text>
               <View className="flex-row flex-wrap">
                 {enquiry.related_facility_id && (
-                  <View className="px-2 py-1 mr-2 mb-2 rounded-full bg-primary/10">
-                    <Text className="text-[11px] text-primary font-semibold">
+                  <View
+                    className="px-2 py-1 mr-2 mb-2 rounded-full"
+                    style={{ backgroundColor: `${colors.primaryBright}20` }}
+                  >
+                    <Text className="text-[11px] font-semibold" style={{ color: colors.primaryBright }}>
                       Facility
                     </Text>
                   </View>
                 )}
                 {enquiry.related_tenant_id && (
-                  <View className="px-2 py-1 mr-2 mb-2 rounded-full bg-primary/10">
-                    <Text className="text-[11px] text-primary font-semibold">
+                  <View
+                    className="px-2 py-1 mr-2 mb-2 rounded-full"
+                    style={{ backgroundColor: `${colors.primaryBright}20` }}
+                  >
+                    <Text className="text-[11px] font-semibold" style={{ color: colors.primaryBright }}>
                       Tenant
                     </Text>
                   </View>
                 )}
                 {enquiry.related_opportunity_id && (
-                  <View className="px-2 py-1 mr-2 mb-2 rounded-full bg-primary/10">
-                    <Text className="text-[11px] text-primary font-semibold">
+                  <View
+                    className="px-2 py-1 mr-2 mb-2 rounded-full"
+                    style={{ backgroundColor: `${colors.primaryBright}20` }}
+                  >
+                    <Text className="text-[11px] font-semibold" style={{ color: colors.primaryBright }}>
                       Opportunity
                     </Text>
                   </View>

@@ -86,7 +86,7 @@
         --card-foreground: 255 255 255;
         --popover: 22 42 70;
         --popover-foreground: 255 255 255;
-        --primary: 30 58 95; /* Slightly lighter navy for dark bg */
+        --primary: 30 58 95; /* #1E3A5F — original dark-mode navy for cards/fills */
         --primary-foreground: 255 255 255;
         --secondary: 194 112 24; /* Darker ELIDZ Orange (#C27018) */
         --secondary-foreground: 255 255 255;

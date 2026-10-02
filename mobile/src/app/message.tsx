@@ -169,10 +169,7 @@ function MessageBubble({ item, isMe, colors, onImagePress, canReport = false, on
                 className="flex-row items-center p-2.5 rounded-xl active:opacity-80"
                 style={{ backgroundColor: isMe ? 'rgba(255,255,255,0.12)' : colors.muted }}
               >
-                <View
-                  className="w-8 h-8 rounded-lg items-center justify-center mr-2"
-                  style={{ backgroundColor: isMe ? 'rgba(255,255,255,0.15)' : colors.accent + '25' }}
-                >
+                <View className="mr-2 items-center justify-center">
                   <Feather
                     name={item.attachment_type === 'audio' ? 'music' : 'file-text'}
                     size={16}
@@ -211,7 +208,7 @@ function MessageBubble({ item, isMe, colors, onImagePress, canReport = false, on
           <Feather
             name={item.read_at ? 'check-circle' : 'check'}
             size={11}
-            color={item.read_at ? colors.primary : colors.iconGray}
+            color={item.read_at ? colors.primaryBright : colors.iconGray}
           />
         )}
       </View>
@@ -276,16 +273,11 @@ function DropdownMenu({
             ]}
             onPress={item.onPress}
           >
-            <View
-              style={[
-                styles.menuIconBg,
-                { backgroundColor: item.danger ? colors.redLight + '15' : colors.primary + '12' },
-              ]}
-            >
+            <View className="mr-1 items-center justify-center">
               <Feather
                 name={item.icon as any}
                 size={15}
-                color={item.danger ? colors.redLight : colors.primary}
+                color={item.danger ? colors.redLight : colors.primaryBright}
               />
             </View>
             <Text
@@ -326,14 +318,11 @@ function AttachmentPreview({
           />
         </View>
       ) : (
-        <View
-          className="w-9 h-9 rounded-lg items-center justify-center mr-2"
-          style={{ backgroundColor: colors.primary + '15' }}
-        >
+        <View className="mr-2 items-center justify-center">
           <Feather
             name={attachment.type === 'audio' ? 'music' : 'file-text'}
             size={16}
-            color={colors.primary}
+            color={colors.primaryBright}
           />
         </View>
       )}
@@ -346,8 +335,7 @@ function AttachmentPreview({
       </Text>
       <Pressable
         onPress={onRemove}
-        className="ml-2 w-6 h-6 rounded-full items-center justify-center"
-        style={{ backgroundColor: colors.redLight + '15' }}
+        className="ml-2 p-1 items-center justify-center"
         hitSlop={8}
       >
         <Feather name="x" size={13} color={colors.redLight} />
@@ -990,9 +978,7 @@ function MessageScreen() {
             onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
             ListEmptyComponent={
               <View className="flex-1 items-center justify-center py-20">
-                <View
-                  style={[styles.emptyIconWrapper, { backgroundColor: colors.accent + '18', borderColor: colors.accent + '35' }]}
-                >
+                <View className="items-center justify-center">
                   <Feather name="message-circle" size={32} color={colors.accent} />
                 </View>
                 <Text className="text-base font-semibold text-foreground mt-4">No messages yet</Text>
@@ -1030,7 +1016,7 @@ function MessageScreen() {
             <Pressable
               onPress={handlePickDocument}
               disabled={sending}
-              style={[styles.attachBtn, { backgroundColor: colors.accent + '20' }]}
+              style={[styles.attachBtn]}
               hitSlop={6}
             >
               <Feather name="paperclip" size={20} color={colors.accent} />

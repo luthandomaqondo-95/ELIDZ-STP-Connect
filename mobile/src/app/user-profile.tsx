@@ -35,6 +35,8 @@ function UserProfileScreen() {
     const [offeringsError, setOfferingsError] = useState<string | null>(null);
     const [isVerifiedSMME, setIsVerifiedSMME] = useState(false);
 
+    const [offeringsTab, setOfferingsTab] = useState<'products' | 'services'>('products');
+
     const userId = params?.id || params?.userId;
     const isOwnProfile = currentUser?.id === userId;
     const isSMME = profileUser?.role === 'SMME';
@@ -113,6 +115,11 @@ function UserProfileScreen() {
                 if (cancelled) return;
                 setSmmeServices(services);
                 setSmmeProducts(products);
+                if (products.length === 0 && services.length > 0) {
+                    setOfferingsTab('services');
+                } else if (products.length > 0) {
+                    setOfferingsTab('products');
+                }
             })
             .catch((err: any) => {
                 if (cancelled) return;
@@ -155,7 +162,14 @@ function UserProfileScreen() {
             Alert.alert('Request sent', `Connection request sent to ${profileUser.name}.`);
         } catch (error: any) {
             console.error('Connect error:', error);
-            Alert.alert('Error', error?.message || 'Failed to send request.');
+            const message = error?.message || 'Failed to send request.';
+            if (/already sent|pending connection request/i.test(message)) {
+                setConnectionStatus('pending_sent');
+                queryClient.invalidateQueries({ queryKey: ['contacts'] });
+                Alert.alert('Request Pending', 'A connection request is already pending with this user.');
+                return;
+            }
+            Alert.alert('Error', message);
         }
     }, [currentUser?.id, profileUser?.id, profileUser?.name, queryClient]);
 
@@ -198,7 +212,7 @@ function UserProfileScreen() {
         return (
             <ScreenScrollView>
                 <View className="flex-1 justify-center items-center p-10 mt-20">
-                    <View className="bg-muted p-6 rounded-full">
+                    <View>
                         <Feather name="user-x" size={48} color={colors.mutedForeground} />
                     </View>
                     <Text className="text-xl font-bold mt-6 text-foreground">User Not Found</Text>
@@ -219,16 +233,18 @@ function UserProfileScreen() {
                 </View>
 
                 <View className="items-center pt-0 mb-1">
-                    <View
-                        className="rounded-full border-4 border-background shadow-sm overflow-hidden"
-                        style={{ width: 96, height: 96, backgroundColor: colors.backgroundSecondary }}
-                    >
-                        <Image
-                            source={avatarSource}
-                            style={{ width: 96, height: 96 }}
-                            contentFit="cover"
-                            contentPosition="center"
-                        />
+                    <View className="relative" style={{ width: 96, height: 96 }}>
+                        <View
+                            className="rounded-full border-4 border-background shadow-sm overflow-hidden"
+                            style={{ width: 96, height: 96, backgroundColor: colors.backgroundSecondary }}
+                        >
+                            <Image
+                                source={avatarSource}
+                                style={{ width: 96, height: 96 }}
+                                contentFit="cover"
+                                contentPosition="center"
+                            />
+                        </View>
                         {isVerifiedSMME && (
                             <View
                                 className="absolute bottom-1 right-1 w-8 h-8 rounded-full items-center justify-center border-4 border-background"
@@ -248,7 +264,7 @@ function UserProfileScreen() {
                 </View>
             </View>
 
-            {/* Stats row - only relevant for SMMEs (verification, products & services) */}
+            {/* Stats row - only relevant for SMMEs */}
             {isSMME && (
                 <View className="flex-row mx-6 mt-2 mb-2 justify-around">
                     <View className="items-center">
@@ -268,29 +284,29 @@ function UserProfileScreen() {
 
             {/* Action Buttons */}
             {!isOwnProfile && currentUser && (
-                <View className="flex-row px-6 mt-6 gap-3">
+                <View className="flex-row px-6 mt-5 gap-3">
                     {connectionStatus === 'connected' ? (
-                        <Pressable 
+                        <Pressable
                             onPress={() => router.push({ pathname: '/message', params: { userId: profileUser.id, userName: profileUser.name } })}
-                            className="flex-1 flex-row bg-primary h-12 rounded-2xl items-center justify-center shadow-md active:opacity-90"
+                            className="flex-1 flex-row bg-primary h-12 rounded-2xl items-center justify-center active:opacity-90"
                         >
                             <Feather name="message-square" size={18} color="white" />
                             <Text className="text-white font-bold ml-2">Message</Text>
                         </Pressable>
                     ) : connectionStatus === 'pending_received' ? (
                         <>
-                            <Pressable onPress={handleAccept} className="flex-1 bg-green-600 h-12 rounded-2xl items-center justify-center shadow-md active:opacity-90">
+                            <Pressable onPress={handleAccept} className="flex-1 bg-primary h-12 rounded-2xl items-center justify-center active:opacity-90">
                                 <Text className="text-white font-bold">Accept</Text>
                             </Pressable>
-                            <Pressable onPress={handleDecline} className="flex-1 bg-destructive/10 h-12 rounded-2xl items-center justify-center border border-destructive/20 active:opacity-90">
-                                <Text className="text-destructive font-bold">Decline</Text>
+                            <Pressable onPress={handleDecline} className="flex-1 h-12 rounded-2xl items-center justify-center border border-border active:opacity-90">
+                                <Text className="text-foreground font-bold">Decline</Text>
                             </Pressable>
                         </>
                     ) : (
-                        <Pressable 
-                            onPress={handleConnect} 
+                        <Pressable
+                            onPress={handleConnect}
                             disabled={connectionStatus === 'pending_sent'}
-                            className={`flex-1 h-12 rounded-2xl items-center justify-center shadow-md ${connectionStatus === 'pending_sent' ? 'bg-muted' : 'bg-foreground dark:bg-white'}`}
+                            className={`flex-1 h-12 rounded-2xl items-center justify-center ${connectionStatus === 'pending_sent' ? 'bg-muted' : 'bg-foreground dark:bg-white'}`}
                         >
                             <Text className={`font-bold ${connectionStatus === 'pending_sent' ? 'text-muted-foreground' : 'text-background dark:text-black'}`}>
                                 {connectionStatus === 'pending_sent' ? 'Request Sent' : 'Connect'}
@@ -301,174 +317,151 @@ function UserProfileScreen() {
             )}
 
             {/* Content Sections */}
-            <View className="px-6 py-8 gap-y-6">
+            <View className="px-6 py-8 gap-y-8">
                 {/* About */}
                 {profileUser.bio && (
                     <View>
-                        <Text className="text-lg font-bold text-foreground mb-2">About</Text>
-                        <Text className="text-base text-muted-foreground leading-6">{profileUser.bio}</Text>
+                        <Text className="text-base font-bold text-foreground mb-2">About</Text>
+                        <Text className="text-sm text-muted-foreground leading-6">{profileUser.bio}</Text>
                     </View>
                 )}
 
                 {/* Contact Info */}
-                <View className="bg-card p-5 rounded-3xl border border-border">
-                    <Text className="text-lg font-bold text-foreground mb-4">Contact Details</Text>
-                    <View className="gap-y-4">
-                        <Pressable onPress={() => Linking.openURL(`mailto:${profileUser.email}`)} className="flex-row items-center">
-                            <View
-                                className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                                style={{ backgroundColor: colors.whiteOpacity10 }}
-                            >
-                                <Feather name="mail" size={18} color={colors.accent} />
-                            </View>
-                            <Text className="text-foreground font-medium flex-1">{profileUser.email}</Text>
+                <View>
+                    <Text className="text-base font-bold text-foreground mb-3">Contact</Text>
+                    <View className="gap-y-3">
+                        <Pressable
+                            onPress={() => Linking.openURL(`mailto:${profileUser.email}`)}
+                            className="flex-row items-center active:opacity-70"
+                        >
+                            <Feather name="mail" size={16} color={colors.mutedForeground} />
+                            <Text className="text-foreground text-sm ml-3 flex-1">{profileUser.email}</Text>
                         </Pressable>
                         {profileUser.address && (
                             <View className="flex-row items-center">
-                                <View
-                                    className="w-10 h-10 rounded-full items-center justify-center mr-3"
-                                    style={{ backgroundColor: colors.whiteOpacity10 }}
-                                >
-                                    <Feather name="map-pin" size={18} color={colors.accent} />
-                                </View>
-                                <Text className="text-foreground font-medium flex-1">{profileUser.address}</Text>
+                                <Feather name="map-pin" size={16} color={colors.mutedForeground} />
+                                <Text className="text-foreground text-sm ml-3 flex-1">{profileUser.address}</Text>
                             </View>
                         )}
                     </View>
                 </View>
 
-                {/* Verified SMME offerings */}
+                {/* Products & Services */}
                 {isSMME && (
-                    <View className="bg-card p-5 rounded-3xl border border-border">
+                    <View>
                         <View className="flex-row items-center justify-between mb-4">
-                            <Text className="text-lg font-bold text-foreground">Products & Services</Text>
+                            <Text className="text-base font-bold text-foreground">Products & Services</Text>
                             {loadingOfferings ? (
-                                <View className="flex-row items-center">
-                                    <ActivityIndicator size="small" color={colors.primary} />
-                                    <Text className="text-muted-foreground text-xs ml-2">Loading</Text>
-                                </View>
+                                <ActivityIndicator size="small" color={colors.mutedForeground} />
                             ) : null}
                         </View>
 
                         {offeringsError ? (
-                            <View className="py-6 items-center">
-                                <Feather name="alert-circle" size={22} color={colors.mutedForeground} />
-                                <Text className="text-muted-foreground mt-2 text-center">{offeringsError}</Text>
-                            </View>
+                            <Text className="text-sm text-muted-foreground">{offeringsError}</Text>
                         ) : null}
 
                         {!loadingOfferings && !offeringsError && smmeProducts.length === 0 && smmeServices.length === 0 ? (
-                            <View className="py-8 items-center">
-                                <Feather name="grid" size={26} color={colors.mutedForeground} />
-                                <Text className="text-muted-foreground mt-2 text-center">No products or services listed yet.</Text>
-                            </View>
+                            <Text className="text-sm text-muted-foreground">No products or services listed yet.</Text>
                         ) : null}
 
-                        {!offeringsError && smmeProducts.length > 0 && (
-                            <View className="mb-4">
-                                <Text className="text-base font-extrabold text-foreground mb-3">Products</Text>
-                                <View className="gap-y-3">
-                                    {smmeProducts.map((item) => (
-                                        <View
-                                            key={item.id}
-                                            className="p-4 rounded-2xl border border-border"
-                                            style={{ backgroundColor: colors.backgroundSecondary }}
+                        {!loadingOfferings && !offeringsError && (smmeProducts.length > 0 || smmeServices.length > 0) && (
+                            <>
+                                {/* Simple text tabs */}
+                                <View className="flex-row mb-4 border-b border-border">
+                                    {smmeProducts.length > 0 && (
+                                        <Pressable
+                                            onPress={() => setOfferingsTab('products')}
+                                            className="mr-6 pb-2"
+                                            style={{
+                                                borderBottomWidth: offeringsTab === 'products' ? 2 : 0,
+                                                borderBottomColor: colors.foreground,
+                                            }}
                                         >
-                                            <View className="flex-row items-start justify-between">
-                                                <View className="flex-1 pr-3">
-                                                    <Text className="text-base font-bold text-foreground">{item.name}</Text>
-                                                    <Text className="text-sm text-muted-foreground mt-1" numberOfLines={2}>
-                                                        {item.description}
-                                                    </Text>
-                                                </View>
-                                                <View className="items-end">
-                                                    <View
-                                                        className="px-2 py-1 rounded-lg"
-                                                        style={{ backgroundColor: colors.whiteOpacity15 }}
-                                                    >
-                                                        <Text className="text-xs font-bold" style={{ color: colors.accent }}>
-                                                            {item.category}
-                                                        </Text>
-                                                    </View>
-                                                    <Text className="text-foreground font-extrabold mt-2 text-sm">
-                                                        {item.price || 'Contact'}
-                                                    </Text>
-                                                </View>
-                                            </View>
-                                            {(item.contact_email || item.contact_phone) && (
-                                                <View className="flex-row flex-wrap mt-3">
-                                                    {item.contact_email ? (
-                                                        <Pressable onPress={() => Linking.openURL(`mailto:${item.contact_email}`)} className="mr-3 mt-1">
-                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
-                                                                {item.contact_email}
-                                                            </Text>
-                                                        </Pressable>
-                                                    ) : null}
-                                                    {item.contact_phone ? (
-                                                        <Pressable onPress={() => Linking.openURL(`tel:${item.contact_phone}`)} className="mt-1">
-                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
-                                                                {item.contact_phone}
-                                                            </Text>
-                                                        </Pressable>
-                                                    ) : null}
-                                                </View>
-                                            )}
-                                        </View>
-                                    ))}
+                                            <Text
+                                                className={`text-sm font-semibold ${
+                                                    offeringsTab === 'products' ? 'text-foreground' : 'text-muted-foreground'
+                                                }`}
+                                            >
+                                                Products ({smmeProducts.length})
+                                            </Text>
+                                        </Pressable>
+                                    )}
+                                    {smmeServices.length > 0 && (
+                                        <Pressable
+                                            onPress={() => setOfferingsTab('services')}
+                                            className="pb-2"
+                                            style={{
+                                                borderBottomWidth: offeringsTab === 'services' ? 2 : 0,
+                                                borderBottomColor: colors.foreground,
+                                            }}
+                                        >
+                                            <Text
+                                                className={`text-sm font-semibold ${
+                                                    offeringsTab === 'services' ? 'text-foreground' : 'text-muted-foreground'
+                                                }`}
+                                            >
+                                                Services ({smmeServices.length})
+                                            </Text>
+                                        </Pressable>
+                                    )}
                                 </View>
-                            </View>
-                        )}
 
-                        {!offeringsError && smmeServices.length > 0 && (
-                            <View>
-                                <Text className="text-base font-extrabold text-foreground mb-3">Services</Text>
-                                <View className="gap-y-3">
-                                    {smmeServices.map((item) => (
-                                        <View
-                                            key={item.id}
-                                            className="p-4 rounded-2xl border border-border"
-                                            style={{ backgroundColor: colors.backgroundSecondary }}
-                                        >
-                                            <View className="flex-row items-start justify-between">
-                                                <View className="flex-1 pr-3">
-                                                    <Text className="text-base font-bold text-foreground">{item.name}</Text>
-                                                    <Text className="text-sm text-muted-foreground mt-1" numberOfLines={2}>
+                                {(offeringsTab === 'products' ? smmeProducts : smmeServices).map((item, index, list) => (
+                                    <View
+                                        key={item.id}
+                                        className={`py-3.5 ${index < list.length - 1 ? 'border-b border-border' : ''}`}
+                                    >
+                                        <View className="flex-row items-start justify-between gap-3">
+                                            <View className="flex-1">
+                                                <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>
+                                                    {item.name}
+                                                </Text>
+                                                {item.category ? (
+                                                    <Text className="text-xs text-muted-foreground mt-0.5" numberOfLines={1}>
+                                                        {item.category}
+                                                    </Text>
+                                                ) : null}
+                                                {item.description ? (
+                                                    <Text className="text-xs text-muted-foreground mt-1.5 leading-4" numberOfLines={2}>
                                                         {item.description}
                                                     </Text>
-                                                </View>
-                                                <View className="items-end">
-                                                    <View
-                                                        className="px-2 py-1 rounded-lg"
-                                                        style={{ backgroundColor: colors.whiteOpacity15 }}
-                                                    >
-                                                        <Text className="text-xs font-bold" style={{ color: colors.accent }}>
-                                                            {item.category}
-                                                        </Text>
-                                                    </View>
-                                                </View>
+                                                ) : null}
                                             </View>
-                                            {(item.contact_email || item.contact_phone) && (
-                                                <View className="flex-row flex-wrap mt-3">
-                                                    {item.contact_email ? (
-                                                        <Pressable onPress={() => Linking.openURL(`mailto:${item.contact_email}`)} className="mr-3 mt-1">
-                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
-                                                                {item.contact_email}
-                                                            </Text>
-                                                        </Pressable>
-                                                    ) : null}
-                                                    {item.contact_phone ? (
-                                                        <Pressable onPress={() => Linking.openURL(`tel:${item.contact_phone}`)} className="mt-1">
-                                                            <Text className="text-xs font-semibold" style={{ color: colors.accent }}>
-                                                                {item.contact_phone}
-                                                            </Text>
-                                                        </Pressable>
-                                                    ) : null}
-                                                </View>
+                                            {offeringsTab === 'products' && (
+                                                <Text className="text-sm font-semibold text-foreground shrink-0">
+                                                    {item.price || 'On request'}
+                                                </Text>
                                             )}
                                         </View>
-                                    ))}
-                                </View>
-                            </View>
+                                        {(item.contact_email || item.contact_phone) && (
+                                            <View className="flex-row flex-wrap mt-2 gap-x-4 gap-y-1">
+                                                {item.contact_email ? (
+                                                    <Pressable
+                                                        onPress={() => Linking.openURL(`mailto:${item.contact_email}`)}
+                                                        className="flex-row items-center active:opacity-70"
+                                                    >
+                                                        <Feather name="mail" size={12} color={colors.mutedForeground} />
+                                                        <Text className="text-xs text-muted-foreground ml-1.5">
+                                                            {item.contact_email}
+                                                        </Text>
+                                                    </Pressable>
+                                                ) : null}
+                                                {item.contact_phone ? (
+                                                    <Pressable
+                                                        onPress={() => Linking.openURL(`tel:${item.contact_phone}`)}
+                                                        className="flex-row items-center active:opacity-70"
+                                                    >
+                                                        <Feather name="phone" size={12} color={colors.mutedForeground} />
+                                                        <Text className="text-xs text-muted-foreground ml-1.5">
+                                                            {item.contact_phone}
+                                                        </Text>
+                                                    </Pressable>
+                                                ) : null}
+                                            </View>
+                                        )}
+                                    </View>
+                                ))}
+                            </>
                         )}
                     </View>
                 )}

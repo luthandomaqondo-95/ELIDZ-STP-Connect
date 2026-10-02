@@ -34,13 +34,13 @@ export default function NewsScreen() {
 
   const getCategoryColor = (category?: string): string => {
     switch (category) {
-      case 'Corporate': return colors.primary;
+      case 'Corporate': return colors.primaryBright;
       case 'Achievements': return colors.accent;
       case 'Training': return colors.success;
       case 'Community': return colors.info;
       case 'Partnership': return colors.purple;
       case 'Events': return '#E83E8C';
-      default: return '#3B6E8F';
+      default: return colors.primaryBright;
     }
   };
 

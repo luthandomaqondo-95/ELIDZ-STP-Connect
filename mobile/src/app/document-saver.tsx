@@ -74,8 +74,8 @@ function DocumentSaverScreen() {
 			onPress={() => { }}
 		>
 			<View className="flex-row items-center">
-				<View className="w-12 h-12 rounded-lg justify-center items-center mr-2.5 bg-primary">
-					<Feather name="file-text" size={24} color={colors.buttonText} />
+				<View className="mr-2.5 items-center justify-center">
+					<Feather name="file-text" size={24} color={colors.primaryBright} />
 				</View>
 				<View className="flex-1">
 					<Text className="text-base font-semibold">

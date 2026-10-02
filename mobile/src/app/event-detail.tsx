@@ -170,30 +170,23 @@ function EventDetailScreen() {
           </View>
         )}
 
-        <View className="p-3 rounded-xl mb-5 bg-secondary shadow-sm">
-          <View className="items-center">
-            <Feather name="user-plus" size={32} color={colors.buttonText} />
-            <Text className="text-lg font-bold text-secondary-foreground mt-2.5 mb-2">
-              {isRsvped ? 'You are attending this event' : 'RSVP for this event'}
+        <Pressable
+          className="mb-5 py-3 rounded-xl items-center active:opacity-80"
+          style={{ backgroundColor: colors.accent }}
+          onPress={handleRsvpPress}
+          disabled={rsvpLoading}
+        >
+          {rsvpLoading ? (
+            <ActivityIndicator color="white" />
+          ) : (
+            <Text className="text-base font-semibold text-white">
+              {isRsvped ? 'Cancel RSVP' : 'RSVP'}
             </Text>
-            <Pressable
-              className="bg-primary-foreground px-5 py-2.5 rounded-lg items-center active:opacity-80 min-w-[170px]"
-              onPress={handleRsvpPress}
-              disabled={rsvpLoading}
-            >
-              {rsvpLoading ? (
-                <ActivityIndicator color={colors.secondary} />
-              ) : (
-                <Text className="text-base font-semibold text-secondary">
-                  {isRsvped ? 'Cancel RSVP' : 'RSVP Now'}
-                </Text>
-              )}
-            </Pressable>
-            {rsvpError ? (
-              <Text className="mt-2 text-center text-sm text-red-200">{rsvpError}</Text>
-            ) : null}
-          </View>
-        </View>
+          )}
+        </Pressable>
+        {rsvpError ? (
+          <Text className="mb-5 -mt-3 text-center text-sm text-destructive">{rsvpError}</Text>
+        ) : null}
       </View>
     </ScreenScrollView>
   );

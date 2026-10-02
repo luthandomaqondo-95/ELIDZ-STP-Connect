@@ -151,17 +151,6 @@ function MessagesScreen() {
         };
         return roleColors[role] || colors.primary;
     }
-
-    function getRoleIcon(role: UserRole): string {
-        const roleIcons: Record<UserRole, string> = {
-            Entrepreneur: 'zap',
-            SMME: 'briefcase',
-            Student: 'book-open',
-            Tenant: 'home',
-        };
-        return roleIcons[role] || 'user';
-    }
-
     async function handleConnect(contact: ContactWithConnection) {
         if (!isLoggedIn || !profile) {
             Alert.alert('Sign Up Required', 'Please sign up to connect with other users.');
@@ -170,10 +159,30 @@ function MessagesScreen() {
         try {
             await connectionService.sendConnectionRequest(profile.id, contact.id);
             Alert.alert('Success', `Connection request sent to ${contact.name}!`);
+            // Move contact to pending_sent in cache so Connect is not shown again
+            queryClient.setQueriesData(
+                { queryKey: ['contacts'] },
+                (old: ContactWithConnection[] | undefined) => {
+                    if (!Array.isArray(old)) return old;
+                    return old.map((c) =>
+                        c.id === contact.id
+                            ? { ...c, connectionStatus: 'pending_sent' as const }
+                            : c
+                    );
+                }
+            );
             queryClient.invalidateQueries({ queryKey: ['contacts'] });
+            setActiveTab('requests');
         } catch (error: any) {
-            console.error('Error sending connection request:', error);
-            Alert.alert('Error', error.message || 'Failed to send connection request.');
+            console.error('Connect error:', error);
+            const message = error?.message || 'Failed to send connection request.';
+            if (/already sent|pending connection request/i.test(message)) {
+                Alert.alert('Request Pending', 'A connection request is already pending with this user.');
+                queryClient.invalidateQueries({ queryKey: ['contacts'] });
+                setActiveTab('requests');
+                return;
+            }
+            Alert.alert('Error', message);
         }
     }
 
@@ -238,6 +247,21 @@ function MessagesScreen() {
     }
 
     async function handleCancelRequest(connectionId: string, userName: string) {
+        Alert.alert(
+            'Cancel Request',
+            `Are you sure you want to cancel your connection request to ${userName}?`,
+            [
+                { text: 'Keep Request', style: 'cancel' },
+                {
+                    text: 'Cancel Request',
+                    style: 'destructive',
+                    onPress: () => confirmCancelRequest(connectionId, userName),
+                },
+            ]
+        );
+    }
+
+    async function confirmCancelRequest(connectionId: string, userName: string) {
         const userId = profile?.id;
         try {
             // 1. Delete from Supabase (source of truth)
@@ -321,58 +345,54 @@ function MessagesScreen() {
         return (
             <Pressable
                 key={chat.id}
-                className="bg-card mb-3 rounded-2xl border border-border shadow-sm overflow-hidden active:opacity-95"
+                className="bg-card mb-2 rounded-xl border border-border shadow-sm overflow-hidden active:opacity-95"
                 onPress={() => {
                     const userName = chat.type === 'direct' && chat.otherUser ? chat.otherUser.name : displayName;
                     router.push(`/message?chatId=${chat.id}&userName=${encodeURIComponent(userName)}`);
                 }}
             >
-                <View className="flex-row items-center p-4">
+                <View className="flex-row items-center px-3 py-2.5">
                     <View className="relative">
-                        <View className="w-12 h-12 rounded-full overflow-hidden justify-center items-center">
-                            <ContactAvatar avatar={chat.type === 'direct' ? chat.otherUser?.avatar : undefined} size={48} />
+                        <View className="w-10 h-10 rounded-full overflow-hidden justify-center items-center">
+                            <ContactAvatar avatar={chat.type === 'direct' ? chat.otherUser?.avatar : undefined} size={40} />
                         </View>
                         {chat.unreadCount !== undefined && chat.unreadCount > 0 &&
                          chat.lastMessage?.sender_id !== profile?.id && (
-                            <View className="absolute -top-1 -right-1 w-5 h-5 bg-accent rounded-full justify-center items-center">
-                                <Text className="text-white text-xs font-bold">{chat.unreadCount}</Text>
+                            <View className="absolute -top-1 -right-1 w-4 h-4 bg-accent rounded-full justify-center items-center">
+                                <Text className="text-white text-[10px] font-bold">{chat.unreadCount}</Text>
                             </View>
                         )}
                     </View>
 
-                    <View className="flex-1 ml-3">
-                        <View className="flex-row items-center justify-between mb-1">
-                            <Text className="text-base font-bold text-foreground flex-1" numberOfLines={1}>
+                    <View className="flex-1 ml-2.5">
+                        <View className="flex-row items-center justify-between mb-0.5">
+                            <Text className="text-sm font-bold text-foreground flex-1" numberOfLines={1}>
                                 {displayName}
                             </Text>
                             {chat.lastMessage && (
-                                <Text className="text-xs text-muted-foreground ml-2">
+                                <Text className="text-[11px] text-muted-foreground ml-2">
                                     {formatTimeAgo(chat.lastMessage.created_at)}
                                 </Text>
                             )}
                         </View>
 
-                        <View className="flex-row items-center mb-1.5">
+                        <View className="flex-row items-center mb-0.5">
                             <View
-                                className="flex-row items-center px-2 py-0.5 rounded-md"
+                                className="flex-row items-center px-1.5 py-0.5 rounded-md"
                                 style={{
                                     backgroundColor: isDarkMode ? getRoleColor(role) : getRoleColor(role) + '10',
                                 }}
                             >
-                                <Feather
-                                    name={getRoleIcon(role) as any}
-                                    size={10}
-                                    color={isDarkMode ? colors.white : getRoleColor(role)}
-                                />
+
                                 <Text
-                                    className="text-[10px] font-medium ml-1"
+                                    className="text-[10px] font-medium"
                                     style={{ color: isDarkMode ? colors.white : getRoleColor(role) }}
                                 >
                                     {chat.type === 'direct' ? role : 'Group'}
                                 </Text>
                             </View>
                             {chat.type === 'direct' && chat.otherUser?.organization && (
-                                <Text className="text-muted-foreground text-xs ml-2" numberOfLines={1}>
+                                <Text className="text-muted-foreground text-[11px] ml-2" numberOfLines={1}>
                                     • {chat.otherUser.organization}
                                 </Text>
                             )}
@@ -380,7 +400,7 @@ function MessagesScreen() {
 
                         {chat.lastMessage ? (
                             <Text
-                                className={`text-sm ${
+                                className={`text-xs ${
                                     chat.lastMessage.sender_id === profile?.id
                                         ? 'text-muted-foreground'
                                         : chat.unreadCount && chat.unreadCount > 0
@@ -401,7 +421,7 @@ function MessagesScreen() {
                                         : '')}
                             </Text>
                         ) : (
-                            <Text className="text-xs text-muted-foreground italic">
+                            <Text className="text-[11px] text-muted-foreground italic">
                                 No messages yet
                             </Text>
                         )}
@@ -409,7 +429,7 @@ function MessagesScreen() {
 
                     {chat.unreadCount !== undefined && chat.unreadCount > 0 &&
                      chat.lastMessage?.sender_id !== profile?.id && (
-                        <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2" />
+                        <View className="w-2 h-2 rounded-full bg-accent ml-2" />
                     )}
                 </View>
             </Pressable>
@@ -421,7 +441,7 @@ function MessagesScreen() {
         return (
             <Pressable
                 key={contact.id}
-                className="bg-card mb-3 rounded-2xl border border-border shadow-sm overflow-hidden active:opacity-95"
+                className="bg-card mb-2 rounded-xl border border-border shadow-sm overflow-hidden active:opacity-95"
                 onPress={() => {
                     if (contact.connectionStatus === 'connected') {
                         handleMessage(contact);
@@ -431,54 +451,72 @@ function MessagesScreen() {
                     }
                 }}
             >
-                <View className="flex-row items-center p-4">
+                <View className="flex-row items-center px-3 py-2.5">
                     <View className="relative">
-                        <View className="w-12 h-12 rounded-full overflow-hidden">
-                            <ContactAvatar avatar={contact.avatar} size={48} />
+                        <View className="w-10 h-10 rounded-full overflow-hidden">
+                            <ContactAvatar avatar={contact.avatar} size={40} />
                         </View>
                     </View>
 
-                    <View className="flex-1 ml-3">
-                        <View className="flex-row items-center mb-1">
-                            <Text className="text-base font-bold text-foreground flex-1" numberOfLines={1}>
+                    <View className="flex-1 ml-2.5">
+                        <View className="flex-row items-center mb-0.5">
+                            <Text className="text-sm font-bold text-foreground flex-1" numberOfLines={1}>
                                 {contact.name}
                             </Text>
                             {contact.connectionStatus === 'pending_sent' && (
                                 <Pressable
-                                    className="ml-2 w-9 h-9 rounded-full justify-center items-center"
-                                    style={{ backgroundColor: colors.destructive }}
+                                    className="ml-2 p-1 justify-center items-center active:opacity-60"
                                     onPress={(e) => {
                                         e.stopPropagation();
                                         if (contact.connectionId) handleCancelRequest(contact.connectionId, contact.name);
                                     }}
-                                    hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+                                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                                 >
-                                    <Feather name="x" size={18} color="white" />
+                                    <Feather name="x" size={18} color={colors.destructive} />
                                 </Pressable>
                             )}
-                            {contact.lastMessageTime && (
-                                <Text className="text-xs text-muted-foreground ml-2">
+                            {contact.connectionStatus === 'pending_received' && (
+                                <View className="flex-row items-center ml-2 gap-2">
+                                    <Pressable
+                                        className="p-1 justify-center items-center active:opacity-60"
+                                        onPress={(e) => {
+                                            e.stopPropagation();
+                                            handleAcceptConnection(contact);
+                                        }}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Feather name="check" size={18} color={colors.constructive} />
+                                    </Pressable>
+                                    <Pressable
+                                        className="p-1 justify-center items-center active:opacity-60"
+                                        onPress={(e) => {
+                                            e.stopPropagation();
+                                            handleDeclineConnection(contact.connectionId!, contact.name);
+                                        }}
+                                        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                                    >
+                                        <Feather name="x" size={18} color={colors.destructive} />
+                                    </Pressable>
+                                </View>
+                            )}
+                            {contact.lastMessageTime && contact.connectionStatus !== 'pending_received' && (
+                                <Text className="text-[11px] text-muted-foreground ml-2">
                                     {contact.lastMessageTime}
                                 </Text>
                             )}
                         </View>
 
-                        <View className="flex-row items-center mb-1.5">
+                        <View className="flex-row items-center mb-0.5">
                             <View
-                                className="flex-row items-center px-2 py-0.5 rounded-md"
+                                className="flex-row items-center px-1.5 py-0.5 rounded-md"
                                 style={{
                                     backgroundColor: isDarkMode
                                         ? getRoleColor(contact.role as UserRole)
                                         : getRoleColor(contact.role as UserRole) + '10',
                                 }}
                             >
-                                <Feather
-                                    name={getRoleIcon(contact.role as UserRole) as any}
-                                    size={10}
-                                    color={isDarkMode ? colors.white : getRoleColor(contact.role as UserRole)}
-                                />
                                 <Text
-                                    className="text-[10px] font-medium ml-1"
+                                    className="text-[10px] font-medium"
                                     style={{ color: isDarkMode ? colors.white : getRoleColor(contact.role as UserRole) }}
                                 >
                                     {contact.role}
@@ -486,62 +524,40 @@ function MessagesScreen() {
                             </View>
                         </View>
 
-                        <Text className="text-muted-foreground text-xs" numberOfLines={1}>
+                        <Text className="text-muted-foreground text-[11px]" numberOfLines={1}>
                             {contact.organization || 'No organization'}
                         </Text>
 
                         {contact.lastMessage ? (
-                            <Text className={`text-sm ${contact.hasUnreadMessages ? 'text-foreground font-semibold' : 'text-muted-foreground'}`} numberOfLines={1}>
+                            <Text className={`text-xs ${contact.hasUnreadMessages ? 'text-foreground font-semibold' : 'text-muted-foreground'}`} numberOfLines={1}>
                                 {contact.lastMessage}
                             </Text>
-                        ) : (
-                            <Text className="text-xs text-muted-foreground italic"></Text>
-                        )}
+                        ) : null}
                     </View>
 
                     {contact.hasUnreadMessages && (
-                        <View className="w-2.5 h-2.5 rounded-full bg-accent ml-2" />
+                        <View className="w-2 h-2 rounded-full bg-accent ml-2" />
                     )}
 
                     {contact.connectionStatus === 'available' && (
                         <Pressable
-                            className="ml-2 px-4 py-2 rounded-full flex-row items-center active:opacity-90"
-                            style={{ backgroundColor: colors.primary }}
+                            className="ml-2 flex-row items-center active:opacity-70"
                             onPress={() => handleConnect(contact)}
+                            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                         >
-                            <Feather name="user-plus" size={14} color="white" style={{ marginRight: 6 }} />
-                            <Text className="text-white text-xs font-bold">Connect</Text>
+                            <Feather name="user-plus" size={16} color={colors.primaryBright} style={{ marginRight: 4 }} />
+                            <Text className="text-[11px] font-bold" style={{ color: colors.primaryBright }}>
+                                Connect
+                            </Text>
                         </Pressable>
                     )}
 
                     {contact.connectionStatus === 'connected' && (
-                        <View className="ml-2 p-2 rounded-full" style={{ backgroundColor: colors.primary + '20' }}>
-                            <Feather name="message-circle" size={20} color={colors.primary} />
+                        <View className="ml-2 p-1">
+                            <Feather name="message-circle" size={18} color={colors.primaryBright} />
                         </View>
                     )}
                 </View>
-
-                {/* Pending actions in a separate row to avoid overlapping text */}
-                        {contact.connectionStatus === 'pending_received' && (
-                    <View className="flex-row justify-end items-center px-4 pb-3 pt-0">
-                        <Pressable
-                            className="w-10 h-10 rounded-full justify-center items-center mr-2"
-                            style={{ backgroundColor: colors.constructive }}
-                            onPress={() => handleAcceptConnection(contact)}
-                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                        >
-                            <Feather name="check" size={18} color="white" />
-                        </Pressable>
-                        <Pressable
-                            className="w-10 h-10 rounded-full justify-center items-center"
-                            style={{ backgroundColor: colors.destructive }}
-                            onPress={() => handleDeclineConnection(contact.connectionId!, contact.name)}
-                            hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
-                        >
-                            <Feather name="x" size={18} color="white" />
-                        </Pressable>
-                    </View>
-                )}
 
             </Pressable>
         );
@@ -563,7 +579,7 @@ function MessagesScreen() {
                  </View>
                  <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
                     <View className="flex-row items-center mb-2">
-                        <View className="bg-[#F38C1E]/10 p-2 rounded-full mr-3">
+                        <View className="mr-3 items-center justify-center">
                             <Feather name="lock" size={18} color={colors.accent} />
                         </View>
                         <Text className="text-foreground text-lg font-bold">
@@ -627,50 +643,67 @@ function MessagesScreen() {
                   }}
                 >
                     <View className="flex-row bg-card rounded-xl p-1 border border-border shadow-sm">
-                        <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'messages' ? 'bg-primary' : ''}`}
-                            onPress={() => setActiveTab('messages')}
-                        >
-                            <Feather name="message-circle" size={18} color={activeTab === 'messages' ? colors.white : colors.iconGrayDark} />
-                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'messages' ? 'text-white' : 'text-foreground'}`}>
-                                Messages
-                            </Text>
+                        <View className="flex-1 relative">
+                            <Pressable
+                                className={`py-3 rounded-lg items-center ${activeTab === 'messages' ? 'bg-primary' : ''}`}
+                                onPress={() => setActiveTab('messages')}
+                            >
+                                <Feather name="message-circle" size={18} color={activeTab === 'messages' ? colors.white : colors.iconGrayDark} />
+                                <Text className={`text-xs font-semibold mt-1 ${activeTab === 'messages' ? 'text-white' : 'text-foreground'}`}>
+                                    Messages
+                                </Text>
+                            </Pressable>
                             {chats && chats.some(c => (c.unreadCount || 0) > 0) && (
-                                <View className="absolute -top-1 -right-1 bg-accent rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                <View
+                                    className="absolute top-1 right-1.5 bg-accent rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center z-10 border border-card"
+                                    pointerEvents="none"
+                                >
                                     <Text className="text-white text-[10px] font-bold">
                                         {chats.filter(c => (c.unreadCount || 0) > 0).length}
                                     </Text>
                                 </View>
                             )}
-                        </Pressable>
-                        <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'requests' ? 'bg-primary' : ''}`}
-                            onPress={() => setActiveTab('requests')}
-                        >
-                            <Feather name="user-check" size={18} color={activeTab === 'requests' ? colors.white : colors.iconGrayDark} />
-                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'requests' ? 'text-white' : 'text-foreground'}`}>
-                                Requests
-                            </Text>
+                        </View>
+                        <View className="flex-1 relative">
+                            <Pressable
+                                className={`py-3 rounded-lg items-center ${activeTab === 'requests' ? 'bg-primary' : ''}`}
+                                onPress={() => setActiveTab('requests')}
+                            >
+                                <Feather name="user-check" size={18} color={activeTab === 'requests' ? colors.white : colors.iconGrayDark} />
+                                <Text className={`text-xs font-semibold mt-1 ${activeTab === 'requests' ? 'text-white' : 'text-foreground'}`}>
+                                    Requests
+                                </Text>
+                            </Pressable>
                             {(pendingReceivedContacts.length + pendingSentContacts.length) > 0 && (
-                                <View className="absolute -top-1 -right-1 bg-accent rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
-                                    <Text className="text-white text-[10px] font-bold">{pendingReceivedContacts.length + pendingSentContacts.length}</Text>
+                                <View
+                                    className="absolute top-1 right-1.5 bg-accent rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center z-10 border border-card"
+                                    pointerEvents="none"
+                                >
+                                    <Text className="text-white text-[10px] font-bold">
+                                        {pendingReceivedContacts.length + pendingSentContacts.length}
+                                    </Text>
                                 </View>
                             )}
-                        </Pressable>
-                        <Pressable
-                            className={`flex-1 py-3 rounded-lg items-center ${activeTab === 'discover' ? 'bg-primary' : ''}`}
-                            onPress={() => setActiveTab('discover')}
-                        >
-                            <Feather name="users" size={18} color={activeTab === 'discover' ? colors.white : colors.iconGrayDark} />
-                            <Text className={`text-xs font-semibold mt-1 ${activeTab === 'discover' ? 'text-white' : 'text-foreground'}`}>
-                                Discover
-                            </Text>
+                        </View>
+                        <View className="flex-1 relative">
+                            <Pressable
+                                className={`py-3 rounded-lg items-center ${activeTab === 'discover' ? 'bg-primary' : ''}`}
+                                onPress={() => setActiveTab('discover')}
+                            >
+                                <Feather name="users" size={18} color={activeTab === 'discover' ? colors.white : colors.iconGrayDark} />
+                                <Text className={`text-xs font-semibold mt-1 ${activeTab === 'discover' ? 'text-white' : 'text-foreground'}`}>
+                                    Discover
+                                </Text>
+                            </Pressable>
                             {availableContacts.length > 0 && (
-                                <View className="absolute -top-1 -right-1 bg-gray-400 rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center">
+                                <View
+                                    className="absolute top-1 right-1.5 bg-gray-400 rounded-full px-1.5 py-0.5 min-w-[18px] items-center justify-center z-10 border border-card"
+                                    pointerEvents="none"
+                                >
                                     <Text className="text-white text-[10px] font-bold">{availableContacts.length}</Text>
                                 </View>
                             )}
-                        </Pressable>
+                        </View>
                     </View>
                 </View>
 

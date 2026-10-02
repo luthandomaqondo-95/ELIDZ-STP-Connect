@@ -41,7 +41,7 @@ function SectionCard({ icon, title, accent, children }: {
   return (
     <View className="p-4 rounded-2xl mb-3 bg-card border border-border shadow-sm">
       <View className="flex-row items-center mb-3">
-        <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: `${accent}18` }}>
+        <View className="items-center justify-center">
           <Feather name={icon} size={16} color={accent} />
         </View>
         <Text className="text-base font-bold text-foreground ml-2.5">{title}</Text>
@@ -53,7 +53,7 @@ function SectionCard({ icon, title, accent, children }: {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 function TenantDetailScreen() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const accent = colors.accent;
   const params = useLocalSearchParams<{ tenant?: string; name?: string; id?: string }>();
   const [tenant, setTenant] = useState<Tenant | null>(null);
@@ -184,8 +184,16 @@ function TenantDetailScreen() {
             <View className="px-3 py-1 rounded-full" style={{ backgroundColor: `${accent}20` }}>
               <Text className="text-xs font-semibold" style={{ color: accent }}>{industry}</Text>
             </View>
-            <View className="px-3 py-1 rounded-full bg-primary/10">
-              <Text className="text-xs font-semibold text-primary">{location}</Text>
+            <View
+              className="px-3 py-1 rounded-full"
+              style={{ backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : `${colors.primary}15` }}
+            >
+              <Text
+                className="text-xs font-semibold"
+                style={{ color: isDark ? colors.textSecondary : colors.primary }}
+              >
+                {location}
+              </Text>
             </View>
           </View>
         </View>
@@ -250,7 +258,7 @@ function TenantDetailScreen() {
                 className="flex-row items-center py-2 active:opacity-70"
                 onPress={handleContactEmail}
               >
-                <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: `${accent}15` }}>
+                <View className="items-center justify-center">
                   <Feather name="mail" size={15} color={accent} />
                 </View>
                 <Text className="text-sm ml-2.5 flex-1" style={{ color: accent }} numberOfLines={1}>
@@ -267,9 +275,9 @@ function TenantDetailScreen() {
                   className="flex-row items-center py-2 active:opacity-70"
                   onPress={handleContactEmail}
                 >
-                  <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: `${accent}15` }}>
-                    <Feather name="mail" size={15} color={accent} />
-                  </View>
+                <View className="items-center justify-center">
+                  <Feather name="mail" size={15} color={accent} />
+                </View>
                   <Text className="text-sm ml-2.5 flex-1" style={{ color: accent }} numberOfLines={1}>
                     {tenant.additional_contact_email}
                   </Text>
@@ -287,7 +295,7 @@ function TenantDetailScreen() {
                   className="flex-row items-center py-2 active:opacity-70"
                   onPress={() => Linking.openURL(`tel:${tenant.contact_phone}`)}
                 >
-                  <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: `${accent}15` }}>
+                  <View className="items-center justify-center">
                     <Feather name="phone" size={15} color={accent} />
                   </View>
                   <Text className="text-sm ml-2.5 flex-1" style={{ color: accent }}>
@@ -310,7 +318,7 @@ function TenantDetailScreen() {
                   className="flex-row items-center py-2 active:opacity-70"
                   onPress={() => openLink(link.url)}
                 >
-                  <View className="w-8 h-8 rounded-full items-center justify-center" style={{ backgroundColor: `${accent}15` }}>
+                  <View className="items-center justify-center">
                     <Feather name="share-2" size={15} color={accent} />
                   </View>
                   <Text className="text-sm ml-2.5 flex-1" style={{ color: accent }}>

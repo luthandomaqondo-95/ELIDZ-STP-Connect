@@ -62,7 +62,7 @@ export default function NotFoundScreen() {
             <Stack.Screen options={{ headerShown: false }} />
             <View className='flex-1 bg-background items-center justify-center px-6'>
                 <Animated.View style={iconAnimatedStyle} className="mb-8">
-                    <View className="bg-destructive/10 dark:bg-destructive/20 rounded-full p-6">
+                    <View>
                         <Ionicons 
                             name="alert-circle" 
                             size={80} 

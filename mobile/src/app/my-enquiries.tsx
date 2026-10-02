@@ -168,7 +168,7 @@ export default function MyEnquiriesScreen() {
         </View>
         <View className="mx-5 p-5 rounded-2xl bg-card border border-border shadow-sm">
           <View className="flex-row items-center mb-2">
-            <View className="bg-[#F38C1E]/10 p-2 rounded-full mr-3">
+            <View className="mr-3 items-center justify-center">
               <Feather name="lock" size={18} color={colors.accent} />
             </View>
             <Text className="text-foreground text-lg font-bold">

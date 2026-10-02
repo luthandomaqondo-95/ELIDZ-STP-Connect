@@ -1,3 +1,4 @@
 admin/.env.local
 admin/.env.local
 .playwright-mcp/
+mobile/.env

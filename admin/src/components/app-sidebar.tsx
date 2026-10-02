@@ -6,6 +6,7 @@ import {
 	BarChart3,
 	Bell,
 	Briefcase,
+	Building2,
 	Car,
 	Cpu,
 	FlaskConical,
@@ -58,8 +59,6 @@ const iconMap: Record<string, LucideIcon> = {
     'zap': Zap,
     'default': Building2
 }
-
-import { Building2 } from "lucide-react"
 
 // Static sidebar entries for specific ELIDZ centers.
 // These link to explicit center routes (even if the DB also has them).
@@ -142,6 +141,21 @@ const baseData = {
 				{
 					title: "Manage Opportunities",
 					url: "/dashboard/opportunities",
+				},
+			],
+		},
+		{
+			title: "Tenants",
+			url: "/dashboard/tenants",
+			icon: Building2,
+			items: [
+				{
+					title: "Manage Tenants",
+					url: "/dashboard/tenants",
+				},
+				{
+					title: "Add Tenant",
+					url: "/dashboard/tenants/create",
 				},
 			],
 		},
