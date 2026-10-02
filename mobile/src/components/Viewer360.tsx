@@ -245,12 +245,22 @@ function NativeViewer({
   const gyroSubRef = useRef<GyroSubscription | null>(null);
   const gyroModeRef = useRef<'off' | 'pending' | 'native' | 'webview'>('off');
 
+  const lastInjectAtRef = useRef(0);
+
   const injectGyroScript = useCallback((script: string) => {
-    webViewRef.current?.injectJavaScript?.(script);
+    try {
+      webViewRef.current?.injectJavaScript?.(script);
+    } catch {
+      // WebView may already be unmounted
+    }
   }, []);
 
   const stopNativeGyro = useCallback(() => {
-    gyroSubRef.current?.remove();
+    try {
+      gyroSubRef.current?.remove();
+    } catch {
+      // ignore
+    }
     gyroSubRef.current = null;
   }, []);
 
@@ -348,6 +358,11 @@ function NativeViewer({
     };
   }, [scene, onLoading, onError, webViewAvailable, flushPending]);
 
+  const enableWebViewGyro = useCallback(() => {
+    gyroModeRef.current = 'webview';
+    injectGyroScript('window.__toggleGyro && window.__toggleGyro(); true;');
+  }, [injectGyroScript]);
+
   const triggerGyro = useCallback(() => {
     if (gyroModeRef.current === 'native') {
       stopNativeGyro();
@@ -363,13 +378,21 @@ function NativeViewer({
     }
 
     if (gyroModeRef.current === 'pending') return;
+
+    // DeviceMotion.addListener hard-crashes on many Android builds (native NPE).
+    // Keep Android on the WebView deviceorientation path only.
+    if (Platform.OS === 'android') {
+      enableWebViewGyro();
+      return;
+    }
+
     gyroModeRef.current = 'pending';
 
     void (async () => {
       const DeviceMotion = getDeviceMotion();
       if (DeviceMotion) {
         try {
-          if (Platform.OS === 'ios' && typeof DeviceMotion.requestPermissionsAsync === 'function') {
+          if (typeof DeviceMotion.requestPermissionsAsync === 'function') {
             const perm = await Promise.race([
               DeviceMotion.requestPermissionsAsync(),
               new Promise<{ status?: string; granted?: boolean }>((_, reject) =>
@@ -381,11 +404,15 @@ function NativeViewer({
               throw new Error('Motion permission denied');
             }
           }
-          DeviceMotion.setUpdateInterval?.(100);
+          DeviceMotion.setUpdateInterval?.(120);
           stopNativeGyro();
+          lastInjectAtRef.current = 0;
           gyroSubRef.current = DeviceMotion.addListener((data) => {
             const rot = data?.rotation;
             if (!rot) return;
+            const now = Date.now();
+            if (now - lastInjectAtRef.current < 66) return;
+            lastInjectAtRef.current = now;
             const alpha = radToDeg(rot.alpha);
             const beta = radToDeg(rot.beta);
             const gamma = radToDeg(rot.gamma);
@@ -403,11 +430,10 @@ function NativeViewer({
       }
 
       if (gyroModeRef.current !== 'native') {
-        gyroModeRef.current = 'webview';
-        injectGyroScript('window.__toggleGyro && window.__toggleGyro(); true;');
+        enableWebViewGyro();
       }
     })();
-  }, [injectGyroScript, stopNativeGyro]);
+  }, [enableWebViewGyro, injectGyroScript, stopNativeGyro]);
 
   useEffect(() => {
     registerGyroTrigger?.(triggerGyro);
@@ -426,7 +452,11 @@ function NativeViewer({
     <View className="flex-1 bg-viewer-bg">
       <WebViewComponent
         ref={webViewRef}
-        source={{ html: bootHtml }}
+        source={{
+          html: bootHtml,
+          // Android blocks deviceorientation on null/about origins from raw HTML.
+          ...(Platform.OS === 'android' ? { baseUrl: 'https://localhost/' } : {}),
+        }}
         style={{ flex: 1, backgroundColor: 'transparent' }}
         originWhitelist={['*']}
         javaScriptEnabled

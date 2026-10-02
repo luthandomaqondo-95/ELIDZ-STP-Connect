@@ -2,10 +2,9 @@
  * 360° equirectangular video viewer (HTML + Three.js) for WebView and web.
  *
  * Gyroscope / device motion (mobile):
- * - Native apps prefer DeviceMotion from expo-sensors (injected via __setGyro).
- * - Fallback: browser Device Orientation API.
+ * - iOS native apps prefer DeviceMotion from expo-sensors (injected via __setGyro).
+ * - Android uses the WebView Device Orientation API only (DeviceMotion can hard-crash).
  * - iOS 13+: Motion permission must be requested from a user gesture.
- * - Android: No permission; deviceorientation works when available.
  * - When gyro is on, touch-drag rotation is disabled; pinch zoom and hotspot taps still work.
  * - Camera rotation is smoothed (lerp) for natural movement.
  *
@@ -298,7 +297,12 @@ canvas { display: block; width: 100%; height: 100%; }
   function startDeviceOrientation() {
     deviceOrientationAvailable = true;
     try {
+      window.removeEventListener('deviceorientation', onDeviceOrientation);
+      window.removeEventListener('deviceorientationabsolute', onDeviceOrientation);
+    } catch (err) {}
+    try {
       window.addEventListener('deviceorientation', onDeviceOrientation, { passive: true });
+      window.addEventListener('deviceorientationabsolute', onDeviceOrientation, { passive: true });
     } catch (err) {
       deviceOrientationAvailable = false;
       throw err;
