@@ -8,6 +8,7 @@ import * as ExpoLinking from 'expo-linking';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { router } from 'expo-router';
+import { authService, SocialProvider } from '@/services/auth.service';
 
 /** Parse auth params from OAuth callback URL (handles both hash and query params). */
 function getAuthParamsFromUrl(url: string): { code?: string; access_token?: string; refresh_token?: string } {
@@ -35,6 +36,32 @@ function getEmailConfirmationRedirectUrl(): string {
 		: 'elidzstp://email-confirmed';
 }
 
+const ACCOUNT_SUSPENDED_MESSAGE =
+	'Your account has been suspended. If you believe this is a mistake, please contact support.';
+
+function isAccountSuspended(row: {
+	verification_status?: string | null;
+	status?: string | null;
+} | null): boolean {
+	if (!row) return false;
+	const v = String(row.verification_status ?? '').toLowerCase();
+	const s = String(row.status ?? '').toLowerCase();
+	return v === 'suspended' || s === 'suspended';
+}
+
+function isInvalidRefreshTokenError(error: unknown): boolean {
+	const message =
+		typeof error === 'object' && error !== null && 'message' in error
+			? String((error as { message?: unknown }).message ?? '')
+			: '';
+	const code =
+		typeof error === 'object' && error !== null && 'code' in error
+			? String((error as { code?: unknown }).code ?? '')
+			: '';
+
+	return /invalid refresh token|refresh token not found/i.test(message) || code === 'refresh_token_not_found';
+}
+
 export default function AuthProvider({ children }: PropsWithChildren) {
 	const [session, setSession] = useState<Session | undefined | null>()
 	const [profile, setProfile] = useState<Profile | null>()
@@ -60,6 +87,11 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			}
 
 			if (data) {
+				if (isAccountSuspended(data as Profile)) {
+					await supabase.auth.signOut();
+					setProfile(null);
+					return;
+				}
 				setProfile(data as Profile);
 			}
 		} catch (error) {
@@ -97,6 +129,15 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		console.log('AuthProvider.login: Login successful, user:', data?.user?.email);
 		
 		if (data?.user) {
+			const { data: statusRow } = await supabase
+				.from('profiles')
+				.select('verification_status')
+				.eq('id', data.user.id)
+				.maybeSingle();
+			if (isAccountSuspended(statusRow)) {
+				await supabase.auth.signOut();
+				throw new Error(ACCOUNT_SUSPENDED_MESSAGE);
+			}
 			await loadProfile(data.user.id);
 		}
 	}
@@ -123,10 +164,10 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 		if (authError) {
 			const message = authError.message ?? '';
-			if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message)) {
-				throw new Error(
-					'Too many signup attempts. Please wait about a minute, then try again. If you already signed up, check your email (including spam) for the confirmation link.'
-				);
+		if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message)) {
+			throw new Error(
+				'Too many email requests. Please wait up to an hour before trying again. If you already signed up, check your email (including spam) for the confirmation link, or try logging in instead.'
+			);
 			}
 			if (/user already registered|already been registered/i.test(message)) {
 				throw new Error(
@@ -226,7 +267,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			throw new Error('Please enter your email first.');
 		}
 
-		const { error } = await supabase.auth.resend({
+		const RESEND_TIMEOUT_MS = 15000;
+		const resendPromise = supabase.auth.resend({
 			type: 'signup',
 			email: normalizedEmail,
 			options: {
@@ -234,8 +276,21 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			},
 		});
 
+		// Supabase can occasionally hang on RN when local auth storage is stale / networking is flaky.
+		// This makes sure the UI doesn't get stuck on "Sending…".
+		const timeoutPromise = new Promise<never>((_, reject) => {
+			setTimeout(() => reject(new Error('Request timed out. Please try again.')), RESEND_TIMEOUT_MS);
+		});
+
+		const { error } = await Promise.race([resendPromise, timeoutPromise]);
+
 		if (error) {
 			const message = error.message ?? '';
+			if (isInvalidRefreshTokenError(error)) {
+				// Clear stale session storage so future auth actions behave normally.
+				await supabase.auth.signOut({ scope: 'local' });
+				throw new Error('Session expired. Please log in again.');
+			}
 			if (/email rate limit exceeded|over_email_send_rate_limit/i.test(message)) {
 				throw new Error('Too many email requests. Please wait about a minute, then try again.');
 			}
@@ -290,10 +345,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					throw new Error('No ID token received from Google');
 				}
 
-				const { data, error } = await supabase.auth.signInWithIdToken({
-					provider: 'google',
-					token: response.data.idToken,
-				});
+				const { user, session, error } = await authService.signInWithIdToken('google', response.data.idToken);
 
 				if (error) {
 					if (/provider is not enabled|unsupported provider/i.test(error.message)) {
@@ -304,10 +356,19 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					throw new Error(error.message);
 				}
 
-				if (data?.session?.user) {
-					await loadProfile(data.session.user.id);
+				if (session?.user) {
+					const { data: statusRow } = await supabase
+						.from('profiles')
+						.select('verification_status')
+						.eq('id', session.user.id)
+						.maybeSingle();
+					if (isAccountSuspended(statusRow)) {
+						await supabase.auth.signOut();
+						throw new Error(ACCOUNT_SUSPENDED_MESSAGE);
+					}
+					await loadProfile(session.user.id);
 				}
-				return data;
+				return { user, session };
 			}
 
 			// Web platform: fall back to OAuth flow
@@ -338,6 +399,19 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			console.error('Google sign-in error:', error);
 			throw error;
 		}
+	}
+
+	async function socialSignIn(provider: SocialProvider, idToken: string, nonce?: string): Promise<{ error: Error | null }> {
+		const { user, session, error } = await authService.signInWithIdToken(provider, idToken, nonce);
+		if (error) {
+			return { error };
+		}
+
+		setSession(session);
+		if (user?.id) {
+			await loadProfile(user.id);
+		}
+		return { error: null };
 	}
 
 	async function signInWithApple() {
@@ -378,6 +452,15 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				}
 
 				if (data?.session?.user) {
+					const { data: statusRow } = await supabase
+						.from('profiles')
+						.select('verification_status')
+						.eq('id', data.session.user.id)
+						.maybeSingle();
+					if (isAccountSuspended(statusRow)) {
+						await supabase.auth.signOut();
+						throw new Error(ACCOUNT_SUSPENDED_MESSAGE);
+					}
 					await loadProfile(data.session.user.id);
 				}
 				return data;
@@ -433,6 +516,22 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 	async function updateProfile(updates: Partial<Profile>) {
 		if (!session?.user) return;
 
+		const allowedRoles: Array<Profile['role']> = [
+			'Entrepreneur',
+			'SMME',
+			'Student',
+			'Tenant',
+		];
+
+		const nextRole: Profile['role'] | undefined =
+			updates.role && allowedRoles.includes(updates.role) ? updates.role : undefined;
+
+		// Users should never be able to mark themselves "verified" or "rejected" from the client.
+		const nextVerificationStatus =
+			updates.verification_status === 'pending' || updates.verification_status === 'unverified'
+				? updates.verification_status
+				: undefined;
+
 		const { error } = await supabase
 			.from('profiles')
 			.update({
@@ -442,6 +541,8 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				organization: updates.organization,
 				bio: updates.bio,
 				avatar: updates.avatar,
+				role: nextRole,
+				verification_status: nextVerificationStatus,
 			})
 			.eq('id', session.user.id);
 
@@ -462,6 +563,14 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			} = await supabase.auth.getSession()
 
 			if (error) {
+				if (isInvalidRefreshTokenError(error)) {
+					// Stale local auth storage can trigger this after password changes or old installs.
+					// Clear only local session state to avoid noisy errors for unauthenticated users.
+					await supabase.auth.signOut({ scope: 'local' });
+					setSession(null);
+					setIsLoading(false);
+					return;
+				}
 				console.error('Error fetching session:', error)
 			}
 
@@ -473,13 +582,21 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 		const {
 			data: { subscription },
-		} = supabase.auth.onAuthStateChange(async (event, session) => {
-			console.log('Auth state changed:', { event, session })
-			setSession(session)
-			if (event === 'PASSWORD_RECOVERY') {
-				router.replace('/(auth)/change-password');
-				return;
-			}
+	} = supabase.auth.onAuthStateChange(async (event, session) => {
+		console.log('Auth state changed:', { event, session })
+		if (event === 'PASSWORD_RECOVERY') {
+			// Don't update the global session state here — doing so would trigger the
+			// session-change effect which reloads the profile and causes a full-screen
+			// spinner to cover the change-password page. The change-password screen
+			// sets its own session via supabase.auth.setSession() from the deep-link tokens.
+			// Use root `/change-password`, not `/(auth)/change-password`: the `(auth)` group
+			// is behind `Stack.Protected guard={!isLoggedIn}`. A stale session from cold start
+			// leaves `isLoggedIn` true, so nested auth routes are unreachable and the user
+			// would stay on `(tabs)` (home) until the next link open clears the race.
+			router.replace('/change-password');
+			return;
+		}
+		setSession(session)
 			if (session?.user) {
 				// Check if profile exists, if not create it (for OAuth users).
 				// IMPORTANT: Never treat a SELECT error (e.g. RLS) as "missing", otherwise we
@@ -508,7 +625,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					const name = userMetadata.name || userMetadata.full_name || email.split('@')[0] || 'User';
 
 					// Ensure role is one of the allowed values
-					const allowedRoles = ['Entrepreneur', 'Researcher', 'SMME', 'Student', 'Investor', 'Tenant'];
+					const allowedRoles = ['Entrepreneur', 'SMME', 'Student', 'Tenant'];
 					const defaultRole = 'Entrepreneur';
 					const userRole = userMetadata.role || defaultRole;
 					const validRole = allowedRoles.includes(userRole) ? userRole : defaultRole;
@@ -558,16 +675,17 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 	}, [])
 
 	useEffect(() => {
+		// NOTE: No setIsLoading here — the full-screen spinner should only appear during
+		// the initial session check (handled by fetchSession above). Subsequent session
+		// changes (e.g. PASSWORD_RECOVERY, token refresh) reload the profile silently so
+		// they never block the UI with a spinner.
+		if (session === undefined) return; // skip the initial render before fetchSession runs
 		const fetchProfile = async () => {
-			setIsLoading(true)
-
 			if (session) {
 				await loadProfile(session.user.id);
 			} else {
 				setProfile(null)
 			}
-
-			setIsLoading(false)
 		}
 
 		fetchProfile()
@@ -585,6 +703,7 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				resendSignupConfirmation,
 				signInWithGoogle,
 				signInWithApple,
+				socialSignIn,
 				logout,
 				updateProfile,
 			}}

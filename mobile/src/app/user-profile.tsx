@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import { connectionService } from '@/services/connection.service';
 import { smmmeService, SMMEServiceProduct } from '@/services/smme.service';
 import { verificationService } from '@/services/verification.service';
+import { chatService } from '@/services/chat.service';
 import { Profile } from '@/types';
 import { useAvatarUri } from '@/hooks/use-avatar-uri';
 import { DEFAULT_AVATAR } from '@/constants/avatars';
@@ -159,15 +160,19 @@ function UserProfileScreen() {
     }, [currentUser?.id, profileUser?.id, profileUser?.name, queryClient]);
 
     const handleAccept = useCallback(async () => {
-        if (!connectionId) return;
+        if (!connectionId || !currentUser?.id || !profileUser?.id) return;
         try {
             await connectionService.acceptConnectionRequest(connectionId);
+            await chatService.createDirectChat(currentUser.id, profileUser.id);
             setConnectionStatus('connected');
+            queryClient.invalidateQueries({ queryKey: ['contacts'] });
+            queryClient.invalidateQueries({ queryKey: ['chats'] });
+            Alert.alert('Connected', `You can now message ${profileUser.name} from the Messages tab.`);
         } catch (error: any) {
             console.error('Accept error:', error);
             Alert.alert('Error', error?.message || 'Failed to accept request.');
         }
-    }, [connectionId]);
+    }, [connectionId, currentUser?.id, profileUser?.id, profileUser?.name, queryClient]);
 
     const handleDecline = useCallback(async () => {
         if (!connectionId) return;

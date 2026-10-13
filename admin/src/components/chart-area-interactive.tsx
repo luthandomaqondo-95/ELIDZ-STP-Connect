@@ -167,7 +167,18 @@ export function ChartAreaInteractive({
 }: ChartAreaInteractiveProps = {}) {
   const [timeRange, setTimeRange] = React.useState("90d")
 
-  const sourceData = data && data.length > 0 ? data : chartData
+  // Use real data when provided; fall back to built-in mock only when no data passed
+  const usingRealData = data && data.length > 0
+  const sourceData = usingRealData ? data : chartData
+
+  // Build a dynamic config so the legend reflects the actual key names
+  const activeChartConfig = usingRealData
+    ? {
+        ...chartConfig,
+        [primaryKey]: { label: primaryKey.charAt(0).toUpperCase() + primaryKey.slice(1), color: "var(--chart-1)" },
+        ...(secondaryKey ? { [secondaryKey]: { label: secondaryKey.charAt(0).toUpperCase() + secondaryKey.slice(1), color: "var(--chart-2)" } } : {}),
+      }
+    : chartConfig
 
   const filteredData = sourceData.filter((item) => {
     if (!showTimeRange) return true
@@ -217,7 +228,7 @@ export function ChartAreaInteractive({
       </CardHeader>
       <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
         <ChartContainer
-          config={chartConfig}
+          config={activeChartConfig}
           className="aspect-auto h-[250px] w-full"
         >
           <AreaChart data={filteredData}>

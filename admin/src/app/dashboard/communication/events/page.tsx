@@ -1,62 +1,41 @@
+import { Suspense } from "react"
 import { CalendarDays } from "lucide-react"
 
+import { EventPublisher, PublishedEventsList } from "@/components/communication/publish-ui"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
-import { EventPublisher } from "@/components/events/event-publisher"
-import { PublishedEventsList } from "@/components/events/published-events-list"
-import { createAdminClient } from "@/lib/supabase/admin"
+import { Skeleton } from "@/components/ui/skeleton"
+import { getPublishedEventsForAdmin } from "@/lib/events"
 
-type EventRsvpRelation = {
-  user_id: string
-  created_at: string | null
-  profiles: Array<{
-    name: string | null
-    email: string | null
-  }> | null
+function PublishedEventsListFallback() {
+  return (
+    <div className="rounded-3xl border-0 bg-white/90 p-6 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+      <Skeleton className="mb-2 h-6 w-56 rounded-lg bg-slate-200 dark:bg-slate-700" />
+      <Skeleton className="mb-6 h-4 max-w-xl rounded-lg bg-slate-200 dark:bg-slate-700" />
+      <Skeleton className="mb-3 h-11 w-full rounded-2xl bg-slate-200 dark:bg-slate-700" />
+      <div className="grid gap-4 md:grid-cols-2">
+        <Skeleton className="h-56 rounded-3xl bg-slate-200 dark:bg-slate-700" />
+        <Skeleton className="h-56 rounded-3xl bg-slate-200 dark:bg-slate-700" />
+      </div>
+    </div>
+  )
 }
 
-type EventRecord = {
-  id: string
-  title: string | null
-  description: string | null
-  date: string | null
-  location: string | null
-  created_at: string | null
-  event_rsvps: EventRsvpRelation[] | null
+async function PublishedEventsSection() {
+  const items = await getPublishedEventsForAdmin()
+  return <PublishedEventsList items={items} />
 }
 
-export default async function EventsManagementPage() {
-  const supabase = createAdminClient()
-
-  const { data: rawEvents } = await supabase
-    .from("events")
-    .select(
-      "id, title, description, date, location, created_at, event_rsvps(user_id, created_at, profiles(name, email))"
-    )
-    .order("created_at", { ascending: false })
-
-  const items = ((rawEvents || []) as EventRecord[]).map((event) => ({
-    id: event.id,
-    title: event.title ?? null,
-    description: event.description ?? null,
-    date: event.date ?? null,
-    location: event.location ?? null,
-    rsvps: (event.event_rsvps || []).map((rsvp) => ({
-      id: rsvp.user_id,
-      name: rsvp.profiles?.[0]?.name ?? null,
-      email: rsvp.profiles?.[0]?.email ?? null,
-      joinedAt: rsvp.created_at,
-    })),
-  }))
-
+export default function EventsManagementPage() {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-3 pt-0">
       <DashboardPageHeader title="Publish Events" icon={<CalendarDays className="h-5 w-5" />} />
       <p className="max-w-3xl text-sm italic text-muted-foreground">
         Add mobile event updates for the ELIDZ Science and Technology Park app and track RSVPs.
       </p>
-
       <EventPublisher />
-      <PublishedEventsList items={items} />
+      <Suspense fallback={<PublishedEventsListFallback />}>
+        <PublishedEventsSection />
+      </Suspense>
     </div>
   )
 }

@@ -1,18 +1,13 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
+import { createServerClient } from "@supabase/ssr"
+import { NextResponse, type NextRequest } from "next/server"
+import { isProfileSuspended } from "@/lib/account-status"
 
 export async function middleware(request: NextRequest) {
-  const isDummyAuth = request.cookies.get('dummy_auth')?.value === '1'
   let response = NextResponse.next({
     request: {
       headers: request.headers,
     },
   })
-
-  // Allow dummy login immediately for dashboard routes.
-  if (request.nextUrl.pathname.startsWith('/dashboard') && isDummyAuth) {
-    return response
-  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -23,7 +18,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value))
           response = NextResponse.next({
             request: {
               headers: request.headers,
@@ -37,41 +32,71 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Mis-typed or legacy URL — avoid noisy 404s in logs
+  if (request.nextUrl.pathname === "/auth/blue") {
+    return NextResponse.redirect(new URL("/auth/login", request.url))
+  }
 
-  // Protect dashboard routes
-  if (request.nextUrl.pathname.startsWith('/dashboard')) {
-    if (!user) {
-      return NextResponse.redirect(new URL('/auth/login', request.url))
+  if (!request.nextUrl.pathname.startsWith("/dashboard")) {
+    return response
+  }
+
+  let user = null
+  try {
+    const { data, error } = await supabase.auth.getUser()
+    if (!error) {
+      user = data.user
     }
+  } catch (e) {
+    console.error("[middleware] getUser failed (network?):", e)
+  }
 
-    // Check user role in profiles table
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
+  if (!user) {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession()
+      user = session?.user ?? null
+    } catch (e) {
+      console.error("[middleware] getSession fallback failed:", e)
+    }
+  }
+
+  if (!user) {
+    return NextResponse.redirect(new URL("/auth/login", request.url))
+  }
+
+  try {
+    const { data: profile, error } = await supabase
+      .from("profiles")
+      .select("role, verification_status")
+      .eq("id", user.id)
       .single()
 
-    // If no profile or role is not Admin or Super Admin, redirect to unauthorized page
-    if (!profile || (profile.role !== 'Admin' && profile.role !== 'Super Admin')) {
-      return NextResponse.redirect(new URL('/auth/unauthorized', request.url))
+    if (error) {
+      console.error("[middleware] profile fetch:", error.message)
+      return NextResponse.redirect(new URL("/auth/login", request.url))
     }
+
+    if (profile && isProfileSuspended(profile)) {
+      await supabase.auth.signOut()
+      const url = request.nextUrl.clone()
+      url.pathname = "/auth/login"
+      url.searchParams.set("error", "suspended")
+      return NextResponse.redirect(url)
+    }
+
+    if (!profile || (profile.role !== "Admin" && profile.role !== "Super Admin")) {
+      return NextResponse.redirect(new URL("/auth/unauthorized", request.url))
+    }
+  } catch (e) {
+    console.error("[middleware] profile error:", e)
+    return NextResponse.redirect(new URL("/auth/login", request.url))
   }
 
   return response
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - public files (images etc)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: ["/dashboard/:path*", "/auth/blue"],
 }

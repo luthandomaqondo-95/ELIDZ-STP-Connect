@@ -36,10 +36,8 @@ const ELIDZ_BRAND_COLORS = {
     // User Role Colors (for networking)
     role: {
         entrepreneur: '#28A745',    // Green
-        researcher: '#002147',      // ELIDZ Navy Blue
         sme: '#F38C1E',             // ELIDZ Orange
         student: '#6F42C1',         // Purple
-        investor: '#E83E8C',        // Pink
         tenant: '#17A2B8',          // Teal
     },
 
@@ -190,10 +188,8 @@ const SYSTEM_COLORS = {
 
         // User role colors
         roleEntrepreneur: ELIDZ_BRAND_COLORS.role.entrepreneur,
-        roleResearcher: ELIDZ_BRAND_COLORS.role.researcher,
         roleSME: ELIDZ_BRAND_COLORS.role.sme,
         roleStudent: ELIDZ_BRAND_COLORS.role.student,
-        roleInvestor: ELIDZ_BRAND_COLORS.role.investor,
         roleTenant: ELIDZ_BRAND_COLORS.role.tenant,
 
         // Status colors
@@ -301,10 +297,8 @@ const SYSTEM_COLORS = {
 
         // User role colors (same as light for consistency)
         roleEntrepreneur: ELIDZ_BRAND_COLORS.role.entrepreneur,
-        roleResearcher: ELIDZ_BRAND_COLORS.role.researcher,
         roleSME: ELIDZ_BRAND_COLORS.role.sme,
         roleStudent: ELIDZ_BRAND_COLORS.role.student,
-        roleInvestor: ELIDZ_BRAND_COLORS.role.investor,
         roleTenant: ELIDZ_BRAND_COLORS.role.tenant,
 
         // Status colors

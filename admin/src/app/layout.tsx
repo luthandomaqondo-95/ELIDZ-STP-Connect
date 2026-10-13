@@ -21,6 +21,7 @@ export default function RootLayout({
 		<html lang="en" className="dark" suppressHydrationWarning>
 			<body
 				className="antialiased bg-background text-foreground"
+				suppressHydrationWarning
 			>
 				<Providers>
 					<NextTopLoader color="#1e3a8a" showSpinner={false} />

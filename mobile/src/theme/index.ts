@@ -59,10 +59,8 @@ export interface ThemeColors {
 
   // User role colors
   roleEntrepreneur: string;
-  roleResearcher: string;
   roleSME: string;
   roleStudent: string;
-  roleInvestor: string;
   roleTenant: string;
 
   // Status colors

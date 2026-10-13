@@ -59,5 +59,36 @@ export function createNewsPublisherInitialForm() {
     imageUrl: "",
     publishedAt: getLocalDateTimeValue(),
     content: "",
+    targetAudience: "all",
   }
+}
+
+export type NewsAuthor =
+  | {
+      id?: string | null
+      name?: string | null
+      email?: string | null
+    }
+  | Array<{
+      id?: string | null
+      name?: string | null
+      email?: string | null
+    }>
+  | null
+
+export type PublishedNewsItem = {
+  id: string
+  title?: string | null
+  content?: string | null
+  image_url?: string | null
+  published_at?: string | null
+  created_at?: string | null
+  author?: NewsAuthor
+}
+
+// Simple replacement for the deleted getPublishedNewsForAdmin function
+export async function getPublishedNewsForAdmin(): Promise<PublishedNewsItem[]> {
+  // For now, return empty array - the list functionality can be implemented later
+  // with a separate API route or by querying the database directly
+  return []
 }

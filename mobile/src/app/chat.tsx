@@ -61,6 +61,12 @@ function ChatsScreen() {
   const getChatDisplayName = (chat: ChatWithDetails) =>
     chat.name || chat.otherUser?.name || 'Chat';
 
+  const getBlockedBadgeLabel = (chat: ChatWithDetails): string | null => {
+    if (chat.blockedByCurrentUser) return 'Blocked';
+    if (chat.blockedByOtherUser) return 'Blocked you';
+    return null;
+  };
+
   const renderChatItem = ({ item }: { item: ChatWithDetails }) => (
     <Pressable
       className="bg-card p-4 rounded-xl active:opacity-70 shadow-sm"
@@ -90,6 +96,13 @@ function ChatsScreen() {
           </View>
         )}
       </View>
+      {getBlockedBadgeLabel(item) && (
+        <View className="self-start mt-2 px-2.5 py-1 rounded-full bg-destructive/15 border border-destructive/40">
+          <Text className="text-[11px] font-semibold text-destructive">
+            {getBlockedBadgeLabel(item)}
+          </Text>
+        </View>
+      )}
       <Text className="text-base text-muted-foreground mt-2" numberOfLines={1}>
         {item.lastMessage?.content || 'No messages yet'}
       </Text>

@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "5MF7V6G7WN.com.elidzstp.app",
+        "paths": [
+          "/auth/*"
+        ]
+      }
+    ]
+  }
+}

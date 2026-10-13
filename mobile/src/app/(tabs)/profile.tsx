@@ -348,31 +348,6 @@ function ProfileScreen() {
                     </View>
                 )}
 
-                {/* SMME Progress Reports Section */}
-                {isLoggedIn && profile?.role === 'SMME' && (
-                    <View className="mx-6 mb-6">
-                        <Pressable
-                            onPress={() => router.push('/progress-reports')}
-                            className="bg-card rounded-2xl p-4 shadow-sm border border-border active:opacity-95"
-                        >
-                            <View className="flex-row items-center justify-between">
-                                <View className="flex-row items-center flex-1">
-                                    <View className="w-10 h-10 rounded-full bg-accent/10 items-center justify-center mr-3">
-                                        <Feather name="file-text" size={18} color={colors.accent} />
-                                    </View>
-                                    <View className="flex-1">
-                                        <Text className="text-foreground font-bold text-sm">Progress Reports</Text>
-                                        <Text className="text-muted-foreground text-xs mt-0.5">
-                                            Submit funding progress reports
-                                        </Text>
-                                    </View>
-                                </View>
-                                <Feather name="chevron-right" size={20} color={colors.text} />
-                            </View>
-                        </Pressable>
-                    </View>
-                )}
-
                 {/* (Verification + Products & Services merged above) */}
 
                 {/* Premium Banner (disabled) */}

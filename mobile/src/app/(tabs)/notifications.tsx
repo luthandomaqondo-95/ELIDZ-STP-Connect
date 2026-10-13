@@ -110,14 +110,17 @@ export default function NotificationsScreen() {
                     style: 'destructive',
                     onPress: async () => {
                         try {
+                            console.log('Deleting notification:', notification.id);
                             await notificationService.deleteNotification(notification.id, profile.id);
+                            console.log('Notification deleted successfully');
                             setNotifications(prev => prev.filter(n => n.id !== notification.id));
                             if (!notification.read_at) {
                                 setUnreadCount(prev => Math.max(0, prev - 1));
                             }
+                            Alert.alert('Success', 'Notification deleted');
                         } catch (error) {
                             console.error('Error deleting notification:', error);
-                            Alert.alert('Error', 'Failed to delete notification.');
+                            Alert.alert('Error', 'Failed to delete notification. Please try again.');
                         }
                     },
                 },

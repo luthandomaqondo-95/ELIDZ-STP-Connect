@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, TextInput, Pressable, TouchableOpacity, Image, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router, useLocalSearchParams } from 'expo-router';
+import Constants from 'expo-constants';
 import { Text } from '@/components/ui/text';
 import { ScreenKeyboardAwareScrollView } from '@/components/ScreenKeyboardAwareScrollView';
 import { useAuthContext } from '@/hooks/use-auth-context';
@@ -17,10 +18,12 @@ import { PasswordField } from '@/components/PasswordField';
 import { TermsAndPrivacyNotice } from '@/components/TermsAndPrivacyNotice';
 import { ErrorAlert } from '@/components/Error';
 import { useAsyncOperation } from '@/hooks/useAsyncOperation';
+import { authBack } from '@/utils/navigation';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
 export default function LoginScreen() {
     const insets = useSafeAreaInsets();
-    const { login, signInWithGoogle, signInWithApple, resendSignupConfirmation, profile } = useAuthContext();
+    const { login, signInWithApple, socialSignIn, resendSignupConfirmation, profile } = useAuthContext();
     const { colorScheme } = useColorScheme();
     const colors = COLORS[colorScheme ?? 'light'];
     const params = useLocalSearchParams<{ signupSuccess?: string; email?: string }>();
@@ -28,6 +31,7 @@ export default function LoginScreen() {
     const [email, setEmail] = useState(params.email ?? '');
     const [password, setPassword] = useState('');
     const [cooldownSeconds, setCooldownSeconds] = useState(0);
+    const [providerLoading, setProviderLoading] = useState<'google' | 'apple' | null>(null);
     const [hasCheckedVerification, setHasCheckedVerification] = useState(false);
     const [acceptedTerms, setAcceptedTerms] = useState(false);
     const [showVerificationAlert, setShowVerificationAlert] = useState(false);
@@ -47,6 +51,15 @@ export default function LoginScreen() {
     useEffect(() => {
         if (params.email) setEmail(params.email);
     }, [params.email]);
+
+    useEffect(() => {
+        const googleAuth = Constants.expoConfig?.extra?.googleAuth as { webClientId?: string } | undefined;
+        const webClientId = googleAuth?.webClientId;
+        GoogleSignin.configure({
+            webClientId,
+            scopes: ['openid', 'email', 'profile'],
+        });
+    }, []);
 
     useEffect(() => {
         async function checkSMMEVerification() {
@@ -121,6 +134,57 @@ export default function LoginScreen() {
         );
     }
 
+    const isSuccessResponse = (response: unknown): response is { data: { idToken?: string | null } } => {
+        if (!response || typeof response !== 'object') return false;
+        const data = (response as { data?: { idToken?: string | null } }).data;
+        return !!data && typeof data === 'object';
+    };
+
+    const handleSocialLogin = async (provider: 'google') => {
+        clearError();
+        setProviderLoading(provider);
+        try {
+            await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+            const response = await GoogleSignin.signIn();
+
+            if (!isSuccessResponse(response)) {
+                setError('Google Sign-In failed', 'Error');
+                return;
+            }
+
+            const idToken = response.data.idToken;
+            if (!idToken) {
+                setError('Google Sign-In failed - no idToken', 'Error');
+                return;
+            }
+
+            const { error } = await socialSignIn('google', idToken);
+            if (error) {
+                setError(error.message || 'Failed to login with Google', 'Error');
+                return;
+            }
+
+            router.replace('/(tabs)');
+        } catch (error: any) {
+            if (error?.code === statusCodes.SIGN_IN_CANCELLED) {
+                return;
+            }
+            if (error?.code === statusCodes.IN_PROGRESS) {
+                setError('Google Sign-In already in progress', 'Error');
+                return;
+            }
+            if (error?.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+                setError('Google Play Services unavailable', 'Error');
+                return;
+            }
+            setError('Google Sign-In failed', 'Error');
+        } finally {
+            setProviderLoading(null);
+        }
+    };
+
+    const handleBack = authBack;
+
     return (
         <View className="flex-1 bg-background">
             <View className="absolute inset-0 z-0">
@@ -137,7 +201,7 @@ export default function LoginScreen() {
                 <View className="px-6 pt-1 pb-3 rounded-3xl z-20">
                     <TouchableOpacity
                         className="flex-row items-center self-start mt-1 py-2 pr-3 pl-0 active:opacity-80"
-                        onPress={() => router.back()}
+                        onPress={handleBack}
                         accessibilityRole="button"
                         accessibilityLabel="Go back"
                     >
@@ -219,15 +283,8 @@ export default function LoginScreen() {
                         </View>
                         <Pressable
                             className="h-14 rounded-full bg-card border-2 border-border flex-row items-center justify-center mb-3 active:opacity-80 active:scale-95"
-                            onPress={async () => {
-                                await execute(() => signInWithGoogle(), {
-                                    onSuccess: () => {
-                                        clearError();
-                                        router.replace('/(tabs)');
-                                    },
-                                });
-                            }}
-                            disabled={isLoading}
+                            onPress={() => handleSocialLogin('google')}
+                            disabled={providerLoading !== null}
                         >
                             <Image
                                 source={require('../../../assets/logos/search.png')}
@@ -235,7 +292,7 @@ export default function LoginScreen() {
                                 resizeMode="contain"
                             />
                             <Text className="text-base font-semibold text-foreground">
-                                {isLoading ? 'Signing in...' : 'Continue with Google'}
+                                {providerLoading === 'google' ? 'Signing in...' : 'Continue with Google'}
                             </Text>
                         </Pressable>
                         {Platform.OS === 'ios' && (

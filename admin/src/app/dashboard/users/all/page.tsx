@@ -1,32 +1,46 @@
-import { createClient } from "@/lib/supabase/server"
 import { UsersTable, User } from "./users-table"
-import { InviteUserDialog } from "./invite-user-dialog"
+import { InviteAdminDialog } from "./invite-admin-dialog"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Users } from "lucide-react"
+import { listAdminUsers } from "@/lib/admin/users-list"
+import { getAuthedProfile } from "@/lib/authz"
 
-export default async function AllUsersPage() {
-    const supabase = await createClient()
-    const { data: profiles } = await supabase.from('profiles').select('*')
+export const dynamic = "force-dynamic"
 
-    const users: User[] = (profiles || []).map(profile => ({
-        id: profile.id,
-        name: profile.name || "Unknown",
-        email: profile.email || "",
-        role: profile.role || "User",
-        status: "Active", // Default as we don't have status in profiles table yet
-        company: profile.organization || "-",
-        lastActive: new Date(profile.updated_at).toLocaleDateString(),
-        avatar: profile.avatar || ""
-    }))
+export default async function AllUsersPage({
+    searchParams,
+}: {
+    searchParams?: Promise<{ role?: string }>;
+}) {
+    const resolvedSearchParams = await searchParams
+    const selectedRole = resolvedSearchParams?.role
+
+    let users: User[] = []
+    try {
+        users = await listAdminUsers(selectedRole)
+    } catch (error) {
+        console.error("Error loading users:", error)
+        users = []
+    }
+
+    const { profile } = await getAuthedProfile()
+    const actorRole = (profile?.role as string) ?? ""
+    const canInviteSuperAdmin = actorRole === "Super Admin"
+    const canInviteAdmin = actorRole === "Super Admin"
 
     return (
         <div className="flex flex-1 flex-col gap-3 sm:gap-4 px-0 md:px-0 py-0 pt-0">
             <DashboardPageHeader
-                title="All Users"
+                title={selectedRole ? `Users — ${selectedRole}` : "All Users"}
                 icon={<Users className="h-5 w-5" />}
-                action={<InviteUserDialog />}
+                action={
+                    canInviteAdmin ? (
+                        <InviteAdminDialog canInviteSuperAdmin={canInviteSuperAdmin} />
+                    ) : undefined
+                }
+                backHref={selectedRole ? "/dashboard/users/roles" : undefined}
             />
-            <UsersTable users={users} />
+            <UsersTable users={users} initialRole={selectedRole} />
         </div>
     );
 }

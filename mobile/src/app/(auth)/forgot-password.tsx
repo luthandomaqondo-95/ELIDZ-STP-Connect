@@ -40,10 +40,11 @@ export default function ForgotPasswordScreen() {
         setError(null);
 
         try {
-            const appWebUrl = Constants.expoConfig?.extra?.appWebUrl as string | undefined;
-            const redirectTo = appWebUrl?.trim()
-                ? `${appWebUrl.replace(/\/$/, '')}/auth/reset-password`
-                : Constants.appOwnership === 'expo'
+            // In Expo Go (development) the scheme is managed by Expo; everywhere else
+            // (dev-client, production build) use the app's own custom scheme so the
+            // reset link opens the app directly without touching the admin site.
+            const redirectTo =
+                Constants.appOwnership === 'expo'
                     ? ExpoLinking.createURL('change-password')
                     : 'elidzstp://change-password';
 
@@ -139,11 +140,11 @@ export default function ForgotPasswordScreen() {
 
                             {/* Reset Button */}
                             <Button
-                                className="h-14 rounded-full bg-accent justify-center items-center mb-6 active:opacity-80 active:scale-95 shadow-sm"
+                                className="min-h-[56px] rounded-full bg-accent justify-center items-center mb-6 px-6 py-3.5 active:opacity-80 active:scale-95 shadow-sm"
                                 onPress={handleResetPassword}
                                 disabled={isLoading}
                             >
-                                <Text className="text-lg font-bold text-white">
+                                <Text className="text-base leading-6 font-bold text-white text-center">
                                     {isLoading ? 'Sending...' : 'Send Reset Link'}
                                 </Text>
                             </Button>
@@ -174,18 +175,18 @@ export default function ForgotPasswordScreen() {
 
                             {/* Back to Login Button */}
                             <Pressable
-                                className="w-full h-14 rounded-full bg-accent justify-center items-center mb-4 active:opacity-80 active:scale-95 shadow-sm"
+                                className="w-full min-h-[56px] rounded-full bg-accent justify-center items-center mb-4 px-6 py-3.5 active:opacity-80 active:scale-95 shadow-sm"
                                 onPress={handleBackToLogin}
                             >
-                                <Text className="text-lg font-bold text-white">Back to Login</Text>
+                                <Text className="text-base leading-6 font-bold text-white text-center">Back to Login</Text>
                             </Pressable>
 
                             {/* Try Different Email */}
                             <Pressable
-                                className="w-full h-14 rounded-full border-2 border-accent justify-center items-center active:opacity-80 active:scale-95"
+                                className="w-full min-h-[56px] rounded-full border-2 border-accent justify-center items-center px-6 py-3.5 active:opacity-80 active:scale-95"
                                 onPress={() => setIsEmailSent(false)}
                             >
-                                <Text className="text-lg font-bold text-accent">Try Different Email</Text>
+                                <Text className="text-base leading-6 font-bold text-accent text-center">Try Different Email</Text>
                             </Pressable>
                         </View>
                     )}

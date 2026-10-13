@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.elidzstp.app",
+      "sha256_cert_fingerprints": [
+        "4E:80:1A:4D:A4:16:C3:D2:0B:25:0A:9F:4A:FC:DF:25:37:38:A5:CB:1B:13:36:90:98:70:60:2E:24:01:43:08"
+      ]
+    }
+  }
+]
