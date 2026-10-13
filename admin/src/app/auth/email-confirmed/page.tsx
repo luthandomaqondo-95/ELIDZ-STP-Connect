@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle, ArrowRight } from "lucide-react";
+import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
+import { AUTH_BUTTON_CLASS, AUTH_STATUS_ICON_CLASS, AuthCard } from "@/components/auth-card";
 
 function getParamsFromUrl(): { access_token?: string; refresh_token?: string; code?: string; token_hash?: string; type?: string } {
     if (typeof window === "undefined") return {};
@@ -20,6 +22,7 @@ function getParamsFromUrl(): { access_token?: string; refresh_token?: string; co
 }
 
 export default function EmailConfirmedPage() {
+    const router = useRouter();
     const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
     useEffect(() => {
@@ -62,37 +65,47 @@ export default function EmailConfirmedPage() {
 
     if (status === "loading") {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[200px] gap-4">
-                <p className="text-zinc-400">Confirming your email…</p>
-            </div>
+            <AuthCard title="Confirming Email" description="Confirming your email…">
+                <div className="flex justify-center py-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+                </div>
+            </AuthCard>
         );
     }
 
     if (status === "error") {
         return (
-            <div className="flex flex-col items-center gap-6 text-center">
-                <p className="text-zinc-400">Invalid or expired confirmation link.</p>
-                <Link href="/auth/login" className="text-indigo-400 hover:underline">Back to Login</Link>
-            </div>
+            <AuthCard title="Link Expired" description="Invalid or expired confirmation link.">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className={AUTH_STATUS_ICON_CLASS}>
+                        <XCircle className="text-red-400" />
+                    </div>
+                    <p className="text-sm text-zinc-300">Sign in again or ask for a new confirmation email.</p>
+                    <AnimatedDashboardButton
+                        label="Back to Login"
+                        variant="blue"
+                        className={AUTH_BUTTON_CLASS}
+                        onClick={() => router.push("/auth/login")}
+                    />
+                </div>
+            </AuthCard>
         );
     }
 
     return (
-        <div className="flex flex-col items-center gap-6 text-center">
-            <div className="inline-flex justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                <CheckCircle className="w-8 h-8" />
+        <AuthCard title="Email Confirmed" description="Your email address has been verified.">
+            <div className="flex flex-col items-center gap-4 text-center">
+                <div className={AUTH_STATUS_ICON_CLASS}>
+                    <CheckCircle className="text-green-500" />
+                </div>
+                <p className="text-sm text-zinc-300">You can now log in to the ELIDZ-STP Connect app with your account.</p>
+                <AnimatedDashboardButton
+                    label="Go to Login"
+                    variant="green"
+                    className={AUTH_BUTTON_CLASS}
+                    onClick={() => router.push("/auth/login")}
+                />
             </div>
-            <div>
-                <h1 className="text-2xl font-bold">Email confirmed</h1>
-                <p className="text-zinc-400 mt-2">You can now log in to the ELIDZ-STP Connect app with your account.</p>
-            </div>
-            <Link
-                href="/auth/login"
-                className="inline-flex items-center gap-2 text-indigo-400 hover:underline font-medium"
-            >
-                Go to Login
-                <ArrowRight className="w-4 h-4" />
-            </Link>
-        </div>
+        </AuthCard>
     );
 }

@@ -18,6 +18,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart"
+import { cn } from "@/lib/utils"
 
 export const description = "A donut chart with text"
 
@@ -35,7 +36,9 @@ type ChartPieDonutTextProps = {
   innerRadius?: number
   outerRadius?: number
   cardClassName?: string
+  chartClassName?: string
   showFooter?: boolean
+  showLegend?: boolean
 }
 
 export function ChartPieDonutText({
@@ -46,7 +49,9 @@ export function ChartPieDonutText({
   innerRadius = 60,
   outerRadius = 80,
   cardClassName = "",
+  chartClassName = "",
   showFooter = false,
+  showLegend = true,
 }: ChartPieDonutTextProps) {
   // Default demo data (backward compatible)
   const fallbackData: DonutDatum[] = [
@@ -57,7 +62,7 @@ export function ChartPieDonutText({
     { name: "Other", value: 190, fill: "var(--chart-5)" },
   ]
 
-  const chartData: DonutDatum[] = data?.length ? data : fallbackData
+  const chartData: DonutDatum[] = data ?? fallbackData
 
   // Auto-generate chart config colors when not provided via fill
   const autoConfigColors = [
@@ -68,8 +73,10 @@ export function ChartPieDonutText({
     "var(--chart-5)",
   ]
 
+  // Slice ids keep config keys CSS-safe, since names may contain spaces
   const computedData = chartData.map((d, i) => ({
     ...d,
+    slice: `slice${i + 1}`,
     fill: d.fill || autoConfigColors[i % autoConfigColors.length],
   }))
 
@@ -77,38 +84,56 @@ export function ChartPieDonutText({
     return computedData.reduce((acc, curr) => acc + (Number(curr.value) || 0), 0)
   }, [computedData])
 
-  // Build a minimal config so ChartContainer sets CSS vars for colors if needed
-  const chartConfig = computedData.reduce((acc, curr, i) => {
-    const key = `slice${i + 1}`
-    ;(acc as any)[key] = { label: curr.name, color: curr.fill }
+  const chartConfig = computedData.reduce((acc, curr) => {
+    ;(acc as any)[curr.slice] = { label: curr.name, color: curr.fill }
     return acc
-  }, { visitors: { label: totalLabel } } as ChartConfig)
+  }, { value: { label: totalLabel } } as ChartConfig)
+
+  const wrapperRef = React.useRef<HTMLDivElement>(null)
+  const [width, setWidth] = React.useState(0)
+
+  React.useEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+    const observer = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
+
+  const CHART_HEIGHT = 230
+  const maxFit = width ? Math.min(width, CHART_HEIGHT) / 2 - 4 : outerRadius
+  const outer = Math.max(40, Math.min(outerRadius, maxFit))
+  const inner = innerRadius > 0 ? Math.round((outer * innerRadius) / outerRadius) : 0
 
   return (
-    <Card className={`flex flex-col ${cardClassName}`}>
+    <Card className={cn("@container flex flex-col", cardClassName)}>
       <CardHeader className="items-center pb-0">
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
+      <CardContent className="flex flex-1 flex-col items-center gap-4 pb-0 @[22rem]:flex-row">
+        <div ref={wrapperRef} className="w-full min-w-0 flex-1">
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
+          className={cn("mx-auto aspect-auto h-[230px] w-full max-w-[230px]", chartClassName)}
         >
           <PieChart>
             <ChartTooltip
               cursor={false}
-              content={<ChartTooltipContent hideLabel />}
+              content={<ChartTooltipContent nameKey="slice" hideLabel />}
             />
             <Pie
               data={computedData}
               dataKey="value"
-              nameKey="name"
-              innerRadius={innerRadius}
-              outerRadius={outerRadius}
-              strokeWidth={5}
+              nameKey="slice"
+              innerRadius={inner}
+              outerRadius={outer}
+              paddingAngle={inner > 0 ? 2 : 0}
+              cornerRadius={inner > 0 ? 4 : 0}
+              stroke="var(--card)"
+              strokeWidth={inner > 0 ? 2 : 3}
             >
-              <Label
+              {inner > 0 && <Label
                 content={({ viewBox }) => {
                   if (viewBox && "cx" in viewBox && "cy" in viewBox) {
                     return (
@@ -120,15 +145,15 @@ export function ChartPieDonutText({
                       >
                         <tspan
                           x={viewBox.cx}
-                          y={viewBox.cy}
+                          y={(viewBox.cy || 0) - 8}
                           className="fill-foreground text-3xl font-bold"
                         >
                           {total.toLocaleString()}
                         </tspan>
                         <tspan
                           x={viewBox.cx}
-                          y={(viewBox.cy || 0) + 24}
-                          className="fill-muted-foreground"
+                          y={(viewBox.cy || 0) + 18}
+                          className="fill-muted-foreground text-sm"
                         >
                           {totalLabel}
                         </tspan>
@@ -136,10 +161,25 @@ export function ChartPieDonutText({
                     )
                   }
                 }}
-              />
+              />}
             </Pie>
           </PieChart>
         </ChartContainer>
+        </div>
+        {showLegend && (
+          <ul className="flex w-full shrink-0 flex-col gap-2.5 text-sm @[22rem]:w-[42%] @[22rem]:max-w-[220px]">
+            {computedData.map((d) => (
+              <li key={d.slice} className="flex items-start gap-2">
+                <span
+                  className="mt-1 h-3 w-3 shrink-0 rounded-[3px]"
+                  style={{ backgroundColor: d.fill }}
+                />
+                <span className="min-w-0 flex-1 break-words leading-snug text-foreground">{d.name}</span>
+                <span className="font-semibold tabular-nums text-foreground">{Number(d.value).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+        )}
       </CardContent>
       {showFooter && (
         <CardFooter className="flex-col gap-2 text-sm">

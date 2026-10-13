@@ -88,10 +88,10 @@ export function PublishedNewsList({ items }: PublishedNewsListProps) {
         return (
           <article
             key={item.id}
-            className="group flex h-full flex-col rounded-3xl border border-cyan-500/15 bg-[#06122a] p-5 shadow-[0_12px_30px_rgba(1,8,22,0.45)]"
+            className="group flex h-full min-w-0 flex-col rounded-3xl bg-[#06122a] p-4 shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)] sm:p-5"
           >
-            <div className="mb-2 flex items-start justify-between gap-3">
-              <h3 className="line-clamp-3 text-xl font-semibold leading-tight text-slate-100">
+            <div className="mb-2 flex flex-col-reverse items-start gap-2 min-[400px]:flex-row min-[400px]:justify-between min-[400px]:gap-3">
+              <h3 className="line-clamp-3 min-w-0 break-words text-lg font-semibold leading-tight text-slate-100 sm:text-xl">
                 {item.title || "Untitled article"}
               </h3>
               <Badge className="shrink-0 rounded-full bg-emerald-500/25 px-3 py-1 text-emerald-200 hover:bg-emerald-500/25">
@@ -99,19 +99,19 @@ export function PublishedNewsList({ items }: PublishedNewsListProps) {
               </Badge>
             </div>
 
-            {authorName ? <p className="mb-3 text-sm text-slate-300">{authorName}</p> : null}
+            {authorName ? <p className="mb-2 truncate text-sm text-slate-300">{authorName}</p> : null}
 
-            <p className="line-clamp-4 text-base leading-relaxed text-slate-200/95">
+            <p className="line-clamp-4 break-words text-sm leading-relaxed text-slate-200/95 sm:text-base">
               {item.content || "No content available."}
             </p>
 
-            <div className="mt-auto pt-4">
-              <p className="inline-flex items-center gap-2 text-sm text-slate-400">
-                <Clock3 className="h-4 w-4" />
-                {toDisplayDate(item.published_at)}
+            <div className="mt-auto flex items-center justify-between gap-2 pt-3">
+              <p className="inline-flex min-w-0 items-center gap-2 text-xs text-slate-400 sm:text-sm">
+                <Clock3 className="h-4 w-4 shrink-0" />
+                <span className="truncate">{toDisplayDate(item.published_at)}</span>
               </p>
 
-              <div className="mt-3 flex justify-end">
+              <div className="flex shrink-0 justify-end">
                 <Button
                   type="button"
                   size="icon"

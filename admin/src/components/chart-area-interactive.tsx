@@ -186,7 +186,7 @@ export function ChartAreaInteractive({
 
   return (
     <Card className={cardClassName}>
-      <CardHeader className="flex items-center gap-2 space-y-0 border-b py-5 sm:flex-row">
+      <CardHeader className="flex items-center gap-2 space-y-0 py-5 sm:flex-row">
         <div className="grid flex-1 gap-1">
           <CardTitle>{title}</CardTitle>
           <CardDescription>{description}</CardDescription>
@@ -196,7 +196,7 @@ export function ChartAreaInteractive({
         ) : showTimeRange ? (
         <Select value={timeRange} onValueChange={setTimeRange}>
           <SelectTrigger
-            className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
+            className="hidden w-[160px] rounded-3xl border-0 bg-white shadow-[0_6px_14px_-4px_rgba(0,0,0,0.4)] sm:ml-auto sm:flex dark:bg-slate-800 dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.85)]"
             aria-label="Select a value"
           >
             <SelectValue placeholder="Last 3 months" />

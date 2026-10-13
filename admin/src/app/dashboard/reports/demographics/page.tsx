@@ -8,6 +8,7 @@ import {
 } from "@/components/ui/card"
 import { UserDemographicsCharts } from "./demographics-charts"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { PieChart } from "lucide-react"
 
 export default async function UserDemographicsPage() {
     const supabase = await createClient()
@@ -73,8 +74,8 @@ export default async function UserDemographicsPage() {
     }))
 
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
-            <DashboardPageHeader title="User Demographics" backHref="/dashboard/reports" />
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
+            <DashboardPageHeader title="User Demographics" icon={<PieChart className="h-5 w-5" />} />
             <p className="max-w-3xl text-sm text-muted-foreground">
                 Analyze user growth, role distribution, and location trends across ELIDZ to understand where engagement is strongest.
             </p>

@@ -15,6 +15,7 @@ import {
 import { FloatingLabelInput, FloatingLabelSelect, SelectItem } from "@/components/floating-input"
 import { inviteUser } from "@/app/actions"
 import { useRouter } from "next/navigation"
+import { MODAL_CANCEL_BUTTON_CLASS, MODAL_FIELD_CLASS } from "@/lib/utils"
 
 export function InviteUserDialog() {
   const [open, setOpen] = useState(false)
@@ -47,7 +48,7 @@ export function InviteUserDialog() {
       <DialogTrigger asChild>
         <AnimatedDashboardButton label="+ Invite User" />
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[460px] rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.12)] backdrop-blur-sm dark:bg-slate-900/80 dark:shadow-[0_10px_30px_rgba(2,6,23,0.4)]">
+      <DialogContent className="sm:max-w-[460px]">
         <DialogHeader>
           <DialogTitle>Invite User</DialogTitle>
           <DialogDescription>
@@ -55,9 +56,9 @@ export function InviteUserDialog() {
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit}>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-3 sm:gap-4 py-4">
                 {error && (
-                    <div className="rounded-xl border border-red-200 bg-red-50 p-2 text-sm text-red-500 dark:border-red-900/40 dark:bg-red-950/20">
+                    <div className="rounded-xl bg-red-50 p-2 text-sm text-red-500 shadow-[0_6px_14px_-6px_rgba(0,0,0,0.35)] dark:bg-red-950/30 dark:shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)]">
                         {error}
                     </div>
                 )}
@@ -66,7 +67,7 @@ export function InviteUserDialog() {
                   name="name"
                   label="Full Name"
                   placeholder="John Doe"
-                  className="rounded-3xl bg-gray-800"
+                  className={MODAL_FIELD_CLASS}
                   required
                 />
                 <FloatingLabelInput
@@ -75,14 +76,14 @@ export function InviteUserDialog() {
                   type="email"
                   label="Email"
                   placeholder="john@example.com"
-                  className="rounded-3xl bg-gray-800"
+                  className={MODAL_FIELD_CLASS}
                   required
                 />
                 <FloatingLabelSelect
                   label="Role"
                   value={role}
                   onValueChange={setRole}
-                  className="rounded-3xl bg-gray-800"
+                  className={MODAL_FIELD_CLASS}
                 >
                             <SelectItem value="Super Admin">Super Admin</SelectItem>
                             <SelectItem value="Admin">Admin</SelectItem>
@@ -96,7 +97,13 @@ export function InviteUserDialog() {
                 <input type="hidden" name="role" value={role} />
             </div>
             <DialogFooter className="justify-center sm:justify-center">
-                <Button type="button" variant="outline" className="rounded-2xl mt-1" onClick={() => setOpen(false)} disabled={loading}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={MODAL_CANCEL_BUTTON_CLASS}
+                  onClick={() => setOpen(false)}
+                  disabled={loading}
+                >
                     Cancel
                 </Button>
                 <AnimatedDashboardButton

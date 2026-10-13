@@ -20,7 +20,7 @@ export default async function AllUsersPage() {
     }))
 
     return (
-        <div className="flex flex-1 flex-col gap-4 px-0 md:px-0 py-0 pt-0">
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 px-0 md:px-0 py-0 pt-0">
             <DashboardPageHeader
                 title="All Users"
                 icon={<Users className="h-5 w-5" />}

@@ -1,10 +1,11 @@
 "use client"
 
 import { ReactNode, useMemo, useState } from "react"
-import { ChevronLeft, ChevronRight, Search } from "lucide-react"
+import { Search } from "lucide-react"
 
-import { Button } from "@/components/ui/button"
+import { DataPagination } from "@/components/data-pagination"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { cn, DASHBOARD_CARD_CLASS } from "@/lib/utils"
 
 type PublishedItemsListCardProps<T> = {
   title: string
@@ -42,10 +43,10 @@ export function PublishedItemsListCard<T>({
   const visibleItems = filteredItems.slice(startIndex, startIndex + itemsPerPage)
 
   return (
-    <Card className="rounded-3xl border border-cyan-500/20 bg-[#040c20] text-slate-100 shadow-[0_20px_45px_rgba(2,10,30,0.45)]">
-      <CardHeader className="space-y-4">
-        <CardTitle className="text-lg text-slate-100">{title}</CardTitle>
-        <p className="text-sm text-slate-300">{description}</p>
+    <Card className={cn(DASHBOARD_CARD_CLASS, "min-w-0 gap-3 py-5")}>
+      <CardHeader className="space-y-2 px-4 sm:px-6">
+        <CardTitle className="text-lg">{title}</CardTitle>
+        <p className="text-sm text-muted-foreground">{description}</p>
 
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -57,56 +58,28 @@ export function PublishedItemsListCard<T>({
               setCurrentPage(1)
             }}
             placeholder={filterPlaceholder}
-            className="h-12 w-full rounded-full border border-cyan-500/40 bg-[#07152f] pl-11 pr-4 text-sm text-slate-100 outline-none transition focus:border-cyan-400/70"
+            className="h-11 w-full rounded-full border-0 bg-slate-100 pl-11 pr-4 text-sm text-foreground shadow-[inset_0_2px_6px_rgba(0,0,0,0.18)] outline-none transition dark:bg-slate-800"
           />
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        <div className="flex items-center justify-between text-sm text-slate-300">
+      <CardContent className="space-y-3 px-4 sm:px-6">
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
           <p>
             {filteredItems.length} result{filteredItems.length === 1 ? "" : "s"}
           </p>
         </div>
 
         {visibleItems.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-slate-700 p-6 text-sm text-slate-300">
+          <div className="rounded-2xl bg-slate-50 p-4 sm:p-6 text-center text-sm text-muted-foreground shadow-[inset_0_2px_8px_rgba(0,0,0,0.15)] dark:bg-slate-800/50 dark:shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)]">
             {emptyText}
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2">{visibleItems.map(renderItem)}</div>
+          <div className="grid gap-3 md:grid-cols-2">{visibleItems.map(renderItem)}</div>
         )}
 
         {filteredItems.length > itemsPerPage ? (
-          <div className="flex items-center justify-center gap-3 pt-2">
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={safePage === 1}
-              onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
-              className="rounded-full border border-cyan-500/20 bg-[#0a1a37] px-4 text-slate-200 hover:bg-[#10264d] disabled:opacity-45"
-            >
-              <ChevronLeft className="mr-1 h-4 w-4" />
-              Previous
-            </Button>
-
-            <p className="text-sm text-slate-300">
-              Page {safePage} of {totalPages}
-            </p>
-
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              disabled={safePage === totalPages}
-              onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
-              className="rounded-full border border-cyan-500/20 bg-[#0a1a37] px-4 text-slate-200 hover:bg-[#10264d] disabled:opacity-45"
-            >
-              Next
-              <ChevronRight className="ml-1 h-4 w-4" />
-            </Button>
-          </div>
+          <DataPagination currentPage={safePage} totalPages={totalPages} onPageChange={setCurrentPage} />
         ) : null}
       </CardContent>
     </Card>

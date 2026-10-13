@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { UserDemographicsCharts } from "./reports/demographics/demographics-charts"
+import { GeographicDistributionChart, UserDemographicsCharts } from "./reports/demographics/demographics-charts"
 import { AnalyticsCharts } from "./reports/analytics/analytics-charts"
 
 export default async function Page() {
@@ -126,9 +126,9 @@ export default async function Page() {
     return (
     <>
         {/* Welcome banner */}
-        <div className="rounded-3xl bg-gradient-to-r from-slate-800 via-orange-200/15 to-cyan-900 text-white px-5 md:px-6 py-2 md:py-3 flex items-center justify-between">
+        <div className="rounded-3xl bg-gradient-to-r from-slate-800 via-orange-200/15 to-cyan-900 text-white shadow-[0_18px_40px_-12px_rgba(0,0,0,0.6),0_6px_14px_rgba(0,0,0,0.3)] dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)] px-4 md:px-6 py-2 md:py-3 flex items-center justify-between">
             <div className="flex items-center gap-4">
-                <div className="relative h-12 w-12 overflow-hidden rounded-full ring-1 ring-white/15">
+                <div className="relative h-12 w-12 overflow-hidden rounded-full shadow-[0_6px_14px_-2px_rgba(0,0,0,0.6)]">
                     <Image
                         src="/user.jpg"
                         alt="Profile"
@@ -168,10 +168,10 @@ export default async function Page() {
             <p className="col-span-full text-sm italic text-muted-foreground">
                 Track user growth, understand role distribution, and see where users are most active across ELIDZ.
             </p>
-            <Card className="rounded-3xl border-0 bg-blue-50/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:bg-blue-900/20 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+            <Card className="gap-2 py-4 rounded-3xl border-0 bg-blue-50/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:bg-blue-900/20 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl bg-blue-100 text-blue-700 ring-1 ring-blue-300 dark:bg-blue-900/40 dark:text-blue-200 dark:ring-blue-700/50">
+                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl border-0 shadow-[0_6px_14px_-2px_rgba(0,0,0,0.45)] bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-200 dark:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.85)]">
                         <UsersRound className="h-4 w-4" />
                     </div>
                 </CardHeader>
@@ -180,10 +180,10 @@ export default async function Page() {
                     <p className="text-xs text-muted-foreground">+20.1% from last month</p>
                 </CardContent>
             </Card>
-            <Card className="rounded-3xl border-0 bg-amber-50/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:bg-amber-900/20 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+            <Card className="gap-2 py-4 rounded-3xl border-0 bg-amber-50/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:bg-amber-900/20 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Opportunities</CardTitle>
-                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl bg-amber-100 text-amber-700 ring-1 ring-amber-300 dark:bg-amber-900/40 dark:text-amber-200 dark:ring-amber-700/50">
+                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl border-0 shadow-[0_6px_14px_-2px_rgba(0,0,0,0.45)] bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-200 dark:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.85)]">
                         <BriefcaseBusiness className="h-4 w-4" />
                     </div>
                 </CardHeader>
@@ -192,10 +192,10 @@ export default async function Page() {
                     <p className="text-xs text-muted-foreground">+4 new this week</p>
                 </CardContent>
             </Card>
-            <Card className="rounded-3xl border-0 bg-emerald-50/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:bg-emerald-900/20 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+            <Card className="gap-2 py-4 rounded-3xl border-0 bg-emerald-50/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:bg-emerald-900/20 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Visits</CardTitle>
-                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300 dark:bg-emerald-900/40 dark:text-emerald-200 dark:ring-emerald-700/50">
+                    <div className="inline-flex h-8 w-8 items-center justify-center rounded-3xl border-0 shadow-[0_6px_14px_-2px_rgba(0,0,0,0.45)] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200 dark:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.85)]">
                         <Activity className="h-4 w-4" />
                     </div>
                 </CardHeader>
@@ -212,13 +212,16 @@ export default async function Page() {
             locationData={locationChartData} 
             growthData={growthChartData}
             totalUsers={profiles?.length || 0}
+            showGeographic={false}
         /></div>
 
-        <div>
-        <AnalyticsCharts 
-            visitsByType={visitsByType}
-            topEntities={topEntities}
-        /></div>
+        <div className="mt-3 sm:mt-4 grid gap-3 sm:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            <GeographicDistributionChart locationData={locationChartData} className="md:col-span-2 lg:col-span-1" />
+            <AnalyticsCharts 
+                visitsByType={visitsByType}
+                topEntities={topEntities}
+            />
+        </div>
         </div>
         <style>{`
             @keyframes wave {

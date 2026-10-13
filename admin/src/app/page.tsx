@@ -31,7 +31,8 @@ export default function LandingPage() {
     }, [rotatingDescriptions.length]);
 
     return (
-        <div className="relative min-h-screen w-full overflow-hidden bg-slate-950 bg-[url('/hero1.png')] bg-cover bg-center bg-no-repeat text-white">
+        <div className="relative min-h-screen w-full overflow-hidden bg-slate-950 text-white">
+            <div className="absolute inset-0 scale-105 bg-[url('/hero1.png')] bg-cover bg-center bg-no-repeat blur-[3px] pointer-events-none" />
                 {/* Background Effects */}
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,_rgba(99,102,241,0.22),_transparent_55%)] pointer-events-none" />
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_75%,_rgba(34,211,238,0.15),_transparent_55%)] pointer-events-none" />

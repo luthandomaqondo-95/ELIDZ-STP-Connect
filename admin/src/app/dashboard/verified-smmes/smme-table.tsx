@@ -8,8 +8,18 @@ import { AnimatedTable } from "@/components/animated-table"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { Search } from "lucide-react"
+import { AlertTriangle, Search } from "lucide-react"
 import { updateSmmeStatus } from "./actions"
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { FILTER_ROW_CLASS, MODAL_CANCEL_BUTTON_CLASS } from "@/lib/utils"
 
 interface SmmeTableProps {
     initialData: any[]
@@ -26,6 +36,7 @@ export function SmmeTable({ initialData }: SmmeTableProps) {
     const [loading, setLoading] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("All")
+    const [statusError, setStatusError] = useState<string | null>(null)
 
     const filteredData = data.filter((item) => {
         const search = searchQuery.toLowerCase()
@@ -57,14 +68,14 @@ export function SmmeTable({ initialData }: SmmeTableProps) {
             console.error(e)
             // Revert on error
             setData(originalData)
-            alert("Failed to update status. Please ensuring 'verification_status' column exists in 'profiles' table.")
+            setStatusError("Failed to update status. Please ensure the 'verification_status' column exists in the 'profiles' table.")
         } finally {
             setLoading(null)
         }
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
             <div className="space-y-3">
                 <div className="relative w-full md:max-w-md">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -72,7 +83,7 @@ export function SmmeTable({ initialData }: SmmeTableProps) {
                         placeholder="Search SMMEs..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 rounded-3xl border-orange-200/60 bg-white/80 pl-10 shadow-sm dark:bg-slate-900/60 dark:border-orange-800/40"
+                        className="h-11 rounded-3xl border-0 bg-white/80 pl-10 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-900/60 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]"
                     />
                 </div>
                 <div className="relative w-full max-w-md">
@@ -85,14 +96,14 @@ export function SmmeTable({ initialData }: SmmeTableProps) {
                         </span>
                     </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className={FILTER_ROW_CLASS}>
                     {["All", "Verified", "Pending"].map((status) => (
                         <Button
                             key={status}
                             variant="ghost"
                             size="sm"
                             onClick={() => setStatusFilter(status)}
-                            className={`h-9 rounded-3xl px-4 border-0 shadow-none transition-all ${
+                            className={`h-8 max-sm:h-8! shrink-0 rounded-3xl px-3 text-xs sm:h-9 sm:px-4 sm:text-sm border-0 shadow-[0_6px_14px_-4px_rgba(0,0,0,0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_18px_-6px_rgba(0,0,0,0.5)] dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.85)] dark:hover:shadow-[0_10px_20px_-6px_rgba(0,0,0,0.95)] ${
                                 statusFilter === status
                                     ? "bg-orange-500 text-white hover:bg-orange-500/90"
                                     : SMME_FILTER_COLORS[status]
@@ -151,6 +162,25 @@ export function SmmeTable({ initialData }: SmmeTableProps) {
                 </>
             )}
         />
+
+        <Dialog open={statusError !== null} onOpenChange={(open) => !open && setStatusError(null)}>
+            <DialogContent showCloseButton={false} className="gap-5 p-6 sm:max-w-md sm:p-9">
+                <DialogHeader className="items-center text-center sm:text-center">
+                    <div className="mb-2 flex size-16 items-center justify-center rounded-full bg-amber-100 text-amber-600 shadow-[0_8px_20px_-6px_rgba(217,119,6,0.55)] dark:bg-amber-900/40 dark:text-amber-300 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]">
+                        <AlertTriangle className="size-7" />
+                    </div>
+                    <DialogTitle className="text-xl">Update Failed</DialogTitle>
+                    <DialogDescription className="text-[15px] leading-relaxed">{statusError}</DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="ghost" className={MODAL_CANCEL_BUTTON_CLASS}>
+                            OK
+                        </Button>
+                    </DialogClose>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
         </div>
     )
 }

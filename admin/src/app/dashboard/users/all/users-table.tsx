@@ -8,7 +8,18 @@ import { AnimatedTable } from "@/components/animated-table"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { MoreHorizontal, Search, Trash2, CheckCircle, ChevronLeft, ChevronRight } from "lucide-react"
+import { MoreHorizontal, Search, Trash2, CheckCircle, Copy, Loader2 } from "lucide-react"
+import { DataPagination } from "@/components/data-pagination"
+import { cn, FILTER_ROW_CLASS, MODAL_CANCEL_BUTTON_CLASS } from "@/lib/utils"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +44,8 @@ export interface User {
 
 const ROLES = ["All", "Entrepreneur", "Researcher", "SME", "Tenant", "Investor", "Admin", "Super Admin"]
 const ITEMS_PER_PAGE = 10
+const MENU_ICON_CLASS =
+    "flex size-7 shrink-0 items-center justify-center rounded-full shadow-[0_3px_8px_rgba(0,0,0,0.25)] dark:shadow-[0_3px_10px_rgba(0,0,0,0.7)]"
 const ROLE_FILTER_COLORS: Record<string, string> = {
     All: "bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800/70 dark:text-slate-200 dark:hover:bg-slate-700/80",
     Entrepreneur: "bg-amber-100 text-amber-800 hover:bg-amber-200 dark:bg-amber-900/35 dark:text-amber-200 dark:hover:bg-amber-900/50",
@@ -72,14 +85,24 @@ export function UsersTable({ users }: { users: User[] }) {
         setCurrentPage(1)
     }, [searchQuery, selectedRole])
 
-    const handleDelete = async (userId: string) => {
-        if (confirm("Are you sure you want to delete this user? This action cannot be undone.")) {
-            setIsPending(true)
-            const result = await deleteUser(userId)
-            setIsPending(false)
-            if (!result.success) {
-                alert("Failed to delete user: " + result.error)
-            }
+    const [userToDelete, setUserToDelete] = React.useState<User | null>(null)
+    const [deleteError, setDeleteError] = React.useState<string | null>(null)
+
+    const openDeleteDialog = (user: User) => {
+        setDeleteError(null)
+        setUserToDelete(user)
+    }
+
+    const handleDelete = async () => {
+        if (!userToDelete) return
+        setIsPending(true)
+        setDeleteError(null)
+        const result = await deleteUser(userToDelete.id)
+        setIsPending(false)
+        if (result.success) {
+            setUserToDelete(null)
+        } else {
+            setDeleteError(result.error ?? "Failed to delete user.")
         }
     }
 
@@ -91,7 +114,7 @@ export function UsersTable({ users }: { users: User[] }) {
     }
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
             <div className="space-y-3">
                 <div className="relative w-full md:max-w-md">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -99,7 +122,7 @@ export function UsersTable({ users }: { users: User[] }) {
                             placeholder="Search users..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 rounded-3xl border-orange-200/60 bg-white/80 pl-10 shadow-sm dark:bg-slate-900/60 dark:border-orange-800/40"
+                        className="h-11 rounded-3xl border-0 bg-white/80 pl-10 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-900/60 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]"
                         />
                 </div>
                 <div className="relative w-full max-w-md">
@@ -112,14 +135,14 @@ export function UsersTable({ users }: { users: User[] }) {
                         </span>
                     </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className={FILTER_ROW_CLASS}>
                     {ROLES.map((role) => (
                         <Button
                             key={role}
                             variant="ghost"
                             size="sm"
                             onClick={() => setSelectedRole(role)}
-                            className={`h-9 rounded-3xl px-4 border-0 shadow-none transition-all ${
+                            className={`h-8 max-sm:h-8! shrink-0 rounded-3xl px-3 text-xs sm:h-9 sm:px-4 sm:text-sm border-0 shadow-[0_6px_14px_-4px_rgba(0,0,0,0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_18px_-6px_rgba(0,0,0,0.5)] dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.85)] dark:hover:shadow-[0_10px_20px_-6px_rgba(0,0,0,0.95)] ${
                                 selectedRole === role
                                     ? "bg-orange-500 text-white hover:bg-orange-500/90"
                                     : ROLE_FILTER_COLORS[role]
@@ -152,7 +175,7 @@ export function UsersTable({ users }: { users: User[] }) {
                 renderRow={(user: User) => (
                     <>
                                     <TableCell>
-                                        <Avatar className="h-9 w-9">
+                                        <Avatar className="h-9 w-9 shadow-[0_4px_10px_rgba(0,0,0,0.35)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
                                             <AvatarImage src={user.avatar} alt={user.name} />
                                 <AvatarFallback>{user.name ? user.name.slice(0, 2).toUpperCase() : "UN"}</AvatarFallback>
                                         </Avatar>
@@ -171,25 +194,32 @@ export function UsersTable({ users }: { users: User[] }) {
                                     </TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <DropdownMenu>
+                                            <DropdownMenu modal={false}>
                                                 <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <Button variant="ghost" size="icon-sm" className="h-8 w-8 rounded-full bg-white/90 p-0 shadow-[0_4px_10px_rgba(0,0,0,0.35)] hover:bg-white dark:bg-slate-800/90 dark:shadow-[0_4px_12px_rgba(0,0,0,0.8)] dark:hover:bg-slate-800">
                                                         <span className="sr-only">Open menu</span>
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
+                                                <DropdownMenuContent align="end" className="w-52">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuItem onClick={() => navigator.clipboard.writeText(user.id)}>
+                                                        <span className={cn(MENU_ICON_CLASS, "bg-sky-100 text-sky-600 dark:bg-sky-900/40 dark:text-sky-300")}>
+                                                            <Copy className="size-3.5 text-current" />
+                                                        </span>
                                                         Copy User ID
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handleApprove(user.id)}>
-                                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" />
+                                                        <span className={cn(MENU_ICON_CLASS, "bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-300")}>
+                                                            <CheckCircle className="size-3.5 text-current" />
+                                                        </span>
                                                         Approve Account
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleDelete(user.id)} className="text-red-600 focus:text-red-600">
-                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                    <DropdownMenuItem variant="destructive" onSelect={() => openDeleteDialog(user)}>
+                                                        <span className={cn(MENU_ICON_CLASS, "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-300")}>
+                                                            <Trash2 className="size-3.5 text-current" />
+                                                        </span>
                                                         Delete Account
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -200,37 +230,66 @@ export function UsersTable({ users }: { users: User[] }) {
                         )}
             />
             
-            {/* Pagination Controls */}
-            <div className="flex flex-col items-center gap-2 px-2">
-                <div className="text-xs text-muted-foreground">
-                    Showing {startIndex + 1} to {Math.min(startIndex + ITEMS_PER_PAGE, filteredUsers.length)} of {filteredUsers.length} users
-                </div>
-                <div className="flex items-center gap-2">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-                        disabled={currentPage === 1}
-                        className="rounded-3xl px-4"
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                        Previous
-                    </Button>
-                    <div className="text-sm font-medium">
-                        Page {currentPage} of {totalPages || 1}
-                    </div>
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-                        disabled={currentPage >= totalPages || totalPages === 0}
-                        className="rounded-3xl px-4"
-                    >
-                        Next
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
+            <DataPagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
+                summary={
+                    filteredUsers.length === 0
+                        ? "No users to show"
+                        : `Showing ${startIndex + 1} to ${Math.min(startIndex + ITEMS_PER_PAGE, filteredUsers.length)} of ${filteredUsers.length} users`
+                }
+            />
+
+            <Dialog
+                open={userToDelete !== null}
+                onOpenChange={(open) => {
+                    if (!open && !isPending) setUserToDelete(null)
+                }}
+            >
+                <DialogContent
+                    showCloseButton={false}
+                    className="gap-5 p-6 sm:max-w-md sm:p-9"
+                >
+                    <DialogHeader className="items-center text-center sm:text-center">
+                        <div className="mb-2 flex size-16 items-center justify-center rounded-full bg-red-100 text-red-600 shadow-[0_8px_20px_-6px_rgba(220,38,38,0.55)] dark:bg-red-900/40 dark:text-red-300 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]">
+                            <Trash2 className="size-7" />
+                        </div>
+                        <DialogTitle className="text-xl">Delete Account</DialogTitle>
+                        <DialogDescription className="text-[15px] leading-relaxed">
+                            Are you sure you want to delete{" "}
+                            <span className="font-semibold text-foreground">{userToDelete?.name || "this user"}</span>?
+                            This action cannot be undone.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {deleteError && (
+                        <p className="rounded-2xl bg-red-50 px-4 py-2.5 text-center text-sm text-red-700 shadow-[0_6px_16px_-6px_rgba(0,0,0,0.3)] dark:bg-red-950/40 dark:text-red-300">
+                            {deleteError}
+                        </p>
+                    )}
+
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button
+                                variant="ghost"
+                                disabled={isPending}
+                                className={cn(MODAL_CANCEL_BUTTON_CLASS, "h-11 min-w-36 px-6")}
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            onClick={handleDelete}
+                            disabled={isPending}
+                            className="h-11 min-w-36 rounded-3xl bg-red-600 px-6 text-white shadow-[0_8px_20px_-6px_rgba(220,38,38,0.7)] hover:bg-red-600/90 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]"
+                        >
+                            {isPending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+                            {isPending ? "Deleting..." : "Delete"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

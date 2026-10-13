@@ -13,20 +13,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { Lock } from "lucide-react"
+import { DASHBOARD_CARD_CLASS } from "@/lib/utils"
 
 export default function SecuritySettingsPage() {
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
-            <DashboardPageHeader title="Security Settings" backHref="/dashboard/settings" />
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
+            <DashboardPageHeader title="Security Settings" icon={<Lock className="h-5 w-5" />} />
             
-            <Card>
+            <Card className={DASHBOARD_CARD_CLASS}>
                 <CardHeader>
                     <CardTitle>Authentication</CardTitle>
                     <CardDescription>
                         Manage password policies and two-factor authentication.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                      <div className="flex items-center justify-between space-x-2">
                         <Label htmlFor="2fa" className="flex flex-col space-y-1">
                             <span>Two-Factor Authentication</span>

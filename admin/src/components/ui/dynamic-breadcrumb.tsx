@@ -23,12 +23,12 @@ export function DynamicBreadcrumb() {
 
     return (
         <Breadcrumb>
-            <BreadcrumbList>
+            <BreadcrumbList className="font-semibold">
                 {breadcrumbs.map((crumb, index) => (
                     <React.Fragment key={crumb.href}>
                          <BreadcrumbItem className={index === 0 ? "hidden md:block" : ""}>
                              {crumb.isLast ? (
-                                 <BreadcrumbPage>{crumb.title}</BreadcrumbPage>
+                                 <BreadcrumbPage className="font-semibold">{crumb.title}</BreadcrumbPage>
                              ) : (
                                  <BreadcrumbLink href={crumb.href}>{crumb.title}</BreadcrumbLink>
                              )}

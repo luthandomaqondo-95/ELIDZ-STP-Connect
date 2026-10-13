@@ -11,9 +11,10 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { DollarSign, Search } from "lucide-react"
+import { DollarSign, Search, Banknote } from "lucide-react"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
+import { FILTER_ROW_CLASS } from "@/lib/utils"
 
 const funds = [
     {
@@ -74,8 +75,8 @@ export default function FundingInfoPage() {
     }, [searchQuery, statusFilter])
 
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
-            <DashboardPageHeader title="Funding Information" backHref="/dashboard/opportunities" />
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
+            <DashboardPageHeader title="Funding Information" icon={<Banknote className="h-5 w-5" />} />
             <p className="text-muted-foreground">
                 Available funding sources and grants for ELIDZ tenants and STP partners.
             </p>
@@ -86,7 +87,7 @@ export default function FundingInfoPage() {
                         placeholder="Search funding..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 rounded-3xl border-orange-200/60 bg-white/80 pl-10 shadow-sm dark:bg-slate-900/60 dark:border-orange-800/40"
+                        className="h-11 rounded-3xl border-0 bg-white/80 pl-10 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-900/60 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]"
                     />
                 </div>
                 <div className="relative w-full max-w-md">
@@ -99,14 +100,14 @@ export default function FundingInfoPage() {
                         </span>
                     </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className={FILTER_ROW_CLASS}>
                     {["All", "Open", "Closed"].map((status) => (
                         <Button
                             key={status}
                             variant="ghost"
                             size="sm"
                             onClick={() => setStatusFilter(status)}
-                            className={`h-9 rounded-3xl px-4 border-0 shadow-none transition-all ${
+                            className={`h-8 max-sm:h-8! shrink-0 rounded-3xl px-3 text-xs sm:h-9 sm:px-4 sm:text-sm border-0 shadow-[0_6px_14px_-4px_rgba(0,0,0,0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_18px_-6px_rgba(0,0,0,0.5)] dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.85)] dark:hover:shadow-[0_10px_20px_-6px_rgba(0,0,0,0.95)] ${
                                 statusFilter === status
                                     ? "bg-orange-500 text-white hover:bg-orange-500/90"
                                     : FUND_FILTER_COLORS[status]
@@ -118,34 +119,35 @@ export default function FundingInfoPage() {
                     ))}
                 </div>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-3">
                 {filteredFunds.map((fund) => (
-                    <Card key={fund.name} className="rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
-                        <CardHeader className="pb-2">
-                            <div className="flex justify-between items-start">
-                                <CardTitle className="text-lg">{fund.name}</CardTitle>
+                    <Card key={fund.name} className="flex min-w-0 flex-col gap-2.5 overflow-hidden rounded-3xl border-0 py-3 sm:gap-6 sm:py-6 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
+                        <CardHeader className="gap-1.5 px-3 pb-0 sm:gap-2 sm:px-6 sm:pb-2">
+                            <div className="flex flex-col-reverse items-start gap-1.5 sm:flex-row sm:justify-between sm:gap-2">
+                                <CardTitle className="line-clamp-2 text-sm leading-snug sm:line-clamp-none sm:text-lg">{fund.name}</CardTitle>
                                 <Badge
                                     variant={fund.status === "Open" ? "default" : "destructive"}
-                                    className={fund.status === "Open" ? "bg-emerald-600 text-white hover:bg-emerald-600" : "bg-red-600 text-white hover:bg-red-600"}
+                                    className={`shrink-0 px-1.5 text-[10px] sm:px-2 sm:text-xs ${fund.status === "Open" ? "bg-emerald-600 text-white hover:bg-emerald-600" : "bg-red-600 text-white hover:bg-red-600"}`}
                                 >
                                     {fund.status}
                                 </Badge>
                             </div>
-                            <CardDescription>{fund.provider}</CardDescription>
+                            <CardDescription className="truncate text-xs sm:text-sm">{fund.provider}</CardDescription>
                         </CardHeader>
-                        <CardContent>
-                            <div className="flex items-center gap-2 mb-4">
-                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-green-100">
-                                    <DollarSign className="h-4 w-4 text-green-600" />
+                        <CardContent className="flex flex-1 flex-col px-3 sm:px-6">
+                            <div className="mb-2 flex min-w-0 items-center gap-1.5 sm:mb-4 sm:gap-2">
+                                <div className="flex size-6 shrink-0 items-center justify-center rounded-full bg-green-100 shadow-[0_4px_10px_rgba(0,0,0,0.35)] sm:size-8 dark:bg-green-900/40 dark:shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+                                    <DollarSign className="size-3.5 text-green-600 sm:size-4" />
                                 </div>
-                                <span className="font-semibold">{fund.amount}</span>
+                                <span className="min-w-0 truncate text-sm font-semibold sm:text-base">{fund.amount}</span>
                             </div>
-                            <p className="text-sm text-muted-foreground mb-4">
-                                Focus: {fund.focus}
+                            <p className="mb-3 line-clamp-2 text-xs text-muted-foreground sm:mb-4 sm:text-sm">
+                                <span className="max-sm:hidden">Focus: </span>
+                                {fund.focus}
                             </p>
                             <AnimatedDashboardButton
                                 label="Visit Website"
-                                className="h-10 w-full rounded-3xl"
+                                className="mt-auto h-10 w-full rounded-3xl max-sm:px-3 max-sm:text-xs"
                             />
                         </CardContent>
                     </Card>

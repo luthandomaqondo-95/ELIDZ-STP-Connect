@@ -26,6 +26,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { usePathname } from "next/navigation"
+import { SidebarTabIcon, sidebarTabClass } from "@/components/sidebar-tab-icon"
 
 export function NavProjects({
   projects,
@@ -40,16 +41,16 @@ export function NavProjects({
   const pathname = usePathname()
 
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+    <SidebarGroup>
       <SidebarGroupLabel className="text-orange-600 dark:text-orange-300">Projects</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="gap-2.5">
         {projects.map((item) => {
           const active = pathname === item.url || pathname.startsWith(`${item.url}/`)
           return (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild isActive={active}>
+          <SidebarMenuItem key={item.name} className="flex items-center gap-2">
+            <SidebarTabIcon icon={item.icon} name={item.name} active={active} href={item.url} />
+            <SidebarMenuButton asChild tooltip={item.name} isActive={active} className={sidebarTabClass(item.name)}>
               <Link href={item.url}>
-                <item.icon className="text-sky-400" />
                 <span>{item.name}</span>
               </Link>
             </SidebarMenuButton>
@@ -82,9 +83,9 @@ export function NavProjects({
             </DropdownMenu>
           </SidebarMenuItem>
         )})}
-        <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontal className="text-sidebar-foreground/70" />
+        <SidebarMenuItem className="flex items-center gap-2">
+          <SidebarTabIcon icon={MoreHorizontal} name="More" />
+          <SidebarMenuButton tooltip="More" className={sidebarTabClass("More", "text-sidebar-foreground/70")}>
             <span>More</span>
           </SidebarMenuButton>
         </SidebarMenuItem>

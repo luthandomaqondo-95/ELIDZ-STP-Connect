@@ -12,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { DASHBOARD_CARD_CLASS } from "@/lib/utils"
 import {
   ChartConfig,
   ChartContainer,
@@ -70,8 +71,8 @@ export function DashboardCharts() {
     }, [])
 
     return (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="col-span-4">
+        <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-7">
+            <Card className={`col-span-4 ${DASHBOARD_CARD_CLASS}`}>
                 <CardHeader>
                     <CardTitle>User Registrations</CardTitle>
                     <CardDescription>User growth by region for the last 6 months.</CardDescription>
@@ -105,7 +106,7 @@ export function DashboardCharts() {
                 </CardFooter>
             </Card>
 
-            <Card className="col-span-3">
+            <Card className={`col-span-3 ${DASHBOARD_CARD_CLASS}`}>
                 <CardHeader className="items-center pb-0">
                     <CardTitle>Popular Services</CardTitle>
                     <CardDescription>Most visited product lines this month.</CardDescription>

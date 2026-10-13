@@ -49,7 +49,7 @@ export default async function EventsManagementPage() {
   }))
 
   return (
-    <div className="flex flex-1 flex-col gap-4 pt-0">
+    <div className="flex min-w-0 flex-1 flex-col gap-3 pt-0">
       <DashboardPageHeader title="Publish Events" icon={<CalendarDays className="h-5 w-5" />} />
       <p className="max-w-3xl text-sm italic text-muted-foreground">
         Add mobile event updates for the ELIDZ Science and Technology Park app and track RSVPs.

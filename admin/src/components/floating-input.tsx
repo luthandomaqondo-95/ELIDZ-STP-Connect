@@ -24,6 +24,7 @@ const FloatingLabelInput = React.forwardRef<HTMLInputElement, FloatingInputProps
             (value !== undefined) ? (String(value) !== "") : (defaultValue !== undefined) ? String(defaultValue) !== "" : false,
         )
         const inputRef = React.useRef<HTMLInputElement | null>(null)
+        const hasNativePlaceholder = type === "date" || type === "datetime-local" || type === "time" || type === "month"
 
         const handleRef = (instance: HTMLInputElement | null) => {
             inputRef.current = instance
@@ -80,7 +81,7 @@ const FloatingLabelInput = React.forwardRef<HTMLInputElement, FloatingInputProps
                             onChange={handleChange}
                             value={value}
                             defaultValue={defaultValue}
-                            placeholder={(isFilled) ? "" : (isFocused ? (props.placeholder || label) : "")}
+                            placeholder=""
                         />
                         {setShowPassword && (
                             <Button
@@ -96,8 +97,8 @@ const FloatingLabelInput = React.forwardRef<HTMLInputElement, FloatingInputProps
                     </div>
                     <label
                         className={cn(
-                            "absolute left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
-                            isFocused || isFilled
+                            "absolute left-2 sm:left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
+                            isFocused || isFilled || hasNativePlaceholder
                                 ? "text-xs bg-background top-0 -translate-y-1/2"
                                 : "text-base text-muted-foreground top-1/2 -translate-y-1/2",
                             isFocused && !props.error && "text-primary",
@@ -186,11 +187,11 @@ const FloatingLabelTextarea = React.forwardRef<HTMLTextAreaElement, FloatingText
                         onChange={handleChange}
                         value={value}
                         defaultValue={defaultValue}
-                        placeholder={(isFilled) ? "" : (isFocused ? (props.placeholder || label) : "")}
+                        placeholder=""
                     />
                     <label
                         className={cn(
-                            "absolute left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
+                            "absolute left-2 sm:left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
                             isFocused || isFilled
                                 ? "text-xs bg-background top-0 -translate-y-1/2"
                                 : "text-base text-muted-foreground top-4",
@@ -227,7 +228,7 @@ export interface FloatingSelectProps {
 }
 
 const FloatingLabelSelect = React.forwardRef<HTMLButtonElement, FloatingSelectProps>(
-    ({ label, error, value, defaultValue, onValueChange, placeholder, disabled, className, children }, ref) => {
+    ({ label, error, value, defaultValue, onValueChange, disabled, className, children }, ref) => {
         const [isOpen, setIsOpen] = React.useState(false)
         const [isFilled, setIsFilled] = React.useState(
             value !== undefined ? value !== "" : defaultValue !== undefined ? defaultValue !== "" : false
@@ -261,18 +262,18 @@ const FloatingLabelSelect = React.forwardRef<HTMLButtonElement, FloatingSelectPr
                             className,
                         )}
                     >
-                        <SelectPrimitive.Value placeholder={placeholder || ""} />
+                        <SelectPrimitive.Value />
                         <SelectPrimitive.Icon asChild>
                             <ChevronDownIcon className="h-4 w-4 opacity-50" />
                         </SelectPrimitive.Icon>
                     </SelectPrimitive.Trigger>
                     <SelectPrimitive.Portal>
                         <SelectPrimitive.Content
-                            className="bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-md border shadow-md data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
+                            className="bg-white/95 text-popover-foreground backdrop-blur-md dark:bg-slate-900/95 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 relative z-50 max-h-96 min-w-[8rem] overflow-hidden rounded-2xl border-0 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)] data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1"
                             position="popper"
                         >
                             <SelectScrollUpButton />
-                            <SelectPrimitive.Viewport className="p-1 h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]">
+                            <SelectPrimitive.Viewport className="p-1.5 h-[var(--radix-select-trigger-height)] w-full min-w-[var(--radix-select-trigger-width)]">
                                 {children}
                             </SelectPrimitive.Viewport>
                             <SelectScrollDownButton />
@@ -281,7 +282,7 @@ const FloatingLabelSelect = React.forwardRef<HTMLButtonElement, FloatingSelectPr
                 </SelectPrimitive.Root>
                 <label
                     className={cn(
-                        "absolute left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
+                        "absolute left-2 sm:left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
                         isOpen || isFilled
                             ? "text-xs bg-background top-0 -translate-y-1/2"
                             : "text-base text-muted-foreground top-1/2 -translate-y-1/2",
@@ -318,7 +319,7 @@ function SelectItem({
     return (
         <SelectPrimitive.Item
             className={cn(
-                "relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+                "relative flex w-full cursor-pointer select-none items-center rounded-xl py-2 pl-8 pr-2 text-sm font-medium outline-none transition-colors duration-150 focus:bg-orange-50 focus:text-orange-900 dark:focus:bg-slate-800 dark:focus:text-slate-100 data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
                 className,
             )}
             {...props}
@@ -409,7 +410,7 @@ export interface FloatingDropdownProps {
 }
 
 const FloatingLabelDropdown = React.forwardRef<HTMLButtonElement, FloatingDropdownProps>(
-    ({ label, error, value, placeholder, disabled, className, children }, ref) => {
+    ({ label, error, value, disabled, className, children }, ref) => {
         const [isOpen, setIsOpen] = React.useState(false)
         const isFilled = value !== undefined && value !== ""
 
@@ -425,9 +426,7 @@ const FloatingLabelDropdown = React.forwardRef<HTMLButtonElement, FloatingDropdo
                             className,
                         )}
                     >
-                        <span className={cn(!isFilled && "text-muted-foreground")}>
-                            {isFilled ? value : placeholder || ""}
-                        </span>
+                        <span>{isFilled ? value : null}</span>
                         <ChevronDownIcon className="h-4 w-4 opacity-50" />
                     </DropdownMenuPrimitive.Trigger>
                     <DropdownMenuPrimitive.Portal>
@@ -441,7 +440,7 @@ const FloatingLabelDropdown = React.forwardRef<HTMLButtonElement, FloatingDropdo
                 </DropdownMenuPrimitive.Root>
                 <label
                     className={cn(
-                        "absolute left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
+                        "absolute left-2 sm:left-3 pointer-events-none transition-all duration-200 ease-in-out px-1 z-10",
                         isOpen || isFilled
                             ? "text-xs bg-background top-0 -translate-y-1/2"
                             : "text-base text-muted-foreground top-1/2 -translate-y-1/2",

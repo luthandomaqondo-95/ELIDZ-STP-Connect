@@ -11,7 +11,7 @@ export default async function OpportunitiesPage() {
     const { data: opportunities } = await supabase.from('opportunities').select('*').order('created_at', { ascending: false })
 
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
             <DashboardPageHeader
                 title="Opportunities"
                 icon={<Calendar className="h-5 w-5" />}

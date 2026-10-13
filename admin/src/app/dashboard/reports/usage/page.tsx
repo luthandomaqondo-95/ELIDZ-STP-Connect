@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { Activity } from "lucide-react"
 import { AnimatedTable } from "@/components/animated-table"
 import { TableCell } from "@/components/ui/table"
 
@@ -47,13 +48,13 @@ const systemLogs = [
 
 export default function SystemUsagePage() {
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
-            <DashboardPageHeader title="System Usage" backHref="/dashboard/reports" />
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
+            <DashboardPageHeader title="System Usage" icon={<Activity className="h-5 w-5" />} />
             <p className="max-w-3xl text-sm italic text-muted-foreground">
                 Monitor infrastructure health, resource consumption, and platform activity to maintain stable operations across ELIDZ systems.
             </p>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                 <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+            <div className="grid gap-3 sm:gap-4 md:grid-cols-2 lg:grid-cols-3">
+                 <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium">Server Uptime</CardTitle>
                     </CardHeader>
@@ -62,7 +63,7 @@ export default function SystemUsagePage() {
                         <p className="text-xs text-muted-foreground">Last 30 days</p>
                     </CardContent>
                 </Card>
-                 <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                 <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium">Storage Used</CardTitle>
                     </CardHeader>
@@ -71,7 +72,7 @@ export default function SystemUsagePage() {
                         <p className="text-xs text-muted-foreground">of 5 TB capacity</p>
                     </CardContent>
                 </Card>
-                 <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                 <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium">API Requests</CardTitle>
                     </CardHeader>
@@ -82,7 +83,7 @@ export default function SystemUsagePage() {
                 </Card>
             </div>
             
-            <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+            <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                 <CardHeader>
                     <CardTitle>System Logs</CardTitle>
                     <CardDescription>Recent system activities and events</CardDescription>

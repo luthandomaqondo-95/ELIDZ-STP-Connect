@@ -11,10 +11,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { Loader2 } from "lucide-react"
+import { BarChart3, Building2, Car, Cpu, Loader2, PenTool, Zap, type LucideIcon } from "lucide-react"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import { UploadButton } from "@/components/upload-button"
+import { cn } from "@/lib/utils"
 
 type Facility = {
   id: string
@@ -31,6 +32,23 @@ type CenterFacilityPageProps = {
   centerServiceName: string
 }
 
+const CENTER_ICONS: [RegExp, LucideIcon][] = [
+  [/design/i, PenTool],
+  [/digital/i, Cpu],
+  [/renewable|energy/i, Zap],
+  [/automotive|manufactur/i, Car],
+  [/analytic/i, BarChart3],
+]
+
+export const TOGGLE_LIST_CLASS =
+  "h-11 whitespace-nowrap rounded-3xl border-0 bg-white/90 p-1 shadow-[0_14px_30px_-8px_rgba(0,0,0,0.55),0_4px_10px_rgba(0,0,0,0.22)] dark:bg-slate-900/80 dark:shadow-[0_14px_32px_-8px_rgba(0,0,0,0.95),0_4px_12px_rgba(0,0,0,0.65)]"
+export const TOGGLE_TRIGGER_CLASS =
+  "rounded-3xl px-5 transition-[color,background-color,box-shadow] duration-200 data-[state=active]:bg-white data-[state=active]:shadow-[0_6px_14px_-3px_rgba(0,0,0,0.5),0_2px_4px_rgba(0,0,0,0.2)] dark:data-[state=active]:border-transparent dark:data-[state=active]:bg-slate-700/80 dark:data-[state=active]:shadow-[0_6px_16px_-3px_rgba(0,0,0,0.95),0_2px_5px_rgba(0,0,0,0.7)]"
+
+function centerIcon(name: string): LucideIcon {
+  return CENTER_ICONS.find(([pattern]) => pattern.test(name))?.[1] ?? Building2
+}
+
 export default function CenterFacilityPage({
   centerServiceName,
 }: CenterFacilityPageProps) {
@@ -41,6 +59,7 @@ export default function CenterFacilityPage({
   const [activeScene, setActiveScene] = useState<any | null>(null)
   const [uploading, setUploading] = useState(false)
   const [videos, setVideos] = useState<any[]>([])
+  const [activeTab, setActiveTab] = useState("overview")
 
   const supabase = createClient()
 
@@ -194,7 +213,7 @@ export default function CenterFacilityPage({
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-8">
+      <div className="flex h-full items-center justify-center p-4 sm:p-8">
         <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
       </div>
     )
@@ -202,7 +221,7 @@ export default function CenterFacilityPage({
 
   if (!facility) {
     return (
-      <div className="flex flex-col items-center justify-center p-8 text-center">
+      <div className="flex flex-col items-center justify-center p-4 text-center sm:p-8">
         <h2 className="text-2xl font-bold">Center not found</h2>
         <p className="text-muted-foreground">
           The requested center could not be loaded.
@@ -211,11 +230,13 @@ export default function CenterFacilityPage({
     )
   }
 
+  const CenterIcon = centerIcon(centerServiceName)
+
   return (
-    <div className="flex flex-1 flex-col gap-4 pt-0">
+    <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
       <DashboardPageHeader
         title={facility.name}
-        backHref="/dashboard"
+        icon={<CenterIcon className="h-5 w-5" />}
         action={
           <div className="flex gap-2">
             <UploadButton 
@@ -234,20 +255,20 @@ export default function CenterFacilityPage({
         facility information in one place.
       </p>
 
-      <Tabs defaultValue="overview" className="space-y-4">
-        <div className="flex justify-center overflow-x-auto">
-          <TabsList className="h-11 rounded-3xl border-0 bg-white/90 p-1 shadow-sm dark:bg-slate-900/70 whitespace-nowrap">
-            <TabsTrigger value="overview" className="rounded-3xl px-5">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-3 sm:gap-4">
+        <div className="flex justify-center">
+          <TabsList className={TOGGLE_LIST_CLASS}>
+            <TabsTrigger value="overview" className={TOGGLE_TRIGGER_CLASS}>
               Overview
             </TabsTrigger>
-            <TabsTrigger value="services" className="rounded-3xl px-5">
+            <TabsTrigger value="services" className={TOGGLE_TRIGGER_CLASS}>
               Services & Features
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="overview" className="space-y-4">
-          <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+        <TabsContent value="overview" className="order-2 space-y-3 sm:space-y-4">
+          <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
             <CardHeader className="pb-3">
               <CardTitle>About {facility.name}</CardTitle>
               <CardDescription className="text-sm">
@@ -256,14 +277,14 @@ export default function CenterFacilityPage({
             </CardHeader>
 
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-3xl bg-orange-100/70 p-4 dark:bg-slate-800/60">
+              <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                <div className="rounded-3xl bg-orange-100/70 p-3 sm:p-4 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-800/60 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]">
                   <h4 className="text-sm font-semibold mb-2">Location</h4>
                   <p className="text-sm text-muted-foreground">
                     {facility.location}
                   </p>
                 </div>
-                <div className="rounded-3xl bg-orange-100/70 p-4 dark:bg-slate-800/60">
+                <div className="rounded-3xl bg-orange-100/70 p-3 sm:p-4 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-800/60 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]">
                   <h4 className="text-sm font-semibold mb-2">
                     Facility Type
                   </h4>
@@ -274,12 +295,12 @@ export default function CenterFacilityPage({
           </Card>
         </TabsContent>
 
-        <TabsContent value="services" className="space-y-4">
-          <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <TabsContent value="services" className="order-2 space-y-3 sm:space-y-4">
+          <div className="grid items-stretch gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
             {vrSections.map((section) => (
               <Card
                 key={section.id}
-                className="h-full min-h-[220px] rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]"
+                className="h-full rounded-3xl sm:min-h-[220px] border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]"
               >
                 <CardHeader className="pb-1">
                   <CardTitle className="text-[15px] leading-tight">
@@ -304,17 +325,20 @@ export default function CenterFacilityPage({
             ))}
 
             {vrSections.length === 0 && (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
+              <div className="col-span-full py-6 text-center text-muted-foreground sm:py-8">
                 No specific services listed for this center yet.
               </div>
             )}
           </div>
         </TabsContent>
-      </Tabs>
 
-      {/* Panoramic View Section */}
       {(activeScene || videos.length > 0) && (
-        <Card className="overflow-hidden border-zinc-800">
+        <Card
+          className={cn(
+            "order-3 gap-0 overflow-hidden rounded-3xl border-0 py-0 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]",
+            activeTab === "overview" && "order-1"
+          )}
+        >
           <div className="relative aspect-video w-full bg-black">
             {/* Check if we have videos for this facility */}
             {videos.length > 0 ? (
@@ -334,8 +358,8 @@ export default function CenterFacilityPage({
                 className="object-cover opacity-90 hover:opacity-100 transition-opacity duration-500"
               />
             )}
-            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-              <h3 className="text-xl font-bold text-white mb-1">
+            <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 sm:p-6">
+              <h3 className="mb-1 text-lg font-bold text-white sm:text-xl">
                 {videos.length > 0 ? videos[0].title : activeScene.title}
               </h3>
               <p className="text-sm text-zinc-300">
@@ -344,13 +368,13 @@ export default function CenterFacilityPage({
 
               {/* Scene/Video switcher */}
               {(vrScenes.length > 1 || videos.length > 0) && (
-                <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:mt-4 sm:pb-2">
                   {/* Show VR scenes if no videos or mixed */}
                   {vrScenes.map((scene) => (
                     <button
                       key={scene.id}
                       onClick={() => setActiveScene(scene)}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium shadow-[0_4px_12px_rgba(0,0,0,0.55)] transition-colors ${
                         activeScene?.id === scene.id && videos.length === 0
                           ? 'bg-white text-black' 
                           : 'bg-black/50 text-white hover:bg-black/70'
@@ -367,7 +391,7 @@ export default function CenterFacilityPage({
                         // Switch to video view
                         setActiveScene(null)
                       }}
-                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
+                      className={`flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium shadow-[0_4px_12px_rgba(0,0,0,0.55)] transition-colors ${
                         videos.length > 0 && !activeScene
                           ? 'bg-white text-black' 
                           : 'bg-black/50 text-white hover:bg-black/70'
@@ -382,6 +406,7 @@ export default function CenterFacilityPage({
           </div>
         </Card>
       )}
+      </Tabs>
     </div>
   )
 }

@@ -19,7 +19,7 @@ export default async function VerifiedSmmePage() {
     }
 
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
             <DashboardPageHeader
                 title="Verified SMMEs"
                 icon={<BadgeCheck className="h-5 w-5" />}

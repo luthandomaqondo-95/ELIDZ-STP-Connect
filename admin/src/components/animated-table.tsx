@@ -101,14 +101,14 @@ export function AnimatedTable({
   emptyMessage = "No data available",
   renderRow,
   theme = "indigo",
-  animationDelay = 0.05,
+  animationDelay = 0.06,
 }: AnimatedTableProps) {
   const themeClass = themeClasses[theme]
 
   return (
     <div
       className={cn(
-        "rounded-2xl border-2 bg-gradient-to-br overflow-hidden shadow-inner",
+        "rounded-3xl border-0 bg-gradient-to-br overflow-hidden shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]",
         themeClass.border,
         themeClass.bg
       )}
@@ -145,7 +145,7 @@ export function AnimatedTable({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="py-6 md:py-8 text-center text-sm text-muted-foreground"
+                className="py-6 sm:py-6 md:py-8 text-center text-sm text-muted-foreground"
               >
                 <Loader2 className="h-4 w-4 animate-spin mx-auto" />
               </TableCell>
@@ -154,7 +154,7 @@ export function AnimatedTable({
             <TableRow>
               <TableCell
                 colSpan={columns.length}
-                className="py-6 md:py-8 text-center text-sm text-muted-foreground"
+                className="py-6 sm:py-6 md:py-8 text-center text-sm text-muted-foreground"
               >
                 {emptyMessage}
               </TableCell>
@@ -164,12 +164,13 @@ export function AnimatedTable({
               <TableRow
                 key={index}
                 className={cn(
-                  "table-row-waterfall-row transition-all duration-200",
+                  "table-row-waterfall-row transition-colors duration-200",
                   themeClass.rowBorder,
                   themeClass.rowHover
                 )}
                 style={{
-                  ["--row-delay" as any]: `${index * animationDelay}s`,
+                  // Capped so long tables don't keep the last rows waiting
+                  ["--row-delay" as any]: `${Math.min(index, 12) * animationDelay}s`,
                 }}
               >
                 {renderRow(item, index)}

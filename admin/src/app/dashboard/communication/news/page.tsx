@@ -15,7 +15,7 @@ export default async function PublishNewsPage() {
     .order("published_at", { ascending: false })
 
   return (
-    <div className="flex flex-1 flex-col gap-4 pt-0">
+    <div className="flex min-w-0 flex-1 flex-col gap-3 pt-0">
       <DashboardPageHeader
         title="Publish News"
         icon={<Newspaper className="h-5 w-5" />}

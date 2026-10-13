@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { FloatingLabelInput, FloatingLabelSelect, SelectItem } from "@/components/floating-input"
 import { createVerifiedSmme } from "./actions"
+import { MODAL_CANCEL_BUTTON_CLASS, MODAL_FIELD_CLASS } from "@/lib/utils"
 
 export function AddSmmeDialog() {
     const [open, setOpen] = useState(false)
@@ -50,7 +51,7 @@ export function AddSmmeDialog() {
             <DialogTrigger asChild>
                 <AnimatedDashboardButton label="+ Add Verified SMME" />
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[560px] rounded-3xl border-0 bg-white/90 p-4 md:p-6 shadow-[0_10px_30px_rgba(2,6,23,0.12)] backdrop-blur-sm dark:bg-slate-900/80 dark:shadow-[0_10px_30px_rgba(2,6,23,0.4)]">
+            <DialogContent className="sm:max-w-[560px] p-4 sm:p-4 md:p-6">
                 <form onSubmit={onSubmit}>
                     <DialogHeader>
                         <DialogTitle>Add Verified SMME</DialogTitle>
@@ -60,17 +61,17 @@ export function AddSmmeDialog() {
                     </DialogHeader>
                     <div className="grid gap-3 py-2 md:gap-4 md:py-4">
                         {error && (
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-2 text-sm text-red-500 dark:border-red-900/40 dark:bg-red-950/20">
+                            <div className="rounded-xl bg-red-50 p-2 text-sm text-red-500 shadow-[0_6px_14px_-6px_rgba(0,0,0,0.35)] dark:bg-red-950/30 dark:shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)]">
                                 {error}
                             </div>
                         )}
-                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2">
                             <FloatingLabelInput
                                 id="name"
                                 name="name"
                                 label="Name"
                                 placeholder="Acme Innovations"
-                                className="rounded-3xl bg-gray-800"
+                                className={MODAL_FIELD_CLASS}
                                 required
                             />
                             <FloatingLabelInput
@@ -79,7 +80,7 @@ export function AddSmmeDialog() {
                                 type="email"
                                 label="Email"
                                 placeholder="contact@company.com"
-                                className="rounded-3xl bg-gray-800"
+                                className={MODAL_FIELD_CLASS}
                                 required
                             />
                             <FloatingLabelInput
@@ -87,14 +88,14 @@ export function AddSmmeDialog() {
                                 name="organization"
                                 label="Organization"
                                 placeholder="Acme Group"
-                                className="rounded-3xl bg-gray-800"
+                                className={MODAL_FIELD_CLASS}
                                 required
                             />
                             <FloatingLabelSelect
                                 label="Role"
                                 value={role}
                                 onValueChange={setRole}
-                                className="rounded-3xl bg-gray-800"
+                                className={MODAL_FIELD_CLASS}
                             >
                                 <SelectItem value="SME">SME</SelectItem>
                                 <SelectItem value="Entrepreneur">Entrepreneur</SelectItem>
@@ -103,8 +104,8 @@ export function AddSmmeDialog() {
                             <input type="hidden" name="role" value={role} />
                         </div>
                     </div>
-                    <DialogFooter className="justify-center sm:justify-center">
-                        <Button type="button" variant="outline" className="rounded-2xl mt-1" onClick={() => setOpen(false)} disabled={loading}>
+                    <DialogFooter>
+                        <Button type="button" variant="ghost" className={MODAL_CANCEL_BUTTON_CLASS} onClick={() => setOpen(false)} disabled={loading}>
                             Cancel
                         </Button>
                         <AnimatedDashboardButton

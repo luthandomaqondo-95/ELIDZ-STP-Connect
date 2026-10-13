@@ -12,6 +12,7 @@ import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import Link from "next/link"
 import { Input } from "@/components/ui/input"
 import { Search, Shield, ShieldAlert, ShieldCheck } from "lucide-react"
+import { FILTER_ROW_CLASS } from "@/lib/utils"
 
 const roles = [
     {
@@ -63,7 +64,7 @@ export default function UserRolesPage() {
     })
 
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
             <DashboardPageHeader
                 title="User Roles"
                 icon={<ShieldCheck className="h-5 w-5" />}
@@ -80,7 +81,7 @@ export default function UserRolesPage() {
                         placeholder="Search roles..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="h-11 rounded-3xl border-orange-200/60 bg-white/80 pl-10 shadow-sm dark:bg-slate-900/60 dark:border-orange-800/40"
+                        className="h-11 rounded-3xl border-0 bg-white/80 pl-10 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-900/60 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]"
                     />
                 </div>
                 <div className="relative w-full max-w-md">
@@ -93,14 +94,14 @@ export default function UserRolesPage() {
                         </span>
                     </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
+                <div className={FILTER_ROW_CLASS}>
                     {["All", "Super Admin", "Admin", "Tenant", "Investor"].map((roleName) => (
                         <Button
                             key={roleName}
                             variant="ghost"
                             size="sm"
                             onClick={() => setFilter(roleName)}
-                            className={`h-9 rounded-3xl px-4 border-0 shadow-none transition-all ${
+                            className={`h-8 max-sm:h-8! shrink-0 rounded-3xl px-3 text-xs sm:h-9 sm:px-4 sm:text-sm border-0 shadow-[0_6px_14px_-4px_rgba(0,0,0,0.4)] transition-all hover:-translate-y-0.5 hover:shadow-[0_10px_18px_-6px_rgba(0,0,0,0.5)] dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.85)] dark:hover:shadow-[0_10px_20px_-6px_rgba(0,0,0,0.95)] ${
                                 filter === roleName
                                     ? "bg-orange-500 text-white hover:bg-orange-500/90"
                                     : ROLE_FILTER_COLORS[roleName]
@@ -126,7 +127,9 @@ export default function UserRolesPage() {
                 renderRow={(role) => (
                     <>
                         <TableCell>
-                            <role.icon className="h-4 w-4 text-muted-foreground" />
+                            <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white text-orange-600 shadow-[0_4px_10px_rgba(0,0,0,0.35)] dark:bg-slate-800 dark:text-orange-300 dark:shadow-[0_4px_12px_rgba(0,0,0,0.8)]">
+                                <role.icon className="h-4 w-4" />
+                            </span>
                         </TableCell>
                         <TableCell className="font-medium">{role.role}</TableCell>
                         <TableCell>{role.users}</TableCell>

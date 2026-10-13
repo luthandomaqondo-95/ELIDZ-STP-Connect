@@ -4,6 +4,8 @@ import * as React from "react"
 import { motion } from "motion/react"
 import { Loader2 } from "lucide-react"
 
+import { cn } from "@/lib/utils"
+
 interface AnimatedDashboardButtonProps {
     label?: string
     isLoading?: boolean
@@ -43,7 +45,12 @@ export function AnimatedDashboardButton({
             disabled={disabled || isLoading}
             onClick={onClick}
             aria-busy={isLoading}
-            className={`apple-button rounded-full px-6 h-12 text-sm font-semibold shadow-sm relative overflow-hidden cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed ${palette.textClass} ${className}`}
+            className={cn(
+                "apple-button rounded-full px-6 h-12 whitespace-nowrap text-sm font-semibold shadow-sm relative overflow-hidden cursor-pointer inline-flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed",
+                "max-sm:h-10! max-sm:rounded-full! max-sm:px-5",
+                palette.textClass,
+                className
+            )}
             whileHover={{
                 scale: 1.05,
                 boxShadow: palette.hoverShadow,

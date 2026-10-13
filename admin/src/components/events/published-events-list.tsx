@@ -75,7 +75,7 @@ export function PublishedEventsList({ items }: PublishedEventsListProps) {
       renderItem={(item) => (
         <article
           key={item.id}
-          className="group flex h-full flex-col rounded-3xl border border-cyan-500/15 bg-[#06122a] p-5 shadow-[0_12px_30px_rgba(1,8,22,0.45)]"
+          className="group flex h-full flex-col rounded-3xl bg-[#06122a] p-4 sm:p-5 shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]"
         >
           <div className="mb-3 flex items-start justify-between gap-3">
             <h3 className="line-clamp-2 text-lg font-semibold leading-tight text-slate-100">
@@ -113,7 +113,7 @@ export function PublishedEventsList({ items }: PublishedEventsListProps) {
             </p>
           ) : null}
 
-          <div className="mt-5 rounded-2xl border border-cyan-500/15 bg-[#071936] p-3">
+          <div className="mt-5 rounded-2xl bg-[#071936] p-3 shadow-[inset_0_2px_8px_rgba(0,0,0,0.6)]">
             <p className="mb-2 inline-flex items-center gap-2 text-sm font-medium text-cyan-200">
               <Users className="h-4 w-4" />
               RSVP&apos;d ({item.rsvps.length})
@@ -126,7 +126,7 @@ export function PublishedEventsList({ items }: PublishedEventsListProps) {
                 {item.rsvps.map((person) => (
                   <div
                     key={`${item.id}-${person.id}`}
-                    className="rounded-xl border border-cyan-500/10 bg-[#081f3f] px-3 py-2"
+                    className="rounded-xl bg-[#081f3f] px-3 py-2 shadow-[0_4px_10px_-2px_rgba(0,0,0,0.6)]"
                   >
                     <p className="text-sm text-slate-100">{person.name || "Unnamed attendee"}</p>
                     <p className="text-xs text-slate-300">{person.email || "No email"}</p>

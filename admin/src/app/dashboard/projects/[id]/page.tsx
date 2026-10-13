@@ -12,9 +12,11 @@ import { createClient } from "@/lib/supabase/client"
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Image from "next/image"
-import { Loader2 } from "lucide-react"
+import { Building2, Loader2 } from "lucide-react"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
+import { cn } from "@/lib/utils"
+import { TOGGLE_LIST_CLASS, TOGGLE_TRIGGER_CLASS } from "@/components/center-facility-page"
 
 export default function FacilityPage() {
     const params = useParams()
@@ -23,6 +25,7 @@ export default function FacilityPage() {
     const [vrSections, setVrSections] = useState<any[]>([])
     const [loading, setLoading] = useState(true)
     const [activeScene, setActiveScene] = useState<any>(null)
+    const [activeTab, setActiveTab] = useState("overview")
     const supabase = createClient()
     const id = params.id as string
 
@@ -81,7 +84,7 @@ export default function FacilityPage() {
 
     if (loading) {
         return (
-            <div className="flex h-full items-center justify-center p-8">
+            <div className="flex h-full items-center justify-center p-4 sm:p-8">
                 <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
             </div>
         )
@@ -89,7 +92,7 @@ export default function FacilityPage() {
 
     if (!facility) {
         return (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
+            <div className="flex flex-col items-center justify-center p-4 text-center sm:p-8">
                 <h2 className="text-2xl font-bold">Facility not found</h2>
                 <p className="text-muted-foreground">The requested facility could not be loaded.</p>
             </div>
@@ -97,35 +100,35 @@ export default function FacilityPage() {
     }
 
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
             <DashboardPageHeader
                 title={facility.name}
-                backHref="/dashboard"
+                icon={<Building2 className="h-5 w-5" />}
                 action={<AnimatedDashboardButton label="Manage Facility" />}
             />
             <p className="max-w-3xl text-sm italic text-muted-foreground">
                 Explore the {facility.name} virtual tour, featured sections, and key facility information in one place.
             </p>
-            <Tabs defaultValue="overview" className="space-y-4">
-                <div className="flex justify-center overflow-x-auto">
-                    <TabsList className="h-11 rounded-3xl border-0 bg-white/90 p-1 shadow-sm dark:bg-slate-900/70 whitespace-nowrap">
-                        <TabsTrigger value="overview" className="rounded-3xl px-5">Overview</TabsTrigger>
-                        <TabsTrigger value="services" className="rounded-3xl px-5">Services & Features</TabsTrigger>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-3 sm:gap-4">
+                <div className="flex justify-center">
+                    <TabsList className={TOGGLE_LIST_CLASS}>
+                        <TabsTrigger value="overview" className={TOGGLE_TRIGGER_CLASS}>Overview</TabsTrigger>
+                        <TabsTrigger value="services" className={TOGGLE_TRIGGER_CLASS}>Services & Features</TabsTrigger>
                     </TabsList>
                 </div>
-                <TabsContent value="overview" className="space-y-4">
-                     <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                <TabsContent value="overview" className="order-2 space-y-3 sm:space-y-4">
+                     <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                         <CardHeader className="pb-3">
                             <CardTitle>About {facility.name}</CardTitle>
                             <CardDescription className="text-sm">{facility.description}</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div className="rounded-3xl bg-orange-100/70 p-4 dark:bg-slate-800/60">
+                            <div className="grid gap-3 sm:gap-4 md:grid-cols-2">
+                                <div className="rounded-3xl bg-orange-100/70 p-3 sm:p-4 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-800/60 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]">
                                     <h4 className="text-sm font-semibold mb-2">Location</h4>
                                     <p className="text-sm text-muted-foreground">{facility.location}</p>
                                 </div>
-                                <div className="rounded-3xl bg-orange-100/70 p-4 dark:bg-slate-800/60">
+                                <div className="rounded-3xl bg-orange-100/70 p-3 sm:p-4 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-800/60 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]">
                                     <h4 className="text-sm font-semibold mb-2">Facility Type</h4>
                                     <p className="text-sm text-muted-foreground">{facility.type}</p>
                                 </div>
@@ -133,10 +136,10 @@ export default function FacilityPage() {
                         </CardContent>
                     </Card>
                 </TabsContent>
-                <TabsContent value="services" className="space-y-4">
-                     <div className="grid items-stretch gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <TabsContent value="services" className="order-2 space-y-3 sm:space-y-4">
+                     <div className="grid items-stretch gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
                         {vrSections.map((section) => (
-                            <Card key={section.id} className="h-full min-h-[220px] rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+                            <Card key={section.id} className="h-full rounded-3xl sm:min-h-[220px] border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
                                 <CardHeader className="pb-1">
                                     <CardTitle className="text-[15px] leading-tight">{section.title}</CardTitle>
                                 </CardHeader>
@@ -153,17 +156,20 @@ export default function FacilityPage() {
                             </Card>
                         ))}
                         {vrSections.length === 0 && (
-                            <div className="col-span-full text-center py-8 text-muted-foreground">
+                            <div className="col-span-full py-6 text-center text-muted-foreground sm:py-8">
                                 No specific services listed for this facility yet.
                             </div>
                         )}
                      </div>
                 </TabsContent>
-            </Tabs>
 
-            {/* Panoramic View Section */}
             {activeScene && (
-                <Card className="overflow-hidden border-zinc-800">
+                <Card
+                    className={cn(
+                        "order-3 gap-0 overflow-hidden rounded-3xl border-0 py-0 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]",
+                        activeTab === "overview" && "order-1"
+                    )}
+                >
                     <div className="relative aspect-video w-full bg-black">
                         {/* 
                           In a real implementation, this would use a 360 viewer library like pannellum or react-360.
@@ -175,13 +181,13 @@ export default function FacilityPage() {
                             fill
                             className="object-cover opacity-90 hover:opacity-100 transition-opacity duration-500"
                         />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-6">
-                            <h3 className="text-xl font-bold text-white mb-1">{activeScene.title}</h3>
+                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 sm:p-6">
+                            <h3 className="mb-1 text-lg font-bold text-white sm:text-xl">{activeScene.title}</h3>
                             <p className="text-sm text-zinc-300">Interactive 360° View</p>
                             
                             {/* Scene switcher if multiple scenes exist */}
                             {vrScenes.length > 1 && (
-                                <div className="flex gap-2 mt-4 overflow-x-auto pb-2">
+                                <div className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:mt-4 sm:pb-2">
                                     {vrScenes.map(scene => (
                                         <button
                                             key={scene.id}
@@ -201,6 +207,7 @@ export default function FacilityPage() {
                     </div>
                 </Card>
             )}
+            </Tabs>
         </div>
     );
 }

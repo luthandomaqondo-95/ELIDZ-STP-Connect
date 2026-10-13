@@ -27,24 +27,24 @@ export function DashboardPageHeader({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           {backHref ? (
             <Link
               href={backHref}
               aria-label={backLabel}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-3xl bg-orange-100 text-orange-700 ring-1 ring-orange-200 transition-colors hover:bg-orange-200/80 dark:bg-orange-900/30 dark:text-orange-200 dark:ring-orange-800/40 dark:hover:bg-orange-900/50"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl border-0 bg-orange-100 text-orange-700 shadow-[0_6px_14px_-2px_rgba(0,0,0,0.45)] transition-colors hover:bg-orange-200/80 dark:bg-orange-900/30 dark:text-orange-200 dark:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.85)] dark:hover:bg-orange-900/50"
             >
               <ArrowLeft className="h-5 w-5" />
             </Link>
           ) : rawIcon ? (
             <>{resolvedIcon}</>
           ) : (
-            <div className="inline-flex h-10 w-10 items-center justify-center rounded-3xl bg-orange-100 text-orange-700 ring-1 ring-orange-200 dark:bg-orange-900/30 dark:text-orange-200 dark:ring-orange-800/40">
+            <div className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-3xl border-0 bg-orange-100 text-orange-700 shadow-[0_6px_14px_-2px_rgba(0,0,0,0.45)] dark:bg-orange-900/30 dark:text-orange-200 dark:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.85)]">
               {resolvedIcon}
             </div>
           )}
-          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+          <h1 className="min-w-0 text-xl leading-tight font-semibold tracking-tight text-slate-900 sm:text-2xl md:text-3xl dark:text-slate-100">
             {title}
           </h1>
         </div>
