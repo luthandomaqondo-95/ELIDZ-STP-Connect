@@ -1,499 +1,321 @@
 "use client"
 
-import { useEffect, useMemo, useState, useCallback, useRef } from "react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Button } from "@/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useEffect, useState, useRef } from "react"
 import {
-  Search,
-  Loader2,
-  RefreshCcw,
-  CheckCircle2,
-  XCircle,
-  MessageSquare,
-} from "lucide-react"
+  Card,
+  CardContent,
+  CardHeader,
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ArrowLeft, Search, Loader2, MessagesSquare } from "lucide-react"
+import { useChat } from "@/hooks/use-chat"
 import { cn } from "@/lib/utils"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 
-// ── Types ─────────────────────────────────────────────────────────────────────
+const PANEL_CLASS =
+    "flex h-full min-h-0 flex-col overflow-hidden rounded-3xl border-0 bg-white/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]"
 
-type EnquiryStatus = "new" | "in_progress" | "resolved" | "closed"
-
-type EnquiryRow = {
-  id: string
-  user_id: string | null
-  enquiry_type: string
-  subject: string
-  message: string
-  related_facility_id?: string | null
-  status: EnquiryStatus
-  response?: string | null
-  responded_by?: string | null
-  responded_at?: string | null
-  created_at: string
-  updated_at: string
-  user?: {
-    id: string
-    name: string
-    email: string
-    avatar?: string | null
-    role?: string | null
-  } | null
-  responder?: { id: string; name: string; email: string } | null
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<EnquiryStatus, { label: string; bg: string }> = {
-  new:         { label: "New",         bg: "bg-blue-500" },
-  in_progress: { label: "In Progress", bg: "bg-amber-500" },
-  resolved:    { label: "Resolved",    bg: "bg-emerald-600" },
-  closed:      { label: "Closed",      bg: "bg-slate-500" },
-}
-
-function formatDate(dateString: string) {
-  if (!dateString) return ""
-  const date = new Date(dateString)
-  const now = new Date()
-  const diffDays = Math.floor((now.getTime() - date.getTime()) / 86_400_000)
-  if (diffDays === 0) return new Intl.DateTimeFormat("en-US", { hour: "numeric", minute: "2-digit", hour12: true }).format(date)
-  if (diffDays < 7)  return new Intl.DateTimeFormat("en-US", { weekday: "short", hour: "numeric", minute: "2-digit", hour12: true }).format(date)
-  return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date)
-}
-
-function initials(name: string) {
-  return name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) || "?"
-}
-
-function extractPreferredBookingDate(message?: string | null) {
-  if (!message) return null
-  const match = message.match(/Preferred date:\s*([^\n\r]+)/i)
-  return match?.[1]?.trim() ?? null
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
+const AVATAR_SHADOW = "shadow-[0_4px_10px_rgba(0,0,0,0.35)] dark:shadow-[0_4px_12px_rgba(0,0,0,0.8)]"
 
 export default function MessageCenterPage() {
-  const [enquiries, setEnquiries]       = useState<EnquiryRow[]>([])
-  const [loading, setLoading]           = useState(true)
-  const [silentPoll, setSilentPoll]     = useState(false)
-  const [selectedId, setSelectedId]     = useState<string | null>(null)
-  const [draftResponse, setDraftResponse] = useState("")
-  const [saving, setSaving]             = useState(false)
-  const [saveSuccess, setSaveSuccess]   = useState(false)
-  const [error, setError]               = useState<string | null>(null)
-  const [searchQuery, setSearchQuery]   = useState("")
+    const { 
+        chats, 
+        messages, 
+        loading, 
+        currentUser, 
+        selectedChat, 
+        setSelectedChat, 
+        sendMessage,
+        markAsRead
+    } = useChat();
+    
+    const [searchQuery, setSearchQuery] = useState("");
+    const [newMessage, setNewMessage] = useState("");
+    const scrollRef = useRef<HTMLDivElement>(null);
 
-  const bottomRef = useRef<HTMLDivElement>(null)
+    // Mark as read when selecting a chat
+    useEffect(() => {
+        if (selectedChat) {
+            markAsRead(selectedChat.id);
+        }
+    }, [selectedChat, markAsRead]);
 
-  const selectedEnquiry = useMemo(
-    () => enquiries.find((e) => e.id === selectedId) ?? null,
-    [enquiries, selectedId]
-  )
+    // Scroll only the conversation to the newest message, so the page itself does not jump on phones.
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+    }, [messages, selectedChat]);
 
-  const filteredEnquiries = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    if (!q) return enquiries
-    return enquiries.filter((e) => {
-      const name = e.user?.name || e.user?.email || ""
-      return (
-        name.toLowerCase().includes(q) ||
-        (e.subject || "").toLowerCase().includes(q) ||
-        (e.message || "").toLowerCase().includes(q)
-      )
-    })
-  }, [enquiries, searchQuery])
+    const filteredChats = chats.filter(chat => {
+        const otherName = chat.otherUser?.name || chat.name || "Unknown";
+        const lastMsg = chat.lastMessage?.content || "";
+        return otherName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+               lastMsg.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
-  // ── Data fetching ───────────────────────────────────────────────────────────
+    const handleSend = async () => {
+        if (!newMessage.trim()) return;
+        const msg = newMessage;
+        setNewMessage(""); // Clear immediately
+        await sendMessage(msg);
+    };
 
-  const loadEnquiries = useCallback(async (silent = false) => {
-    if (silent) setSilentPoll(true)
-    else setLoading(true)
-    setError(null)
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    };
 
-    try {
-      const res = await fetch("/api/admin/facility-enquiries")
-      const json = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(json?.error || "Failed to load enquiries")
+    const formatDate = (dateString: string) => {
+        if (!dateString) return "";
+        const date = new Date(dateString);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-      const rows = (json?.enquiries ?? []) as EnquiryRow[]
-      setEnquiries(rows)
+        if (days === 0) {
+            return new Intl.DateTimeFormat('en-US', {
+                hour: 'numeric',
+                minute: 'numeric',
+                hour12: true
+            }).format(date);
+        } else if (days < 7) {
+            return new Intl.DateTimeFormat('en-US', {
+                weekday: 'short'
+            }).format(date);
+        } else {
+            return new Intl.DateTimeFormat('en-US', {
+                month: 'short',
+                day: 'numeric'
+            }).format(date);
+        }
+    };
 
-      setSelectedId((prev) => {
-        if (prev && rows.some((r) => r.id === prev)) return prev
-        return rows[0]?.id ?? null
-      })
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to load enquiries")
-    } finally {
-      setLoading(false)
-      setSilentPoll(false)
-    }
-  }, [])
+    const getInitials = (name: string) => {
+        return name
+            .split(' ')
+            .map(n => n[0])
+            .join('')
+            .toUpperCase()
+            .slice(0, 2);
+    };
 
-  useEffect(() => {
-    loadEnquiries()
-    const id = setInterval(() => loadEnquiries(true), 8000)
-    return () => clearInterval(id)
-  }, [loadEnquiries])
-
-  // Reset draft + success state when switching conversations
-  useEffect(() => {
-    setDraftResponse("")
-    setSaveSuccess(false)
-    setError(null)
-  }, [selectedId]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Scroll to bottom after response renders
-  useEffect(() => {
-    if (selectedEnquiry?.response) {
-      bottomRef.current?.scrollIntoView({ behavior: "smooth" })
-    }
-  }, [selectedEnquiry?.response, selectedId])
-
-  const preferredBookingDate = useMemo(
-    () => extractPreferredBookingDate(selectedEnquiry?.message),
-    [selectedEnquiry?.message]
-  )
-
-  const isFacilityBookingEnquiry = useMemo(
-    () =>
-      selectedEnquiry?.enquiry_type === "Facility" ||
-      Boolean(selectedEnquiry?.related_facility_id),
-    [selectedEnquiry?.enquiry_type, selectedEnquiry?.related_facility_id]
-  )
-
-  // ── Send response ───────────────────────────────────────────────────────────
-  const sendResponse = useCallback(async (options?: { overrideStatus?: EnquiryStatus; responseText?: string }) => {
-    if (!selectedEnquiry) return
-    const finalResponse = (options?.responseText ?? draftResponse).trim()
-    if (!finalResponse) return
-    setSaving(true)
-    setSaveSuccess(false)
-    setError(null)
-
-    // Auto-advance "new" → "in_progress" when admin replies without specifying status
-    const status: EnquiryStatus =
-      options?.overrideStatus ??
-      (selectedEnquiry.status === "new" ? "in_progress" : selectedEnquiry.status)
-
-    try {
-      const res = await fetch("/api/admin/facility-enquiries", {
-        method: "PATCH",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ id: selectedEnquiry.id, response: finalResponse, status }),
-      })
-      const json = await res.json().catch(() => null)
-      if (!res.ok) throw new Error(json?.error || "Failed to send response")
-
-      const updated = json?.enquiry as EnquiryRow
-      setEnquiries((prev) => prev.map((e) => (e.id === updated.id ? updated : e)))
-      setDraftResponse("")
-      setSaveSuccess(true)
-      setTimeout(() => setSaveSuccess(false), 4000)
-      // Scroll to bottom so the new response bubble is visible
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100)
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Failed to send response")
-    } finally {
-      setSaving(false)
-    }
-  }, [selectedEnquiry, draftResponse])
-
-  const canSend = !!draftResponse.trim() && !saving
-
-  // ── Render ──────────────────────────────────────────────────────────────────
-
-  return (
-    <div className="flex flex-1 flex-col gap-4 pt-0" style={{ height: "calc(100vh - 5rem)" }}>
-      <DashboardPageHeader title="Message Centre" backHref="/dashboard/communication" />
-      <p className="text-sm italic text-muted-foreground -mt-2">
-        Respond to facility enquiries from the mobile app. Replies appear instantly on the user&apos;s side.
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 flex-1 min-h-0">
-
-        {/* ── Left: Enquiry list ─────────────────────────────────────── */}
-        <Card className="col-span-1 flex flex-col rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)] overflow-hidden min-h-0">
-          <CardHeader className="pb-3 border-b flex-shrink-0">
-            <div className="flex gap-2 items-center">
-              <div className="relative flex-1">
-                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search enquiries..."
-                  className="h-10 rounded-3xl border-0 bg-orange-100/80 pl-8 dark:bg-slate-800/80"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-              <button
-                type="button"
-                className="h-10 w-10 rounded-3xl grid place-items-center bg-orange-100/80 shadow-sm hover:bg-orange-100 dark:bg-slate-800/80 dark:hover:bg-slate-800 transition-colors"
-                onClick={() => loadEnquiries(false)}
-                title="Refresh"
-              >
-                <RefreshCcw className={cn("h-4 w-4", silentPoll && "animate-spin")} />
-              </button>
-            </div>
-          </CardHeader>
-
-          <CardContent className="flex-1 overflow-auto p-0 min-h-0">
-            {loading ? (
-              <div className="flex justify-center items-center h-32">
-                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-              </div>
-            ) : filteredEnquiries.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground text-sm space-y-2">
-                <MessageSquare className="h-8 w-8 mx-auto opacity-30" />
-                <p>No enquiries found</p>
-              </div>
-            ) : (
-              filteredEnquiries.map((enq) => {
-                const name = enq.user?.name || enq.user?.email || "Unknown"
-                const isSelected = selectedId === enq.id
-                const cfg = STATUS_CONFIG[enq.status]
-                const hasResponse = !!enq.response
-
-                return (
-                  <div
-                    key={enq.id}
-                    onClick={() => setSelectedId(enq.id)}
-                    className={cn(
-                      "flex gap-3 p-4 border-b cursor-pointer transition-all select-none",
-                      isSelected
-                        ? "bg-orange-100/70 dark:bg-orange-900/20"
-                        : "hover:bg-slate-100/70 dark:hover:bg-slate-800/50"
-                    )}
-                  >
-                    <Avatar className="h-9 w-9 flex-shrink-0">
-                      <AvatarImage src={enq.user?.avatar || undefined} />
-                      <AvatarFallback className="text-xs">{initials(name)}</AvatarFallback>
-                    </Avatar>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start gap-1 mb-0.5">
-                        <span className="text-sm font-semibold truncate">{name}</span>
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap flex-shrink-0">
-                          {formatDate(enq.created_at)}
-                        </span>
-                      </div>
-                      <p className="text-xs text-muted-foreground truncate mb-1.5">
-                        {enq.subject || "No subject"}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full text-white", cfg.bg)}>
-                          {cfg.label}
-                        </span>
-                        {hasResponse && (
-                          <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            ✓ Replied
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })
-            )}
-          </CardContent>
-        </Card>
-
-        {/* ── Right: Conversation ────────────────────────────────────── */}
-        <Card className="col-span-1 md:col-span-2 flex flex-col rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)] overflow-hidden min-h-0">
-
-          {selectedEnquiry ? (
-            <>
-              {/* Conversation header */}
-              <div className="p-4 border-b flex items-center justify-between gap-3 flex-shrink-0 bg-card">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Avatar className="h-10 w-10 flex-shrink-0">
-                    <AvatarImage src={selectedEnquiry.user?.avatar || undefined} />
-                    <AvatarFallback>
-                      {initials(selectedEnquiry.user?.name || selectedEnquiry.user?.email || "U")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-sm truncate">
-                      {selectedEnquiry.user?.name || selectedEnquiry.user?.email || "Unknown User"}
-                    </h3>
-                    {selectedEnquiry.user?.email && (
-                      <p className="text-xs text-muted-foreground truncate">
-                        {selectedEnquiry.user.email}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <span
-                  className={cn(
-                    "text-[11px] font-bold px-3 py-1.5 rounded-full text-white flex-shrink-0",
-                    STATUS_CONFIG[selectedEnquiry.status].bg
-                  )}
-                >
-                  {STATUS_CONFIG[selectedEnquiry.status].label}
-                </span>
-              </div>
-
-              {/* Chat messages area */}
-              <div className="flex-1 overflow-y-auto p-5 space-y-5 bg-muted/20 min-h-0">
-
-                {/* Meta chip */}
-                <div className="text-center">
-                  <span className="text-[11px] text-muted-foreground bg-background border rounded-full px-3 py-1 inline-block">
-                    {selectedEnquiry.enquiry_type} enquiry &nbsp;·&nbsp; {formatDate(selectedEnquiry.created_at)}
-                    {selectedEnquiry.related_facility_id && (
-                      <> &nbsp;·&nbsp; Facility</>
-                    )}
-                  </span>
-                </div>
-
-                {/* Subject label */}
-                <p className="text-sm font-semibold text-foreground px-1">
-                  {selectedEnquiry.subject}
+    return (
+        <div className="flex h-[calc(100dvh-5.5rem)] min-h-0 flex-col gap-3 sm:h-[calc(100dvh-6rem)] sm:gap-4">
+            {/* On phones an open conversation takes the whole screen, like WhatsApp. */}
+            <div className={cn("flex flex-col gap-3 sm:gap-4", selectedChat && "max-md:hidden")}>
+                <DashboardPageHeader title="Message Center" icon={<MessagesSquare className="h-5 w-5" />} />
+                <p className="hidden max-w-3xl text-sm italic text-muted-foreground sm:block">
+                    Connect with tenants, investors, and team members through one streamlined conversation hub with real-time updates.
                 </p>
-
-                {/* User message — left bubble */}
-                <div className="flex gap-2.5 items-end">
-                  <Avatar className="h-7 w-7 flex-shrink-0 mb-4">
-                    <AvatarImage src={selectedEnquiry.user?.avatar || undefined} />
-                    <AvatarFallback className="text-[10px]">
-                      {initials(selectedEnquiry.user?.name || selectedEnquiry.user?.email || "U")}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="max-w-[78%]">
-                    <div className="rounded-2xl rounded-bl-sm bg-background border shadow-sm px-4 py-3">
-                      <p className="text-sm text-foreground leading-relaxed whitespace-pre-wrap">
-                        {selectedEnquiry.message}
-                      </p>
-                    </div>
-                    <p className="text-[10px] text-muted-foreground mt-1 ml-1">
-                      {formatDate(selectedEnquiry.created_at)}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Admin response — right bubble */}
-                {selectedEnquiry.response && (
-                  <div className="flex gap-2.5 items-end justify-end">
-                    <div className="max-w-[78%]">
-                      <div className="rounded-2xl rounded-br-sm bg-[#002147] dark:bg-[#1e3a5f] px-4 py-3">
-                        <p className="text-sm text-white leading-relaxed whitespace-pre-wrap">
-                          {selectedEnquiry.response}
-                        </p>
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-1 text-right mr-1">
-                        ELIDZ-STP Admin
-                        {selectedEnquiry.responded_at
-                          ? ` · ${formatDate(selectedEnquiry.responded_at)}`
-                          : ""}
-                      </p>
-                    </div>
-                    <div className="h-7 w-7 rounded-full bg-[#002147] dark:bg-[#1e3a5f] flex items-center justify-center flex-shrink-0 mb-4 text-[10px] font-bold text-white">
-                      AD
-                    </div>
-                  </div>
-                )}
-
-                {/* Success banner */}
-                {saveSuccess && (
-                  <div className="flex items-center gap-2 rounded-2xl bg-emerald-50 border border-emerald-200 px-4 py-3 text-xs text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-800 dark:text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                    Response sent. The user can now see your reply in the mobile app.
-                  </div>
-                )}
-
-                <div ref={bottomRef} />
-              </div>
-
-              {/* Compose area */}
-              <div className="p-4 border-t flex-shrink-0 bg-card space-y-3">
-                {error && (
-                  <div className="rounded-2xl border border-red-500/20 bg-red-50 p-3 text-xs text-red-600 dark:bg-red-900/20 dark:text-red-400">
-                    {error}
-                  </div>
-                )}
-
-                <Textarea
-                  value={draftResponse}
-                  onChange={(e) => setDraftResponse(e.target.value)}
-                  onKeyDown={(e) => {
-                    // Ctrl/Cmd + Enter sends reply
-                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-                      e.preventDefault()
-                      sendResponse()
-                    }
-                  }}
-                  placeholder="Type your reply… (Ctrl+Enter to send)"
-                  className="min-h-[90px] rounded-2xl border-input resize-none text-sm"
-                  disabled={saving}
-                />
-
-                {isFacilityBookingEnquiry && preferredBookingDate && (
-                  <div className="rounded-2xl border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-700/60 dark:bg-amber-900/20 dark:text-amber-200">
-                    Preferred booking date requested: <span className="font-semibold">{preferredBookingDate}</span>
-                  </div>
-                )}
-
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  {/* Status-change helpers */}
-                  <div className="flex flex-wrap gap-2">
-                    {isFacilityBookingEnquiry && preferredBookingDate && (
-                      <>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-2xl text-xs h-8 text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-900/20"
-                          onClick={() =>
-                            sendResponse({
-                              overrideStatus: "resolved",
-                              responseText: `Booking approval: Approved\nApproved booking date: ${preferredBookingDate}\n\nYour facility booking has been approved for ${preferredBookingDate}.`,
-                            })
-                          }
-                          disabled={saving}
-                        >
-                          <CheckCircle2 className="h-3 w-3 mr-1" />
-                          Approve Booking
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="rounded-2xl text-xs h-8 text-red-700 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-900/20"
-                          onClick={() =>
-                            sendResponse({
-                              overrideStatus: "closed",
-                              responseText: "Booking approval: Declined\n\nYour requested booking date is currently unavailable. Please submit another preferred date.",
-                            })
-                          }
-                          disabled={saving}
-                        >
-                          <XCircle className="h-3 w-3 mr-1" />
-                          Decline Booking
-                        </Button>
-                      </>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="rounded-2xl text-xs h-8 text-slate-500 border-slate-200 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800"
-                      onClick={() => sendResponse({ overrideStatus: "closed" })}
-                      disabled={!canSend}
-                    >
-                      <XCircle className="h-3 w-3 mr-1" />
-                      Close
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
-              <MessageSquare className="h-14 w-14 opacity-20" />
-              <p className="text-sm">Select a conversation to get started</p>
             </div>
-          )}
-        </Card>
-      </div>
-    </div>
-  )
+            
+            <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(0,1fr)] gap-3 sm:gap-4 md:grid-cols-3">
+                {/* Conversation list */}
+                <Card className={cn(PANEL_CLASS, "pb-0", selectedChat && "max-md:hidden")}>
+                    <CardHeader className="pb-3">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <Input 
+                                placeholder="Search messages..." 
+                                className="h-10 rounded-full border-0 bg-orange-100/80 pl-9 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]" 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </div>
+                    </CardHeader>
+                    <CardContent className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-0 sm:p-0">
+                        {loading ? (
+                            <div className="flex justify-center items-center h-full p-4">
+                                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                            </div>
+                        ) : filteredChats.length === 0 ? (
+                            <div className="p-4 text-center text-muted-foreground">
+                                No conversations found
+                            </div>
+                        ) : (
+                            <div className="flex flex-col pb-2">
+                                {filteredChats.map((chat) => {
+                                    const otherUser = chat.otherUser;
+                                    const name = otherUser?.name || chat.name || "Unknown User";
+                                    const isSelected = selectedChat?.id === chat.id;
+                                    const unread = chat.unreadCount || 0;
+                                    
+                                    return (
+                                        <button
+                                            type="button"
+                                            key={chat.id} 
+                                            className={cn(
+                                                "mx-2 my-0.5 flex items-center gap-3 rounded-2xl p-2.5 text-left transition-colors sm:my-1 sm:p-3",
+                                                isSelected && "bg-orange-100/70 shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-orange-900/25 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]",
+                                                !isSelected && "hover:bg-slate-100/70 active:bg-slate-100 dark:hover:bg-slate-800/60 dark:active:bg-slate-800",
+                                                unread > 0 && !isSelected && "bg-blue-50/50 dark:bg-blue-900/10"
+                                            )}
+                                            onClick={() => setSelectedChat(chat)}
+                                        >
+                                            <Avatar className={cn("size-12 sm:size-10", AVATAR_SHADOW)}>
+                                                <AvatarImage src={otherUser?.avatar} />
+                                                <AvatarFallback>{getInitials(name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="min-w-0 flex-1">
+                                                <div className="flex items-baseline justify-between gap-2">
+                                                    <span className={cn(
+                                                        "truncate text-[15px] sm:text-sm",
+                                                        unread > 0 ? "font-bold" : "font-medium"
+                                                    )}>
+                                                        {name}
+                                                    </span>
+                                                    {chat.updated_at && (
+                                                        <span className={cn(
+                                                            "shrink-0 text-xs",
+                                                            unread > 0 ? "font-semibold text-orange-600 dark:text-orange-300" : "text-muted-foreground"
+                                                        )}>
+                                                            {formatDate(chat.updated_at)}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <div className="mt-0.5 flex items-center justify-between gap-2">
+                                                    <p className={cn(
+                                                        "min-w-0 truncate text-sm sm:text-xs",
+                                                        unread > 0 ? "text-foreground font-medium" : "text-muted-foreground"
+                                                    )}>
+                                                        {chat.lastMessage?.content || "No messages yet"}
+                                                    </p>
+                                                    {unread > 0 && (
+                                                        <span className="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-orange-500 px-1.5 text-[10px] font-bold text-white shadow-[0_4px_10px_-2px_rgba(234,88,12,0.6)] dark:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.85)]">
+                                                            {unread}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                {/* Conversation */}
+                <Card className={cn(PANEL_CLASS, "gap-0 py-0 md:col-span-2", !selectedChat && "max-md:hidden")}>
+                    {selectedChat ? (
+                        <>
+                            <div className="relative z-10 flex items-center gap-2 bg-card p-2.5 shadow-[0_8px_16px_-10px_rgba(0,0,0,0.45)] sm:gap-3 sm:p-4 dark:shadow-[0_8px_18px_-10px_rgba(0,0,0,0.9)]">
+                                <button
+                                    type="button"
+                                    aria-label="Back to conversations"
+                                    onClick={() => setSelectedChat(null)}
+                                    className="inline-flex size-9 shrink-0 items-center justify-center rounded-full bg-orange-100 text-orange-700 shadow-[0_6px_14px_-2px_rgba(0,0,0,0.45)] transition-colors hover:bg-orange-200/80 md:hidden dark:bg-orange-900/30 dark:text-orange-200 dark:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.85)] dark:hover:bg-orange-900/50"
+                                >
+                                    <ArrowLeft className="h-5 w-5" />
+                                </button>
+                                <Avatar className={cn("size-10", AVATAR_SHADOW)}>
+                                    <AvatarImage src={selectedChat.otherUser?.avatar} />
+                                    <AvatarFallback>
+                                        {getInitials(selectedChat.otherUser?.name || selectedChat.name || "U")}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                    <h3 className="truncate font-semibold leading-tight">
+                                        {selectedChat.otherUser?.name || selectedChat.name || "Unknown User"}
+                                    </h3>
+                                    {selectedChat.otherUser?.role && (
+                                        <p className="truncate text-xs text-muted-foreground">
+                                            {selectedChat.otherUser.role}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                            
+                            <div
+                                ref={scrollRef}
+                                className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-muted/20 px-2.5 py-3 sm:p-4"
+                            >
+                                {messages.map((msg, index) => {
+                                    const isMe = msg.sender_id === currentUser?.id;
+                                    const showAvatar = index === 0 || messages[index - 1].sender_id !== msg.sender_id;
+                                    const author = isMe ? (currentUser ?? msg.sender) : msg.sender;
+                                    
+                                    return (
+                                        <div 
+                                            key={msg.id} 
+                                            className={cn(
+                                                "flex max-w-[85%] gap-2 sm:max-w-[75%]",
+                                                showAvatar ? "mt-3 first:mt-0" : "mt-1",
+                                                isMe ? "ml-auto flex-row-reverse" : ""
+                                            )}
+                                        >
+                                            <div className="w-8 flex-shrink-0">
+                                                {showAvatar && (
+                                                    <Avatar className={cn("h-8 w-8", AVATAR_SHADOW)}>
+                                                        <AvatarImage src={author?.avatar} />
+                                                        <AvatarFallback
+                                                            className={cn(
+                                                                "text-xs",
+                                                                isMe && "bg-orange-100 font-semibold text-orange-800 dark:bg-orange-900/40 dark:text-orange-200"
+                                                            )}
+                                                        >
+                                                            {getInitials(author?.name || (isMe ? "Me" : "U"))}
+                                                        </AvatarFallback>
+                                                    </Avatar>
+                                                )}
+                                            </div>
+                                            
+                                            <div className={cn(
+                                                "min-w-0 rounded-2xl px-3 py-2 text-sm",
+                                                showAvatar && (isMe ? "rounded-tr-md" : "rounded-tl-md"),
+                                                isMe 
+                                                    ? "bg-primary text-primary-foreground shadow-[0_10px_24px_-10px_rgba(0,0,0,0.55)] dark:shadow-[0_10px_26px_-10px_rgba(0,0,0,0.9)]" 
+                                                    : "bg-background shadow-[0_10px_24px_-10px_rgba(0,0,0,0.45)] dark:shadow-[0_10px_26px_-10px_rgba(0,0,0,0.85)]"
+                                            )}>
+                                                <p className="whitespace-pre-wrap break-words">{msg.content}</p>
+                                                <div className={cn(
+                                                    "mt-0.5 text-right text-[10px] opacity-70",
+                                                    isMe ? "text-primary-foreground" : "text-muted-foreground"
+                                                )}>
+                                                    {formatDate(msg.created_at)}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="relative z-10 bg-card p-2.5 shadow-[0_-8px_16px_-10px_rgba(0,0,0,0.45)] sm:p-4 dark:shadow-[0_-8px_18px_-10px_rgba(0,0,0,0.9)]">
+                                <div className="flex items-center gap-2">
+                                    <Input 
+                                        placeholder="Type a message..." 
+                                        value={newMessage}
+                                        onChange={(e) => setNewMessage(e.target.value)}
+                                        onKeyDown={handleKeyPress}
+                                        enterKeyHint="send"
+                                        className="h-10 flex-1 rounded-full border-0 bg-orange-100/80 px-4 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
+                                    />
+                                    <AnimatedDashboardButton
+                                        label="Send"
+                                        className="h-10 shrink-0 rounded-full px-4"
+                                        onClick={handleSend}
+                                        disabled={!newMessage.trim()}
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground p-8 text-center">
+                            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] dark:bg-slate-800 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)]">
+                                <Search className="h-8 w-8 opacity-50" />
+                            </div>
+                            <h3 className="text-lg font-medium mb-2">No Chat Selected</h3>
+                            <p className="max-w-xs mx-auto">
+                                Select a conversation from the list to view messages or start a new one.
+                            </p>
+                        </div>
+                    )}
+                </Card>
+            </div>
+        </div>
+    );
 }

@@ -19,6 +19,7 @@ import {
   SidebarMenuSubButton,
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
+import { SidebarTabIcon, sidebarTabClass } from "@/components/sidebar-tab-icon"
 
 export function NavMain({
   items,
@@ -44,16 +45,16 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="text-orange-600 dark:text-orange-300">Platform</SidebarGroupLabel>
-      <SidebarMenu>
+      <SidebarMenu className="gap-2.5">
         {items.map((item) => {
             const active = isItemActive(item)
             // If there are no sub-items, render a simple link
             if (!item.items || item.items.length === 0) {
                 return (
-                    <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild tooltip={item.title} isActive={active}>
+                    <SidebarMenuItem key={item.title} className="flex items-center gap-2">
+                        {item.icon && <SidebarTabIcon icon={item.icon} name={item.title} active={active} href={item.url} />}
+                        <SidebarMenuButton asChild tooltip={item.title} isActive={active} className={sidebarTabClass(item.title)}>
                             <Link href={item.url}>
-                                {item.icon && <item.icon className="text-sky-400" />}
                                 <span>{item.title}</span>
                             </Link>
                         </SidebarMenuButton>
@@ -70,15 +71,21 @@ export function NavMain({
                 className="group/collapsible"
               >
                 <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton tooltip={item.title} isActive={active}>
-                      {item.icon && <item.icon className="text-sky-400" />}
-                      <span>{item.title}</span>
-                      <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
+                  <div className="flex items-center gap-2">
+                    {item.icon && (
+                      <CollapsibleTrigger asChild>
+                        <SidebarTabIcon icon={item.icon} name={item.title} active={active} />
+                      </CollapsibleTrigger>
+                    )}
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton tooltip={item.title} isActive={active} className={sidebarTabClass(item.title)}>
+                        <span>{item.title}</span>
+                        <ChevronRight className="ml-auto transition-[transform,opacity] duration-400 ease-in-out group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:opacity-0" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                  </div>
                   <CollapsibleContent>
-                    <SidebarMenuSub>
+                    <SidebarMenuSub className="ml-[3.375rem] mt-2">
                       {item.items?.map((subItem) => {
                         const subActive = pathname === subItem.url || pathname.startsWith(`${subItem.url}/`)
                         return (

@@ -404,7 +404,7 @@ export function AppSidebar({ user, ...props }: React.ComponentProps<typeof Sideb
 
 	return (
 		<Sidebar collapsible="icon" {...props}>
-			<SidebarHeader className="border-b">
+			<SidebarHeader className="h-16 shrink-0 justify-center border-b border-border/70 py-0 dark:border-border/55">
 				<TeamSwitcher teams={sidebarData.teams} />
 			</SidebarHeader>
 			<SidebarContent>

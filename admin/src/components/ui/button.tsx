@@ -13,7 +13,7 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60",
         outline:
-          "border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+          "border-0 bg-white shadow-[0_6px_14px_-4px_rgba(0,0,0,0.4)] hover:bg-slate-50 hover:text-accent-foreground dark:bg-slate-800 dark:shadow-[0_6px_16px_-4px_rgba(0,0,0,0.85)] dark:hover:bg-slate-700",
         secondary:
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost:
@@ -29,6 +29,13 @@ const buttonVariants = cva(
         "icon-lg": "size-10",
       },
     },
+    compoundVariants: [
+      {
+        variant: ["default", "destructive", "outline", "secondary", "ghost"],
+        size: ["default", "sm", "lg"],
+        className: "max-sm:h-10! max-sm:rounded-full!",
+      },
+    ],
     defaultVariants: {
       variant: "default",
       size: "default",

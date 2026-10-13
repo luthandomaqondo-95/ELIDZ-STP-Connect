@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { CheckCircle } from "lucide-react";
-
-const MOBILE_EMAIL_CONFIRMED_URL = "elidzstp://email-confirmed";
+import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
+import { AUTH_BUTTON_CLASS, AUTH_STATUS_ICON_CLASS, AuthCard } from "@/components/auth-card";
 
 function getParamsFromUrl(): { access_token?: string; refresh_token?: string; code?: string; token_hash?: string; type?: string } {
     if (typeof window === "undefined") return {};
@@ -21,10 +22,8 @@ function getParamsFromUrl(): { access_token?: string; refresh_token?: string; co
 }
 
 export default function EmailConfirmedPage() {
-    const [status, setStatus] = useState<"loading" | "success">("loading");
-    const [message, setMessage] = useState(
-        "You can now log in to the ELIDZ-STP Connect mobile app with your account."
-    );
+    const router = useRouter();
+    const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
     useEffect(() => {
         const client = createClient();
@@ -42,9 +41,6 @@ export default function EmailConfirmedPage() {
                     setStatus("success");
                     return;
                 }
-                setMessage(
-                    "Your link was opened successfully. Go back to the mobile app and sign in with your new account."
-                );
             }
             if (code) {
                 const { error } = await client.auth.exchangeCodeForSession(code);
@@ -53,9 +49,6 @@ export default function EmailConfirmedPage() {
                     setStatus("success");
                     return;
                 }
-                setMessage(
-                    "Your email may already be confirmed. Go back to the mobile app and try signing in."
-                );
             }
             if (token_hash && (type === "signup" || type === "email")) {
                 const { error } = await client.auth.verifyOtp({ type: type as "signup" | "email", token_hash });
@@ -64,43 +57,55 @@ export default function EmailConfirmedPage() {
                     setStatus("success");
                     return;
                 }
-                setMessage(
-                    "Your email may already be confirmed. Go back to the mobile app and try signing in."
-                );
             }
-            // Some providers redirect after completing confirmation server-side, without leaving
-            // a session in this browser context. Show success guidance instead of false error.
-            setMessage(
-                "Your confirmation link was processed. Please return to the mobile app and sign in."
-            );
-            setStatus("success");
+            setStatus("error");
         }
         confirm();
     }, []);
 
     if (status === "loading") {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[200px] gap-4">
-                <p className="text-zinc-400">Confirming your email…</p>
-            </div>
+            <AuthCard title="Confirming Email" description="Confirming your email…">
+                <div className="flex justify-center py-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+                </div>
+            </AuthCard>
+        );
+    }
+
+    if (status === "error") {
+        return (
+            <AuthCard title="Link Expired" description="Invalid or expired confirmation link.">
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className={AUTH_STATUS_ICON_CLASS}>
+                        <XCircle className="text-red-400" />
+                    </div>
+                    <p className="text-sm text-zinc-300">Sign in again or ask for a new confirmation email.</p>
+                    <AnimatedDashboardButton
+                        label="Back to Login"
+                        variant="blue"
+                        className={AUTH_BUTTON_CLASS}
+                        onClick={() => router.push("/auth/login")}
+                    />
+                </div>
+            </AuthCard>
         );
     }
 
     return (
-        <div className="flex flex-col items-center gap-6 text-center">
-            <div className="inline-flex justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                <CheckCircle className="w-8 h-8" />
+        <AuthCard title="Email Confirmed" description="Your email address has been verified.">
+            <div className="flex flex-col items-center gap-4 text-center">
+                <div className={AUTH_STATUS_ICON_CLASS}>
+                    <CheckCircle className="text-green-500" />
+                </div>
+                <p className="text-sm text-zinc-300">You can now log in to the ELIDZ-STP Connect app with your account.</p>
+                <AnimatedDashboardButton
+                    label="Go to Login"
+                    variant="green"
+                    className={AUTH_BUTTON_CLASS}
+                    onClick={() => router.push("/auth/login")}
+                />
             </div>
-            <div>
-                <h1 className="text-2xl font-bold">Email confirmed</h1>
-                <p className="text-zinc-400 mt-2">{message}</p>
-            </div>
-            <a
-                href={MOBILE_EMAIL_CONFIRMED_URL}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
-            >
-                Open Mobile App
-            </a>
-        </div>
+        </AuthCard>
     );
 }

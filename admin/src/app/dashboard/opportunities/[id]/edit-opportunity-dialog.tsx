@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { MODAL_CANCEL_BUTTON_CLASS } from "@/lib/utils"
 import { FloatingLabelInput, FloatingLabelSelect, FloatingLabelTextarea, SelectItem } from "@/components/floating-input"
 
 interface EditOpportunityDialogProps {
@@ -84,31 +85,31 @@ export function EditOpportunityDialog({ id, initial }: EditOpportunityDialogProp
       <DialogTrigger asChild>
         <AnimatedDashboardButton label="Edit Opportunity" />
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[640px] rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.12)] backdrop-blur-sm dark:bg-slate-900/80 dark:shadow-[0_10px_30px_rgba(2,6,23,0.4)]">
+      <DialogContent className="sm:max-w-[640px]">
         <DialogHeader>
           <DialogTitle>Edit Opportunity</DialogTitle>
           <DialogDescription>Update the details and save changes.</DialogDescription>
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
+        <form onSubmit={onSubmit} className="space-y-3 sm:space-y-4">
           {error && (
-            <div className="rounded-xl border border-red-200 bg-red-50 p-2 text-sm text-red-500 dark:border-red-900/40 dark:bg-red-950/20">
+            <div className="rounded-xl bg-red-50 p-2 text-sm text-red-500 shadow-[0_6px_14px_-6px_rgba(0,0,0,0.35)] dark:bg-red-950/30 dark:shadow-[0_6px_16px_-6px_rgba(0,0,0,0.8)]">
               {error}
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-2">
             <FloatingLabelInput
               label="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+              className="h-10 rounded-3xl border-transparent bg-orange-100/80 px-3 sm:h-11 sm:px-4 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
               required
             />
             <FloatingLabelSelect
               label="Type"
               value={type}
               onValueChange={setType}
-              className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+              className="h-10 rounded-3xl border-transparent bg-orange-100/80 px-3 sm:h-11 sm:px-4 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
             >
               <SelectItem value="tender">Tender</SelectItem>
               <SelectItem value="challenge">Challenge</SelectItem>
@@ -122,14 +123,14 @@ export function EditOpportunityDialog({ id, initial }: EditOpportunityDialogProp
             type="date"
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
-            className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+            className="h-10 rounded-3xl border-transparent bg-orange-100/80 px-3 sm:h-11 sm:px-4 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
           />
 
           <FloatingLabelTextarea
             label="Description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="min-h-[130px] rounded-3xl border-transparent bg-orange-100/80 px-4 py-3 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+            className="min-h-[130px] rounded-3xl border-transparent bg-orange-100/80 px-3 py-2.5 sm:px-4 sm:py-3 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
             required
           />
 
@@ -137,11 +138,11 @@ export function EditOpportunityDialog({ id, initial }: EditOpportunityDialogProp
             label="Requirements"
             value={requirements}
             onChange={(e) => setRequirements(e.target.value)}
-            className="min-h-[100px] rounded-3xl border-transparent bg-orange-100/80 px-4 py-3 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+            className="min-h-[100px] rounded-3xl border-transparent bg-orange-100/80 px-3 py-2.5 sm:px-4 sm:py-3 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
           />
 
-          <DialogFooter className="justify-center sm:justify-center">
-            <Button type="button" variant="outline" className="rounded-2xl mt-1" onClick={() => setOpen(false)} disabled={saving}>
+          <DialogFooter>
+            <Button type="button" variant="ghost" className={MODAL_CANCEL_BUTTON_CLASS} onClick={() => setOpen(false)} disabled={saving}>
               Cancel
             </Button>
             <AnimatedDashboardButton
