@@ -13,42 +13,44 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
+import { Settings } from "lucide-react"
+import { DASHBOARD_CARD_CLASS } from "@/lib/utils"
 
 export default function GeneralSettingsPage() {
     return (
-        <div className="flex flex-1 flex-col gap-4 pt-0">
-            <DashboardPageHeader title="General Settings" backHref="/dashboard/settings" />
+        <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
+            <DashboardPageHeader title="General Settings" icon={<Settings className="h-5 w-5" />} />
             
-            <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+            <Card className={DASHBOARD_CARD_CLASS}>
                 <CardHeader>
                     <CardTitle>Platform Information</CardTitle>
                     <CardDescription>
                         Manage general details about the STP Connect platform.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                     <div className="space-y-2">
                         <Label htmlFor="platform-name">Platform Name</Label>
-                        <Input id="platform-name" defaultValue="ELIDZ STP Connect" className="h-11 rounded-2xl border-orange-200/60 bg-white/80 dark:border-orange-800/40 dark:bg-slate-900/60" />
+                        <Input id="platform-name" defaultValue="ELIDZ STP Connect" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="support-email">Support Email</Label>
-                        <Input id="support-email" defaultValue="support@elidz.co.za" className="h-11 rounded-2xl border-orange-200/60 bg-white/80 dark:border-orange-800/40 dark:bg-slate-900/60" />
+                        <Input id="support-email" defaultValue="support@elidz.co.za" />
                     </div>
                 </CardContent>
                 <CardFooter>
-                    <Button className="rounded-3xl">Save Changes</Button>
+                    <Button>Save Changes</Button>
                 </CardFooter>
             </Card>
 
-            <Card className="rounded-3xl border-0 bg-white/90 shadow-[0_10px_30px_rgba(2,6,23,0.08)] backdrop-blur-sm dark:bg-slate-900/75 dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]">
+            <Card className={DASHBOARD_CARD_CLASS}>
                 <CardHeader>
                     <CardTitle>Appearance</CardTitle>
                     <CardDescription>
                         Customize the look and feel of the dashboard.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 sm:space-y-4">
                      <div className="flex items-center justify-between space-x-2">
                         <Label htmlFor="dark-mode" className="flex flex-col space-y-1">
                             <span>Dark Mode</span>
