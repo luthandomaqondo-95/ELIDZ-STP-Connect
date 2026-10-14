@@ -1,105 +1,75 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { ShieldCheck, ArrowLeft, CheckCircle } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Loader2, ShieldAlert } from "lucide-react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
+import { Field, FieldGroup } from "@/components/ui/field";
+import { FloatingLabelInput } from "@/components/floating-input";
+import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
+import {
+    AUTH_BUTTON_CLASS,
+    AUTH_ERROR_CLASS,
+    AUTH_INPUT_CLASS,
+    AUTH_LINK_CLASS,
+    AUTH_STATUS_ICON_CLASS,
+    AuthCard,
+} from "@/components/auth-card";
 
-
-function getParamsFromUrl(): {
-    access_token?: string;
-    refresh_token?: string;
-    code?: string;
-    token_hash?: string;
-    type?: string;
-} {
-    if (typeof window === "undefined") return {};
-    const hash = window.location.hash?.replace(/^#/, "") || "";
-    const search = window.location.search?.replace(/^\?/, "") || "";
-    const hashParams = new URLSearchParams(hash);
-    const searchParams = new URLSearchParams(search);
-    const get = (key: string) => hashParams.get(key) ?? searchParams.get(key) ?? undefined;
+function getParamsFromHash(hash: string): { access_token?: string; refresh_token?: string } {
+    const params = new URLSearchParams(hash.replace(/^#/, ""));
     return {
-        access_token: get("access_token"),
-        refresh_token: get("refresh_token"),
-        code: get("code"),
-        token_hash: get("token_hash"),
-        type: get("type"),
+        access_token: params.get("access_token") ?? undefined,
+        refresh_token: params.get("refresh_token") ?? undefined,
     };
 }
 
-export function ResetPasswordForm() {
+function BackToLogin() {
+    return (
+        <div className="text-center text-sm">
+            <Link href="/auth/login" className={`inline-flex items-center font-medium ${AUTH_LINK_CLASS}`}>
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to Login
+            </Link>
+        </div>
+    );
+}
+
+export function ResetPasswordForm({ className, ...props }: React.ComponentProps<"div">) {
+    const router = useRouter();
     const supabase = createClient();
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasSession, setHasSession] = useState<boolean | null>(null);
-    const [isSuccess, setIsSuccess] = useState(false);
 
     useEffect(() => {
         const client = createClient();
         async function init() {
-            const { access_token, refresh_token, code, token_hash, type } = getParamsFromUrl();
-
             const { data: { session } } = await client.auth.getSession();
             if (session) {
                 setHasSession(true);
                 return;
             }
-
-            if (access_token && refresh_token) {
-                const { error: err } = await client.auth.setSession({ access_token, refresh_token });
-                if (!err) {
-                    window.history.replaceState(null, "", window.location.pathname);
-                    setHasSession(true);
-                    return;
+            if (typeof window !== "undefined" && window.location.hash) {
+                const { access_token, refresh_token } = getParamsFromHash(window.location.hash);
+                if (access_token) {
+                    const { error: err } = await client.auth.setSession({ access_token, refresh_token: refresh_token ?? "" });
+                    if (!err) {
+                        window.history.replaceState(null, "", window.location.pathname);
+                        setHasSession(true);
+                        return;
+                    }
                 }
             }
-
-            if (code) {
-                const { error: err } = await client.auth.exchangeCodeForSession(code);
-                if (!err) {
-                    window.history.replaceState(null, "", window.location.pathname);
-                    setHasSession(true);
-                    return;
-                }
-            }
-
-            if (token_hash && (type === "recovery" || type === "invite")) {
-                const otpType = type === "invite" ? "invite" : "recovery";
-                const { error: err } = await client.auth.verifyOtp({ type: otpType, token_hash });
-                if (!err) {
-                    window.history.replaceState(null, "", window.location.pathname);
-                    const { data: { session: verifiedSession } } = await client.auth.getSession();
-                    setHasSession(!!verifiedSession);
-                    return;
-                }
-            }
-
-            // Final fallback: sometimes auth params are consumed by middleware and a session already exists.
-            const { data: { session: fallbackSession } } = await client.auth.getSession();
-            if (fallbackSession) {
-                setHasSession(true);
-                return;
-            }
-
             setHasSession(false);
         }
         init();
     }, []);
-
-    useEffect(() => {
-        if (!isSuccess || typeof window === "undefined") return;
-        const timeoutId = window.setTimeout(() => {
-            window.location.href = "/auth/login";
-        }, 1200);
-        return () => window.clearTimeout(timeoutId);
-    }, [isSuccess]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -120,7 +90,8 @@ export function ResetPasswordForm() {
                 return;
             }
             await supabase.auth.signOut();
-            setIsSuccess(true);
+            router.push("/auth/login");
+            router.refresh();
         } catch {
             setError("Something went wrong. Please try again.");
         } finally {
@@ -128,124 +99,84 @@ export function ResetPasswordForm() {
         }
     };
 
-    if (isSuccess) {
-        return (
-            <div className={cn("flex flex-col items-center gap-6 text-center", "")}>
-                <div className="inline-flex justify-center w-14 h-14 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400">
-                    <CheckCircle className="w-8 h-8" />
-                </div>
-                <div>
-                    <h1 className="text-2xl font-bold">Password updated</h1>
-                    <p className="text-zinc-400 mt-2">
-                        Your password was set successfully. Redirecting to sign in…
-                    </p>
-                </div>
-                <Link
-                    href="/auth/login"
-                    className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
-                >
-                    Go to sign in
-                </Link>
-            </div>
-        );
-    }
-
     if (hasSession === null) {
         return (
-            <div className={cn("flex flex-col gap-6", '')}>
-                <p className="text-zinc-400">Loading…</p>
-            </div>
+            <AuthCard className={className} title="Reset Password" description="Checking your reset link…" {...props}>
+                <div className="flex justify-center py-4">
+                    <Loader2 className="h-8 w-8 animate-spin text-indigo-400" />
+                </div>
+            </AuthCard>
         );
     }
 
     if (!hasSession) {
         return (
-            <div className={cn("flex flex-col gap-6", '')}>
-                <p className="text-zinc-400">
-                    This reset link is invalid or has expired. Request a new link to continue.
-                </p>
-                <div className="rounded-2xl border border-amber-500/30 bg-amber-950/40 p-4 text-left text-sm text-amber-100/90">
-                    <p className="font-medium text-amber-100">Invite opened on supabase.co?</p>
-                    <p className="mt-2 text-amber-100/80">
-                        If the address bar shows{" "}
-                        <code className="rounded bg-black/30 px-1 text-xs">*.supabase.co</code> and a JSON error,
-                        Supabase could not redirect to this app (wrong Site URL or redirect allow list).
-                        Copy everything from <code className="rounded bg-black/30 px-1 text-xs">#</code> to the end of the URL,
-                        then open{" "}
-                        <code className="break-all rounded bg-black/30 px-1 text-xs">
-                            {typeof window !== "undefined" ? window.location.origin : ""}/auth/reset-password
-                        </code>
-                        {" "}and paste that fragment at the end, or ask an admin to re-send the invite after fixing{" "}
-                        <strong>Authentication → URL Configuration</strong> in Supabase (Site URL = this app, Redirect URLs includes this page).
-                    </p>
+            <AuthCard className={className} title="Reset Password" description="This reset link is invalid or has expired." {...props}>
+                <div className="flex flex-col items-center gap-4 text-center">
+                    <div className={AUTH_STATUS_ICON_CLASS}>
+                        <ShieldAlert className="text-orange-400" />
+                    </div>
+                    <p className="text-sm text-zinc-300">Request a new link to reset your password.</p>
+                    <AnimatedDashboardButton
+                        label="Request reset link"
+                        variant="blue"
+                        className={AUTH_BUTTON_CLASS}
+                        onClick={() => router.push("/auth/forgot-password")}
+                    />
+                    <BackToLogin />
                 </div>
-                <Link
-                    href="/auth/forgot-password"
-                    className="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-500 transition-colors"
-                >
-                    Request new reset link
-                </Link>
-            </div>
+            </AuthCard>
         );
     }
 
     return (
-        <div className={cn("flex flex-col gap-6", '')}>
-            <div className="flex flex-col items-center gap-2 text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 mb-2">
-                    <ShieldCheck className="h-6 w-6" />
-                </div>
-                <h1 className="text-2xl font-bold tracking-tight">Reset Password</h1>
-                <p className="text-muted-foreground text-sm text-balance">
-                    Enter your new password below.
-                </p>
-            </div>
-
-            <form onSubmit={handleSubmit} className="grid gap-6">
-                <div className="grid gap-2">
-                    <Label htmlFor="password">New Password</Label>
-                    <Input
-                        id="password"
-                        type="password"
-                        required
-                        minLength={6}
-                        value={password}
-                        onChange={(e) => { setPassword(e.target.value); setError(null); }}
-                        disabled={isLoading}
-                        className="bg-zinc-950/50 border-zinc-800 text-zinc-100 rounded-3xl h-12"
-                    />
-                </div>
-
-                <div className="grid gap-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input
-                        id="confirm-password"
-                        type="password"
-                        required
-                        minLength={6}
-                        value={confirmPassword}
-                        onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }}
-                        disabled={isLoading}
-                        className="bg-zinc-950/50 border-zinc-800 text-zinc-100 rounded-3xl h-12"
-                    />
-                    {error && (
-                        <div className="mt-2 rounded-2xl bg-red-50 dark:bg-red-900/20 p-3 text-xs text-red-600 dark:text-red-400 border border-red-500/20">
-                            {error}
+        <AuthCard className={className} title="Reset Password" description="Enter your new password below." {...props}>
+            <form onSubmit={handleSubmit}>
+                {error && <div className={`mb-3 ${AUTH_ERROR_CLASS}`}>{error}</div>}
+                <FieldGroup className="gap-3 min-[850px]:gap-5 lg:gap-5">
+                    <Field>
+                        <FloatingLabelInput
+                            id="password"
+                            type={showPassword ? "text" : "password"}
+                            label="New Password"
+                            required
+                            minLength={6}
+                            value={password}
+                            onChange={(e) => { setPassword(e.target.value); setError(null); }}
+                            disabled={isLoading}
+                            setShowPassword={setShowPassword}
+                            className={`${AUTH_INPUT_CLASS} pr-10`}
+                        />
+                    </Field>
+                    <Field>
+                        <FloatingLabelInput
+                            id="confirm-password"
+                            type={showConfirmPassword ? "text" : "password"}
+                            label="Confirm Password"
+                            required
+                            minLength={6}
+                            value={confirmPassword}
+                            onChange={(e) => { setConfirmPassword(e.target.value); setError(null); }}
+                            disabled={isLoading}
+                            setShowPassword={setShowConfirmPassword}
+                            className={`${AUTH_INPUT_CLASS} pr-10`}
+                        />
+                    </Field>
+                    <Field className="pt-1">
+                        <AnimatedDashboardButton
+                            type="submit"
+                            disabled={isLoading}
+                            isLoading={isLoading}
+                            variant="blue"
+                            label={isLoading ? "Updating…" : "Reset Password"}
+                            className={AUTH_BUTTON_CLASS}
+                        />
+                        <div className="mt-3">
+                            <BackToLogin />
                         </div>
-                    )}
-                </div>
-
-                <Button type="submit" disabled={isLoading} className="w-full bg-indigo-600 hover:bg-indigo-700 rounded-3xl h-12">
-                    {isLoading ? "Updating…" : "Reset Password"}
-                </Button>
+                    </Field>
+                </FieldGroup>
             </form>
-
-            <div className="text-center text-sm">
-                <Link href="/auth/login" className="inline-flex items-center text-indigo-600 hover:text-indigo-500 hover:underline font-medium">
-                    <ArrowLeft className="w-4 h-4 mr-1" />
-                    Back to Login
-                </Link>
-            </div>
-        </div>
+        </AuthCard>
     );
 }

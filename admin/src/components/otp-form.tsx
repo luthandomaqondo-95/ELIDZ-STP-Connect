@@ -1,79 +1,57 @@
 "use client";
 
 import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
-import { AnimatedSeparator } from "@/components/animated-separator";
-import Image from "next/image";
+import { AUTH_BUTTON_CLASS, AUTH_LINK_CLASS, AuthCard } from "@/components/auth-card";
 
-export function OTPForm() {
+const OTP_SLOT_CLASS =
+    "h-11 w-10 rounded-2xl border-0 bg-gray-800 dark:bg-gray-800 [&_.animate-caret-blink]:bg-zinc-100 text-base text-zinc-100 shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),inset_0_-1px_0_rgba(255,255,255,0.06),0_1px_2px_rgba(0,0,0,0.6)] first:rounded-l-2xl first:border-l-0 last:rounded-r-2xl sm:h-12 sm:w-12 data-[active=true]:ring-2 data-[active=true]:ring-indigo-500/50";
+
+export function OTPForm({ className, ...props }: React.ComponentProps<"div">) {
     const [otp, setOtp] = useState("");
 
     return (
-        <div className={cn("flex flex-col gap-6", '')}>
-            <Card className="relative rounded-3xl overflow-hidden bg-gray-900 text-white shadow-[0_0_40px_rgba(251,146,60,0.55)] ring-2 ring-orange-300/45 before:pointer-events-none before:absolute before:inset-0 before:rounded-3xl before:shadow-[0_0_55px_rgba(251,146,60,0.45)]">
-                <CardHeader className="pb-8 text-center">
-                    <div className="mb-2 flex items-center justify-center gap-2">
-                        <Image
-                            src="/logos/elidz-icon.png"
-                            alt="ELIDZ Icon"
-                            width={24}
-                            height={24}
-                            className="h-6 w-6 object-contain"
-                        />
-                        <CardTitle className="text-2xl md:text-3xl font-semibold font-serif italic tracking-wide text-orange-50">
-                            Verify OTP
-                        </CardTitle>
-                    </div>
-                    <AnimatedSeparator className="-mt-1 !mb-3" lineClassName="w-16 sm:w-20" color="#fb923c" />
-                    <CardDescription className="text-zinc-400">
-                        Enter the one-time password sent to your email.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-0">
-                    <form className="grid gap-4">
-                        <div className="grid gap-2">
-                            <Label htmlFor="otp" className="text-center text-zinc-300">One-Time Password</Label>
-                            <div className="flex justify-center">
-                                <InputOTP
-                                    id="otp"
-                                    value={otp}
-                                    onChange={setOtp}
-                                    maxLength={6}
-                                    required
-                                    containerClassName="justify-center gap-1.5 sm:gap-2"
-                                >
-                                    <InputOTPGroup className="gap-1.5 sm:gap-2">
-                                        <InputOTPSlot index={0} className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-900/80 text-sm text-zinc-100 shadow-sm ring-offset-background transition-all sm:h-12 sm:w-12 sm:rounded-xl sm:text-base data-[active=true]:border-indigo-400 data-[active=true]:ring-2 data-[active=true]:ring-indigo-400/40" />
-                                        <InputOTPSlot index={1} className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-900/80 text-sm text-zinc-100 shadow-sm ring-offset-background transition-all sm:h-12 sm:w-12 sm:rounded-xl sm:text-base data-[active=true]:border-indigo-400 data-[active=true]:ring-2 data-[active=true]:ring-indigo-400/40" />
-                                        <InputOTPSlot index={2} className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-900/80 text-sm text-zinc-100 shadow-sm ring-offset-background transition-all sm:h-12 sm:w-12 sm:rounded-xl sm:text-base data-[active=true]:border-indigo-400 data-[active=true]:ring-2 data-[active=true]:ring-indigo-400/40" />
-                                        <InputOTPSlot index={3} className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-900/80 text-sm text-zinc-100 shadow-sm ring-offset-background transition-all sm:h-12 sm:w-12 sm:rounded-xl sm:text-base data-[active=true]:border-indigo-400 data-[active=true]:ring-2 data-[active=true]:ring-indigo-400/40" />
-                                        <InputOTPSlot index={4} className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-900/80 text-sm text-zinc-100 shadow-sm ring-offset-background transition-all sm:h-12 sm:w-12 sm:rounded-xl sm:text-base data-[active=true]:border-indigo-400 data-[active=true]:ring-2 data-[active=true]:ring-indigo-400/40" />
-                                        <InputOTPSlot index={5} className="h-10 w-10 rounded-lg border border-zinc-700 bg-zinc-900/80 text-sm text-zinc-100 shadow-sm ring-offset-background transition-all sm:h-12 sm:w-12 sm:rounded-xl sm:text-base data-[active=true]:border-indigo-400 data-[active=true]:ring-2 data-[active=true]:ring-indigo-400/40" />
-                                    </InputOTPGroup>
-                                </InputOTP>
-                            </div>
-                        </div>
+        <AuthCard
+            className={className}
+            title="Verify OTP"
+            description="Enter the one-time password sent to your email."
+            {...props}
+        >
+            <form className="flex flex-col gap-5">
+                <div className="flex flex-col items-center gap-3">
+                    <Label htmlFor="otp" className="text-zinc-300">One-Time Password</Label>
+                    <InputOTP
+                        id="otp"
+                        value={otp}
+                        onChange={setOtp}
+                        maxLength={6}
+                        required
+                        containerClassName="justify-center"
+                    >
+                        <InputOTPGroup className="gap-1.5 sm:gap-2">
+                            {Array.from({ length: 6 }, (_, index) => (
+                                <InputOTPSlot key={index} index={index} className={OTP_SLOT_CLASS} />
+                            ))}
+                        </InputOTPGroup>
+                    </InputOTP>
+                </div>
 
-                        <AnimatedDashboardButton
-                            type="submit"
-                            label="Verify"
-                            variant="blue"
-                            className="mt-2 w-full !h-12 rounded-3xl"
-                        />
+                <AnimatedDashboardButton
+                    type="submit"
+                    label="Verify"
+                    variant="blue"
+                    className={AUTH_BUTTON_CLASS}
+                />
 
-                        <div className="text-center text-sm text-zinc-500 mt-2">
-                            Didn&apos;t receive the code?{" "}
-                            <a href="#" className="text-indigo-400 hover:text-indigo-300 hover:underline font-medium">
-                                Resend
-                            </a>
-                        </div>
-                    </form>
-                </CardContent>
-            </Card>
-        </div>
+                <p className="text-center text-sm text-zinc-500">
+                    Didn&apos;t receive the code?{" "}
+                    <a href="#" className={`font-medium ${AUTH_LINK_CLASS}`}>
+                        Resend
+                    </a>
+                </p>
+            </form>
+        </AuthCard>
     );
 }
