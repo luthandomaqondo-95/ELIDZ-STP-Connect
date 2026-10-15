@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Linking, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Text } from '@/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
 import { Stars } from '@/components/Stars';
@@ -43,15 +43,21 @@ function getAuthParamsFromUrl(url: string): {
 }
 
 export default function EmailConfirmedScreen() {
+	const routeParams = useLocalSearchParams<{ token?: string }>();
 	const { colorScheme } = useColorScheme();
 	const colors = COLORS[colorScheme ?? 'light'];
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
 	const [confirmed, setConfirmed] = useState(false);
 
-	const trySetSessionFromUrl = useCallback(async (url: string | null) => {
+	const trySetSessionFromUrl = useCallback(async (url: string | null, routeToken?: string) => {
 		try {
 			if (!url) {
+				if (routeToken) {
+					await customVerifyEmail(routeToken);
+					setConfirmed(true);
+					return;
+				}
 				const { data: { session } } = await supabase.auth.getSession();
 				if (session) {
 					setConfirmed(true);
@@ -107,10 +113,10 @@ export default function EmailConfirmedScreen() {
 	}, []);
 
 	useEffect(() => {
-		Linking.getInitialURL().then(trySetSessionFromUrl);
-		const sub = Linking.addEventListener('url', ({ url }) => trySetSessionFromUrl(url));
+		Linking.getInitialURL().then((url) => trySetSessionFromUrl(url, routeParams.token));
+		const sub = Linking.addEventListener('url', ({ url }) => trySetSessionFromUrl(url, routeParams.token));
 		return () => sub.remove();
-	}, [trySetSessionFromUrl]);
+	}, [trySetSessionFromUrl, routeParams.token]);
 
 	useEffect(() => {
 		if (confirmed) {
