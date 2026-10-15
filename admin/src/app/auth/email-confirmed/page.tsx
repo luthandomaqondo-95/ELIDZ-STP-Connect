@@ -7,7 +7,7 @@ import { CheckCircle, Loader2, XCircle } from "lucide-react";
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button";
 import { AUTH_BUTTON_CLASS, AUTH_STATUS_ICON_CLASS, AuthCard } from "@/components/auth-card";
 
-function getParamsFromUrl(): { access_token?: string; refresh_token?: string; code?: string; token_hash?: string; type?: string } {
+function getParamsFromUrl(): { access_token?: string; refresh_token?: string; code?: string; token_hash?: string; type?: string; token?: string } {
     if (typeof window === "undefined") return {};
     const hash = window.location.hash?.replace(/^#/, "") || "";
     const search = window.location.search?.replace(/^\?/, "") || "";
@@ -18,6 +18,7 @@ function getParamsFromUrl(): { access_token?: string; refresh_token?: string; co
         code: params.get("code") ?? undefined,
         token_hash: params.get("token_hash") ?? undefined,
         type: params.get("type") ?? undefined,
+        token: params.get("token") ?? undefined,
     };
 }
 
@@ -33,7 +34,19 @@ export default function EmailConfirmedPage() {
                 setStatus("success");
                 return;
             }
-            const { access_token, refresh_token, code, token_hash, type } = getParamsFromUrl();
+            const { access_token, refresh_token, code, token_hash, type, token } = getParamsFromUrl();
+            if (token) {
+                const response = await fetch("/api/auth/verify-email", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Accept: "application/json" },
+                    body: JSON.stringify({ token }),
+                });
+                if (response.ok) {
+                    window.history.replaceState(null, "", window.location.pathname);
+                    setStatus("success");
+                    return;
+                }
+            }
             if (access_token && refresh_token) {
                 const { error } = await client.auth.setSession({ access_token, refresh_token });
                 if (!error) {

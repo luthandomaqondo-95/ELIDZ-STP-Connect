@@ -28,8 +28,8 @@
       "env": {
         "EXPO_PUBLIC_CUSTOM_AUTH_ENABLED": "true",
         "EXPO_PUBLIC_BFF_REQUIRED": "true",
-        "EXPO_PUBLIC_API_BASE_URL": "https://elidzconnect-iqos9vrao-tebogolekgothoane5-gmailcoms-projects.vercel.app",
-        "EXPO_PUBLIC_APP_WEB_URL": "https://elidzconnect-iqos9vrao-tebogolekgothoane5-gmailcoms-projects.vercel.app",
+        "EXPO_PUBLIC_API_BASE_URL": "https://elidzconnect-8duyrt214-tebogolekgothoane5-gmailcoms-projects.vercel.app",
+        "EXPO_PUBLIC_APP_WEB_URL": "https://elidzconnect-8duyrt214-tebogolekgothoane5-gmailcoms-projects.vercel.app",
         "SENTRY_ALLOW_FAILURE": "true",
         "EXPO_PUBLIC_USE_CHAT_POLL": "false",
         "EXPO_PUBLIC_USE_BFF_UPLOADS": "false"

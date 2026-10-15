@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Pressable, Linking, ActivityIndicator } from 'react-native';
+import { View, Linking, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Text } from '@/components/ui/text';
@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Stars } from '@/components/Stars';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
+import { customVerifyEmail } from '@/lib/custom-auth-session';
 import { useColorScheme } from '@/hooks/use-theme-color';
 import { COLORS } from '@/theme/colors';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,6 +18,7 @@ function getAuthParamsFromUrl(url: string): {
 	code?: string;
 	token_hash?: string;
 	type?: string;
+	token?: string;
 } {
 	try {
 		const [baseAndQuery, hashRaw = ''] = url.split('#');
@@ -33,6 +35,7 @@ function getAuthParamsFromUrl(url: string): {
 			code: get('code'),
 			token_hash: get('token_hash'),
 			type: get('type'),
+			token: get('token'),
 		};
 	} catch {
 		return {};
@@ -57,8 +60,11 @@ export default function EmailConfirmedScreen() {
 				}
 				return;
 			}
-			const { access_token, refresh_token, code, token_hash, type } = getAuthParamsFromUrl(url);
-			if (access_token && refresh_token) {
+			const { access_token, refresh_token, code, token_hash, type, token } = getAuthParamsFromUrl(url);
+			if (token) {
+				await customVerifyEmail(token);
+				setConfirmed(true);
+			} else if (access_token && refresh_token) {
 				const { error: sessionError } = await supabase.auth.setSession({
 					access_token,
 					refresh_token,
