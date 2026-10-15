@@ -18,6 +18,7 @@ import {
 	AUTH_LINK_CLASS,
 	AuthCard,
 } from "@/components/auth-card";
+import { isCustomAuthUiEnabled } from "@/lib/custom-auth/client-flag";
 
 export function LoginForm({
 	className,
@@ -48,6 +49,27 @@ export function LoginForm({
 				document.cookie = "dummy_auth=1; Path=/; Max-Age=86400; SameSite=Lax"
 				setIsSuccess(true)
 				setTimeout(() => window.location.assign("/dashboard"), 350)
+				return
+			}
+
+			if (isCustomAuthUiEnabled()) {
+				const res = await fetch("/api/auth/session/login", {
+					method: "POST",
+					credentials: "same-origin",
+					headers: { "Content-Type": "application/json", Accept: "application/json" },
+					body: JSON.stringify({ email: trimmedEmail, password: formData.password }),
+				})
+				const json = await res.json().catch(() => ({}))
+				if (!res.ok) {
+					setError(typeof json.error === "string" ? json.error : "Login failed")
+					setIsLoading(false)
+					return
+				}
+				setIsSuccess(true)
+				setTimeout(() => {
+					router.push("/dashboard")
+					router.refresh()
+				}, 350)
 				return
 			}
 

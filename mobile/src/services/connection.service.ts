@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types';
+import { shouldUseBff, mobileApi } from '@/lib/mobile-api';
 
 export interface Connection {
 	id: string;
@@ -27,6 +28,12 @@ export interface ContactWithConnection extends Profile {
 
 class ConnectionService {
 	async getBlockStatus(currentUserId: string, otherUserId: string): Promise<{ isBlocked: boolean; blockedByCurrentUser: boolean; blockedByOtherUser: boolean }> {
+		if (shouldUseBff()) {
+			return mobileApi('/api/mobile/connections/block', {
+				query: { userId: otherUserId },
+			});
+		}
+
 		const { data, error } = await supabase
 			.from('connections')
 			.select('id,user_id,connected_user_id,status')
@@ -56,6 +63,13 @@ class ConnectionService {
 	async getAcceptedConnections(userId: string): Promise<Connection[]> {
 		console.log('ConnectionService.getAcceptedConnections called for userId:', userId);
 
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ connections: Connection[] }>('/api/mobile/connections', {
+				query: { status: 'accepted' },
+			});
+			return res.connections || [];
+		}
+
 		const { data, error } = await supabase
 			.from('connections')
 			.select(`
@@ -80,6 +94,13 @@ class ConnectionService {
 
 	async getConnectionRequests(userId: string): Promise<ConnectionRequest[]> {
 		console.log('ConnectionService.getConnectionRequests called for userId:', userId);
+
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ connections: ConnectionRequest[] }>('/api/mobile/connections', {
+				query: { status: 'pending' },
+			});
+			return res.connections || [];
+		}
 
 		// Run both queries in parallel for better performance
 		const [incomingResult, outgoingResult] = await Promise.all([
@@ -218,6 +239,14 @@ class ConnectionService {
 	async sendConnectionRequest(requesterId: string, addresseeId: string): Promise<Connection> {
 		console.log('ConnectionService.sendConnectionRequest called:', requesterId, '->', addresseeId);
 
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ connection: Connection }>('/api/mobile/connections', {
+				method: 'POST',
+				body: { addresseeId },
+			});
+			return res.connection;
+		}
+
 		const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 		if (!session?.user) {
 			throw new Error('User not authenticated');
@@ -283,6 +312,14 @@ class ConnectionService {
 
 	async acceptConnectionRequest(connectionId: string): Promise<Connection> {
 		console.log('ConnectionService.acceptConnectionRequest called for connectionId:', connectionId);
+
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ connection: Connection }>(`/api/mobile/connections/${connectionId}`, {
+				method: 'PATCH',
+				body: { action: 'accept' },
+			});
+			return res.connection;
+		}
 
 		const { data, error } = await supabase
 			.from('connections')

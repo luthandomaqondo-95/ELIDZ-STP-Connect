@@ -1,10 +1,10 @@
-import { createClient } from "@/lib/supabase/server"
+import { createDashboardClient } from "@/lib/authz"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { createEmptyTenantForm, type TenantFacilityOption } from "@/lib/tenants"
 import { TenantForm } from "../tenant-form"
 
 async function getFacilities(): Promise<TenantFacilityOption[]> {
-  const supabase = await createClient()
+  const supabase = await createDashboardClient()
   const { data } = await supabase
     .from("facilities")
     .select("service_id, service_name")

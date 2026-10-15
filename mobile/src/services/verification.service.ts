@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { shouldUseBff, mobileApi } from '@/lib/mobile-api';
 
 export type DocumentType = 'Business Registration' | 'ID Document' | 'Business Profile' | 'Tax Clearance' | 'Other';
 
@@ -23,6 +24,11 @@ export interface VerificationDocument {
 class VerificationService {
     // Get all verification documents for a user
     async getAllVerifications(userId: string): Promise<SMMEVerification[]> {
+        if (shouldUseBff()) {
+            const res = await mobileApi<{ verifications: SMMEVerification[] }>('/api/mobile/verifications');
+            return res.verifications || [];
+        }
+
         const { data, error } = await supabase
             .from('smme_verifications')
             .select('*')
@@ -88,7 +94,14 @@ class VerificationService {
     }
 
     async submitVerification(userId: string, documentUrl: string, documentType: DocumentType): Promise<SMMEVerification> {
-        // Upsert to replace existing document of the same type
+        if (shouldUseBff()) {
+            const res = await mobileApi<{ verification: SMMEVerification }>('/api/mobile/verifications', {
+                method: 'POST',
+                body: { document_url: documentUrl, document_type: documentType },
+            });
+            return res.verification;
+        }
+
         const { data, error } = await supabase
             .from('smme_verifications')
             .upsert({
@@ -145,8 +158,38 @@ class VerificationService {
             // Determine content type
             const contentType = this.getContentType(fileExtension);
 
+            const { shouldUseBffUploads } = await import('@/lib/feature-flags');
+            if (shouldUseBffUploads() || shouldUseBff()) {
+                const { grant } = await mobileApi<{
+                    grant: { signedUrl: string; publicUrl: string | null; path: string };
+                }>('/api/mobile/uploads/sign', {
+                    method: 'POST',
+                    body: {
+                        bucket: 'verification-documents',
+                        filename: fileName,
+                        contentType,
+                    },
+                });
+                const uploadRes = await fetch(grant.signedUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': contentType,
+                        'x-upsert': 'false',
+                    },
+                    body: arrayBuffer,
+                });
+                if (!uploadRes.ok) {
+                    throw new Error(`Failed to upload document (${uploadRes.status})`);
+                }
+                const publicUrl = grant.publicUrl || grant.signedUrl.split('?')[0];
+                if (!publicUrl) {
+                    throw new Error('Failed to get public URL for uploaded document');
+                }
+                return publicUrl;
+            }
+
             // Upload to Supabase Storage
-            const { data, error } = await supabase.storage
+            const { error } = await supabase.storage
                 .from('verification-documents')
                 .upload(filePath, arrayBuffer, {
                     contentType: contentType,

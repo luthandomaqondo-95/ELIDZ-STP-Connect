@@ -1,7 +1,6 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
-import { requireAdmin, requireSuperAdmin } from "@/lib/authz";
+import { createDashboardClient, requireAdmin, requireSuperAdmin } from "@/lib/authz";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 export type RoleSummary = {
@@ -25,12 +24,11 @@ export async function getCurrentAdminRole() {
 export async function getRoleSummaries(): Promise<RoleSummary[]> {
   await requireAdmin();
 
-  const supabase = await createClient();
-  const adminDb = createAdminClient();
+  const supabase = await createDashboardClient();
 
   const [profilesRes, rolePermsRes] = await Promise.all([
     supabase.from("profiles").select("role"),
-    adminDb.from("role_permissions").select("role, permission_key, name"),
+    supabase.from("role_permissions").select("role, permission_key, name"),
   ]);
 
   if (profilesRes.error) throw new Error(profilesRes.error.message);

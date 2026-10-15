@@ -20,22 +20,35 @@ export async function POST(
     const supabase = createAdminClient()
     const { user, profile } = await getAuthedProfile()
 
-    // First, try to delete from auth.users using admin functions
-    // This requires service role key which createAdminClient provides
-    const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+    if (!user || !profile) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
 
-    // Also delete from profiles table
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', userId)
+    const actorRole = (profile.role as string) ?? ""
+    if (actorRole !== "Admin" && actorRole !== "Super Admin") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    }
 
-    if (authError && profileError) {
-      console.error("Error deleting user:", { authError, profileError })
-      return NextResponse.json(
-        { error: "Failed to delete user", details: { authError: authError.message, profileError: profileError.message } },
-        { status: 500 }
-      )
+    const { isCustomAuthEnabled } = await import("@/lib/custom-auth/feature-flag")
+    if (isCustomAuthEnabled()) {
+      const { deleteProvisionedUser } = await import("@/lib/custom-auth/service")
+      await deleteProvisionedUser(userId)
+    } else {
+      // First, try to delete from auth.users using admin functions
+      const { error: authError } = await supabase.auth.admin.deleteUser(userId)
+
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .delete()
+        .eq('id', userId)
+
+      if (authError && profileError) {
+        console.error("Error deleting user:", { authError, profileError })
+        return NextResponse.json(
+          { error: "Failed to delete user", details: { authError: authError.message, profileError: profileError.message } },
+          { status: 500 }
+        )
+      }
     }
 
     await notifySuperAdminsOfAdminAction({

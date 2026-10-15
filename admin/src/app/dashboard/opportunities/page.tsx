@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button"
 import { Calendar } from "lucide-react"
 import Link from "next/link"
-import { createClient } from "@/lib/supabase/server"
+import { createDashboardClient } from "@/lib/authz"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import { OpportunitiesList } from "./opportunities-list"
 
 export default async function OpportunitiesPage() {
-    const supabase = await createClient()
+    const supabase = await createDashboardClient()
     const { data: opportunities } = await supabase
         .from("opportunities")
         .select("*, tenant:tenants(name, logo_url)")

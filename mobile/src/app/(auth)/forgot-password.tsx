@@ -40,6 +40,14 @@ export default function ForgotPasswordScreen() {
         setError(null);
 
         try {
+            const { isCustomAuthEnabled } = await import('@/lib/feature-flags');
+            if (isCustomAuthEnabled()) {
+                const { customForgotPassword } = await import('@/lib/custom-auth-session');
+                await customForgotPassword(normalizedEmail);
+                setIsEmailSent(true);
+                return;
+            }
+
             // In Expo Go (development) the scheme is managed by Expo; everywhere else
             // (dev-client, production build) use the app's own custom scheme so the
             // reset link opens the app directly without touching the admin site.

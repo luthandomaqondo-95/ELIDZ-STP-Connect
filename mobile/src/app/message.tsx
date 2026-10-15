@@ -445,27 +445,51 @@ function MessageScreen() {
     loadMessages();
     loadChatDetails();
 
-    const channel = supabase
-      .channel(`chat_messages:${chatId}`)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
-        (payload) => {
-          const newMsg = payload.new as Message;
-          setMessages((curr) => {
-            if (curr.find((m) => m.id === newMsg.id)) return curr;
-            return [...curr, newMsg];
-          });
-          if (newMsg.sender_id !== user.id) {
-            chatService.markMessagesAsRead(chatId, user.id);
+    // When custom auth / chat poll flag is on, Realtime JWTs are unverified — use BFF polling.
+    let cancelled = false;
+    let pollTimer: ReturnType<typeof setInterval> | null = null;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    (async () => {
+      const { shouldUseChatPolling } = await import('@/lib/feature-flags');
+      if (shouldUseChatPolling()) {
+        pollTimer = setInterval(async () => {
+          if (cancelled) return;
+          try {
+            const latest = await chatService.getChatMessages(chatId, 100);
+            if (cancelled) return;
+            setMessages(latest);
+          } catch (e) {
+            console.warn('MessageScreen poll failed', e);
           }
-          setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
-        }
-      )
-      .subscribe();
+        }, 4000);
+        return;
+      }
+
+      channel = supabase
+        .channel(`chat_messages:${chatId}`)
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
+          (payload) => {
+            const newMsg = payload.new as Message;
+            setMessages((curr) => {
+              if (curr.find((m) => m.id === newMsg.id)) return curr;
+              return [...curr, newMsg];
+            });
+            if (newMsg.sender_id !== user.id) {
+              chatService.markMessagesAsRead(chatId, user.id);
+            }
+            setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
+          }
+        )
+        .subscribe();
+    })();
 
     return () => {
-      supabase.removeChannel(channel);
+      cancelled = true;
+      if (pollTimer) clearInterval(pollTimer);
+      if (channel) supabase.removeChannel(channel);
     };
   }, [chatId, user, loadMessages, loadChatDetails]);
 

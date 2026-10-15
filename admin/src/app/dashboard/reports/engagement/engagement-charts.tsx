@@ -86,7 +86,7 @@ export function EngagementCharts({ trendData, typeBreakdown }: EngagementChartsP
                     {total === 0 ? (
                         <p className="text-sm text-muted-foreground">No visit data recorded yet.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <PieChart>
                                 <Pie
                                     data={typeBreakdown}

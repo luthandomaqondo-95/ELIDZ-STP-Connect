@@ -24,7 +24,25 @@
         "buildType": "apk"
       },
       "environment": "preview",
-      "channel": "preview"
+      "channel": "preview",
+      "env": {
+        "EXPO_PUBLIC_CUSTOM_AUTH_ENABLED": "true",
+        "EXPO_PUBLIC_BFF_REQUIRED": "true",
+        "EXPO_PUBLIC_API_BASE_URL": "https://elidzconnect-iqos9vrao-tebogolekgothoane5-gmailcoms-projects.vercel.app",
+        "EXPO_PUBLIC_APP_WEB_URL": "https://elidzconnect-iqos9vrao-tebogolekgothoane5-gmailcoms-projects.vercel.app",
+        "EXPO_PUBLIC_USE_CHAT_POLL": "false",
+        "EXPO_PUBLIC_USE_BFF_UPLOADS": "false"
+      }
+    },
+    "preview-bff": {
+      "extends": "preview",
+      "channel": "preview-bff",
+      "env": {
+        "EXPO_PUBLIC_CUSTOM_AUTH_ENABLED": "true",
+        "EXPO_PUBLIC_BFF_REQUIRED": "true",
+        "EXPO_PUBLIC_USE_CHAT_POLL": "true",
+        "EXPO_PUBLIC_USE_BFF_UPLOADS": "true"
+      }
     },
     "production": {
       "autoIncrement": true,

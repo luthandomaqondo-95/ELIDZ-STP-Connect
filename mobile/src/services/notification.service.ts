@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { shouldUseBff, mobileApi } from '@/lib/mobile-api';
 
 export type NotificationType = 
     | 'verification_approved'
@@ -41,6 +42,13 @@ class NotificationService {
      * Get all notifications for a user
      */
     async getNotifications(userId: string, limit = 50): Promise<Notification[]> {
+        if (shouldUseBff()) {
+            const res = await mobileApi<{ notifications: Notification[] }>('/api/mobile/notifications', {
+                query: { limit },
+            });
+            return res.notifications || [];
+        }
+
         const { data, error } = await supabase
             .from('notifications')
             .select('*')
@@ -60,6 +68,13 @@ class NotificationService {
      * Get unread notifications for a user
      */
     async getUnreadNotifications(userId: string): Promise<Notification[]> {
+        if (shouldUseBff()) {
+            const res = await mobileApi<{ notifications: Notification[] }>('/api/mobile/notifications', {
+                query: { unread: 1 },
+            });
+            return res.notifications || [];
+        }
+
         const { data, error } = await supabase
             .from('notifications')
             .select('*')
@@ -79,6 +94,17 @@ class NotificationService {
      * Get unread notification count for a user
      */
     async getUnreadCount(userId: string): Promise<number> {
+        if (shouldUseBff()) {
+            try {
+                const res = await mobileApi<{ count: number }>('/api/mobile/notifications', {
+                    query: { count: 1 },
+                });
+                return res.count || 0;
+            } catch {
+                return 0;
+            }
+        }
+
         try {
             const { data, error } = await supabase.rpc('get_unread_notification_count', {
                 p_user_id: userId
@@ -122,6 +148,14 @@ class NotificationService {
      * Mark a notification as read
      */
     async markAsRead(notificationId: string, userId: string): Promise<void> {
+        if (shouldUseBff()) {
+            await mobileApi(`/api/mobile/notifications/${notificationId}`, {
+                method: 'PATCH',
+                body: { action: 'read' },
+            });
+            return;
+        }
+
         const { error } = await supabase
             .from('notifications')
             .update({ read_at: new Date().toISOString() })
@@ -138,6 +172,14 @@ class NotificationService {
      * Mark all notifications as read for a user
      */
     async markAllAsRead(userId: string): Promise<number> {
+        if (shouldUseBff()) {
+            await mobileApi('/api/mobile/notifications', {
+                method: 'POST',
+                body: { action: 'mark_all_read' },
+            });
+            return 0;
+        }
+
         const { data, error } = await supabase.rpc('mark_all_notifications_read', {
             p_user_id: userId
         });
@@ -192,18 +234,16 @@ class NotificationService {
      * Delete a notification
      */
     async deleteNotification(notificationId: string, userId: string): Promise<void> {
-        // Check if user is authenticated
+        if (shouldUseBff()) {
+            await mobileApi(`/api/mobile/notifications/${notificationId}`, { method: 'DELETE' });
+            return;
+        }
+
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
             console.error('NotificationService.deleteNotification: No active session');
             throw new Error('User must be authenticated to delete notifications');
         }
-
-        console.log('NotificationService.deleteNotification: Attempting delete', { 
-            notificationId, 
-            userId,
-            sessionUserId: session.user?.id 
-        });
 
         const { error, data } = await supabase
             .from('notifications')

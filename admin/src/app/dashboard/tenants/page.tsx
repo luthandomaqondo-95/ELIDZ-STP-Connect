@@ -1,13 +1,13 @@
 import Link from "next/link"
 import { Building2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
+import { createDashboardClient } from "@/lib/authz"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import { TenantsList } from "./tenants-list"
 import type { TenantRecord } from "@/lib/tenants"
 
 export default async function TenantsPage() {
-  const supabase = await createClient()
+  const supabase = await createDashboardClient()
   const { data: tenants } = await supabase
     .from("tenants")
     .select("*")

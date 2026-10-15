@@ -20,6 +20,7 @@ import { useQueryClient } from '@tanstack/react-query';
 
 function UserProfileScreen() {
     const { colors } = useTheme();
+    const foregroundColor = ('foreground' in colors ? colors.foreground : colors.text) as string;
     const { profile: currentUser } = useAuthContext();
     const params = useLocalSearchParams<{ id?: string; userId?: string }>();
     const queryClient = useQueryClient();
@@ -374,7 +375,7 @@ function UserProfileScreen() {
                                             className="mr-6 pb-2"
                                             style={{
                                                 borderBottomWidth: offeringsTab === 'products' ? 2 : 0,
-                                                borderBottomColor: colors.foreground,
+                                                borderBottomColor: foregroundColor,
                                             }}
                                         >
                                             <Text
@@ -392,7 +393,7 @@ function UserProfileScreen() {
                                             className="pb-2"
                                             style={{
                                                 borderBottomWidth: offeringsTab === 'services' ? 2 : 0,
-                                                borderBottomColor: colors.foreground,
+                                                borderBottomColor: foregroundColor,
                                             }}
                                         >
                                             <Text

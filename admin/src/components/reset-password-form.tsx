@@ -16,6 +16,7 @@ import {
     AUTH_STATUS_ICON_CLASS,
     AuthCard,
 } from "@/components/auth-card";
+import { isCustomAuthUiEnabled } from "@/lib/custom-auth/client-flag";
 
 function getParamsFromHash(hash: string): { access_token?: string; refresh_token?: string } {
     const params = new URLSearchParams(hash.replace(/^#/, ""));
@@ -46,8 +47,19 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasSession, setHasSession] = useState<boolean | null>(null);
+    const [customToken, setCustomToken] = useState<string | null>(null);
 
     useEffect(() => {
+        if (isCustomAuthUiEnabled()) {
+            const params = new URLSearchParams(
+                typeof window !== "undefined" ? window.location.search : ""
+            );
+            const token = params.get("token");
+            setCustomToken(token);
+            setHasSession(Boolean(token));
+            return;
+        }
+
         const client = createClient();
         async function init() {
             const { data: { session } } = await client.auth.getSession();
@@ -84,6 +96,26 @@ export function ResetPasswordForm({ className, ...props }: React.ComponentProps<
         }
         setIsLoading(true);
         try {
+            if (isCustomAuthUiEnabled()) {
+                if (!customToken) {
+                    setError("Missing reset token.");
+                    return;
+                }
+                const res = await fetch("/api/auth/reset-password", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Accept: "application/json" },
+                    body: JSON.stringify({ token: customToken, password }),
+                });
+                const json = await res.json().catch(() => ({}));
+                if (!res.ok) {
+                    setError(typeof json.error === "string" ? json.error : "Reset failed");
+                    return;
+                }
+                router.push("/auth/login");
+                router.refresh();
+                return;
+            }
+
             const { error: err } = await supabase.auth.updateUser({ password });
             if (err) {
                 setError(err.message);

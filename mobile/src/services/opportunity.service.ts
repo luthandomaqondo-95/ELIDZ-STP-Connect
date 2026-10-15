@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Opportunity } from '@/types';
+import { shouldUseBff, mobileApi } from '@/lib/mobile-api';
 
 /** Shown when an opportunity has no linked tenant (park-wide / staff-posted listings). */
 export const DEFAULT_OPPORTUNITY_ORG_LABEL = 'ELIDZ-STP';
@@ -109,6 +110,13 @@ class OpportunityServiceClass {
 	}
 
 	async applyToOpportunity(opportunityId: string, coverLetter?: string): Promise<{ id: string }> {
+		if (shouldUseBff()) {
+			return mobileApi<{ id: string }>('/api/mobile/applications', {
+				method: 'POST',
+				body: { opportunityId, coverLetter },
+			});
+		}
+
 		const { data: { user } } = await supabase.auth.getUser();
 		if (!user) {
 			throw new Error('You must be logged in to apply for an opportunity');

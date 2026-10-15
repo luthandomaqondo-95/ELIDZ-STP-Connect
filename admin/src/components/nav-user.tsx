@@ -41,7 +41,13 @@ export function NavUser({
   const supabase = createClient()
 
   const handleSignOut = async () => {
-      await supabase.auth.signOut()
+      const custom =
+        /^(1|true|yes)$/i.test(String(process.env.NEXT_PUBLIC_CUSTOM_AUTH_ENABLED ?? "").trim())
+      if (custom) {
+        await fetch("/api/auth/session/logout", { method: "POST" }).catch(() => undefined)
+      } else {
+        await supabase.auth.signOut()
+      }
       router.push("/auth/login")
       router.refresh()
   }

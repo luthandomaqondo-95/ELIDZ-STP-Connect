@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import type { ComponentType } from "react"
 import { Building2, Globe, Mail, MapPin, Phone } from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
+import { createDashboardClient } from "@/lib/authz"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -19,7 +19,7 @@ interface PageProps {
 }
 
 async function getFacilities(): Promise<TenantFacilityOption[]> {
-  const supabase = await createClient()
+  const supabase = await createDashboardClient()
   const { data } = await supabase
     .from("facilities")
     .select("service_id, service_name")
@@ -56,7 +56,7 @@ function DetailRow({
 
 export default async function TenantDetailPage({ params }: PageProps) {
   const { id } = await params
-  const supabase = await createClient()
+  const supabase = await createDashboardClient()
 
   const [{ data: tenant, error }, facilities] = await Promise.all([
     supabase.from("tenants").select("*").eq("id", id).single(),

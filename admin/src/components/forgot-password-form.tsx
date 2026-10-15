@@ -15,6 +15,7 @@ import {
     AUTH_STATUS_ICON_CLASS,
     AuthCard,
 } from "@/components/auth-card";
+import { isCustomAuthUiEnabled } from "@/lib/custom-auth/client-flag";
 
 function BackToLogin() {
     return (
@@ -41,6 +42,21 @@ export function ForgotPasswordForm({ className, ...props }: React.ComponentProps
         if (!trimmed) return;
         setIsLoading(true);
         try {
+            if (isCustomAuthUiEnabled()) {
+                const res = await fetch("/api/auth/forgot-password", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", Accept: "application/json" },
+                    body: JSON.stringify({ email: trimmed }),
+                });
+                if (!res.ok) {
+                    const json = await res.json().catch(() => ({}));
+                    setError(typeof json.error === "string" ? json.error : "Something went wrong. Please try again.");
+                    return;
+                }
+                setIsSent(true);
+                return;
+            }
+
             const { error: err } = await supabase.auth.resetPasswordForEmail(trimmed, {
                 redirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth/reset-password` : undefined,
             });

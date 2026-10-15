@@ -41,7 +41,7 @@ function ChatsScreen() {
   }, [profile?.id]);
 
   const handleStartChat = () => {
-    router.push('/opportunities-chat');
+    router.push('/chat');
   };
 
   const formatTimestamp = (isoDate?: string) => {

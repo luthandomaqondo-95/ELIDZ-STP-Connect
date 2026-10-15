@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types';
+import { shouldUseBff, mobileApi } from '@/lib/mobile-api';
 
 export interface Chat {
 	id: string;
@@ -54,6 +55,18 @@ export interface ChatWithDetails extends Chat {
 class ChatService {
 	async getUserChats(userId: string, search?: string): Promise<ChatWithDetails[]> {
 		console.log('ChatService.getUserChats called for userId:', userId, 'search:', search);
+
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ chats: ChatWithDetails[] }>('/api/mobile/chats');
+			const chats = res.chats || [];
+			if (!search?.trim()) return chats;
+			const q = search.trim().toLowerCase();
+			return chats.filter((c) => {
+				const name = (c.name || c.otherUser?.name || '').toLowerCase();
+				const last = (c.lastMessage?.content || '').toLowerCase();
+				return name.includes(q) || last.includes(q);
+			});
+		}
 
 		const { data: participants, error: participantsError } = await supabase
 			.from('chat_participants')
@@ -222,6 +235,13 @@ class ChatService {
 	async getChatMessages(chatId: string, limit = 50): Promise<Message[]> {
 		console.log('ChatService.getChatMessages called for chatId:', chatId);
 
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ messages: Message[] }>(`/api/mobile/chats/${chatId}/messages`, {
+				query: { limit },
+			});
+			return res.messages || [];
+		}
+
 		const { data, error } = await supabase
 			.from('messages')
 			.select('*, sender:profiles(*)')
@@ -245,11 +265,9 @@ class ChatService {
 
 		if (attachment) {
 			try {
-				// 1. Upload file (Expo / React Native-safe: use ArrayBuffer instead of Blob)
 				const response = await fetch(attachment.uri);
 				const arrayBuffer = await response.arrayBuffer();
 				const fileExt = attachment.name?.split('.').pop() || 'jpg';
-				const fileName = `${chatId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 				const contentType =
 					attachment.type === 'image'
 						? 'image/jpeg'
@@ -259,28 +277,60 @@ class ChatService {
 						? 'audio/mpeg'
 						: 'application/octet-stream';
 
-				const { data: uploadData, error: uploadError } = await supabase.storage
-					.from('chat-attachments')
-					.upload(fileName, arrayBuffer, {
-						contentType,
+				const { shouldUseBffUploads } = await import('@/lib/feature-flags');
+				if (shouldUseBffUploads() || shouldUseBff()) {
+					const { grant } = await mobileApi<{
+						grant: { signedUrl: string; token: string; path: string; publicUrl: string | null; bucket: string };
+					}>('/api/mobile/uploads/sign', {
+						method: 'POST',
+						body: {
+							bucket: 'chat-attachments',
+							chatId,
+							filename: attachment.name || `file.${fileExt}`,
+							contentType,
+						},
 					});
-
-				if (uploadError) {
-					console.error('ChatService.sendMessage upload error:', uploadError);
-					throw uploadError;
+					const uploadRes = await fetch(grant.signedUrl, {
+						method: 'PUT',
+						headers: {
+							'Content-Type': contentType,
+							'x-upsert': 'false',
+						},
+						body: arrayBuffer,
+					});
+					if (!uploadRes.ok) {
+						throw new Error(`Upload failed (${uploadRes.status})`);
+					}
+					attachmentUrl =
+						grant.publicUrl ||
+						`${grant.signedUrl.split('?')[0]}`;
+				} else {
+					const fileName = `${chatId}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+					const { error: uploadError } = await supabase.storage
+						.from('chat-attachments')
+						.upload(fileName, arrayBuffer, { contentType });
+					if (uploadError) throw uploadError;
+					const { data: publicUrlData } = supabase.storage
+						.from('chat-attachments')
+						.getPublicUrl(fileName);
+					attachmentUrl = publicUrlData.publicUrl;
 				}
-
-				// 2. Get Public URL
-				const { data: publicUrlData } = supabase.storage
-					.from('chat-attachments')
-					.getPublicUrl(fileName);
-				
-				attachmentUrl = publicUrlData.publicUrl;
-
 			} catch (error) {
 				console.error('ChatService.sendMessage file processing error:', error);
-				throw error; // Or handle gracefully
+				throw error;
 			}
+		}
+
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ message: Message }>(`/api/mobile/chats/${chatId}/messages`, {
+				method: 'POST',
+				body: {
+					content: (content || '').trim(),
+					attachment_url: attachmentUrl || null,
+					attachment_type: attachment?.type || null,
+				},
+			});
+			return res.message;
 		}
 
 		const { data, error } = await supabase
@@ -309,11 +359,21 @@ class ChatService {
 		return data as Message;
 	}
 
-	async createDirectChat(userId1: string, userId2: string): Promise<Chat> {
-		console.log('ChatService.createDirectChat called for users:', userId1, userId2);
+	async createDirectChat(_userId1: string, userId2: string): Promise<Chat> {
+		console.log('ChatService.createDirectChat called for target user:', userId2);
+
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ chat: Chat }>('/api/mobile/chats', {
+				method: 'POST',
+				// The BFF derives the caller from the verified bearer token.
+				// Only the intended target is supplied by the client.
+				body: { otherUserId: userId2 },
+			});
+			return res.chat;
+		}
 
 		const { data: rpcResult, error: rpcError } = await supabase.rpc('create_direct_chat', {
-			p_user_id_1: userId1,
+			p_user_id_1: _userId1,
 			p_user_id_2: userId2,
 		});
 

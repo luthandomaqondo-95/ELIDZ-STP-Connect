@@ -74,51 +74,74 @@ export async function POST(request: NextRequest) {
     }
 
     const supabase = createAdminClient();
+    const { isCustomAuthEnabled } = await import("@/lib/custom-auth/feature-flag");
 
-    // 1. Invite User
-    const { data: userData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
+    let invitedUserId: string;
 
-    if (inviteError) {
-      console.error("Invite error:", inviteError);
-      return NextResponse.json(
-        { error: "Failed to invite user", details: inviteError.message },
-        { status: 500 }
-      );
-    }
-
-    if (!userData.user) {
-      return NextResponse.json(
-        { error: "Failed to create user" },
-        { status: 500 }
-      );
-    }
-
-    // 2. Create Profile
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .insert({
-        id: userData.user.id,
-        name,
+    if (isCustomAuthEnabled()) {
+      const { provisionInvitedUser } = await import("@/lib/custom-auth/service");
+      if (role === "Admin" || role === "Super Admin") {
+        return NextResponse.json(
+          { error: "Cannot create administrator accounts via SMME invite" },
+          { status: 403 }
+        );
+      }
+      const provisioned = await provisionInvitedUser({
         email,
+        name,
         role,
         organization,
-        verification_status: "verified",
+        verificationStatus: "verified",
+        allowAdminRoles: false,
       });
+      invitedUserId = provisioned.userId;
+    } else {
+      // 1. Invite User
+      const { data: userData, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email);
 
-    if (profileError) {
-      console.error("Profile creation error:", profileError);
-      // Cleanup user if profile creation fails
-      await supabase.auth.admin.deleteUser(userData.user.id);
-      return NextResponse.json(
-        { error: "Failed to create profile", details: profileError.message },
-        { status: 500 }
-      );
+      if (inviteError) {
+        console.error("Invite error:", inviteError);
+        return NextResponse.json(
+          { error: "Failed to invite user", details: inviteError.message },
+          { status: 500 }
+        );
+      }
+
+      if (!userData.user) {
+        return NextResponse.json(
+          { error: "Failed to create user" },
+          { status: 500 }
+        );
+      }
+
+      invitedUserId = userData.user.id;
+
+      // 2. Create Profile
+      const { error: profileError } = await supabase
+        .from("profiles")
+        .insert({
+          id: invitedUserId,
+          name,
+          email,
+          role,
+          organization,
+          verification_status: "verified",
+        });
+
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+        await supabase.auth.admin.deleteUser(invitedUserId);
+        return NextResponse.json(
+          { error: "Failed to create profile", details: profileError.message },
+          { status: 500 }
+        );
+      }
     }
 
     // 3. Create notification for the new SMME
     const notificationData = {
       id: crypto.randomUUID(),
-      user_id: userData.user.id,
+      user_id: invitedUserId,
       title: "Welcome to ELIDZ STP!",
       message: `Your account has been verified and you're now part of the ELIDZ Science and Technology Park community.`,
       type: "announcement",
@@ -142,14 +165,14 @@ export async function POST(request: NextRequest) {
       actorRole: (profile?.role as string | undefined) ?? "Admin",
       details: `Created SMME ${name} (${email}) for organization ${organization}.`,
       relatedEntityType: "profile",
-      relatedEntityId: userData.user.id,
+      relatedEntityId: invitedUserId,
     });
 
     return NextResponse.json({
       success: true,
       message: "SMME added successfully",
       smme: {
-        id: userData.user.id,
+        id: invitedUserId,
         name,
         email,
         role,

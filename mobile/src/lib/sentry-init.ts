@@ -1,5 +1,5 @@
 import * as Sentry from '@sentry/react-native';
-import type { Event, EventHint } from '@sentry/core';
+import type { ErrorEvent, Event, EventHint } from '@sentry/core';
 import { Platform } from 'react-native';
 
 /** Fraction of "noise" events to keep (rest dropped in beforeSend). */
@@ -57,7 +57,7 @@ function mergeTags(
 /**
  * Drop or downgrade noise; tag so Sentry issues can be filtered (e.g. issue_class:expected).
  */
-function beforeSend(event: Event, _hint: EventHint): Event | null {
+function beforeSend(event: ErrorEvent, _hint: EventHint): ErrorEvent | null {
 	const text = flattenEventText(event);
 
 	mergeTags(event, {

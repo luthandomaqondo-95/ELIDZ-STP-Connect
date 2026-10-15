@@ -67,7 +67,7 @@ export function SmmeCharts({
                     {totalSmmes === 0 ? (
                         <p className="text-sm text-muted-foreground">No SMME accounts registered yet.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <PieChart>
                                 <Pie
                                     data={verificationData}
@@ -113,7 +113,7 @@ export function SmmeCharts({
                     {totalListings === 0 ? (
                         <p className="text-sm text-muted-foreground">No services or products listed yet.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <PieChart>
                                 <Pie
                                     data={listingTypeData}
@@ -158,7 +158,7 @@ export function SmmeCharts({
                     {categoryData.length === 0 ? (
                         <p className="text-sm text-muted-foreground">No category data available.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <BarChart data={categoryData} layout="vertical" margin={{ left: 8 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} />

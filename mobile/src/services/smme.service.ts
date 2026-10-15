@@ -1,5 +1,6 @@
 import { supabase } from '@/lib/supabase';
 import { Profile } from '@/types';
+import { shouldUseBff, mobileApi } from '@/lib/mobile-api';
 
 export interface SMMEServiceProduct {
 	id: string;
@@ -84,6 +85,14 @@ class SMMEService {
 		website_url?: string;
 	}): Promise<SMMEServiceProduct> {
 		console.log('SMMEService.createServiceProduct called for smmmeId:', smmmeId, 'with data:', data);
+
+		if (shouldUseBff()) {
+			const res = await mobileApi<{ item: SMMEServiceProduct }>('/api/mobile/smme-services', {
+				method: 'POST',
+				body: data,
+			});
+			return res.item;
+		}
 
 		const { data: result, error } = await supabase
 			.from('smme_services_products')

@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createDashboardClient } from "@/lib/authz"
 import {
   Card,
   CardContent,
@@ -11,7 +11,7 @@ import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { PieChart } from "lucide-react"
 
 export default async function UserDemographicsPage() {
-    const supabase = await createClient()
+    const supabase = await createDashboardClient()
     
     // Fetch profile data
     const { data: profiles } = await supabase

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { shouldUseBff, mobileApi } from '@/lib/mobile-api';
 
 export interface Enquiry {
   id: string;
@@ -27,12 +28,16 @@ export interface CreateEnquiryData {
 }
 
 class EnquiryService {
-  /**
-   * Create a new enquiry
-   */
   async createEnquiry(data: CreateEnquiryData): Promise<Enquiry> {
+    if (shouldUseBff()) {
+      const res = await mobileApi<{ enquiry: Enquiry }>('/api/mobile/enquiries', {
+        method: 'POST',
+        body: data,
+      });
+      return res.enquiry;
+    }
+
     const { data: { user } } = await supabase.auth.getUser();
-    
     if (!user) {
       throw new Error('You must be logged in to submit an enquiry');
     }
@@ -60,10 +65,13 @@ class EnquiryService {
     return enquiry as Enquiry;
   }
 
-  /**
-   * Get user's enquiries
-   */
   async getUserEnquiries(userId: string): Promise<Enquiry[]> {
+    if (shouldUseBff()) {
+      // Server always scopes to the authenticated user — ignore client userId for authz
+      const res = await mobileApi<{ enquiries: Enquiry[] }>('/api/mobile/enquiries');
+      return res.enquiries;
+    }
+
     const { data, error } = await supabase
       .from('enquiries')
       .select('*')
@@ -78,10 +86,17 @@ class EnquiryService {
     return (data || []) as Enquiry[];
   }
 
-  /**
-   * Get a specific enquiry by ID
-   */
   async getEnquiryById(enquiryId: string): Promise<Enquiry | null> {
+    if (shouldUseBff()) {
+      try {
+        const res = await mobileApi<{ enquiry: Enquiry }>(`/api/mobile/enquiries/${enquiryId}`);
+        return res.enquiry;
+      } catch (e: any) {
+        if (e?.status === 404) return null;
+        throw e;
+      }
+    }
+
     const { data, error } = await supabase
       .from('enquiries')
       .select('*')
@@ -90,7 +105,7 @@ class EnquiryService {
 
     if (error) {
       if (error.code === 'PGRST116') {
-        return null; // Not found
+        return null;
       }
       console.error('EnquiryService.getEnquiryById error:', error);
       throw new Error(error.message || 'Failed to fetch enquiry');
@@ -101,4 +116,3 @@ class EnquiryService {
 }
 
 export const enquiryService = new EnquiryService();
-

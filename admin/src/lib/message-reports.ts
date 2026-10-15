@@ -1,8 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { requireAdmin } from "@/lib/authz"
 
 export type ReportStatus = "pending" | "reviewing" | "resolved" | "dismissed"
 
@@ -108,17 +108,14 @@ export async function updateMessageReportStatus(reportId: string, status: Report
     return { success: false, error: "Invalid report status." }
   }
 
-  const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { userId } = await requireAdmin()
 
   const adminSupabase = createAdminClient()
   const { error } = await adminSupabase
     .from("message_reports")
     .update({
       status,
-      reviewed_by: user?.id ?? null,
+      reviewed_by: userId,
       reviewed_at: new Date().toISOString(),
     })
     .eq("id", reportId)

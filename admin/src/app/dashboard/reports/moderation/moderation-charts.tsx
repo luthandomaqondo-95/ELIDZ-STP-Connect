@@ -61,7 +61,7 @@ export function ModerationCharts({ statusData, reasonData, trendData }: Moderati
                     {total === 0 ? (
                         <p className="text-sm text-muted-foreground">No reports submitted yet.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <PieChart>
                                 <Pie
                                     data={statusData}
@@ -104,7 +104,7 @@ export function ModerationCharts({ statusData, reasonData, trendData }: Moderati
                     {reasonData.length === 0 ? (
                         <p className="text-sm text-muted-foreground">No report reasons recorded yet.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <BarChart data={reasonData} layout="vertical" margin={{ left: 8 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} />

@@ -1,6 +1,6 @@
 import * as React from "react"
 import { Activity, BriefcaseBusiness, UsersRound, CalendarCheck } from "lucide-react"
-import { createClient } from "@/lib/supabase/server"
+import { createDashboardClient, getAuthedProfile } from "@/lib/authz"
 import Image from "next/image"
 
 import {
@@ -13,15 +13,17 @@ import { GeographicDistributionChart, UserDemographicsCharts } from "./reports/d
 import { AnalyticsCharts } from "./reports/analytics/analytics-charts"
 
 export default async function Page() {
-    const supabase = await createClient()
-    
-    // Resolve current user display name
-    const { data: auth } = await supabase.auth.getUser()
-    let displayName = "there"
-    if (auth?.user?.id) {
-        const { data: profile } = await supabase.from("profiles").select("name").eq("id", auth.user.id).single()
-        displayName = (profile?.name || auth.user.email || "there").split(" ")[0]
-    }
+    // Prefer custom-auth session when enabled; fall back stays Guest/"there".
+    const { user, profile } = await getAuthedProfile()
+    const displayName = (
+        (typeof profile?.name === "string" && profile.name) ||
+        user?.email ||
+        "there"
+    ).split(" ")[0]
+
+    // Authorize + data client after identity resolve so missing sessions redirect
+    // via middleware/layout rather than throwing a raw 500 from requireAdmin.
+    const supabase = await createDashboardClient()
     
     // Fetch real counts from Supabase
     const { count: userCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true })

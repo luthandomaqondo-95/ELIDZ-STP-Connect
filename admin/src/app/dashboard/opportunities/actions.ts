@@ -1,8 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { requireAdmin } from "@/lib/authz"
 
 type CreateOpportunityResult =
 	| { success: true; id: string }
@@ -21,14 +21,7 @@ export async function createOpportunity(formData: FormData): Promise<CreateOppor
 	}
 
 	try {
-		const supabase = await createClient()
-		const {
-			data: { user },
-		} = await supabase.auth.getUser()
-
-		if (!user) {
-			return { success: false, error: "Not authenticated." }
-		}
+		const { userId } = await requireAdmin()
 
 		const supabaseAdmin = createAdminClient()
 		const { data, error } = await supabaseAdmin
@@ -41,7 +34,7 @@ export async function createOpportunity(formData: FormData): Promise<CreateOppor
 				description,
 				requirements: requirements || null,
 				status: "active",
-				posted_by: user.id,
+				posted_by: userId,
 			})
 			.select("id")
 			.single()
@@ -60,6 +53,7 @@ export async function createOpportunity(formData: FormData): Promise<CreateOppor
 
 export async function deleteOpportunity(opportunityId: string): Promise<{ success: true } | { success: false; error: string }> {
 	try {
+		await requireAdmin()
 		const supabaseAdmin = createAdminClient()
 		const { error } = await supabaseAdmin.from("opportunities").delete().eq("id", opportunityId)
 

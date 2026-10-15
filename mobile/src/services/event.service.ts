@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { shouldUseBff, mobileApi } from '@/lib/mobile-api';
 
 export interface Event {
   id: string;
@@ -97,6 +98,11 @@ class EventServiceClass {
   }
 
   async hasUserRsvped(eventId: string): Promise<boolean> {
+    if (shouldUseBff()) {
+      const res = await mobileApi<{ rsvped: boolean }>(`/api/mobile/events/${eventId}/rsvp`);
+      return !!res.rsvped;
+    }
+
     const userId = await this.getCurrentUserId();
 
     const { data, error } = await supabase
@@ -114,6 +120,13 @@ class EventServiceClass {
   }
 
   async rsvpToEvent(eventId: string): Promise<EventRsvp> {
+    if (shouldUseBff()) {
+      const res = await mobileApi<{ rsvp: EventRsvp }>(`/api/mobile/events/${eventId}/rsvp`, {
+        method: 'POST',
+      });
+      return res.rsvp;
+    }
+
     const userId = await this.getCurrentUserId();
 
     const { data, error } = await supabase
@@ -138,6 +151,11 @@ class EventServiceClass {
   }
 
   async cancelRsvp(eventId: string): Promise<void> {
+    if (shouldUseBff()) {
+      await mobileApi(`/api/mobile/events/${eventId}/rsvp`, { method: 'DELETE' });
+      return;
+    }
+
     const userId = await this.getCurrentUserId();
 
     const { error } = await supabase

@@ -86,7 +86,7 @@ export function ChartBarLabelCustom<T extends Record<string, any> = DefaultBarDa
           >
             <CartesianGrid horizontal={false} />
             <YAxis
-              dataKey={categoryKey}
+              dataKey={categoryKey as string}
               type="category"
               tickLine={false}
               tickMargin={10}
@@ -94,12 +94,12 @@ export function ChartBarLabelCustom<T extends Record<string, any> = DefaultBarDa
               tickFormatter={(value) => value.slice(0, 3)}
               hide
             />
-            <XAxis dataKey={valueKey} type="number" domain={[0, "dataMax"]} hide />
+            <XAxis dataKey={valueKey as string} type="number" domain={[0, "dataMax"]} hide />
             <ChartTooltip
               cursor={false}
               content={<ChartTooltipContent indicator={tooltipIndicator} />}
             />
-            <Bar dataKey={valueKey} fill="var(--color-desktop)" radius={[0, 16, 16, 0]}>
+            <Bar dataKey={valueKey as string} fill="var(--color-desktop)" radius={[0, 16, 16, 0]}>
               {resolvedData.map((entry, index) => (
                 <Cell
                   key={`cell-${index}`}
@@ -107,14 +107,14 @@ export function ChartBarLabelCustom<T extends Record<string, any> = DefaultBarDa
                 />
               ))}
               <LabelList
-                dataKey={categoryKey}
+                dataKey={categoryKey as string}
                 position="insideLeft"
                 offset={8}
                 className="fill-(--color-label)"
                 fontSize={12}
               />
               <LabelList
-                dataKey={valueKey}
+                dataKey={valueKey as string}
                 position="right"
                 offset={8}
                 className="fill-foreground"

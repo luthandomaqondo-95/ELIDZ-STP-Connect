@@ -3,10 +3,10 @@ import { Newspaper } from "lucide-react"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { NewsPublisher } from "@/components/news/news-publisher"
 import { PublishedNewsList } from "@/components/news/published-news-list"
-import { createClient } from "@/lib/supabase/server"
+import { createDashboardClient } from "@/lib/authz"
 
 export default async function PublishNewsPage() {
-  const supabase = await createClient()
+  const supabase = await createDashboardClient()
   const { data: news } = await supabase
     .from("news")
     .select(

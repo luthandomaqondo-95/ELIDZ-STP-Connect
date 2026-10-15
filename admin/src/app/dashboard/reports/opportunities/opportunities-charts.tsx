@@ -70,7 +70,7 @@ export function OpportunitiesCharts({
                     {total === 0 ? (
                         <p className="text-sm text-muted-foreground">No opportunities posted yet.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <PieChart>
                                 <Pie
                                     data={statusData}
@@ -110,7 +110,7 @@ export function OpportunitiesCharts({
                     {typeData.length === 0 ? (
                         <p className="text-sm text-muted-foreground">No data available.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <BarChart data={typeData} layout="vertical" margin={{ left: 12 }}>
                                 <CartesianGrid strokeDasharray="3 3" horizontal={false} />
                                 <XAxis type="number" tickLine={false} axisLine={false} allowDecimals={false} />
@@ -174,7 +174,7 @@ export function OpportunitiesCharts({
                     {appStatusData.length === 0 ? (
                         <p className="text-sm text-muted-foreground">No applications received yet.</p>
                     ) : (
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={1} initialDimension={{ width: 320, height: 200 }}>
                             <BarChart data={appStatusData} barCategoryGap="30%">
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                                 <XAxis dataKey="name" tickLine={false} axisLine={false} />

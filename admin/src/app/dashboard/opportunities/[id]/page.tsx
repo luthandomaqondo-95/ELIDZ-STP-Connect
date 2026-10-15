@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server"
+import { createDashboardClient } from "@/lib/authz"
 import { notFound } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,7 +15,7 @@ interface PageProps {
 
 export default async function OpportunityPage({ params }: PageProps) {
     const { id } = await params
-    const supabase = await createClient()
+    const supabase = await createDashboardClient()
 
     // Fetch opportunity details
     const { data: opportunity, error } = await supabase

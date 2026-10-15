@@ -2,28 +2,14 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { DynamicBreadcrumb } from "@/components/ui/dynamic-breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { createClient } from "@/lib/supabase/server"
+import { buildSidebarUser, getAuthedProfile } from "@/lib/authz"
+
+// Dashboard reads request cookies (custom-auth session) and must not prerender.
+export const dynamic = "force-dynamic"
 
 export default async function Page({ children }: { children: React.ReactNode }) {
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
-
-    let userData = {
-        name: "Guest",
-        email: "",
-        avatar: "",
-        role: ""
-    }
-
-    if (user) {
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-        userData = {
-            name: profile?.name || user.email || "User",
-            email: user.email || "",
-            avatar: profile?.avatar || "",
-            role: profile?.role || ""
-        }
-    }
+    const { user, profile } = await getAuthedProfile()
+    const userData = buildSidebarUser(user, profile)
 
     return (
         <SidebarProvider>

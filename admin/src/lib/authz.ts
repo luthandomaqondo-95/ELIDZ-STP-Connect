@@ -1,4 +1,9 @@
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { isCustomAuthEnabled } from "@/lib/custom-auth/feature-flag";
+import { ACCESS_COOKIE } from "@/lib/custom-auth/cookies";
+import { resolveCustomAdminSession } from "@/lib/custom-auth/admin-session";
 
 export type AdminRole = "Admin" | "Super Admin";
 
@@ -17,7 +22,56 @@ export type AuthedProfileResult = {
   profile: Record<string, unknown> | null;
 };
 
+export type SidebarUser = {
+  name: string;
+  email: string;
+  avatar: string;
+  role: string;
+};
+
+/** Map authz result to sidebar display fields (Guest when unauthenticated). */
+export function buildSidebarUser(
+  user: AuthedProfileResult["user"],
+  profile: AuthedProfileResult["profile"]
+): SidebarUser {
+  if (!user) {
+    return { name: "Guest", email: "", avatar: "", role: "" };
+  }
+  return {
+    name:
+      (typeof profile?.name === "string" && profile.name) ||
+      user.email ||
+      "User",
+    email: user.email || "",
+    avatar: typeof profile?.avatar === "string" ? profile.avatar : "",
+    role: typeof profile?.role === "string" ? profile.role : "",
+  };
+}
+
 export async function getAuthedProfile() {
+  if (isCustomAuthEnabled()) {
+    try {
+      const jar = await cookies();
+      const access = jar.get(ACCESS_COOKIE)?.value;
+      const session = await resolveCustomAdminSession(access);
+      if (!session) {
+        return { user: null, profile: null } satisfies AuthedProfileResult;
+      }
+      const supabase = createAdminClient();
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", session.userId)
+        .single();
+      return {
+        user: { id: session.userId, email: session.email },
+        profile: (profile ?? null) as unknown as Record<string, unknown> | null,
+      } satisfies AuthedProfileResult;
+    } catch {
+      return { user: null, profile: null } satisfies AuthedProfileResult;
+    }
+  }
+
   const supabase = await createClient();
   const {
     data: { user },
@@ -79,5 +133,25 @@ export async function requireSuperAdmin() {
   }
 
   return { userId: user.id, role: role as "Super Admin", profile };
+}
+
+/**
+ * Authorized DB client for dashboard server components/actions.
+ * Custom auth: require Admin/Super Admin session cookies, then use service-role
+ * (dashboard has no Supabase Auth cookie / auth.uid() under custom auth).
+ * Legacy Supabase Auth: keep the user-scoped SSR anon client + RLS.
+ */
+export async function createDashboardClient() {
+  if (isCustomAuthEnabled()) {
+    const { user, profile } = await getAuthedProfile();
+    const role = (profile?.role ?? "") as ProfileRole;
+    if (!user || (role !== "Admin" && role !== "Super Admin")) {
+      // Avoid raw 500s from thrown Unauthorized in Server Components.
+      const { redirect } = await import("next/navigation");
+      redirect("/auth/login");
+    }
+    return createAdminClient();
+  }
+  return createClient();
 }
 

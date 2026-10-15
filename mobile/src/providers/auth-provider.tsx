@@ -9,6 +9,48 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import { router } from 'expo-router';
 import { authService, SocialProvider } from '@/services/auth.service';
+import { isCustomAuthEnabled } from '@/lib/feature-flags';
+import type { CustomSession } from '@/lib/custom-auth-session';
+import {
+	customLogin,
+	customLogout,
+	customOAuthApple,
+	customOAuthGoogle,
+	customRegister,
+	customResendVerification,
+	getMemoryUser,
+	restoreCustomSession,
+} from '@/lib/custom-auth-session';
+
+/** Map custom auth session into the Session shape consumers already expect. */
+function customSessionToSupabaseSession(session: CustomSession): Session {
+	const expiresAt =
+		Math.floor(Date.parse(session.accessExpiresAt) / 1000) ||
+		Math.floor(Date.now() / 1000) + 900;
+	return {
+		access_token: session.accessToken,
+		refresh_token: session.refreshToken,
+		expires_in: Math.max(0, expiresAt - Math.floor(Date.now() / 1000)),
+		expires_at: expiresAt,
+		token_type: 'bearer',
+		user: {
+			id: session.user.id,
+			aud: 'authenticated',
+			role: 'authenticated',
+			email: session.user.email,
+			email_confirmed_at: new Date().toISOString(),
+			phone: '',
+			confirmed_at: new Date().toISOString(),
+			last_sign_in_at: new Date().toISOString(),
+			app_metadata: { provider: 'custom', providers: ['custom'] },
+			user_metadata: { name: session.user.name, role: session.user.role },
+			identities: [],
+			created_at: new Date().toISOString(),
+			updated_at: new Date().toISOString(),
+			is_anonymous: false,
+		},
+	} as Session;
+}
 
 /** Parse auth params from OAuth callback URL (handles both hash and query params). */
 function getAuthParamsFromUrl(url: string): { code?: string; access_token?: string; refresh_token?: string } {
@@ -69,6 +111,25 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 	async function loadProfile(userId: string) {
 		try {
+			const { shouldUseBff, mobileApi } = await import('@/lib/mobile-api');
+			if (shouldUseBff()) {
+				const { profile: data } = await mobileApi<{ profile: Profile }>('/api/mobile/profile');
+				if (data) {
+					if (isAccountSuspended(data)) {
+						if (isCustomAuthEnabled()) {
+							await customLogout();
+						} else {
+							await supabase.auth.signOut();
+						}
+						setSession(null);
+						setProfile(null);
+						return;
+					}
+					setProfile(data);
+				}
+				return;
+			}
+
 			const { data, error } = await supabase
 				.from('profiles')
 				.select('*')
@@ -105,6 +166,24 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		const normalizedEmail = email.trim().toLowerCase();
 		
 		console.log('AuthProvider.login: Attempting login with email:', normalizedEmail);
+
+		if (isCustomAuthEnabled()) {
+			try {
+				const custom = await customLogin(normalizedEmail, password);
+				setSession(customSessionToSupabaseSession(custom));
+				await loadProfile(custom.user.id);
+			} catch (err) {
+				const msg = err instanceof Error ? err.message : 'Something went wrong. Please try again.';
+				if (/confirm your account/i.test(msg)) {
+					throw new Error('Please check your email and confirm your account before logging in.');
+				}
+				if (/Invalid email or password/i.test(msg)) {
+					throw new Error('Invalid email or password. Please check your credentials and try again.');
+				}
+				throw new Error(msg);
+			}
+			return;
+		}
 		
 		const { data, error } = await supabase.auth.signInWithPassword({
 			email: normalizedEmail,
@@ -147,6 +226,32 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		const normalizedEmail = email.trim().toLowerCase();
 		const normalizedAddress = address.trim();
 		const trimmedIdNumber = (idNumber ?? '').trim() || null;
+
+		if (isCustomAuthEnabled()) {
+			try {
+				const result = await customRegister({
+					name: trimmedName,
+					email: normalizedEmail,
+					password,
+					role,
+					address: normalizedAddress,
+					idNumber: trimmedIdNumber,
+				});
+				if (result.requiresEmailConfirmation) {
+					throw new Error('EMAIL_CONFIRMATION_REQUIRED: Please check your email to confirm your account before logging in.');
+				}
+			} catch (err) {
+				const message = err instanceof Error ? err.message : 'Failed to create user account';
+				if (message.startsWith('EMAIL_CONFIRMATION_REQUIRED:')) throw err;
+				if (/already registered/i.test(message)) {
+					throw new Error(
+						'This email is already registered. Please confirm your email first, or log in if you already confirmed.'
+					);
+				}
+				throw new Error(message);
+			}
+			return;
+		}
 
 		const { data: authData, error: authError } = await supabase.auth.signUp({
 			email: normalizedEmail,
@@ -267,6 +372,11 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 			throw new Error('Please enter your email first.');
 		}
 
+		if (isCustomAuthEnabled()) {
+			await customResendVerification(normalizedEmail);
+			return;
+		}
+
 		const RESEND_TIMEOUT_MS = 15000;
 		const resendPromise = supabase.auth.resend({
 			type: 'signup',
@@ -352,6 +462,14 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 					throw new Error('No ID token received from Google');
 				}
 
+				if (isCustomAuthEnabled()) {
+					const custom = await customOAuthGoogle(response.data.idToken);
+					const mapped = customSessionToSupabaseSession(custom);
+					setSession(mapped);
+					await loadProfile(custom.user.id);
+					return { user: mapped.user, session: mapped };
+				}
+
 				const { user, session, error } = await authService.signInWithIdToken('google', response.data.idToken);
 
 				if (error) {
@@ -409,6 +527,21 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 	}
 
 	async function socialSignIn(provider: SocialProvider, idToken: string, nonce?: string): Promise<{ error: Error | null }> {
+		if (isCustomAuthEnabled()) {
+			try {
+				const custom =
+					provider === 'google'
+						? await customOAuthGoogle(idToken)
+						: await customOAuthApple(idToken);
+				const mapped = customSessionToSupabaseSession(custom);
+				setSession(mapped);
+				await loadProfile(custom.user.id);
+				return { error: null };
+			} catch (e) {
+				return { error: e instanceof Error ? e : new Error(String(e)) };
+			}
+		}
+
 		const { user, session, error } = await authService.signInWithIdToken(provider, idToken, nonce);
 		if (error) {
 			return { error };
@@ -441,6 +574,14 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 
 				if (!credential.identityToken) {
 					throw new Error('Apple did not return an identity token. Try again.');
+				}
+
+				if (isCustomAuthEnabled()) {
+					const custom = await customOAuthApple(credential.identityToken);
+					const mapped = customSessionToSupabaseSession(custom);
+					setSession(mapped);
+					await loadProfile(custom.user.id);
+					return { user: mapped.user, session: mapped };
 				}
 
 				const { data, error } = await supabase.auth.signInWithIdToken({
@@ -512,6 +653,16 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 	}
 
 	async function logout() {
+		if (isCustomAuthEnabled()) {
+			try {
+				await customLogout();
+			} catch (error) {
+				Sentry.captureException(error);
+			}
+			setProfile(null);
+			setSession(null);
+			return;
+		}
 		const { error } = await supabase.auth.signOut();
 		if (error) {
 			Sentry.captureException(error);
@@ -539,22 +690,39 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 				? updates.verification_status
 				: undefined;
 
-		const { error } = await supabase
-			.from('profiles')
-			.update({
-				name: updates.name,
-				email: updates.email,
-				address: updates.address,
-				organization: updates.organization,
-				bio: updates.bio,
-				avatar: updates.avatar,
-				role: nextRole,
-				verification_status: nextVerificationStatus,
-			})
-			.eq('id', session.user.id);
+		const { shouldUseBff, mobileApi } = await import('@/lib/mobile-api');
+		if (shouldUseBff()) {
+			await mobileApi('/api/mobile/profile', {
+				method: 'PATCH',
+				body: {
+					name: updates.name,
+					email: updates.email,
+					address: updates.address,
+					organization: updates.organization,
+					bio: updates.bio,
+					avatar: updates.avatar,
+					role: nextRole,
+					verification_status: nextVerificationStatus,
+				},
+			});
+		} else {
+			const { error } = await supabase
+				.from('profiles')
+				.update({
+					name: updates.name,
+					email: updates.email,
+					address: updates.address,
+					organization: updates.organization,
+					bio: updates.bio,
+					avatar: updates.avatar,
+					role: nextRole,
+					verification_status: nextVerificationStatus,
+				})
+				.eq('id', session.user.id);
 
-		if (error) {
-			throw new Error(error.message);
+			if (error) {
+				throw new Error(error.message);
+			}
 		}
 
 		await loadProfile(session.user.id);
@@ -563,6 +731,36 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 	useEffect(() => {
 		const fetchSession = async () => {
 			setIsLoading(true)
+
+			if (isCustomAuthEnabled()) {
+				try {
+					const user = await restoreCustomSession();
+					if (user) {
+						const mem = getMemoryUser();
+						// Rebuild a minimal session shell; access token lives in memory via custom-auth-session.
+						const { getValidAccessToken } = await import('@/lib/custom-auth-session');
+						const accessToken = await getValidAccessToken();
+						setSession(
+							customSessionToSupabaseSession({
+								accessToken,
+								refreshToken: '',
+								accessExpiresAt: new Date(Date.now() + 14 * 60 * 1000).toISOString(),
+								user: mem ?? user,
+							})
+						);
+						await loadProfile(user.id);
+					} else {
+						setSession(null);
+						setProfile(null);
+					}
+				} catch (e) {
+					console.warn('Custom session restore failed', e);
+					setSession(null);
+					setProfile(null);
+				}
+				setIsLoading(false);
+				return;
+			}
 
 			const {
 				data: { session },
@@ -586,6 +784,10 @@ export default function AuthProvider({ children }: PropsWithChildren) {
 		}
 
 		fetchSession()
+
+		if (isCustomAuthEnabled()) {
+			return;
+		}
 
 		const {
 			data: { subscription },

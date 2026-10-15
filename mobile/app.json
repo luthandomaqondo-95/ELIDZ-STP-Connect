@@ -145,6 +145,11 @@
     "extra": {
       "supabaseUrl": "https://msngrgkyoozqysxtggfw.supabase.co",
       "appWebUrl": "https://elidzconnect.vercel.app",
+      "apiBaseUrl": "",
+      "customAuthEnabled": false,
+      "bffRequired": false,
+      "useChatPoll": false,
+      "useBffUploads": false,
       "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zbmdyZ2t5b296cXlzeHRnZ2Z3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjM3OTk4MjYsImV4cCI6MjA3OTM3NTgyNn0.epIGq-VP_ULklXjG5zWy3KjOGZa52Z_vcRein_ewaZc",
       "router": {},
       "eas": {

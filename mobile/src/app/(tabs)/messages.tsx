@@ -65,54 +65,67 @@ function MessagesScreen() {
         // Subscribe to new messages to update the list in real-time
         let invalidationTimeout: ReturnType<typeof setTimeout>;
         let connectionsTimeout: ReturnType<typeof setTimeout>;
+        let pollTimer: ReturnType<typeof setInterval> | null = null;
+        let cancelled = false;
+        let channel: ReturnType<typeof supabase.channel> | null = null;
 
-        const channel = supabase
-            .channel('public:messages-and-connections')
-            .on(
-                'postgres_changes',
-                { event: 'INSERT', schema: 'public', table: 'messages' },
-                () => {
-                    // Invalidate on any new message (sent or received) so last message preview and unread badge update immediately
-                    clearTimeout(invalidationTimeout);
-                    invalidationTimeout = setTimeout(() => {
-                        queryClient.invalidateQueries({ queryKey: ['contacts'] });
-                        queryClient.invalidateQueries({ queryKey: ['chats'] });
-                    }, 300);
-                }
-            )
-            .on(
-                'postgres_changes',
-                { event: 'UPDATE', schema: 'public', table: 'messages' },
-                () => {
-                    // When messages are marked read (read_at updated), refresh to clear unread badge
-                    clearTimeout(invalidationTimeout);
-                    invalidationTimeout = setTimeout(() => {
-                        queryClient.invalidateQueries({ queryKey: ['contacts'] });
-                        queryClient.invalidateQueries({ queryKey: ['chats'] });
-                    }, 300);
-                }
-            )
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'connections',
-                },
-                () => {
-                    // Connection created, updated, or deleted - refetch contacts to stay in sync with Supabase
-                    clearTimeout(connectionsTimeout);
-                    connectionsTimeout = setTimeout(() => {
-                        queryClient.refetchQueries({ queryKey: ['contacts'] });
-                    }, 300);
-                }
-            )
-            .subscribe();
+        const invalidateLists = () => {
+            clearTimeout(invalidationTimeout);
+            invalidationTimeout = setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['contacts'] });
+                queryClient.invalidateQueries({ queryKey: ['chats'] });
+            }, 300);
+        };
+
+        (async () => {
+            const { shouldUseChatPolling } = await import('@/lib/feature-flags');
+            if (shouldUseChatPolling()) {
+                pollTimer = setInterval(() => {
+                    if (cancelled) return;
+                    invalidateLists();
+                }, 5000);
+                return;
+            }
+
+            channel = supabase
+                .channel('public:messages-and-connections')
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: 'messages' },
+                    () => {
+                        invalidateLists();
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: 'messages' },
+                    () => {
+                        invalidateLists();
+                    }
+                )
+                .on(
+                    'postgres_changes',
+                    {
+                        event: '*',
+                        schema: 'public',
+                        table: 'connections',
+                    },
+                    () => {
+                        clearTimeout(connectionsTimeout);
+                        connectionsTimeout = setTimeout(() => {
+                            queryClient.refetchQueries({ queryKey: ['contacts'] });
+                        }, 300);
+                    }
+                )
+                .subscribe();
+        })();
 
         return () => {
+            cancelled = true;
             clearTimeout(invalidationTimeout);
             clearTimeout(connectionsTimeout);
-            supabase.removeChannel(channel);
+            if (pollTimer) clearInterval(pollTimer);
+            if (channel) supabase.removeChannel(channel);
         };
     }, [profile?.id, queryClient]);
 

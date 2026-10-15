@@ -42,3 +42,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vercel
+.env*.local
+
+# local Playwright smoke artifacts / secrets
+scripts/.vercel-bypass-secret
+scripts/preview-login*.png
+scripts/bypass-*.html
+scripts/bypass-headers.txt

@@ -17,7 +17,16 @@ export default async function AllUsersPage({
 
     let users: User[] = []
     try {
-        users = await listAdminUsers(selectedRole)
+        users = (await listAdminUsers(selectedRole)).map((row) => ({
+            id: row.id,
+            name: row.name,
+            email: row.email,
+            role: row.role,
+            status: row.status,
+            company: row.company,
+            lastActive: row.lastActive,
+            avatar: row.avatar ?? "",
+        }))
     } catch (error) {
         console.error("Error loading users:", error)
         users = []
@@ -40,7 +49,7 @@ export default async function AllUsersPage({
                 }
                 backHref={selectedRole ? "/dashboard/users/roles" : undefined}
             />
-            <UsersTable users={users} initialRole={selectedRole} />
+            <UsersTable users={users} />
         </div>
     );
 }

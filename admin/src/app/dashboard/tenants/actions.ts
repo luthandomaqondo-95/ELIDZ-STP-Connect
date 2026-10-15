@@ -1,8 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { createClient } from "@/lib/supabase/server"
 import { createAdminClient } from "@/lib/supabase/admin"
+import { requireAdmin } from "@/lib/authz"
 import {
   buildTenantLogoPath,
   isAllowedTenantLogoType,
@@ -79,21 +79,14 @@ async function resolveLogoUrl(formData: FormData, userId: string, existingLogoUr
 
 export async function createTenant(formData: FormData): Promise<TenantMutationResult> {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return { success: false, error: "Not authenticated." }
-    }
+    const { userId } = await requireAdmin()
 
     const payload = readTenantPayload(formData)
     if (!payload.name) {
       return { success: false, error: "Tenant name is required." }
     }
 
-    const logo_url = await resolveLogoUrl(formData, user.id)
+    const logo_url = await resolveLogoUrl(formData, userId)
 
     const supabaseAdmin = createAdminClient()
     const { data, error } = await supabaseAdmin
@@ -101,7 +94,7 @@ export async function createTenant(formData: FormData): Promise<TenantMutationRe
       .insert({
         ...payload,
         logo_url,
-        created_by: user.id,
+        created_by: userId,
       })
       .select("id")
       .single()
@@ -121,14 +114,7 @@ export async function createTenant(formData: FormData): Promise<TenantMutationRe
 
 export async function updateTenant(tenantId: string, formData: FormData): Promise<TenantMutationResult> {
   try {
-    const supabase = await createClient()
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return { success: false, error: "Not authenticated." }
-    }
+    const { userId } = await requireAdmin()
 
     if (!tenantId) {
       return { success: false, error: "Missing tenant id." }
@@ -146,7 +132,7 @@ export async function updateTenant(tenantId: string, formData: FormData): Promis
       .eq("id", tenantId)
       .maybeSingle()
 
-    const logo_url = await resolveLogoUrl(formData, user.id, existing?.logo_url)
+    const logo_url = await resolveLogoUrl(formData, userId, existing?.logo_url)
 
     const { data, error } = await supabaseAdmin
       .from("tenants")
@@ -175,6 +161,7 @@ export async function updateTenant(tenantId: string, formData: FormData): Promis
 
 export async function deleteTenant(tenantId: string): Promise<DeleteTenantResult> {
   try {
+    await requireAdmin()
     if (!tenantId) {
       return { success: false, error: "Missing tenant id." }
     }
