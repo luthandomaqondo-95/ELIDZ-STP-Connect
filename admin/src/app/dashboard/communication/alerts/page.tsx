@@ -9,6 +9,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
+import { useState } from "react"
+import { toast } from "sonner"
 import { BellRing } from "lucide-react"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
@@ -19,7 +21,52 @@ import {
     SelectItem,
 } from "@/components/floating-input"
 
+const EMPTY_ALERT = { targetAudience: "", type: "", title: "", message: "" }
+
 export default function SendAlertsPage() {
+    const [form, setForm] = useState(EMPTY_ALERT)
+    const [sending, setSending] = useState(false)
+    const [error, setError] = useState<string | null>(null)
+
+    const update = (field: keyof typeof EMPTY_ALERT) => (value: string) =>
+        setForm((prev) => ({ ...prev, [field]: value }))
+
+    async function handleSend() {
+        setError(null)
+        if (!form.targetAudience || !form.type || !form.title.trim() || !form.message.trim()) {
+            setError("Please choose an audience and type, and fill in the title and message.")
+            return
+        }
+
+        setSending(true)
+        try {
+            const res = await fetch("/api/admin/alerts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: form.title.trim(),
+                    message: form.message.trim(),
+                    type: form.type,
+                    targetAudience: form.targetAudience,
+                }),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok) {
+                const message = typeof json.error === "string" ? json.error : "Failed to send alert."
+                setError(message)
+                toast.error(message)
+                return
+            }
+            toast.success(json.duplicate ? "This alert was already sent moments ago." : json.message ?? "Alert sent.")
+            setForm(EMPTY_ALERT)
+        } catch {
+            setError("Failed to send alert.")
+            toast.error("Failed to send alert.")
+        } finally {
+            setSending(false)
+        }
+    }
+
     return (
         <div className="flex flex-1 flex-col gap-3 sm:gap-4 pt-0">
             <DashboardPageHeader title="Send Alerts" icon={<BellRing className="h-5 w-5" />} />
@@ -39,16 +86,21 @@ export default function SendAlertsPage() {
                             <FloatingLabelSelect
                                 label="Target Audience"
                                 placeholder="Select audience"
+                                value={form.targetAudience}
+                                onValueChange={update("targetAudience")}
                                 className="h-10 rounded-3xl border-transparent bg-orange-100/80 px-3 sm:h-11 sm:px-4 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
                             >
                                 <SelectItem value="all">All Users</SelectItem>
                                 <SelectItem value="tenants">Tenants Only</SelectItem>
-                                <SelectItem value="investors">Investors Only</SelectItem>
+                                <SelectItem value="entrepreneurs">Entrepreneurs Only</SelectItem>
+                                <SelectItem value="smmes">SMMEs Only</SelectItem>
                                 <SelectItem value="staff">Staff Only</SelectItem>
                             </FloatingLabelSelect>
                             <FloatingLabelSelect
                                 label="Alert Type"
                                 placeholder="Select type"
+                                value={form.type}
+                                onValueChange={update("type")}
                                 className="h-10 rounded-3xl border-transparent bg-orange-100/80 px-3 sm:h-11 sm:px-4 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
                             >
                                 <SelectItem value="info">Information</SelectItem>
@@ -62,6 +114,9 @@ export default function SendAlertsPage() {
                             id="title"
                             label="Title"
                             placeholder="Alert title"
+                            value={form.title}
+                            onChange={(e) => update("title")(e.target.value)}
+                            maxLength={120}
                             className="h-10 rounded-3xl border-transparent bg-orange-100/80 px-3 sm:h-11 sm:px-4 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
                         />
 
@@ -69,8 +124,12 @@ export default function SendAlertsPage() {
                             id="message"
                             label="Message"
                             placeholder="Type your message here..."
+                            value={form.message}
+                            onChange={(e) => update("message")(e.target.value)}
                             className="min-h-[140px] rounded-3xl border-transparent bg-orange-100/80 px-3 py-2.5 sm:px-4 sm:py-3 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
                         />
+
+                        {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
 
                         <div className="pt-4">
                             <div className="mb-3 text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -90,11 +149,20 @@ export default function SendAlertsPage() {
                         </div>
                         <Button
                             variant="outline"
+                            type="button"
+                            disabled={sending}
+                            onClick={() => { setForm(EMPTY_ALERT); setError(null) }}
                             className="h-10 rounded-3xl border-0 bg-red-600 px-5 font-semibold text-white shadow-[0_8px_20px_-6px_rgba(0,0,0,0.4)] hover:bg-red-700 dark:shadow-[0_8px_22px_-6px_rgba(0,0,0,0.85)] dark:bg-red-700 dark:hover:bg-red-800"
                         >
                             Cancel
                         </Button>
-                        <AnimatedDashboardButton label="Send Alert" className="h-10 rounded-3xl px-5" />
+                        <AnimatedDashboardButton
+                            label="Send Alert"
+                            className="h-10 rounded-3xl px-5"
+                            isLoading={sending}
+                            disabled={sending}
+                            onClick={handleSend}
+                        />
                     </CardFooter>
                 </Card>
             </div>

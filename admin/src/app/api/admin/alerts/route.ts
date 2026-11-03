@@ -125,7 +125,7 @@ export async function POST(request: NextRequest) {
         const { data: smmes, error: smmesError } = await supabase
           .from("profiles")
           .select("id")
-          .eq("role", "SMME");
+          .in("role", ["SME", "SMME"]);
         
         if (smmesError) throw smmesError;
         userIds = smmes.map(smme => smme.id);
@@ -160,7 +160,6 @@ export async function POST(request: NextRequest) {
     }));
 
     console.log("Attempting to insert notifications into database...");
-    console.log("Notifications to insert:", JSON.stringify(notifications, null, 2));
 
     const { data, error } = await supabase
       .from("notifications")
@@ -170,7 +169,6 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error("Error creating notifications:", error);
       console.error("Error details:", JSON.stringify(error, null, 2));
-      console.error("Notifications data:", JSON.stringify(notifications, null, 2));
       return NextResponse.json(
         { 
           error: "Failed to create notifications",
@@ -182,7 +180,6 @@ export async function POST(request: NextRequest) {
     }
 
     console.log("Successfully inserted notifications:");
-    console.log("Inserted data:", JSON.stringify(data, null, 2));
     console.log(`Number of notifications created: ${data?.length || 0}`);
 
     await notifySuperAdminsOfAdminAction({

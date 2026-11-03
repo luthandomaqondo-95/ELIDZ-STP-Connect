@@ -51,6 +51,16 @@ export async function createOpportunity(formData: FormData): Promise<CreateOppor
 	}
 }
 
+export async function listTenantOptions(): Promise<{ id: string; name: string }[]> {
+	await requireAdmin()
+	const { data, error } = await createAdminClient()
+		.from("tenants")
+		.select("id, name")
+		.order("name", { ascending: true })
+	if (error) throw new Error(error.message)
+	return data ?? []
+}
+
 export async function deleteOpportunity(opportunityId: string): Promise<{ success: true } | { success: false; error: string }> {
 	try {
 		await requireAdmin()
@@ -73,7 +83,6 @@ export async function deleteOpportunity(opportunityId: string): Promise<{ succes
 export type OpportunityUpdate = {
 	title: string
 	type: string
-	location?: string
 	deadline: string | null
 	description: string
 	requirements: string | null
@@ -87,7 +96,7 @@ export async function getOpportunityForEdit(
 		const supabaseAdmin = createAdminClient()
 		const { data, error } = await supabaseAdmin
 			.from("opportunities")
-			.select("title, type, location, deadline, description, requirements")
+			.select("title, type, deadline, description, requirements")
 			.eq("id", opportunityId)
 			.single()
 
@@ -117,7 +126,6 @@ export async function updateOpportunity(
 			.update({
 				title: fields.title,
 				type: fields.type,
-				...(fields.location !== undefined ? { location: fields.location } : {}),
 				deadline: fields.deadline || null,
 				description: fields.description,
 				requirements: fields.requirements || null,

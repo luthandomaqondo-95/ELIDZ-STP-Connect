@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Save, X, ShieldAlert, CheckCircle2 } from "lucide-react";
 import { saveRolePermissions, type PermissionDef } from "../actions";
 
-const ROLE_ORDER = ["Super Admin", "Admin", "Entrepreneur", "Tenant", "Investor"];
+const ROLE_ORDER = ["Super Admin", "Admin", "Entrepreneur", "SMME", "Tenant"];
 
 export function PermissionsClient({
   selectedRole,
@@ -44,11 +44,12 @@ export function PermissionsClient({
   }, [allPermissions]);
 
   const allRoles = useMemo(() => {
+    // Known roles are always listed so a role with no permission rows yet can be granted some.
     const fromDB = Object.keys(rolePermissions);
-    const ordered = ROLE_ORDER.filter((r) => fromDB.includes(r));
-    const rest = fromDB.filter((r) => !ROLE_ORDER.includes(r)).sort();
-    return [...ordered, ...rest];
-  }, [rolePermissions]);
+    const extra = selectedRole && !ROLE_ORDER.includes(selectedRole) ? [selectedRole] : [];
+    const rest = [...fromDB, ...extra].filter((r, i, all) => !ROLE_ORDER.includes(r) && all.indexOf(r) === i).sort();
+    return [...ROLE_ORDER, ...rest];
+  }, [rolePermissions, selectedRole]);
 
   const displayedRoles = selectedRole
     ? allRoles.filter((r) => r === selectedRole)
