@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminApi } from "@/lib/authz";
+import { signPrivateStorageUrls } from "@/lib/storage-signing";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -54,7 +55,7 @@ export async function GET(
 
     const allItems = items || [];
     return NextResponse.json({
-      documents: docs || [],
+      documents: await signPrivateStorageUrls(docs || [], "document_url"),
       products: allItems.filter((i: any) => i.type === "Product"),
       services: allItems.filter((i: any) => i.type === "Service"),
     });

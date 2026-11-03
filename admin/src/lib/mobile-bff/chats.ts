@@ -1,5 +1,6 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { assertChatParticipant } from "./guards";
+import { signPrivateStorageUrl, signPrivateStorageUrls } from "@/lib/storage-signing";
 
 export async function listOwnChats(userId: string, limit: number) {
   const supabase = createAdminClient();
@@ -38,8 +39,9 @@ export async function listOwnChats(userId: string, limit: number) {
 
   if (mErr) throw new Error(mErr.message);
 
+  const signedMessages = await signPrivateStorageUrls(recentMessages || [], "attachment_url");
   const lastByChat = new Map<string, (typeof recentMessages)[0]>();
-  for (const msg of recentMessages || []) {
+  for (const msg of signedMessages) {
     if (!lastByChat.has(msg.chat_id)) lastByChat.set(msg.chat_id, msg);
   }
 
@@ -71,7 +73,7 @@ export async function listChatMessages(userId: string, chatId: string, limit: nu
     .limit(limit);
 
   if (error) throw new Error(error.message);
-  return (data || []).reverse();
+  return (await signPrivateStorageUrls(data || [], "attachment_url")).reverse();
 }
 
 export async function sendChatMessage(
@@ -112,7 +114,7 @@ export async function sendChatMessage(
     .update({ updated_at: new Date().toISOString() })
     .eq("id", chatId);
 
-  return data;
+  return signPrivateStorageUrl(data, "attachment_url");
 }
 
 export async function createDirectChat(userId: string, otherUserId: string) {

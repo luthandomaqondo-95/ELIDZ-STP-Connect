@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdmin } from "@/lib/authz"
+import { signPrivateStorageUrl, signPrivateStorageUrls } from "@/lib/storage-signing"
 import type { Chat, Message, Profile } from "@/types/chat"
 
 /**
@@ -62,7 +63,8 @@ export async function listAdminChats(): Promise<Chat[]> {
   }
 
   const lastMessageByChat = new Map<string, Message>()
-  for (const msg of allMessagesResult.data ?? []) {
+  const recentMessages = await signPrivateStorageUrls(allMessagesResult.data ?? [], "attachment_url")
+  for (const msg of recentMessages) {
     if (!lastMessageByChat.has(msg.chat_id)) lastMessageByChat.set(msg.chat_id, msg as Message)
   }
 
@@ -96,7 +98,7 @@ export async function listChatMessages(chatId: string): Promise<Message[]> {
     .order("created_at", { ascending: false })
     .limit(50)
   if (error) throw new Error(error.message)
-  return ((data ?? []) as Message[]).reverse()
+  return ((await signPrivateStorageUrls(data ?? [], "attachment_url")) as Message[]).reverse()
 }
 
 export async function sendChatMessage(chatId: string, content: string): Promise<Message> {
@@ -114,7 +116,7 @@ export async function sendChatMessage(chatId: string, content: string): Promise<
   if (error || !data) throw new Error(error?.message || "Failed to send message")
 
   await supabase.from("chats").update({ updated_at: new Date().toISOString() }).eq("id", chatId)
-  return data as Message
+  return (await signPrivateStorageUrl(data, "attachment_url")) as Message
 }
 
 export async function markChatRead(chatId: string): Promise<void> {

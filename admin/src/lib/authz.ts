@@ -3,8 +3,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { isCustomAuthEnabled } from "@/lib/custom-auth/feature-flag";
-import { ACCESS_COOKIE } from "@/lib/custom-auth/cookies";
-import { resolveCustomAdminSession } from "@/lib/custom-auth/admin-session";
+import { ACCESS_COOKIE, REFRESH_COOKIE, sessionCookieOptions } from "@/lib/custom-auth/cookies";
+import { isAdminRole, resolveCustomAdminSession } from "@/lib/custom-auth/admin-session";
+import { refresh as refreshCustomSession } from "@/lib/custom-auth/service";
 
 export type AdminRole = "Admin" | "Super Admin";
 
@@ -49,12 +50,46 @@ export function buildSidebarUser(
   };
 }
 
+type CookieJar = Awaited<ReturnType<typeof cookies>>;
+
+/**
+ * Access JWT expired mid-page (15 min TTL): rotate the refresh cookie and continue, so
+ * client fetches and server actions don't 401 until the next navigation. Only runs where
+ * cookies are writable (route handlers / server actions); in server components the
+ * middleware has already refreshed before render.
+ */
+async function refreshCustomAdminSession(jar: CookieJar) {
+  const refreshToken = jar.get(REFRESH_COOKIE)?.value;
+  if (!refreshToken) return null;
+
+  try {
+    // Probe writability first: rotating and then failing to store the new refresh
+    // token would sign the admin out.
+    jar.set("elidz_cookie_probe", "", { path: "/", maxAge: 0 });
+  } catch {
+    return null;
+  }
+
+  try {
+    const session = await refreshCustomSession(refreshToken);
+    if (!isAdminRole(session.user.role)) return null;
+    jar.set(ACCESS_COOKIE, session.accessToken, sessionCookieOptions("access"));
+    jar.set(REFRESH_COOKIE, session.refreshToken, sessionCookieOptions("refresh"));
+    return await resolveCustomAdminSession(session.accessToken);
+  } catch {
+    // Revoked, expired, suspended, or a concurrent request rotated it first.
+    return null;
+  }
+}
+
 export async function getAuthedProfile() {
   if (isCustomAuthEnabled()) {
     try {
       const jar = await cookies();
       const access = jar.get(ACCESS_COOKIE)?.value;
-      const session = await resolveCustomAdminSession(access);
+      const session =
+        (await resolveCustomAdminSession(access).catch(() => null)) ??
+        (await refreshCustomAdminSession(jar));
       if (!session) {
         return { user: null, profile: null } satisfies AuthedProfileResult;
       }

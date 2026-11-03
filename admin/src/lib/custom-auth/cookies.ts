@@ -10,6 +10,17 @@ function cookieSecure(): boolean {
   return process.env.NODE_ENV === "production";
 }
 
+/** Cookie options for writing session cookies via `cookies()` (route handlers / server actions). */
+export function sessionCookieOptions(kind: "access" | "refresh") {
+  return {
+    httpOnly: true,
+    secure: cookieSecure(),
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: kind === "access" ? ACCESS_MAX_AGE : REFRESH_MAX_AGE,
+  };
+}
+
 export function setSessionCookies(
   response: NextResponse,
   tokens: { accessToken: string; refreshToken: string }

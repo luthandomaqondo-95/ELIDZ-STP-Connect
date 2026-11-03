@@ -473,10 +473,16 @@ function MessageScreen() {
           { event: 'INSERT', schema: 'public', table: 'messages', filter: `chat_id=eq.${chatId}` },
           (payload) => {
             const newMsg = payload.new as Message;
-            setMessages((curr) => {
-              if (curr.find((m) => m.id === newMsg.id)) return curr;
-              return [...curr, newMsg];
-            });
+            if (newMsg.attachment_url) {
+              // Raw rows carry the unsigned storage URL; refetch so the server signs it
+              // (chat-attachments is a private bucket).
+              loadMessages();
+            } else {
+              setMessages((curr) => {
+                if (curr.find((m) => m.id === newMsg.id)) return curr;
+                return [...curr, newMsg];
+              });
+            }
             if (newMsg.sender_id !== user.id) {
               chatService.markMessagesAsRead(chatId, user.id);
             }

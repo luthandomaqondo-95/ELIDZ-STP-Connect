@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { signPrivateStorageUrl, signPrivateStorageUrls } from "@/lib/storage-signing";
 
 const DOC_TYPES = [
   "Business Registration",
@@ -17,7 +18,7 @@ export async function listOwnVerifications(userId: string) {
     .order("created_at", { ascending: false });
 
   if (error) throw new Error(error.message);
-  return data || [];
+  return signPrivateStorageUrls(data || [], "document_url");
 }
 
 export async function submitOwnVerification(
@@ -49,5 +50,5 @@ export async function submitOwnVerification(
     .single();
 
   if (error) throw new Error(error.message);
-  return data;
+  return signPrivateStorageUrl(data, "document_url");
 }
