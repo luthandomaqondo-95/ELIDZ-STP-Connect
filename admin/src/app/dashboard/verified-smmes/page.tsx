@@ -117,11 +117,18 @@ export default function VerifiedSmmePage() {
                         <td>
                             {(() => {
                                 const isVerified = smme.verification_status === "verified"
-                                const label = isVerified ? "Verified" : "Unverified"
+                                const isSuspended = smme.verification_status === "suspended"
+                                const label = isVerified ? "Verified" : isSuspended ? "Suspended" : "Unverified"
                                 return (
                                     <Badge
                                         variant={isVerified ? "default" : "destructive"}
-                                        className={isVerified ? "bg-emerald-600 text-white hover:bg-emerald-600" : "bg-red-600 text-white hover:bg-red-600"}
+                                        className={
+                                            isVerified
+                                                ? "bg-emerald-600 text-white hover:bg-emerald-600"
+                                                : isSuspended
+                                                  ? "bg-slate-600 text-white hover:bg-slate-600"
+                                                  : "bg-red-600 text-white hover:bg-red-600"
+                                        }
                                     >
                                         {label}
                                     </Badge>
@@ -141,7 +148,8 @@ export default function VerifiedSmmePage() {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    disabled={updatingId === smme.id}
+                                    disabled={updatingId === smme.id || smme.verification_status === "suspended"}
+                                    title={smme.verification_status === "suspended" ? "Unsuspend this account from All Users first" : undefined}
                                     onClick={() => toggleStatus(smme.id, smme.verification_status || "pending")}
                                     className="rounded-3xl px-4"
                                 >

@@ -3,6 +3,7 @@ import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Activity, Building2, Package, Wrench } from "lucide-react"
 import { EngagementCharts } from "./engagement-charts"
+import { fetchAllRows, lastTwelveMonths, monthKey } from "@/lib/report-utils"
 
 export default async function PlatformEngagementPage() {
     const adminDb = createAdminClient()
@@ -12,15 +13,10 @@ export default async function PlatformEngagementPage() {
         .from("analytics_visits")
         .select("*", { count: "exact", head: true })
 
-    // Fetch visits broken down by entity_type
-    const { data: visitsByType } = await adminDb
-        .from("analytics_visits")
-        .select("entity_type")
-
-    // Fetch monthly visit trend (visited_at is the timestamp column)
-    const { data: allVisits } = await adminDb
-        .from("analytics_visits")
-        .select("entity_type, visited_at")
+    // All visits (paged past the 1,000-row response cap) for the type breakdown and trend
+    const allVisits = await fetchAllRows((from, to) =>
+        adminDb.from("analytics_visits").select("entity_type, visited_at").order("id").range(from, to)
+    )
 
     // Fetch facilities for naming context
     const { data: facilities } = await adminDb
@@ -29,7 +25,7 @@ export default async function PlatformEngagementPage() {
 
     // Process entity_type counts
     const typeCounts: Record<string, number> = {}
-    visitsByType?.forEach((v) => {
+    allVisits.forEach((v) => {
         const t = v.entity_type || "unknown"
         typeCounts[t] = (typeCounts[t] || 0) + 1
     })
@@ -38,16 +34,16 @@ export default async function PlatformEngagementPage() {
     const serviceVisits = typeCounts["service"] || 0
     const productVisits = typeCounts["product"] || 0
 
-    // Build monthly trend (Jan–Dec)
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    // Build monthly trend over the last 12 months
+    const months = lastTwelveMonths()
     const monthlyTrend: Record<string, { facility: number; service: number; product: number }> = {}
     months.forEach((m) => {
-        monthlyTrend[m] = { facility: 0, service: 0, product: 0 }
+        monthlyTrend[m.key] = { facility: 0, service: 0, product: 0 }
     })
 
-    allVisits?.forEach((v) => {
-        const month = new Date(v.visited_at).toLocaleString("default", { month: "short" })
-        if (monthlyTrend[month] !== undefined) {
+    allVisits.forEach((v) => {
+        const month = monthKey(v.visited_at)
+        if (month && monthlyTrend[month] !== undefined) {
             const type = v.entity_type as "facility" | "service" | "product"
             if (type in monthlyTrend[month]) {
                 monthlyTrend[month][type]++
@@ -56,8 +52,8 @@ export default async function PlatformEngagementPage() {
     })
 
     const trendData = months.map((m) => ({
-        month: m,
-        ...monthlyTrend[m],
+        month: m.label,
+        ...monthlyTrend[m.key],
     }))
 
     // Visit type breakdown for donut

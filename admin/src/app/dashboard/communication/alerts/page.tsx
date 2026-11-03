@@ -91,7 +91,6 @@ export default function SendAlertsPage() {
                                 className="h-10 rounded-3xl border-transparent bg-orange-100/80 px-3 sm:h-11 sm:px-4 text-zinc-900 shadow-[inset_0_2px_6px_rgba(0,0,0,0.22),0_1px_2px_rgba(0,0,0,0.12)] dark:bg-slate-800/80 dark:text-slate-100 dark:shadow-[inset_0_2px_6px_rgba(0,0,0,0.75),0_1px_2px_rgba(0,0,0,0.6)]"
                             >
                                 <SelectItem value="all">All Users</SelectItem>
-                                <SelectItem value="tenants">Tenants Only</SelectItem>
                                 <SelectItem value="entrepreneurs">Entrepreneurs Only</SelectItem>
                                 <SelectItem value="smmes">SMMEs Only</SelectItem>
                                 <SelectItem value="staff">Staff Only</SelectItem>

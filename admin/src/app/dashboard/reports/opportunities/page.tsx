@@ -3,16 +3,18 @@ import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Briefcase, CheckCircle2, Clock, Users } from "lucide-react"
 import { OpportunitiesCharts } from "./opportunities-charts"
+import { countByMonth, fetchAllRows, lastTwelveMonths } from "@/lib/report-utils"
 
 export default async function OpportunitiesPipelinePage() {
     const adminDb = createAdminClient()
 
-    const [
-        { data: opportunities },
-        { data: applications },
-    ] = await Promise.all([
-        adminDb.from("opportunities").select("id, status, type, created_at"),
-        adminDb.from("applications").select("id, opportunity_id, status, submitted_at"),
+    const [opportunities, applications] = await Promise.all([
+        fetchAllRows((from, to) =>
+            adminDb.from("opportunities").select("id, status, type, created_at").order("id").range(from, to)
+        ),
+        fetchAllRows((from, to) =>
+            adminDb.from("applications").select("id, opportunity_id, status, submitted_at").order("id").range(from, to)
+        ),
     ])
 
     const total = opportunities?.length || 0
@@ -39,13 +41,8 @@ export default async function OpportunitiesPipelinePage() {
     ].filter((d) => d.value > 0)
 
     // Monthly opportunity creation trend
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    const monthlyCreations: Record<string, number> = {}
-    opportunities?.forEach((o) => {
-        const month = new Date(o.created_at).toLocaleString("default", { month: "short" })
-        monthlyCreations[month] = (monthlyCreations[month] || 0) + 1
-    })
-    const creationTrend = months.map((m) => ({ month: m, opportunities: monthlyCreations[m] || 0 }))
+    const monthlyCreations = countByMonth(opportunities, (o) => o.created_at)
+    const creationTrend = lastTwelveMonths().map((m) => ({ month: m.label, opportunities: monthlyCreations[m.key] || 0 }))
 
     // Application status breakdown
     const appStatusCounts: Record<string, number> = {}

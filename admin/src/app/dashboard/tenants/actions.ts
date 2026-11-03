@@ -46,7 +46,9 @@ async function resolveLogoUrl(formData: FormData, userId: string, existingLogoUr
   const hasFile = logoFile instanceof File && logoFile.size > 0
 
   if (!hasFile) {
-    return nullIfEmpty(String(formData.get("logo_url") ?? "")) ?? existingLogoUrl ?? null
+    // An explicitly submitted empty logo_url clears the logo; omit the field to keep it.
+    if (formData.has("logo_url")) return nullIfEmpty(String(formData.get("logo_url") ?? ""))
+    return existingLogoUrl ?? null
   }
 
   if (logoFile.size > TENANT_LOGO_MAX_BYTES) {

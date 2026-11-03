@@ -23,6 +23,8 @@ import {
   Users,
 } from "lucide-react"
 import { toast } from "sonner"
+import { deleteEvent } from "@/lib/publish-events"
+import { deleteNews } from "@/lib/publish-mobile-news"
 
 import {
   FloatingLabelInput,
@@ -317,10 +319,8 @@ export function NewsPublisher() {
               onValueChange={(value) => setForm((current) => ({ ...current, targetAudience: value }))}
             >
               <SelectItem value="all">All Users</SelectItem>
-              <SelectItem value="tenants">Tenants</SelectItem>
               <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
-              <SelectItem value="students">Students</SelectItem>
-              <SelectItem value="smmes">SMMES</SelectItem>
+              <SelectItem value="smmes">SMMEs</SelectItem>
               <SelectItem value="staff">Staff Only</SelectItem>
             </FloatingLabelSelect>
 
@@ -567,14 +567,24 @@ export function EventPublisher() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setLoading(true)
 
     const formData = new FormData(event.currentTarget)
+    const missing = (["title", "date", "location", "description"] as const).filter(
+      (field) => !String(formData.get(field) ?? "").trim()
+    )
+    if (missing.length > 0) {
+      toast.error(`Please fill in: ${missing.join(", ")}.`)
+      return
+    }
+    // datetime-local has no offset; convert in the browser so the admin's timezone is kept.
+    const startDate = new Date(String(formData.get("date"))).toISOString()
+
+    setLoading(true)
     const eventData = {
       title: String(formData.get("title") ?? ""),
       description: String(formData.get("description") ?? ""),
-      startDate: String(formData.get("date") ?? ""),
-      endDate: String(formData.get("date") ?? ""), // Same as start date for now
+      startDate,
+      endDate: startDate, // Same as start date for now
       location: String(formData.get("location") ?? ""),
       type: "general", // Default event type
       targetAudience: String(formData.get("target_audience") ?? "all"),
@@ -661,6 +671,7 @@ export function EventPublisher() {
               value={form.location}
               onChange={(event) => setForm((current) => ({ ...current, location: event.target.value }))}
               className="h-11 rounded-3xl border-transparent bg-orange-100/80 px-4 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+              required
             />
 
             <input type="hidden" name="target_audience" value={form.targetAudience} />
@@ -672,10 +683,8 @@ export function EventPublisher() {
               onValueChange={(value) => setForm((current) => ({ ...current, targetAudience: value }))}
             >
               <SelectItem value="all">All Users</SelectItem>
-              <SelectItem value="tenants">Tenants</SelectItem>
               <SelectItem value="entrepreneurs">Entrepreneurs</SelectItem>
-              <SelectItem value="students">Students</SelectItem>
-              <SelectItem value="smmes">SMMES</SelectItem>
+              <SelectItem value="smmes">SMMEs</SelectItem>
               <SelectItem value="staff">Staff Only</SelectItem>
             </FloatingLabelSelect>
 
@@ -687,6 +696,7 @@ export function EventPublisher() {
               value={form.description}
               onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
               className="min-h-[220px] rounded-3xl border-transparent bg-orange-100/80 px-4 py-3 text-zinc-900 shadow-sm dark:bg-slate-800/80 dark:text-slate-100"
+              required
             />
           </CardContent>
         </Card>
@@ -806,10 +816,16 @@ export function PublishedNewsList({ items }: { items: PublishedNewsItem[] }) {
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function handleDelete(id: string) {
+    if (!window.confirm("Delete this news item? This cannot be undone.")) return
     setDeletingId(id)
-    // Delete functionality not implemented yet - would need DELETE API routes
-    toast.error("Delete functionality not available in this version.")
+    const result = await deleteNews(id).catch(() => ({ error: "Failed to delete news." }))
     setDeletingId(null)
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
+    toast.success("News deleted.")
+    router.refresh()
   }
 
   return (
@@ -885,10 +901,16 @@ export function PublishedEventsList({ items }: { items: PublishedEventItem[] }) 
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function handleDelete(id: string) {
+    if (!window.confirm("Delete this event and its RSVPs? This cannot be undone.")) return
     setDeletingId(id)
-    // Delete functionality not implemented yet - would need DELETE API routes
-    toast.error("Delete functionality not available in this version.")
+    const result = await deleteEvent(id).catch(() => ({ error: "Failed to delete event." }))
     setDeletingId(null)
+    if (result.error) {
+      toast.error(result.error)
+      return
+    }
+    toast.success("Event deleted.")
+    router.refresh()
   }
 
   return (

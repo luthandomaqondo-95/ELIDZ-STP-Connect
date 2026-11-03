@@ -11,6 +11,7 @@ import {
 } from "@/lib/news"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdmin } from "@/lib/authz"
+import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts"
 
 async function getAuthenticatedUserId(): Promise<string> {
   const { userId } = await requireAdmin()
@@ -31,7 +32,7 @@ export type PublishNewsResult = {
 }
 
 async function publishMobileNews(input: PublishMobileNewsInput) {
-  const userId = await getAuthenticatedUserId()
+  const { userId, role, profile } = await requireAdmin()
 
   const title = input.title.trim()
   const content = input.content.trim()
@@ -119,6 +120,16 @@ async function publishMobileNews(input: PublishMobileNewsInput) {
     console.error("Error publishing news:", error)
     throw new Error(error.message || "Failed to publish news.")
   }
+
+  await notifySuperAdminsOfAdminAction({
+    action: "Published news",
+    actorId: userId,
+    actorName: (profile?.name as string | undefined) ?? null,
+    actorRole: role,
+    details: `News "${title}" published to the mobile app.`,
+    relatedEntityType: "news",
+    relatedEntityId: null,
+  })
 
   revalidatePath("/dashboard/communication/news")
 }

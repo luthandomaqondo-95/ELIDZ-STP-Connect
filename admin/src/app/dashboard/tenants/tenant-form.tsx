@@ -26,6 +26,7 @@ import {
   type TenantFormValues,
 } from "@/lib/tenants"
 import { createTenant, updateTenant } from "./actions"
+import { uploadImageDirect } from "@/lib/upload-image-client"
 
 type TenantFormProps = {
   mode: "create" | "edit"
@@ -75,18 +76,24 @@ export function TenantForm({ mode, tenantId, initialValues, facilities }: Tenant
       return
     }
 
-    const fd = new FormData()
-    Object.entries(form).forEach(([key, value]) => {
-      fd.set(key, value)
-    })
-    if (logoFile) {
-      fd.set("logo_file", logoFile)
-    }
+    let result: Awaited<ReturnType<typeof createTenant>>
+    try {
+      const fd = new FormData()
+      Object.entries(form).forEach(([key, value]) => {
+        fd.set(key, value)
+      })
+      if (logoFile) {
+        // Upload straight to Storage; request bodies can't carry multi-MB files.
+        fd.set("logo_url", await uploadImageDirect("tenant-logo", logoFile))
+      }
 
-    const result =
-      mode === "create"
-        ? await createTenant(fd)
-        : await updateTenant(tenantId!, fd)
+      result =
+        mode === "create"
+          ? await createTenant(fd)
+          : await updateTenant(tenantId!, fd)
+    } catch (err) {
+      result = { success: false, error: err instanceof Error ? err.message : "Failed to save tenant." }
+    }
 
     setSaving(false)
 

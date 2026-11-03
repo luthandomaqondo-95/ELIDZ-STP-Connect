@@ -8,7 +8,17 @@ import { revalidatePath } from "next/cache"
 export async function updateSmmeStatus(userId: string, status: string) {
     await requireAdmin()
     const supabase = await createDashboardClient()
-    
+
+    // Verifying must not silently lift a suspension; that goes through unsuspend.
+    const { data: current } = await supabase
+        .from('profiles')
+        .select('verification_status')
+        .eq('id', userId)
+        .maybeSingle()
+    if (current?.verification_status === 'suspended') {
+        throw new Error("This account is suspended. Unsuspend it before changing verification.")
+    }
+
     const { error } = await supabase
         .from('profiles')
         .update({ verification_status: status })

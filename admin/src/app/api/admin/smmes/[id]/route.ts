@@ -34,6 +34,19 @@ export async function PATCH(
 
     const supabase = createAdminClient();
 
+    // Verifying must not silently lift a suspension; that goes through unsuspend.
+    const { data: current } = await supabase
+      .from("profiles")
+      .select("verification_status")
+      .eq("id", id)
+      .maybeSingle();
+    if (current?.verification_status === "suspended") {
+      return NextResponse.json(
+        { error: "This account is suspended. Unsuspend it from All Users before changing verification." },
+        { status: 409 }
+      );
+    }
+
     // 1) Update profile verification status
     const { data: profile, error: profileError } = await supabase
       .from("profiles")

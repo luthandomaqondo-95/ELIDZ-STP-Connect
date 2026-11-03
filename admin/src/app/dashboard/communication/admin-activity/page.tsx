@@ -31,14 +31,15 @@ type ActorProfile = {
   email: string | null
 }
 
+// Filter dates are SAST calendar days.
 function parseDateStart(dateInput?: string) {
   if (!dateInput) return null
-  return new Date(`${dateInput}T00:00:00.000Z`).toISOString()
+  return new Date(`${dateInput}T00:00:00.000+02:00`).toISOString()
 }
 
 function parseDateEnd(dateInput?: string) {
   if (!dateInput) return null
-  return new Date(`${dateInput}T23:59:59.999Z`).toISOString()
+  return new Date(`${dateInput}T23:59:59.999+02:00`).toISOString()
 }
 
 function formatTimestamp(iso: string) {
@@ -58,8 +59,9 @@ export default async function AdminActivityPage({
 }: {
   searchParams?: Promise<{ action?: string; admin?: string; from?: string; to?: string }>
 }) {
+  let viewerId: string
   try {
-    await requireSuperAdmin()
+    ({ userId: viewerId } = await requireSuperAdmin())
   } catch {
     redirect("/dashboard?error=unauthorized")
   }
@@ -76,11 +78,15 @@ export default async function AdminActivityPage({
     .select("id, title, message, created_by, created_at, related_entity_type, related_entity_id")
     .eq("type", "system_alert")
     .ilike("title", "Admin action:%")
+    // Each Super Admin receives a copy of every entry; show only the viewer's copy.
+    .eq("user_id", viewerId)
     .order("created_at", { ascending: false })
     .limit(250)
 
-  if (actionFilter) {
-    query = query.or(`title.ilike.%${actionFilter}%,message.ilike.%${actionFilter}%`)
+  // Strip PostgREST .or() syntax characters so free text can't break the filter.
+  const safeAction = actionFilter.replace(/[,()*%\\]/g, " ").trim()
+  if (safeAction) {
+    query = query.or(`title.ilike.%${safeAction}%,message.ilike.%${safeAction}%`)
   }
 
   const fromIso = parseDateStart(fromDate)

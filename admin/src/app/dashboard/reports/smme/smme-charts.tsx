@@ -28,6 +28,7 @@ const VERIFICATION_COLORS: Record<string, string> = {
     Verified: "#10b981",
     Pending: "#f59e0b",
     Rejected: "#f43f5e",
+    Suspended: "#64748b",
 }
 const LISTING_COLORS = ["#6366f1", "#f59e0b"]
 const CATEGORY_COLORS = ["#10b981", "#6366f1", "#f59e0b", "#f43f5e", "#8b5cf6", "#0ea5e9", "#ec4899", "#14b8a6"]

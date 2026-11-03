@@ -9,14 +9,15 @@ import {
 import { UserDemographicsCharts } from "./demographics-charts"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { PieChart } from "lucide-react"
+import { fetchAllRows, lastTwelveMonths, monthKey } from "@/lib/report-utils"
 
 export default async function UserDemographicsPage() {
     const supabase = await createDashboardClient()
     
     // Fetch profile data
-    const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
+    const profiles = await fetchAllRows((from, to) =>
+        supabase.from('profiles').select('*').order('id').range(from, to)
+    )
 
     // Process data for charts
     const roleCounts: Record<string, number> = {}
@@ -50,9 +51,8 @@ export default async function UserDemographicsPage() {
         locationCounts[location] = (locationCounts[location] || 0) + 1
 
         // Growth Stats (Created At)
-        const date = new Date(profile.created_at)
-        const key = date.toLocaleString('default', { month: 'short' })
-        growthData[key] = (growthData[key] || 0) + 1
+        const key = monthKey(profile.created_at)
+        if (key) growthData[key] = (growthData[key] || 0) + 1
     })
 
     // Format data for charts
@@ -67,10 +67,9 @@ export default async function UserDemographicsPage() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 8) // Top 8 locations
 
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
-    const growthChartData = months.map(month => ({
-        name: month,
-        users: growthData[month] || 0
+    const growthChartData = lastTwelveMonths().map(month => ({
+        name: month.label,
+        users: growthData[month.key] || 0
     }))
 
     return (

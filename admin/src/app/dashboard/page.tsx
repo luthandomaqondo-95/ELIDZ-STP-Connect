@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card"
 import { GeographicDistributionChart, UserDemographicsCharts } from "./reports/demographics/demographics-charts"
 import { AnalyticsCharts } from "./reports/analytics/analytics-charts"
+import { daysAgoIso, fetchAllRows, lastTwelveMonths, monthKey } from "@/lib/report-utils"
 
 export default async function Page() {
     // Prefer custom-auth session when enabled; fall back stays Guest/"there".
@@ -31,9 +32,9 @@ export default async function Page() {
     const { count: visitCountResult } = await supabase.from('analytics_visits').select('*', { count: 'exact', head: true })
     
     // Fetch all analytics data for charts
-    const { data: visits } = await supabase
-        .from('analytics_visits')
-        .select('*')
+    const visits = await fetchAllRows((from, to) =>
+        supabase.from('analytics_visits').select('*').order('id').range(from, to)
+    )
 
     // Process Analytics Data
     const visitsByTypeMap: Record<string, number> = {}
@@ -67,9 +68,15 @@ export default async function Page() {
     const visitCount = visitCountResult || 0
 
     // Fetch profile data for charts
-    const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
+    const profiles = await fetchAllRows((from, to) =>
+        supabase.from('profiles').select('*').order('id').range(from, to)
+    )
+
+    const weekAgo = daysAgoIso(7)
+    const { count: newOpportunitiesThisWeek } = await supabase
+        .from('opportunities')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', weekAgo)
 
     // Process data for charts
     const roleCounts: Record<string, number> = {}
@@ -102,9 +109,8 @@ export default async function Page() {
         locationCounts[location] = (locationCounts[location] || 0) + 1
 
         // Growth Stats (Created At)
-        const date = new Date(profile.created_at)
-        const key = date.toLocaleString('default', { month: 'short' })
-        growthData[key] = (growthData[key] || 0) + 1
+        const key = monthKey(profile.created_at)
+        if (key) growthData[key] = (growthData[key] || 0) + 1
     })
 
     // Format data for charts
@@ -119,11 +125,17 @@ export default async function Page() {
         .sort((a, b) => b.count - a.count)
         .slice(0, 8) // Top 8 locations
 
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const months = lastTwelveMonths()
     const growthChartData = months.map(month => ({
-        name: month,
-        users: growthData[month] || 0
+        name: month.label,
+        users: growthData[month.key] || 0
     }))
+
+    const thisMonthUsers = growthData[months[11].key] || 0
+    const lastMonthUsers = growthData[months[10].key] || 0
+    const userTrendText = lastMonthUsers > 0
+        ? `${thisMonthUsers >= lastMonthUsers ? "+" : ""}${Math.round(((thisMonthUsers - lastMonthUsers) / lastMonthUsers) * 100)}% new sign-ups vs last month`
+        : `${thisMonthUsers} new this month`
 
     return (
     <>
@@ -179,7 +191,7 @@ export default async function Page() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{userCount || 0}</div>
-                    <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                    <p className="text-xs text-muted-foreground">{userTrendText}</p>
                 </CardContent>
             </Card>
             <Card className="gap-2 py-4 rounded-3xl border-0 bg-amber-50/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:bg-amber-900/20 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">
@@ -191,7 +203,7 @@ export default async function Page() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">{opportunityCount || 0}</div>
-                    <p className="text-xs text-muted-foreground">+4 new this week</p>
+                    <p className="text-xs text-muted-foreground">+{newOpportunitiesThisWeek || 0} new this week</p>
                 </CardContent>
             </Card>
             <Card className="gap-2 py-4 rounded-3xl border-0 bg-emerald-50/90 shadow-[0_18px_40px_-12px_rgba(0,0,0,0.45),0_6px_14px_rgba(0,0,0,0.18)] dark:bg-emerald-900/20 dark:shadow-[0_18px_40px_-10px_rgba(0,0,0,0.85),0_6px_14px_rgba(0,0,0,0.55)]">

@@ -3,28 +3,36 @@ import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BadgeCheck, Package, Store, Wrench } from "lucide-react"
 import { SmmeCharts } from "./smme-charts"
+import { countByMonth, fetchAllRows, lastTwelveMonths } from "@/lib/report-utils"
 
 export default async function SmmeBusinessPage() {
     const adminDb = createAdminClient()
 
-    const [
-        { data: smmeProfiles },
-        { data: servicesProducts },
-    ] = await Promise.all([
+    const [smmeProfiles, servicesProducts] = await Promise.all([
         // SMMEs are profiles with role SME or SMME
-        adminDb
-            .from("profiles")
-            .select("id, verification_status, created_at, role, organization")
-            .in("role", ["SME", "SMME"]),
-        adminDb
-            .from("smme_services_products")
-            .select("id, type, category, status, created_at"),
+        fetchAllRows((from, to) =>
+            adminDb
+                .from("profiles")
+                .select("id, verification_status, created_at, role, organization")
+                .in("role", ["SME", "SMME"])
+                .order("id")
+                .range(from, to)
+        ),
+        fetchAllRows((from, to) =>
+            adminDb
+                .from("smme_services_products")
+                .select("id, type, category, status, created_at")
+                .order("id")
+                .range(from, to)
+        ),
     ])
 
     const total = smmeProfiles?.length || 0
     const verified = smmeProfiles?.filter((p) => p.verification_status === "verified").length || 0
-    const pending = smmeProfiles?.filter((p) => p.verification_status === "pending").length || 0
     const rejected = smmeProfiles?.filter((p) => p.verification_status === "rejected").length || 0
+    const suspended = smmeProfiles?.filter((p) => p.verification_status === "suspended").length || 0
+    // Anything not yet decided (pending, unverified, or no status) awaits review.
+    const pending = total - verified - rejected - suspended
     const verificationRate = total > 0 ? Math.round((verified / total) * 100) : 0
 
     const services = servicesProducts?.filter((s) => s.type === "Service") || []
@@ -37,6 +45,7 @@ export default async function SmmeBusinessPage() {
         { name: "Verified", value: verified },
         { name: "Pending", value: pending },
         { name: "Rejected", value: rejected },
+        { name: "Suspended", value: suspended },
     ].filter((d) => d.value > 0)
 
     // Category breakdown (top 8)
@@ -57,15 +66,10 @@ export default async function SmmeBusinessPage() {
     ].filter((d) => d.value > 0)
 
     // Monthly SMME registration trend
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-    const monthlyRegistrations: Record<string, number> = {}
-    smmeProfiles?.forEach((p) => {
-        const month = new Date(p.created_at).toLocaleString("default", { month: "short" })
-        monthlyRegistrations[month] = (monthlyRegistrations[month] || 0) + 1
-    })
-    const registrationTrend = months.map((m) => ({
-        month: m,
-        businesses: monthlyRegistrations[m] || 0,
+    const monthlyRegistrations = countByMonth(smmeProfiles, (p) => p.created_at)
+    const registrationTrend = lastTwelveMonths().map((m) => ({
+        month: m.label,
+        businesses: monthlyRegistrations[m.key] || 0,
     }))
 
     const base = "rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]"

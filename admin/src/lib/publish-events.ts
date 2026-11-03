@@ -85,6 +85,10 @@ export async function deleteEvent(id: string): Promise<PublishEventResult> {
     await getAuthenticatedUserId()
 
     const adminSupabase = createAdminClient()
+    // RSVPs reference the event; remove them first so the delete isn't blocked by the FK.
+    const { error: rsvpError } = await adminSupabase.from("event_rsvps").delete().eq("event_id", id)
+    if (rsvpError) throw new Error(rsvpError.message || "Failed to delete event RSVPs.")
+
     const { error } = await adminSupabase.from("events").delete().eq("id", id)
 
     if (error) {

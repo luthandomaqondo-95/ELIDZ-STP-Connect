@@ -45,6 +45,7 @@ import {
   NEWS_IMAGE_MAX_BYTES,
 } from "@/lib/news"
 import { publishNews } from "@/lib/publish-mobile-news"
+import { uploadImageDirect } from "@/lib/upload-image-client"
 
 export function NewsPublisher() {
   const router = useRouter()
@@ -98,7 +99,22 @@ export function NewsPublisher() {
     setLoading(true)
 
     const formData = new FormData(event.currentTarget)
-    const result = await publishNews(formData)
+    let result: Awaited<ReturnType<typeof publishNews>>
+    try {
+      // datetime-local has no offset; convert in the browser so the admin's timezone is kept.
+      const publishedAt = String(formData.get("published_at") ?? "").trim()
+      if (publishedAt) formData.set("published_at", new Date(publishedAt).toISOString())
+
+      if (imageSource === "upload" && selectedImageFile) {
+        // Upload straight to Storage; request bodies can't carry multi-MB files.
+        formData.set("image_url", await uploadImageDirect("news-image", selectedImageFile))
+        formData.delete("image_file")
+      }
+
+      result = await publishNews(formData)
+    } catch (err) {
+      result = { error: err instanceof Error ? err.message : "Failed to publish news." }
+    }
 
     if (result.error) {
       toast.error(result.error)

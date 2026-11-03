@@ -3,14 +3,14 @@ import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { CheckCircle2, Clock, Flag, ShieldAlert } from "lucide-react"
 import { ModerationCharts } from "./moderation-charts"
+import { fetchAllRows, lastTwelveMonths, monthKey } from "@/lib/report-utils"
 
 export default async function ModerationSafetyPage() {
     const adminDb = createAdminClient()
 
-    const { data: reports } = await adminDb
-        .from("message_reports")
-        .select("id, status, reason, created_at")
-        .order("created_at", { ascending: false })
+    const reports = await fetchAllRows((from, to) =>
+        adminDb.from("message_reports").select("id, status, reason, created_at").order("id").range(from, to)
+    )
 
     const total = reports?.length || 0
     const pending = reports?.filter((r) => r.status === "pending").length || 0
@@ -41,20 +41,21 @@ export default async function ModerationSafetyPage() {
         .slice(0, 8)
 
     // Monthly trend
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    const months = lastTwelveMonths()
     const monthlyReports: Record<string, number> = {}
     const monthlyResolved: Record<string, number> = {}
     reports?.forEach((r) => {
-        const month = new Date(r.created_at).toLocaleString("default", { month: "short" })
+        const month = monthKey(r.created_at)
+        if (!month) return
         monthlyReports[month] = (monthlyReports[month] || 0) + 1
         if (r.status === "resolved" || r.status === "dismissed") {
             monthlyResolved[month] = (monthlyResolved[month] || 0) + 1
         }
     })
     const trendData = months.map((m) => ({
-        month: m,
-        reported: monthlyReports[m] || 0,
-        resolved: monthlyResolved[m] || 0,
+        month: m.label,
+        reported: monthlyReports[m.key] || 0,
+        resolved: monthlyResolved[m.key] || 0,
     }))
 
     const base = "rounded-3xl border-0 shadow-[0_10px_30px_rgba(2,6,23,0.08)] dark:shadow-[0_10px_30px_rgba(2,6,23,0.35)]"
