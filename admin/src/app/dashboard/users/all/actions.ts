@@ -2,7 +2,8 @@
 
 import { suspendProfileById, unsuspendProfileById } from "@/lib/admin/profile-suspend"
 import { createAdminClient } from "@/lib/supabase/admin"
-import { getAuthedProfile } from "@/lib/authz"
+import { checkManageableTarget, getAuthedProfile, requireAdminApi } from "@/lib/authz"
+import { deleteUserAccount } from "@/lib/admin/user-delete"
 import { revalidatePath } from "next/cache"
 
 export async function approveUser(userId: string) {
@@ -34,25 +35,26 @@ export async function approveUser(userId: string) {
   }
 }
 
+/** Returns an error message when the caller may not act on this account. */
+async function authorizeTargetAction(userId: string): Promise<string | null> {
+    const auth = await requireAdminApi()
+    if (!auth.ok) return "Unauthorized"
+    const rejection = await checkManageableTarget(auth, userId)
+    return rejection?.error ?? null
+}
+
 export async function deleteUser(userId: string) {
     try {
-        const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-        const response = await fetch(`${baseUrl}/api/admin/users/${userId}/delete`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        })
+        const denied = await authorizeTargetAction(userId)
+        if (denied) return { success: false, error: denied }
 
-        if (!response.ok) {
-            const errorData = await response.json()
-            console.error("Error deleting user:", errorData)
-            return { success: false, error: errorData.error || "Failed to delete user" }
+        const result = await deleteUserAccount(userId)
+        if (!result.ok) {
+            return { success: false, error: result.error }
         }
 
-        const result = await response.json()
         revalidatePath('/dashboard/users/all')
-        return { success: true, data: result }
+        return { success: true }
     } catch (error) {
         console.error("Error deleting user:", error)
         return { success: false, error: "Internal server error" }
@@ -61,6 +63,9 @@ export async function deleteUser(userId: string) {
 
 export async function suspendUser(userId: string) {
     try {
+        const denied = await authorizeTargetAction(userId)
+        if (denied) return { success: false, error: denied }
+
         const result = await suspendProfileById(userId)
         if (!result.ok) {
             const msg = result.details
@@ -85,6 +90,9 @@ export async function suspendUser(userId: string) {
 
 export async function unsuspendUser(userId: string) {
     try {
+        const denied = await authorizeTargetAction(userId)
+        if (denied) return { success: false, error: denied }
+
         const result = await unsuspendProfileById(userId)
         if (!result.ok) {
             const msg = result.details

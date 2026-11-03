@@ -1,58 +1,12 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdminApi } from "@/lib/authz";
 
 type EnquiryStatus = "new" | "in_progress" | "resolved" | "closed";
 
-async function createAuthedSupabaseServerClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
-}
-
-async function requireAdmin() {
-  const supabase = await createAuthedSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { ok: false as const, status: 401 as const, userId: null };
-  }
-
-  const { data: profile, error } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (error || !profile || (profile.role !== "Admin" && profile.role !== "Super Admin")) {
-    return { ok: false as const, status: 403 as const, userId: user.id };
-  }
-
-  return { ok: true as const, status: 200 as const, userId: user.id };
-}
-
 export async function GET(request: Request) {
-  const auth = await requireAdmin();
-  if (!auth.ok) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
-  }
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
 
   const url = new URL(request.url);
   const q = (url.searchParams.get("q") ?? "").trim().toLowerCase();
@@ -98,10 +52,8 @@ export async function GET(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const auth = await requireAdmin();
-  if (!auth.ok) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: auth.status });
-  }
+  const auth = await requireAdminApi();
+  if (!auth.ok) return auth.response;
 
   const body = (await request.json().catch(() => null)) as
     | { id?: string; response?: string; status?: EnquiryStatus }

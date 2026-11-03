@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { requireAdminApi } from "@/lib/authz";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
@@ -6,6 +7,9 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdminApi();
+    if (!auth.ok) return auth.response;
+
     const { id } = await params;
     
     if (!id) {

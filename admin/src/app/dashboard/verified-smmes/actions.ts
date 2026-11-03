@@ -1,7 +1,8 @@
 "use server"
 
 import { createAdminClient } from "@/lib/supabase/admin"
-import { createDashboardClient, requireAdmin } from "@/lib/authz"
+import { createDashboardClient, requireAdmin, requireSuperAdmin } from "@/lib/authz"
+import { isCustomAuthEnabled } from "@/lib/custom-auth/feature-flag"
 import { revalidatePath } from "next/cache"
 
 export async function updateSmmeStatus(userId: string, status: string) {
@@ -22,7 +23,26 @@ export async function updateSmmeStatus(userId: string, status: string) {
 }
 
 export async function createVerifiedSmme(data: { email: string, name: string, organization: string, role: string }) {
-    await requireAdmin()
+    // Same rules as POST /api/admin/smmes: Super Admin only, never an admin-role account.
+    await requireSuperAdmin()
+    if (data.role === "Admin" || data.role === "Super Admin") {
+        throw new Error("Cannot create administrator accounts via SMME invite")
+    }
+
+    if (isCustomAuthEnabled()) {
+        const { provisionInvitedUser } = await import("@/lib/custom-auth/service")
+        await provisionInvitedUser({
+            email: data.email,
+            name: data.name,
+            role: data.role,
+            organization: data.organization,
+            verificationStatus: "verified",
+            allowAdminRoles: false,
+        })
+        revalidatePath('/dashboard/verified-smmes')
+        return { success: true }
+    }
+
     const adminSupabase = createAdminClient()
 
     // 1. Invite User

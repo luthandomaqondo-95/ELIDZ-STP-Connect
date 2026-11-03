@@ -69,3 +69,75 @@ export async function deleteOpportunity(opportunityId: string): Promise<{ succes
 	}
 }
 
+
+export type OpportunityUpdate = {
+	title: string
+	type: string
+	location?: string
+	deadline: string | null
+	description: string
+	requirements: string | null
+}
+
+export async function getOpportunityForEdit(
+	opportunityId: string
+): Promise<{ success: true; data: OpportunityUpdate } | { success: false; error: string }> {
+	try {
+		await requireAdmin()
+		const supabaseAdmin = createAdminClient()
+		const { data, error } = await supabaseAdmin
+			.from("opportunities")
+			.select("title, type, location, deadline, description, requirements")
+			.eq("id", opportunityId)
+			.single()
+
+		if (error || !data) {
+			return { success: false, error: error?.message || "Failed to load opportunity." }
+		}
+		return { success: true, data }
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Failed to load opportunity."
+		return { success: false, error: message }
+	}
+}
+
+export async function updateOpportunity(
+	opportunityId: string,
+	fields: OpportunityUpdate
+): Promise<{ success: true } | { success: false; error: string }> {
+	if (!fields.title?.trim() || !fields.description?.trim()) {
+		return { success: false, error: "Title and description are required." }
+	}
+
+	try {
+		await requireAdmin()
+		const supabaseAdmin = createAdminClient()
+		const { data, error } = await supabaseAdmin
+			.from("opportunities")
+			.update({
+				title: fields.title,
+				type: fields.type,
+				...(fields.location !== undefined ? { location: fields.location } : {}),
+				deadline: fields.deadline || null,
+				description: fields.description,
+				requirements: fields.requirements || null,
+			})
+			.eq("id", opportunityId)
+			.select("id")
+			.maybeSingle()
+
+		if (error) {
+			return { success: false, error: error.message }
+		}
+		if (!data) {
+			return { success: false, error: "Opportunity not found." }
+		}
+
+		revalidatePath("/dashboard/opportunities")
+		revalidatePath(`/dashboard/opportunities/${opportunityId}`)
+		return { success: true }
+	} catch (err) {
+		const message = err instanceof Error ? err.message : "Failed to update opportunity."
+		return { success: false, error: message }
+	}
+}

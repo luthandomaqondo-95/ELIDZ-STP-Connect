@@ -1,10 +1,10 @@
-import { createAdminClient } from "@/lib/supabase/admin"
-import { getAuthedProfile } from "@/lib/authz"
+import { requireManageableTargetApi } from "@/lib/authz"
+import { deleteUserAccount } from "@/lib/admin/user-delete"
 import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function POST(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
@@ -17,45 +17,19 @@ export async function POST(
       )
     }
 
-    const supabase = createAdminClient()
-    const { user, profile } = await getAuthedProfile()
+    const auth = await requireManageableTargetApi(userId)
+    if (!auth.ok) return auth.response
 
-    if (!user || !profile) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const actorRole = (profile.role as string) ?? ""
-    if (actorRole !== "Admin" && actorRole !== "Super Admin") {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 })
-    }
-
-    const { isCustomAuthEnabled } = await import("@/lib/custom-auth/feature-flag")
-    if (isCustomAuthEnabled()) {
-      const { deleteProvisionedUser } = await import("@/lib/custom-auth/service")
-      await deleteProvisionedUser(userId)
-    } else {
-      // First, try to delete from auth.users using admin functions
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId)
-
-      if (authError && profileError) {
-        console.error("Error deleting user:", { authError, profileError })
-        return NextResponse.json(
-          { error: "Failed to delete user", details: { authError: authError.message, profileError: profileError.message } },
-          { status: 500 }
-        )
-      }
+    const result = await deleteUserAccount(userId)
+    if (!result.ok) {
+      return NextResponse.json({ error: result.error }, { status: 500 })
     }
 
     await notifySuperAdminsOfAdminAction({
       action: "Deleted user account",
-      actorId: user?.id ?? null,
-      actorName: (profile?.name as string | undefined) ?? null,
-      actorRole: (profile?.role as string | undefined) ?? null,
+      actorId: auth.userId,
+      actorName: (auth.profile?.name as string | undefined) ?? null,
+      actorRole: auth.role,
       details: `Deleted user ID ${userId}.`,
       relatedEntityType: "profile",
       relatedEntityId: userId,

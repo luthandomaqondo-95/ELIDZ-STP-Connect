@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr"
 import { NextResponse, type NextRequest } from "next/server"
 import { isProfileSuspended } from "@/lib/account-status"
 import { isCustomAuthEnabled } from "@/lib/custom-auth/feature-flag"
-import { ACCESS_COOKIE, clearSessionCookies } from "@/lib/custom-auth/cookies"
+import { ACCESS_COOKIE, REFRESH_COOKIE, clearSessionCookies } from "@/lib/custom-auth/cookies"
 import { verifyAccessToken } from "@/lib/custom-auth/tokens-jwt"
 
 /**
@@ -39,9 +39,7 @@ function isAdminRole(role: string): boolean {
 async function handleCustomAuthDashboard(request: NextRequest) {
   const access = request.cookies.get(ACCESS_COOKIE)?.value
   if (!access) {
-    const redirect = NextResponse.redirect(new URL("/auth/login", request.url))
-    clearSessionCookies(redirect)
-    return redirect
+    return redirectToRefreshOrLogin(request)
   }
 
   try {
@@ -54,10 +52,23 @@ async function handleCustomAuthDashboard(request: NextRequest) {
       request: { headers: request.headers },
     })
   } catch {
-    const redirect = NextResponse.redirect(new URL("/auth/login", request.url))
-    clearSessionCookies(redirect)
-    return redirect
+    return redirectToRefreshOrLogin(request)
   }
+}
+
+/**
+ * Access JWT missing/expired: if a refresh cookie exists, let the Node refresh route
+ * rotate it and send the user back; otherwise go to login.
+ */
+function redirectToRefreshOrLogin(request: NextRequest) {
+  if (request.cookies.get(REFRESH_COOKIE)?.value) {
+    const url = new URL("/api/auth/session/refresh", request.url)
+    url.searchParams.set("next", request.nextUrl.pathname + request.nextUrl.search)
+    return NextResponse.redirect(url)
+  }
+  const redirect = NextResponse.redirect(new URL("/auth/login", request.url))
+  clearSessionCookies(redirect)
+  return redirect
 }
 
 async function handleSupabaseAuthDashboard(request: NextRequest, response: NextResponse) {

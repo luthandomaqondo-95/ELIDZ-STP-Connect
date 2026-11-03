@@ -1,7 +1,6 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
-import { cookies } from "next/headers"
 
 import {
   buildNewsImagePath,
@@ -13,13 +12,7 @@ import {
 import { createAdminClient } from "@/lib/supabase/admin"
 import { requireAdmin } from "@/lib/authz"
 
-async function isDummyAuth() {
-  const cookieStore = await cookies()
-  return cookieStore.get("dummy_auth")?.value === "1"
-}
-
-async function getAuthenticatedUserId(): Promise<string | null> {
-  if (await isDummyAuth()) return null
+async function getAuthenticatedUserId(): Promise<string> {
   const { userId } = await requireAdmin()
   return userId
 }

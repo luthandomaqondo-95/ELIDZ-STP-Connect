@@ -5,6 +5,7 @@ import { enforceRateLimit } from "@/lib/custom-auth/request";
 import { isCustomAuthEnabled } from "@/lib/custom-auth/feature-flag";
 import { setSessionCookies } from "@/lib/custom-auth/cookies";
 import { isAdminRole } from "@/lib/custom-auth/admin-session";
+import { revokeSessionByRefreshToken } from "@/lib/custom-auth/session";
 
 /**
  * Admin cookie login — only active when CUSTOM_AUTH_ENABLED / AUTH_PROVIDER=custom.
@@ -25,6 +26,8 @@ export async function POST(request: NextRequest) {
     const session = await loginWithPassword(email, password, requestMeta(request));
 
     if (!isAdminRole(session.user.role)) {
+      // loginWithPassword already created a session; don't leave it dangling.
+      await revokeSessionByRefreshToken(session.refreshToken);
       return jsonError("Admin access required", 403);
     }
 

@@ -38,6 +38,7 @@ const ALLOWED_STATUSES = new Set<ReportStatus>([
 ])
 
 export async function getMessageReportsForAdmin(): Promise<ReportTableItem[]> {
+  await requireAdmin()
   const adminSupabase = createAdminClient()
 
   const { data: reportsData, error: reportsError } = await adminSupabase
@@ -108,7 +109,13 @@ export async function updateMessageReportStatus(reportId: string, status: Report
     return { success: false, error: "Invalid report status." }
   }
 
-  const { userId } = await requireAdmin()
+  const userId = await requireAdmin().then(
+    (auth) => auth.userId,
+    () => null
+  )
+  if (!userId) {
+    return { success: false, error: "Unauthorized" }
+  }
 
   const adminSupabase = createAdminClient()
   const { error } = await adminSupabase

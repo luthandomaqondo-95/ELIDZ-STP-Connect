@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
+import { getOpportunityForEdit, updateOpportunity } from "../../actions"
 import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,6 @@ type OpportunityForm = {
 export default function EditOpportunityPage() {
   const params = useParams<{ id: string }>()
   const router = useRouter()
-  const supabase = createClient()
 
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -38,18 +37,15 @@ export default function EditOpportunityPage() {
 
   useEffect(() => {
     async function fetchOpportunity() {
-      const { data, error: fetchError } = await supabase
-        .from("opportunities")
-        .select("title, type, location, deadline, description, requirements")
-        .eq("id", params.id)
-        .single()
+      const result = await getOpportunityForEdit(params.id)
 
-      if (fetchError || !data) {
-        setError(fetchError?.message || "Failed to load opportunity.")
+      if (!result.success) {
+        setError(result.error)
         setLoading(false)
         return
       }
 
+      const data = result.data
       setForm({
         title: data.title || "",
         type: data.type || "tender",
@@ -62,29 +58,26 @@ export default function EditOpportunityPage() {
     }
 
     fetchOpportunity()
-  }, [params.id, supabase])
+  }, [params.id])
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setSaving(true)
     setError(null)
 
-    const { error: updateError } = await supabase
-      .from("opportunities")
-      .update({
-        title: form.title,
-        type: form.type,
-        location: form.location,
-        deadline: form.deadline || null,
-        description: form.description,
-        requirements: form.requirements || null,
-      })
-      .eq("id", params.id)
+    const result = await updateOpportunity(params.id, {
+      title: form.title,
+      type: form.type,
+      location: form.location,
+      deadline: form.deadline || null,
+      description: form.description,
+      requirements: form.requirements || null,
+    })
 
     setSaving(false)
 
-    if (updateError) {
-      setError(updateError.message || "Failed to update opportunity.")
+    if (!result.success) {
+      setError(result.error)
       return
     }
 

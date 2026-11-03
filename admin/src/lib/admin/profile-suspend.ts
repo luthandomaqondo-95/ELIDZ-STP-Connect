@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { revokeAllSessionsForUser } from "@/lib/custom-auth/session"
 
 type ProfileRow = Record<string, unknown>
 
@@ -18,7 +19,8 @@ function buildStatusUpdate(
     if (hasVerificationStatus) update.verification_status = "suspended"
     if (hasStatus) update.status = "Suspended"
   } else {
-    if (hasVerificationStatus) update.verification_status = "approved"
+    // "verified" is the status the rest of the app (SMME pages, approveUser) treats as active.
+    if (hasVerificationStatus) update.verification_status = "verified"
     if (hasStatus) update.status = "Active"
   }
 
@@ -70,6 +72,9 @@ export async function suspendProfileById(userId: string): Promise<SuspendResult>
       details: error.message,
     }
   }
+
+  // Kill custom-auth sessions so refresh tokens can't keep a suspended user signed in.
+  await revokeAllSessionsForUser(userId)
 
   return { ok: true, user: data as Record<string, unknown> }
 }

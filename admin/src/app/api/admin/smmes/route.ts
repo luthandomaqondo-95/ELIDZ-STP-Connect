@@ -1,11 +1,14 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthedProfile } from "@/lib/authz";
+import { requireAdminApi } from "@/lib/authz";
 import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts";
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdminApi();
+    if (!auth.ok) return auth.response;
+
     const { searchParams } = new URL(request.url);
     const status = searchParams.get("status");
     const search = searchParams.get("search");
@@ -56,13 +59,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { user, profile } = await getAuthedProfile();
-    if ((profile?.role as string) !== "Super Admin") {
-      return NextResponse.json(
-        { error: "Only Super Admin can invite users" },
-        { status: 403 }
-      );
-    }
+    const auth = await requireAdminApi({ superAdmin: true });
+    if (!auth.ok) return auth.response;
+    const profile = auth.profile;
+    const user = { id: auth.userId };
 
     const { email, name, organization, role } = await request.json();
 

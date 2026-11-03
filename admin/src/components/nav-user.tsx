@@ -41,13 +41,12 @@ export function NavUser({
   const supabase = createClient()
 
   const handleSignOut = async () => {
-      const custom =
-        /^(1|true|yes)$/i.test(String(process.env.NEXT_PUBLIC_CUSTOM_AUTH_ENABLED ?? "").trim())
-      if (custom) {
-        await fetch("/api/auth/session/logout", { method: "POST" }).catch(() => undefined)
-      } else {
-        await supabase.auth.signOut()
-      }
+      // Sign out of both auth modes: the client-side flag can disagree with the
+      // server's CUSTOM_AUTH_ENABLED, and each call is a no-op in the other mode.
+      await Promise.allSettled([
+        fetch("/api/auth/session/logout", { method: "POST" }),
+        supabase.auth.signOut(),
+      ])
       router.push("/auth/login")
       router.refresh()
   }

@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { deleteUser, approveUser } from "./actions"
+import { toast } from "sonner"
 
 export interface User {
     id: string
@@ -108,9 +109,13 @@ export function UsersTable({ users }: { users: User[] }) {
 
     const handleApprove = async (userId: string) => {
         setIsPending(true)
-        await approveUser(userId)
+        const result = await approveUser(userId)
         setIsPending(false)
-        // Ideally show a toast here
+        if (result.success) {
+            toast.success("User approved")
+        } else {
+            toast.error(result.error ?? "Failed to approve user")
+        }
     }
 
     return (

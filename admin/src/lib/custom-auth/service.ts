@@ -682,6 +682,10 @@ export async function deleteProvisionedUser(userId: string): Promise<void> {
   await supabase.from("auth_identities").delete().eq("user_id", userId);
   await supabase.from("auth_credentials").delete().eq("user_id", userId);
   await supabase.from("auth_sessions").delete().eq("user_id", userId);
-  await supabase.from("profiles").delete().eq("id", userId);
+  const { error: profileError } = await supabase.from("profiles").delete().eq("id", userId);
+  if (profileError) {
+    // Usually an FK from user-owned rows; surface it instead of reporting a half-delete as success.
+    throw new Error(`Failed to delete profile: ${profileError.message}`);
+  }
   await deleteAuthUserStub(userId);
 }

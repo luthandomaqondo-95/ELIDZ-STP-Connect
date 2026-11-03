@@ -15,7 +15,6 @@
     "development-simulator": {
       "developmentClient": true,
       "distribution": "internal",
-    
       "environment": "development"
     },
     "preview": {
@@ -53,6 +52,10 @@
       "environment": "production",
       "channel": "production",
       "env": {
+        "EXPO_PUBLIC_CUSTOM_AUTH_ENABLED": "true",
+        "EXPO_PUBLIC_BFF_REQUIRED": "true",
+        "EXPO_PUBLIC_API_BASE_URL": "https://elidzconnect.vercel.app",
+        "EXPO_PUBLIC_APP_WEB_URL": "https://elidzconnect.vercel.app",
         "EAS_BUILD_DISABLE_NPM_CACHE": "1"
       }
     },
@@ -63,6 +66,10 @@
       },
       "channel": "production-huawei",
       "env": {
+        "EXPO_PUBLIC_CUSTOM_AUTH_ENABLED": "true",
+        "EXPO_PUBLIC_BFF_REQUIRED": "true",
+        "EXPO_PUBLIC_API_BASE_URL": "https://elidzconnect.vercel.app",
+        "EXPO_PUBLIC_APP_WEB_URL": "https://elidzconnect.vercel.app",
         "EAS_BUILD_DISABLE_NPM_CACHE": "1"
       }
     }

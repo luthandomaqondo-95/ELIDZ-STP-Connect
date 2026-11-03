@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthedProfile } from "@/lib/authz";
+import { requireAdminApi } from "@/lib/authz";
 import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts";
 import { NextRequest, NextResponse } from "next/server";
 
@@ -8,9 +8,13 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const auth = await requireAdminApi();
+    if (!auth.ok) return auth.response;
+    const actorProfile = auth.profile;
+    const user = { id: auth.userId };
+
     const { status } = await request.json();
     const { id } = await params;
-    const { user, profile: actorProfile } = await getAuthedProfile();
 
     console.log("SMME Status Update - ID:", id, "Status:", status);
 

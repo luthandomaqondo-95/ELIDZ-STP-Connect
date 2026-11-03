@@ -1,8 +1,12 @@
 import { listAdminUsers } from "@/lib/admin/users-list"
+import { requireAdminApi } from "@/lib/authz"
 import { NextRequest, NextResponse } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdminApi()
+    if (!auth.ok) return auth.response
+
     const { searchParams } = new URL(request.url)
     const role = searchParams.get("role")
 

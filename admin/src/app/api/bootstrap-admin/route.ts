@@ -1,13 +1,21 @@
 import { NextResponse } from "next/server";
+import { createHash, timingSafeEqual } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type BootstrapRole = "Admin" | "Super Admin";
+
+function secretsMatch(provided: string, expected: string): boolean {
+  // Hash both sides so lengths match and the comparison is constant-time.
+  const a = createHash("sha256").update(provided).digest();
+  const b = createHash("sha256").update(expected).digest();
+  return timingSafeEqual(a, b);
+}
 
 export async function POST(request: Request) {
   const secret = request.headers.get("x-bootstrap-secret") ?? "";
   const expected = process.env.BOOTSTRAP_ADMIN_SECRET ?? "";
 
-  if (!expected.trim() || secret !== expected) {
+  if (!expected.trim() || !secretsMatch(secret, expected)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -42,7 +50,7 @@ export async function POST(request: Request) {
     user_metadata: { name: fullName },
   });
 
-  if (created.error && !String(created.error.message || "").toLowerCase().includes("already registered")) {
+  if (created.error && !String(created.error.message || "").toLowerCase().includes("already")) {
     return NextResponse.json(
       { error: created.error.message ?? "Failed to create user" },
       { status: 500 }

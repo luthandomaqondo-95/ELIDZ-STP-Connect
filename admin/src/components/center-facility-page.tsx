@@ -16,6 +16,8 @@ import { DashboardPageHeader } from "@/components/dashboard-page-header"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import { UploadButton } from "@/components/upload-button"
 import { cn } from "@/lib/utils"
+import { createFacilityVideoUpload, saveFacilityVideo } from "@/lib/facility-videos"
+import { toast } from "sonner"
 
 type Facility = {
   id: string
@@ -70,50 +72,31 @@ export default function CenterFacilityPage({
     const file = files[0]
     
     try {
-      // Upload to Supabase storage bucket 'videos'
-      const fileName = `${facility.id}/${Date.now()}-${file.name}`
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('videos')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
+      const upload = await createFacilityVideoUpload(facility.id, file.name)
+      if (!upload.success) {
+        toast.error(upload.error)
+        return
+      }
 
+      const { error: uploadError } = await supabase.storage
+        .from('videos')
+        .uploadToSignedUrl(upload.path, upload.token, file, { cacheControl: '3600' })
       if (uploadError) {
-        console.error('Upload error:', uploadError)
+        toast.error(`Upload failed: ${uploadError.message}`)
         return
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('videos')
-        .getPublicUrl(fileName)
-
-      // Update database with video URL
-      const { error: updateError } = await supabase
-        .from('facilities')
-        .update({ video_url: publicUrl })
-        .eq('service_id', facility.id)
-
-      if (updateError) {
-        console.error('Database update error:', updateError)
+      const saved = await saveFacilityVideo(facility.id, upload.path)
+      if (!saved.success) {
+        toast.error(saved.error)
         return
       }
 
-      console.log('Video uploaded successfully:', publicUrl)
-      
-      // Refresh videos list
-      const { data: refreshedVideoData } = await supabase
-        .from("facilities")
-        .select("id, video_url, title")
-        .eq("service_id", facility.id)
-        .not("video_url", "is", null)
-        .order("updated_at", { ascending: false })
-      
-      setVideos(refreshedVideoData || [])
-      
+      setVideos(saved.videos)
+      toast.success("Video uploaded")
     } catch (error) {
       console.error('Upload failed:', error)
+      toast.error("Upload failed")
     } finally {
       setUploading(false)
     }

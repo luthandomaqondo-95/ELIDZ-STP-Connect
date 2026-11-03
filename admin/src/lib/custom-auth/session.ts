@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
+import { isProfileSuspended } from "@/lib/account-status";
 import {
   generateOpaqueToken,
   hashOpaqueToken,
@@ -96,20 +97,30 @@ export async function rotateRefreshToken(
     throw new Error("Invalid or expired refresh token");
   }
 
-  // Revoke old session (rotation)
-  await supabase
+  // Revoke old session (rotation). Conditional on still being active so two concurrent
+  // refreshes with the same token can't both succeed.
+  const { data: revoked, error: revokeError } = await supabase
     .from("auth_sessions")
     .update({ revoked_at: nowIso })
-    .eq("id", existing.id);
+    .eq("id", existing.id)
+    .is("revoked_at", null)
+    .select("id");
+  if (revokeError) throw new Error(revokeError.message);
+  if (!revoked || revoked.length === 0) {
+    throw new Error("Invalid or expired refresh token");
+  }
 
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
-    .select("id, email, role, name")
+    .select("id, email, role, name, verification_status")
     .eq("id", existing.user_id)
     .single();
 
   if (profileError || !profile) {
     throw new Error("User not found");
+  }
+  if (isProfileSuspended(profile)) {
+    throw new Error("Account suspended");
   }
 
   return createSession(profile as ProfileRow, meta);

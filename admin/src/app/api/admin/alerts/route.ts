@@ -1,5 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
-import { getAuthedProfile } from "@/lib/authz";
+import { requireAdminApi } from "@/lib/authz";
 import { notifySuperAdminsOfAdminAction } from "@/lib/admin/super-admin-alerts";
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
@@ -17,7 +17,10 @@ export async function POST(request: NextRequest) {
   try {
     console.log("Starting alerts API call...");
     const { title, message, type, targetAudience, createdBy } = await request.json();
-    const { user, profile } = await getAuthedProfile();
+    const auth = await requireAdminApi();
+    if (!auth.ok) return auth.response;
+    const profile = auth.profile;
+    const user = { id: auth.userId };
     
     console.log("Received data:", { title, message, type, targetAudience, createdBy });
 

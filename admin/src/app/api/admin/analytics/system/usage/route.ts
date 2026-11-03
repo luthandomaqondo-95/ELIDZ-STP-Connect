@@ -1,4 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin"
+import { requireAdminApi } from "@/lib/authz"
 import { NextRequest, NextResponse } from "next/server"
 
 // Helper function to estimate storage usage based on content
@@ -21,6 +22,9 @@ function calculateEstimatedStorage(facilities: number, services: number, product
 
 export async function GET(request: NextRequest) {
   try {
+    const auth = await requireAdminApi()
+    if (!auth.ok) return auth.response
+
     const { searchParams } = new URL(request.url)
     const month = searchParams.get("month") || new Date().toLocaleString("en-US", { month: "long" })
 

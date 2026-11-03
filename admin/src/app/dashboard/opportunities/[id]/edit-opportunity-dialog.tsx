@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { createClient } from "@/lib/supabase/client"
+import { updateOpportunity } from "../actions"
 import { toast } from "sonner"
 import { AnimatedDashboardButton } from "@/components/animated-dashboard-button"
 import {
@@ -31,7 +31,6 @@ interface EditOpportunityDialogProps {
 
 export function EditOpportunityDialog({ id, initial }: EditOpportunityDialogProps) {
   const router = useRouter()
-  const supabase = createClient()
   const [open, setOpen] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -47,31 +46,19 @@ export function EditOpportunityDialog({ id, initial }: EditOpportunityDialogProp
     setSaving(true)
     setError(null)
 
-    const { data: updatedRow, error: updateError } = await supabase
-      .from("opportunities")
-      .update({
-        title,
-        type,
-        deadline: deadline || null,
-        description,
-        requirements: requirements || null,
-      })
-      .eq("id", id)
-      .select("id")
-      .maybeSingle()
+    const result = await updateOpportunity(id, {
+      title,
+      type,
+      deadline: deadline || null,
+      description,
+      requirements: requirements || null,
+    })
 
     setSaving(false)
 
-    if (updateError) {
-      setError(updateError.message || "Failed to update opportunity.")
-      toast.error(updateError.message || "Failed to update opportunity.")
-      return
-    }
-
-    if (!updatedRow) {
-      const message = "No changes were saved. Please check your permissions."
-      setError(message)
-      toast.error(message)
+    if (!result.success) {
+      setError(result.error)
+      toast.error(result.error)
       return
     }
 
